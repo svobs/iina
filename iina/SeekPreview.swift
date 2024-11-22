@@ -11,10 +11,13 @@ extension PlayerWindowController {
   /// Encapsulates state & objects needed for seek preview UI.
   /// This class is not a view in itself.
   class SeekPreview {
-    static let margins = MarginQuad(top: Constants.Distance.Thumbnail.extraOffsetY,
-                                    trailing: Constants.Distance.Thumbnail.extraOffsetX,
-                                    bottom: Constants.Distance.Thumbnail.extraOffsetY,
-                                    leading: Constants.Distance.Thumbnail.extraOffsetX)
+    /// Min distance between `thumbnailPeekView` & sides of `viewportView`.
+    /// For the side which includes `timeLabel`, the margin is split 1/2 above & 1/2 below the label,
+    /// and does not include the offset added by the label's height itself.
+    static let minThumbMargins = MarginQuad(top: Constants.Distance.Thumbnail.extraOffsetY,
+                                            trailing: Constants.Distance.Thumbnail.extraOffsetX,
+                                            bottom: Constants.Distance.Thumbnail.extraOffsetY,
+                                            leading: Constants.Distance.Thumbnail.extraOffsetX)
 
     let timeLabel = NSTextField()
     let thumbnailPeekView = ThumbnailPeekView()
@@ -38,6 +41,14 @@ extension PlayerWindowController {
       timeLabel.isEnabled = true
       timeLabel.refusesFirstResponder = true
       timeLabel.alignment = .center
+
+      let textShadow: NSShadow = NSShadow()
+      // Amount of blur (in pixels) applied to the shadow.
+      textShadow.shadowBlurRadius = 1.0
+      // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
+      textShadow.shadowOffset = NSSize(width: 0.5, height: 0.5)
+      timeLabel.shadow = textShadow
+
       timeLabel.setContentHuggingPriority(.required, for: .horizontal)
       timeLabel.setContentHuggingPriority(.required, for: .vertical)
 
@@ -56,7 +67,7 @@ extension PlayerWindowController {
                      _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) -> Bool {
 
       let log = player.log
-      let margins = SeekPreview.margins
+      let margins = SeekPreview.minThumbMargins
       let timeLabelHeight = timeLabel.fittingSize.height
       let thumbStore = player.info.currentPlayback?.thumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
@@ -168,23 +179,28 @@ extension PlayerWindowController {
       let timeLabelOriginY: CGFloat
       let thumbOriginY: CGFloat
       if showAbove {
+        let halfMargin = margins.bottom * 0.5
         // Show thumbnail above seek time, which is above slider
-        timeLabelOriginY = oscOriginInWindowY + oscHeight + margins.bottom
-        thumbOriginY = timeLabelOriginY + timeLabelHeight
+        timeLabelOriginY = oscOriginInWindowY + oscHeight + halfMargin
+        thumbOriginY = timeLabelOriginY + timeLabelHeight + halfMargin
       } else {
+        let halfMargin = margins.top * 0.5
         // Show thumbnail below slider
-        timeLabelOriginY = oscOriginInWindowY - margins.top - timeLabelHeight
-        thumbOriginY = timeLabelOriginY - thumbHeight
+        timeLabelOriginY = oscOriginInWindowY - halfMargin - timeLabelHeight
+        thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
       // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
       let minX = isRightToLeft ? currentLayout.outsideTrailingBarWidth + margins.trailing : currentLayout.outsideLeadingBarWidth + margins.leading
       let maxX = minX + availableWidth
-      let thumbOriginX = min(max(minX, round(posInWindowX - thumbWidth / 2)), maxX - thumbWidth)
+      let halfThumbWidth = thumbWidth / 2
+      let thumbOriginX = min(max(minX, round(posInWindowX - halfThumbWidth)), maxX - thumbWidth)
+      // Keep timeLabel centered with thumbnail center. If thumb is not visible, halfThumbWidth will be 0.
+      let timeLabelCenterX = round(thumbOriginX + halfThumbWidth)
 
       let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
 
-      log.verbose{"TimeLabel centerX=\(posInWindowX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
-      timeLabelHorizontalCenterConstraint.constant = posInWindowX
+      log.verbose{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
+      timeLabelHorizontalCenterConstraint.constant = timeLabelCenterX
       timeLabelVerticalSpaceConstraint.constant = timeLabelOriginY
 
       if showThumbnail && (thumbWidth < Constants.Distance.Thumbnail.minHeight || thumbHeight < Constants.Distance.Thumbnail.minHeight) {
