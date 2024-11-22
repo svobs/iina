@@ -512,7 +512,7 @@ extension PlayerWindowController {
 
         // Knob height > 24 is not supported
         knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
-        if barHeight >= 36 {
+        if barHeight >= 36, #available(macOS 11.0, *) {
           timeLabelFontSize = NSFont.systemFontSize(for: .large)
         } else {
           timeLabelFontSize = NSFont.systemFontSize(for: .regular)

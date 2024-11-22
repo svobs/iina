@@ -31,7 +31,6 @@ extension PlayerWindowController {
 
     init() {
       timeLabel.identifier = .init("SeekTimeLabel")
-      timeLabel.controlSize = .large
       timeLabel.translatesAutoresizingMaskIntoConstraints = false
       timeLabel.isBordered = false
       timeLabel.drawsBackground = false
