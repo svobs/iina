@@ -41,13 +41,9 @@ extension PlayerWindowController {
       timeLabel.isEnabled = true
       timeLabel.refusesFirstResponder = true
       timeLabel.alignment = .center
+      timeLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize(for: .large))
 
-      let textShadow: NSShadow = NSShadow()
-      // Amount of blur (in pixels) applied to the shadow.
-      textShadow.shadowBlurRadius = 1.0
-      // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
-      textShadow.shadowOffset = NSSize(width: 0.5, height: 0.5)
-      timeLabel.shadow = textShadow
+      updateTimeLabelShadow()
 
       timeLabel.setContentHuggingPriority(.required, for: .horizontal)
       timeLabel.setContentHuggingPriority(.required, for: .vertical)
@@ -56,6 +52,17 @@ extension PlayerWindowController {
       thumbnailPeekView.isHidden = true
 
       timeLabel.isHidden = true
+    }
+
+    func updateTimeLabelShadow() {
+      let labelHeight = timeLabel.fittingSize.height
+      let shadowOffsetPx = labelHeight * 0.05
+      let textShadow: NSShadow = NSShadow()
+      // Amount of blur (in pixels) applied to the shadow.
+      textShadow.shadowBlurRadius = shadowOffsetPx * 2
+      // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
+      textShadow.shadowOffset = NSSize(width: shadowOffsetPx, height: shadowOffsetPx)
+      timeLabel.shadow = textShadow
     }
 
     /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be
@@ -88,8 +95,11 @@ extension PlayerWindowController {
         thumbHeight = 0
       }
 
+      // Subtract some height for less margin before time label
+      let adjustedMarginTotalHeight = margins.totalHeight * 0.75
+
       /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
-      let availableHeight = viewportSize.height - currentLayout.insideBars.totalHeight - margins.totalHeight - timeLabelHeight
+      let availableHeight = viewportSize.height - currentLayout.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelHeight
       /// `availableWidth`: viewport width, minus extra space
       let availableWidth = viewportSize.width - margins.totalWidth
       let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
@@ -149,7 +159,7 @@ extension PlayerWindowController {
           showAbove = true
         case .floating:
           // Need to check available space in viewport above & below OSC
-          let totalExtraVerticalSpace = margins.totalHeight + timeLabelHeight
+          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelHeight
           let availableHeightBelow = max(0, oscOriginInWindowY - currentLayout.insideBottomBarHeight - totalExtraVerticalSpace)
           if availableHeightBelow > thumbHeight {
             // Show below by default, if there is space for the desired size
@@ -176,17 +186,20 @@ extension PlayerWindowController {
       thumbWidth = round(thumbWidth)
       thumbHeight = round(thumbHeight)
 
+      // Y offset calculation
       let timeLabelOriginY: CGFloat
       let thumbOriginY: CGFloat
       if showAbove {
+        let quarterMargin = margins.bottom * 0.25
         let halfMargin = margins.bottom * 0.5
         // Show thumbnail above seek time, which is above slider
-        timeLabelOriginY = oscOriginInWindowY + oscHeight + halfMargin
+        timeLabelOriginY = oscOriginInWindowY + oscHeight + quarterMargin
         thumbOriginY = timeLabelOriginY + timeLabelHeight + halfMargin
       } else {
+        let quarterMargin = margins.top * 0.25
         let halfMargin = margins.top * 0.5
         // Show thumbnail below slider
-        timeLabelOriginY = oscOriginInWindowY - halfMargin - timeLabelHeight
+        timeLabelOriginY = oscOriginInWindowY - quarterMargin - timeLabelHeight
         thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
       // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
