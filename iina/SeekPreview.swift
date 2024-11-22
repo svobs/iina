@@ -356,37 +356,49 @@ extension PlayerWindowController {
 
     let centerOfKnobInSliderCoordX = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
-    let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
-                                                                      centerOfKnobInSliderCoordX)
-    let previewTimeSec = mediaDuration * playbackPositionRatio
-    let stringRepresentation = VideoTime.string(from: previewTimeSec)
-    if seekPreview.timeLabel.stringValue != stringRepresentation {
-      seekPreview.timeLabel.stringValue = stringRepresentation
-    }
-
     // May need to adjust X to account for knob width
     let pointInSlider = NSPoint(x: centerOfKnobInSliderCoordX, y: 0)
     let pointInWindowCorrected = NSPoint(x: playSlider.convert(pointInSlider, to: nil).x, y: pointInWindow.y)
 
     // - 2. Thumbnail Preview
 
-    var showThumbnail = Preference.bool(for: .enableThumbnailPreview)
-    if isScrollingOrDraggingPlaySlider {
-      // Thumbnail preview during seek. Is this feature enabled?
-      showThumbnail = showThumbnail && Preference.bool(for: .showThumbnailDuringSliderSeek)
+    let showThumbnail = Preference.bool(for: .enableThumbnailPreview)
+    let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
+    if isShowingThumbnailForSeek && (!showThumbnail || !Preference.bool(for: .showThumbnailDuringSliderSeek)) {
+      // Do not show any preview if this feature is disabled
+      seekPreview.timeLabel.isHidden = true
+      seekPreview.thumbnailPeekView.isHidden = true
+      return
     }
 
     // Need to ensure OSC is displayed if showing thumbnail preview
-    if showThumbnail && currentLayout.hasFadeableOSC {
+    if currentLayout.hasFadeableOSC {
       let hasTopBarFadeableOSC = currentLayout.oscPosition == .top && currentLayout.topBarView == .showFadeableTopBar
       let isOSCHidden = hasTopBarFadeableOSC ? fadeableTopBarAnimationState == .hidden : fadeableViewsAnimationState == .hidden
-      if isOSCHidden {
-        showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
-      } else {
-        hideFadeableViewsTimer?.invalidate()
+
+      if isShowingThumbnailForSeek {
+        if isOSCHidden {
+          showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
+        } else {
+          hideFadeableViewsTimer?.invalidate()
+        }
+        // Set this to remind ourselves to restart the fade timer when seek is done
+        isShowingFadeableViewsForSeek = true
+
+      } else if isOSCHidden {
+        // Do not show any preview if OSC is hidden and is not a showable seek
+        seekPreview.timeLabel.isHidden = true
+        seekPreview.thumbnailPeekView.isHidden = true
+        return
       }
-      // Set this to remind ourselves to restart the fade timer when seek is done
-      isShowingFadeableViewsForSeek = true
+    }
+
+    let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
+                                                                      centerOfKnobInSliderCoordX)
+    let previewTimeSec = mediaDuration * playbackPositionRatio
+    let stringRepresentation = VideoTime.string(from: previewTimeSec)
+    if seekPreview.timeLabel.stringValue != stringRepresentation {
+      seekPreview.timeLabel.stringValue = stringRepresentation
     }
 
     let didShow = seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
