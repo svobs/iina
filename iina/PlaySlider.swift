@@ -89,10 +89,6 @@ final class PlaySlider: ScrollableSlider {
     needsDisplay = true
   }
 
-  var positionAbsoluteSec: Double {
-    return player.info.playbackDurationSec! * progressRatio
-  }
-
   override func mouseUp(with event: NSEvent) {
     player.windowController.mouseUp(with: event)
   }

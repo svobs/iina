@@ -209,7 +209,7 @@ extension PlayerWindowController {
       if mustHideSeekPreview {
         seekPreview.animationState = .willHide
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
-        seekPreview.timeLabel.isHidden = true
+        seekPreview.timeLabel.animator().alphaValue = 0
       }
     })
 

@@ -2252,7 +2252,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Scroll wheel seek should call `seekFromPlaySlider` directly.
   @IBAction func playSliderAction(_ slider: PlaySlider) {
     // Update player.info & UI proactively
-    let absoluteSecond = slider.positionAbsoluteSec
+    let absoluteSecond = player.info.playbackDurationSec! * slider.progressRatio
     let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
     seekFromPlaySlider(absoluteSecond: absoluteSecond, forceExactSeek: forceExactSeek)
   }

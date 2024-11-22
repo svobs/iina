@@ -109,10 +109,7 @@ extension PlayerWindowController {
         contentView.addSubview(view)
     }
 
-      // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-      seekPreview.timeLabel.nextResponder = playSlider
-      contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
-      contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
+      initSeekPreview(in: contentView)
       initTitleBarAccessories()
       initBottomBarView(in: contentView)
       initSpeedLabel()
@@ -153,6 +150,24 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow windowDidLoad done")
       player.events.emit(.windowLoaded)
     }
+  }
+
+  private func initSeekPreview(in contentView: NSView) {
+    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+    seekPreview.timeLabel.nextResponder = playSlider
+    contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
+    contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
+
+    // Yes, left, not leading!
+    seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 200) // dummy value for now
+    seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+    seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
+
+    // This is a bit confusing but the constant here can be thought of as the X value in window,
+    // not flipped (so, larger values toward the top)
+    seekPreview.timeLabelVerticalSpaceConstraint = contentView.bottomAnchor.constraint(equalTo: seekPreview.timeLabel.bottomAnchor, constant: 0)
+    seekPreview.timeLabelVerticalSpaceConstraint.identifier = .init("SeekTimeHoverLabelVSpaceConstraint")
+    seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
   }
 
   private func initTitleBarAccessories() {

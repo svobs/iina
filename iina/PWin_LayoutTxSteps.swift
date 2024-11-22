@@ -456,9 +456,6 @@ extension PlayerWindowController {
 
     playSliderHeightConstraint?.isActive = false
 
-    seekPreview.timeLabelVerticalSpaceConstraint?.isActive = false
-    seekPreview.timeLabelHorizontalCenterConstraint?.isActive = false
-
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
@@ -482,9 +479,6 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscTopMainView, oscGeo, transition)
 
-        seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -4)
-        seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
-
       case .bottom:
         currentControlBar = bottomBarView
 
@@ -495,9 +489,6 @@ extension PlayerWindowController {
         }
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)
-
-        seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
-        seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
       case .floating:
 
@@ -579,13 +570,6 @@ extension PlayerWindowController {
         RenderCache.shared.invalidateCachedKnobs()
       }
 
-      if !outputLayout.hasFloatingOSC {  // floating case will be handled in later step
-                                         // Yes, left, not leading!
-        seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-        seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
-        seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
-      }
-
       if transition.isEnteringMusicMode {
         // Entering music mode
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
@@ -615,9 +599,6 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
-
-        seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 2)
-        seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
         seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
 
@@ -867,15 +848,6 @@ extension PlayerWindowController {
         controlBarFloating.addMarginConstraints()
       }
       addSpeedLabelToControlBar(transition)
-
-      // same as `.bottom`:
-      seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
-      seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
-
-      // Yes, left, not leading!
-      seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-      seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
-      seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
 
       // Update floating control bar position
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,

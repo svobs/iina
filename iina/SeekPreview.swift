@@ -11,6 +11,11 @@ extension PlayerWindowController {
   /// Encapsulates state & objects needed for seek preview UI.
   /// This class is not a view in itself.
   class SeekPreview {
+    static let margins = MarginQuad(top: Constants.Distance.Thumbnail.extraOffsetY,
+                                    trailing: Constants.Distance.Thumbnail.extraOffsetX,
+                                    bottom: Constants.Distance.Thumbnail.extraOffsetY,
+                                    leading: Constants.Distance.Thumbnail.extraOffsetX)
+
     let timeLabel = NSTextField()
     let thumbnailPeekView = ThumbnailPeekView()
 
@@ -42,35 +47,46 @@ extension PlayerWindowController {
       timeLabel.isHidden = true
     }
 
+    /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be
     // TODO: Investigate using CoreAnimation!
     // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CoreAnimation_guide/CoreAnimationBasics/CoreAnimationBasics.html
-    func displayThumbnail(forTime previewTimeSec: Double, originalPosX: CGFloat, _ player: PlayerCore,
-                          _ currentLayout: LayoutState, currentControlBar: NSView,
-                          _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool,
-                          margins: MarginQuad) -> Bool {
-
-      guard let thumbnails = player.info.currentPlayback?.thumbnails,
-            let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTimeSec) else {
-        thumbnailPeekView.isHidden = true
-        return false
-      }
+    func showPreview(withThumbnail showThumbnail: Bool, forTime previewTimeSec: Double,
+                     posInWindowX: CGFloat, _ player: PlayerCore,
+                     _ currentLayout: LayoutState, currentControlBar: NSView,
+                     _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) -> Bool {
 
       let log = player.log
-      let rotatedImage = ffThumbnail.image
-      var thumbWidth: Double = Double(rotatedImage.width)
-      var thumbHeight: Double = Double(rotatedImage.height)
+      let margins = SeekPreview.margins
+      let timeLabelHeight = timeLabel.fittingSize.height
+      let thumbStore = player.info.currentPlayback?.thumbnails
+      let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
+
+      var showThumbnail = showThumbnail
+      var thumbWidth: Double
+      var thumbHeight: Double
+      if showThumbnail, let ffThumbnail {
+        let rotatedImage = ffThumbnail.image
+        thumbWidth = Double(rotatedImage.width)
+        thumbHeight = Double(rotatedImage.height)
+        if thumbWidth <= 0 || thumbHeight <= 0 {
+          showThumbnail = false
+        }
+      } else {
+        showThumbnail = false
+        thumbWidth = 0
+        thumbHeight = 0
+      }
 
       /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
-      let availableHeight = viewportSize.height - currentLayout.insideBars.totalHeight - margins.totalHeight
+      let availableHeight = viewportSize.height - currentLayout.insideBars.totalHeight - margins.totalHeight - timeLabelHeight
       /// `availableWidth`: viewport width, minus extra space
       let availableWidth = viewportSize.width - margins.totalWidth
       let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
       let oscHeight = currentControlBar.frame.size.height
 
-      let hasThumbnail = thumbWidth > 0 && thumbHeight > 0
-      var thumbAspect = hasThumbnail ? (thumbWidth / thumbHeight) : 1.0
+      var thumbAspect = showThumbnail ? (thumbWidth / thumbHeight) : 1.0
 
-      if hasThumbnail {
+      if showThumbnail {
         // The aspect ratio of some videos is different at display time. May need to resize these videos
         // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
         // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
@@ -121,23 +137,24 @@ extension PlayerWindowController {
         case .bottom:
           showAbove = true
         case .floating:
-          let totalMargin = margins.totalHeight
-          let availableHeightBelow = max(0, oscOriginInWindowY - currentLayout.insideBottomBarHeight - totalMargin)
+          // Need to check available space in viewport above & below OSC
+          let totalExtraVerticalSpace = margins.totalHeight + timeLabelHeight
+          let availableHeightBelow = max(0, oscOriginInWindowY - currentLayout.insideBottomBarHeight - totalExtraVerticalSpace)
           if availableHeightBelow > thumbHeight {
             // Show below by default, if there is space for the desired size
             showAbove = false
           } else {
             // If not enough space to show the full-size thumb below, then show above if it has more space
-            let availableHeightAbove = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalMargin + currentLayout.insideTopBarHeight))
+            let availableHeightAbove = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalExtraVerticalSpace + currentLayout.insideTopBarHeight))
             showAbove = availableHeightAbove > availableHeightBelow
-            if hasThumbnail, showAbove, thumbHeight > availableHeightAbove {
+            if showThumbnail, showAbove, thumbHeight > availableHeightAbove {
               // Scale down thumbnail so it doesn't get clipped by the side of the window
               thumbHeight = availableHeightAbove
               thumbWidth = thumbHeight * thumbAspect
             }
           }
 
-          if hasThumbnail, !showAbove, thumbHeight > availableHeightBelow {
+          if showThumbnail, !showAbove, thumbHeight > availableHeightBelow {
             thumbHeight = availableHeightBelow
             thumbWidth = thumbHeight * thumbAspect
           }
@@ -148,39 +165,46 @@ extension PlayerWindowController {
       thumbWidth = round(thumbWidth)
       thumbHeight = round(thumbHeight)
 
+      let timeLabelOriginY: CGFloat
       let thumbOriginY: CGFloat
       if showAbove {
         // Show thumbnail above seek time, which is above slider
-        thumbOriginY = oscOriginInWindowY + oscHeight + margins.bottom
+        timeLabelOriginY = oscOriginInWindowY + oscHeight + margins.bottom
+        thumbOriginY = timeLabelOriginY + timeLabelHeight
       } else {
         // Show thumbnail below slider
-        thumbOriginY = max(margins.top, oscOriginInWindowY - thumbHeight - margins.top)
+        timeLabelOriginY = oscOriginInWindowY - margins.top - timeLabelHeight
+        thumbOriginY = timeLabelOriginY - thumbHeight
       }
       // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
       let minX = isRightToLeft ? currentLayout.outsideTrailingBarWidth + margins.trailing : currentLayout.outsideLeadingBarWidth + margins.leading
       let maxX = minX + availableWidth
-      let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
+      let thumbOriginX = min(max(minX, round(posInWindowX - thumbWidth / 2)), maxX - thumbWidth)
 
       let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
 
-      if hasThumbnail {
-        guard thumbWidth >= Constants.Distance.Thumbnail.minHeight,
-              thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
-          log.verbose("Not enough space to display thumbnail")
-          thumbnailPeekView.isHidden = true
-          return false
-        }
+      log.verbose{"TimeLabel centerX=\(posInWindowX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
+      timeLabelHorizontalCenterConstraint.constant = posInWindowX
+      timeLabelVerticalSpaceConstraint.constant = timeLabelOriginY
 
+      if showThumbnail && (thumbWidth < Constants.Distance.Thumbnail.minHeight || thumbHeight < Constants.Distance.Thumbnail.minHeight) {
+        log.verbose("Not enough space to display thumbnail")
+        showThumbnail = false
+      }
+
+      if showThumbnail {
         // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
-        let somethingChanged = thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
+        let ffThumbnail = ffThumbnail!
+        let somethingChanged = thumbStore!.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
         if somethingChanged {
-          thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
+          thumbStore!.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
 
           let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
 
           // Apply crop first. Then aspect
           // FIXME: Cropped+Rotated is broken! Need to rotate crop box coordinates to match image rotation!
           let croppedImage: CGImage
+          let rotatedImage = ffThumbnail.image
           if let normalizedCropRect = videoGeo.cropRectNormalized {
             croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
           } else {
@@ -191,12 +215,16 @@ extension PlayerWindowController {
           thumbnailPeekView.widthConstraint.constant = thumbFrame.width
           thumbnailPeekView.heightConstraint.constant = thumbFrame.height
         }
+
+        thumbnailPeekView.frame.origin = thumbFrame.origin
+        log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, frame=\(thumbFrame)"}
+        thumbnailPeekView.alphaValue = 1.0
       }
 
-      thumbnailPeekView.frame.origin = thumbFrame.origin
-      log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, frame=\(thumbFrame)"}
-      thumbnailPeekView.alphaValue = 1.0
-      thumbnailPeekView.isHidden = false
+      timeLabel.alphaValue = 1.0
+      timeLabel.isHidden = false
+      thumbnailPeekView.isHidden = !showThumbnail
+
       return true
     }
   }
@@ -243,7 +271,7 @@ extension PlayerWindowController {
         // Don't hide overlays when in PIP or when they are not actually shown
         seekPreview.animationState = .willHide
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
-        seekPreview.timeLabel.isHidden = true
+        seekPreview.timeLabel.animator().alphaValue = 0
         if isShowingFadeableViewsForSeek {
           isShowingFadeableViewsForSeek = false
           resetFadeTimer()
@@ -285,62 +313,54 @@ extension PlayerWindowController {
 
   /// Should only be called by `refreshSeekPreviewAsync`
   private func showSeekPreview(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
-    // - 1. Seek Time Label
+    let notInMusicModeDisabled = !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible)
 
-    let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
+    // First check if both time & thumbnail are disabled
+    guard let currentControlBar, notInMusicModeDisabled else {
+      seekPreview.timeLabel.isHidden = true
+      seekPreview.thumbnailPeekView.isHidden = true
+      return
+    }
 
-    seekPreview.timeLabelHorizontalCenterConstraint?.constant = knobCenterOffsetInPlaySlider
+    let centerOfKnobInSliderCoordX = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
-                                                                      knobCenterOffsetInPlaySlider)
+                                                                      centerOfKnobInSliderCoordX)
     let previewTimeSec = mediaDuration * playbackPositionRatio
     let stringRepresentation = VideoTime.string(from: previewTimeSec)
     if seekPreview.timeLabel.stringValue != stringRepresentation {
       seekPreview.timeLabel.stringValue = stringRepresentation
     }
-    seekPreview.timeLabel.isHidden = false
+
+    // May need to adjust X to account for knob width
+    let pointInSlider = NSPoint(x: centerOfKnobInSliderCoordX, y: 0)
+    let pointInWindowCorrected = NSPoint(x: playSlider.convert(pointInSlider, to: nil).x, y: pointInWindow.y)
 
     // - 2. Thumbnail Preview
 
+    var showThumbnail = Preference.bool(for: .enableThumbnailPreview)
     if isScrollingOrDraggingPlaySlider {
-      // Thumbnail preview during seek
-      guard Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek) else {
-        // Feature is disabled
-        seekPreview.thumbnailPeekView.isHidden = true
-        return
+      // Thumbnail preview during seek. Is this feature enabled?
+      showThumbnail = showThumbnail && Preference.bool(for: .showThumbnailDuringSliderSeek)
+    }
+
+    // Need to ensure OSC is displayed if showing thumbnail preview
+    if showThumbnail && currentLayout.hasFadeableOSC {
+      let hasTopBarFadeableOSC = currentLayout.oscPosition == .top && currentLayout.topBarView == .showFadeableTopBar
+      let isOSCHidden = hasTopBarFadeableOSC ? fadeableTopBarAnimationState == .hidden : fadeableViewsAnimationState == .hidden
+      if isOSCHidden {
+        showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
+      } else {
+        hideFadeableViewsTimer?.invalidate()
       }
-      // Need to ensure OSC is displayed if showing thumbnail preview
-      let hasFadeableOSC = currentLayout.hasFadeableOSC
-      if hasFadeableOSC {
-        let hasTopBarFadeableOSC = currentLayout.oscPosition == .top && currentLayout.topBarView == .showFadeableTopBar
-        let isOSCHidden = hasTopBarFadeableOSC ? fadeableTopBarAnimationState == .hidden : fadeableViewsAnimationState == .hidden
-        if isOSCHidden {
-          showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
-        } else {
-          hideFadeableViewsTimer?.invalidate()
-        }
-        // Set this to remind ourselves to restart the fade timer when seek is done
-        isShowingFadeableViewsForSeek = true
-      }
+      // Set this to remind ourselves to restart the fade timer when seek is done
+      isShowingFadeableViewsForSeek = true
     }
 
-    guard let currentControlBar else {
-      seekPreview.thumbnailPeekView.isHidden = true
-      return
-    }
-    guard !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible) else {
-      seekPreview.thumbnailPeekView.isHidden = true
-      return
-    }
-
-    let thumbMargins = MarginQuad(top: Constants.Distance.Thumbnail.extraOffsetY, trailing: Constants.Distance.Thumbnail.extraOffsetX,
-                                  bottom: Constants.Distance.Thumbnail.extraOffsetY, leading: Constants.Distance.Thumbnail.extraOffsetX)
-
-    let didShow = seekPreview.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
+    let didShow = seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
                                                currentControlBar: currentControlBar, geo.video,
                                                viewportSize: viewportView.frame.size,
-                                               isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft,
-                                               margins: thumbMargins)
+                                               isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
     guard didShow else { return }
     seekPreview.animationState = .shown
     // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
