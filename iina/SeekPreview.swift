@@ -41,9 +41,6 @@ extension PlayerWindowController {
       timeLabel.isEnabled = true
       timeLabel.refusesFirstResponder = true
       timeLabel.alignment = .center
-      timeLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize(for: .large))
-
-      updateTimeLabelShadow()
 
       timeLabel.setContentHuggingPriority(.required, for: .horizontal)
       timeLabel.setContentHuggingPriority(.required, for: .vertical)
@@ -54,7 +51,14 @@ extension PlayerWindowController {
       timeLabel.isHidden = true
     }
 
-    func updateTimeLabelShadow() {
+    /// This is expected to be called at first layout
+    func updateTimeLabelFontSize(to newSize: CGFloat) {
+      guard timeLabel.font?.pointSize != newSize else { return }
+      timeLabel.font = NSFont.boldSystemFont(ofSize: newSize)
+      updateTimeLabelShadow()
+    }
+
+    private func updateTimeLabelShadow() {
       let labelHeight = timeLabel.fittingSize.height
       let shadowOffsetPx = labelHeight * 0.05
       let textShadow: NSShadow = NSShadow()

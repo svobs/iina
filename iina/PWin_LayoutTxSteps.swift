@@ -511,21 +511,16 @@ extension PlayerWindowController {
         playSliderHeightConstraint.isActive = true
 
         // Knob height > 24 is not supported
-        switch barHeight {
-        case 60...:
-          timeLabelFontSize = NSFont.systemFontSize
-          knobHeight = 24
-        case 48...:
-          timeLabelFontSize = NSFont.systemFontSize
-          knobHeight = outputLayout.oscPosition == .bottom ? 18 : 15
-        default:
-          timeLabelFontSize = NSFont.smallSystemFontSize
-          knobHeight = 15
+        knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
+        if barHeight >= 36 {
+          timeLabelFontSize = NSFont.systemFontSize(for: .large)
+        } else {
+          timeLabelFontSize = NSFont.systemFontSize(for: .regular)
         }
       }
       playSlider.customCell.knobHeight = knobHeight
       (volumeSlider.cell as? VolumeSliderCell)?.knobHeight = knobHeight
-      seekPreview.timeLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
+      seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
 

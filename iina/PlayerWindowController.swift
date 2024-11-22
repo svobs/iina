@@ -438,7 +438,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
-  var bottomBarView: NSView = NSView()
+  var bottomBarView: NSView = NSVisualEffectView()
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
 

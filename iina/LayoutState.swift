@@ -30,7 +30,7 @@ struct LayoutSpec {
   /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
-  let oscBackgroundIsClear = true // TODO: still WIP
+  let oscBackgroundIsClear = false // TODO: still WIP
 
   let controlBarGeo: ControlBarGeometry
 
