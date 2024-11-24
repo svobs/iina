@@ -908,6 +908,10 @@ extension PlayerWindowController {
       videoView.apply(transition.outputGeometry)
     }
 
+    if transition.isEnteringMusicMode {
+      playlistView.scrollPlaylistToCurrentItem()
+    }
+
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
@@ -1101,7 +1105,7 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isTogglingMusicMode, Preference.bool(for: .playlistShowMetadataInMusicMode) {
+    if transition.isTogglingMusicMode && Preference.bool(for: .playlistShowMetadataInMusicMode) {
       /// Need to toggle music metadata due to music mode switch.
       /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
       playlistView.reloadPlaylistRows()
