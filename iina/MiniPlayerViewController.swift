@@ -289,7 +289,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
-        changeVideoViewVisibleState(to: false, showDefaultArt: nil)
+        changeVideoViewVisibleState(to: false)
       }
     })
   }
@@ -304,7 +304,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   // TODO: develop a nice sliding animation if possible
-  func changeVideoViewVisibleState(to visible: Bool, showDefaultArt: Bool?) {
+  func changeVideoViewVisibleState(to visible: Bool) {
     windowController.animationPipeline.submitInstantTask{ [self] in
       let currentGeo = windowController.musicModeGeoForCurrentFrame()
       log.verbose{"MusicMode: applying videoView visibility: \(currentGeo.isVideoVisible.yesno) → \(visible.yesno)"}
@@ -315,8 +315,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         return
       }
 
-      log.verbose{"MusicMode: setting videoView visible=\(visible.yn), H=\(newGeo.videoHeight)"}
-      windowController.applyMusicModeGeoInAnimationPipeline(from: currentGeo, to: newGeo, showDefaultArt: showDefaultArt)
+      player.mpv.queue.async { [self] in
+        log.verbose{"MusicMode: setting videoView visible=\(visible.yn), H=\(newGeo.videoHeight)"}
+        windowController.applyVideoGeoAtFileOpen(newGeo)
+        //       windowController.applyMusicModeGeoInAnimationPipeline(from: currentGeo, to: newGeo, showDefaultArt: showDefaultArt)
+      }
     }
   }
 

@@ -813,11 +813,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     log.verbose("PlayerWindow openWindow done")
-    if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-      // Don't wait for load for network stream; open immediately & show loading msg
-      player.mpv.queue.async { [self] in
+    // Don't wait for load for network stream; open immediately & show loading msg
+    player.mpv.queue.async { [self] in
+      if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
         log.verbose("Current playback is network resource; applying VideoGeometry now")
-        applyVideoGeoAtFileOpen(currentPlayback: currentPlayback, player.info.currentMediaAudioStatus)
+        applyVideoGeoAtFileOpen()
       }
     }
   }

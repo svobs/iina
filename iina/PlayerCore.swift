@@ -2400,10 +2400,7 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
-    // This is optional but provides a better viewer experience.
-    let ffMeta = MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
-    windowController.applyVideoGeoAtFileOpen(ffMeta, currentPlayback: currentPlayback, info.currentMediaAudioStatus)
+    windowController.applyVideoGeoAtFileOpen()
 
     // Launch auto-load tasks on background thread
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -2796,7 +2793,7 @@ class PlayerCore: NSObject {
       log.verbose("Video track changed to \(vid) but file is not loaded; ignoring")
       return
     }
-    
+
 #if DEBUG
     if vid == 0 {
       log.verbose("Video track is 0!")
@@ -2805,17 +2802,11 @@ class PlayerCore: NSObject {
 
     if didChange {
       info.vid = vid
-      postNotification(.iinaVIDChanged)
     }
 
-    /// Show default album art if loaded and vid is 0.
-    let isFileReady = info.isFileLoadedAndSized
-    // Check state so that we don't duplicate work. Don't change in miniPlayer if videoView not visible
-    let showDefaultArt: Bool?
-    if isFileReady && (!isInMiniPlayer || windowController.miniPlayer.isVideoVisible || isShowVideoPendingInMiniPlayer) {
-      showDefaultArt = info.shouldShowDefaultArt
-    } else {
-      showDefaultArt = nil  // don't change existing visibility
+    if didChange {
+      windowController.applyVideoGeoAtFileOpen()
+      postNotification(.iinaVIDChanged)
     }
 
     // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
@@ -2823,17 +2814,14 @@ class PlayerCore: NSObject {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
 
-    /// This will refresh album art display.
-    /// Do this first, before `changeVideoViewVisibleState`, for a nicer animation.
-    DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submitInstantTask { [self] in
-        if isShowVideoPendingInMiniPlayer {
-          isShowVideoPendingInMiniPlayer = false
-          windowController.miniPlayer.changeVideoViewVisibleState(to: true, showDefaultArt: showDefaultArt)
-
-        } else if let showDefaultArt {
-          log.verbose("Video track changed to \(vid): calling showDefaultArt=\(showDefaultArt.yn)")
-          windowController.updateDefaultArtVisibility(to: showDefaultArt)
+    if isShowVideoPendingInMiniPlayer {
+      isShowVideoPendingInMiniPlayer = false
+      /// This will refresh album art display.
+      /// Do this first, before `changeVideoViewVisibleState`, for a nicer animation.
+      DispatchQueue.main.async { [self] in
+        windowController.animationPipeline.submitInstantTask { [self] in
+          /// `showDefaultArt` should already have been handled by `applyVideoGeoAtFileOpen` so do not change here
+          windowController.miniPlayer.changeVideoViewVisibleState(to: true)
         }
       }
     }
@@ -2864,7 +2852,7 @@ class PlayerCore: NSObject {
       if info.isVideoTrackSelected {
         if showMiniPlayerVideo {
           // Don't wait; execute now
-          windowController.miniPlayer.changeVideoViewVisibleState(to: true, showDefaultArt: false)
+          windowController.miniPlayer.changeVideoViewVisibleState(to: true)
         }
       } else {
         // No video track selected. Change to first video track found:

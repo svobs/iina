@@ -158,9 +158,15 @@ extension PlayerWindowController {
 
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
-  func applyVideoGeoAtFileOpen(_ ffMeta: FFVideoMeta? = nil, currentPlayback: Playback,
-                               _ currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
+  /// If current media's vid track changed, may need to apply new geometry
+  func applyVideoGeoAtFileOpen(_ newMusicModeGeo: MusicModeGeometry? = nil) { // TODO: rename/refactor. Not just at file open now!
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+
+    guard let currentPlayback = player.info.currentPlayback else { return }
+    let currentMediaAudioStatus = player.info.currentMediaAudioStatus
+    // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
+    // This is optional but provides a better viewer experience.
+    let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
     log.verbose{"Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil"), audioStatus=\(currentMediaAudioStatus)"}
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
@@ -257,19 +263,29 @@ extension PlayerWindowController {
       updateWindowBorderAndOpacity()
     }
 
-    applyVideoGeoTransform("fileLoaded", transform, fileJustOpened: true, then: doAfter)
+    applyVideoGeoTransform("fileLoaded", transform, newMusicModeGeo, fileJustOpened: true, then: doAfter)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ transformName: String,
                               _ videoTransform: @escaping VideoGeometry.Transform,
+                              _ newMusicModeGeo: MusicModeGeometry? = nil,
                               fileJustOpened: Bool = false,
                               then doAfter: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     let isRestoring = player.info.isRestoring
     let priorState = player.info.priorState
-    let showDefaultArt = player.info.shouldShowDefaultArt
     let currentMediaAudioStatus = player.info.currentMediaAudioStatus
+
+    /// Show default album art if loaded and vid is 0.
+    let isFileReady = player.info.isFileLoadedAndSized
+    // Check state so that we don't duplicate work. Don't change in miniPlayer if videoView not visible
+    let showDefaultArt: Bool?
+    if isFileReady && (!isInMiniPlayer || miniPlayer.isVideoVisible || player.isShowVideoPendingInMiniPlayer) {
+      showDefaultArt = player.info.shouldShowDefaultArt
+    } else {
+      showDefaultArt = nil  // don't change existing visibility
+    }
 
     log.verbose{"[applyVideoGeo \(transformName)] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)"}
 
@@ -374,7 +390,8 @@ extension PlayerWindowController {
         let didRotate = oldVidGeo.totalRotation != newVidGeo.totalRotation
 
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
-        pendingVideoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
+        pendingVideoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newMusicModeGeo: newMusicModeGeo,
+                                                              newLayout: newLayout, windowState: state,
                                                               showDefaultArt: showDefaultArt, didRotate: didRotate)
 
         if let doAfter {
@@ -391,6 +408,7 @@ extension PlayerWindowController {
 
   /// Only `applyVideoGeoTransform` should call this.
   private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
+                                        newMusicModeGeo: MusicModeGeometry? = nil,
                                         newLayout: LayoutState,
                                         windowState: WindowStateAtManualOpen,
                                         showDefaultArt: Bool? = nil,
@@ -470,7 +488,7 @@ extension PlayerWindowController {
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
       log.verbose{"[applyVideoGeo] Prev cached value of musicModeGeo: \(musicModeGeo)"}
-      let newMusicModeGeo = musicModeGeoForCurrentFrame(newVidGeo: newVidGeo)
+      let newMusicModeGeo = newMusicModeGeo?.clone(video: newVidGeo) ?? musicModeGeoForCurrentFrame(newVidGeo: newVidGeo)
       log.verbose{"[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)"}
       return buildApplyMusicModeGeoTasks(from: musicModeGeo, to: newMusicModeGeo,
                                          duration: duration, showDefaultArt: showDefaultArt)
