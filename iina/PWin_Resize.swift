@@ -415,7 +415,15 @@ extension PlayerWindowController {
                                         didRotate: Bool) -> [IINAAnimation.Task] {
 
     // There's no good animation for rotation (yet), so just do as little animation as possible in this case
-    var duration = didRotate ? 0.0 : IINAAnimation.VideoReconfigDuration
+    var duration: CGFloat
+    if didRotate {
+      duration = 0.0
+    } else if newMusicModeGeo != nil {
+      // toggling videoView visiblity
+      duration = IINAAnimation.DefaultDuration
+    } else {
+      duration = IINAAnimation.VideoReconfigDuration
+    }
     var timing = CAMediaTimingFunctionName.easeInEaseOut
 
     /// See also: `doPIPEntry`

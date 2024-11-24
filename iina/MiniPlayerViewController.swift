@@ -318,7 +318,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       player.mpv.queue.async { [self] in
         log.verbose{"MusicMode: setting videoView visible=\(visible.yn), H=\(newGeo.videoHeight)"}
         windowController.applyVideoGeoAtFileOpen(newGeo)
-        //       windowController.applyMusicModeGeoInAnimationPipeline(from: currentGeo, to: newGeo, showDefaultArt: showDefaultArt)
       }
     }
   }
