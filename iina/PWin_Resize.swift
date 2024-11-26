@@ -164,10 +164,11 @@ extension PlayerWindowController {
 
     guard let currentPlayback = player.info.currentPlayback else { return }
     let currentMediaAudioStatus = player.info.currentMediaAudioStatus
+    let vidTrackID = player.info.vid
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
     let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
-    log.verbose{"Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil"), audioStatus=\(currentMediaAudioStatus)"}
+    log.verbose{"[applyVideoGeo FileOpen] Calling applyVideoGeoTransform, vid=\(String(vidTrackID)), audioStatus=\(currentMediaAudioStatus)"}
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard player.state.isNotYet(.stopping) else {
@@ -176,8 +177,9 @@ extension PlayerWindowController {
       }
 
       if isInMiniPlayer, geo.musicMode.isVideoVisible, !player.info.isRestoring, currentMediaAudioStatus == .isAudioWithArtHidden {
-        log.verbose{"[applyVideoGeo FileOpen] Player is in music mode + media is audio + has album art but is not showing it. Sending mpv request to select video track 1"}
-        player.setTrack(1, forType: .video)
+        log.verbose{"[applyVideoGeo FileOpen] Player is in music mode + media is audio + has album art but is not showing it. Will try to enable video track"}
+        player.setVideoTrackEnabled(thenShowMiniPlayerVideo: true)
+        return nil
       }
 
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
@@ -226,7 +228,7 @@ extension PlayerWindowController {
                                     log)
 
       // FIXME: currentMediaAudioStatus==notAudio for playlist which auto-plays audio
-      if !currentMediaAudioStatus.isAudio {
+      if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
         let dwidth = player.mpv.getInt(MPVProperty.dwidth)
         let dheight = player.mpv.getInt(MPVProperty.dheight)
 
@@ -263,7 +265,7 @@ extension PlayerWindowController {
       updateWindowBorderAndOpacity()
     }
 
-    applyVideoGeoTransform("fileLoaded", transform, newMusicModeGeo, fileJustOpened: true, then: doAfter)
+    applyVideoGeoTransform("FileOpen", transform, newMusicModeGeo, fileJustOpened: true, then: doAfter)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
@@ -281,7 +283,7 @@ extension PlayerWindowController {
     let isFileReady = player.info.isFileLoadedAndSized
     // Check state so that we don't duplicate work. Don't change in miniPlayer if videoView not visible
     let showDefaultArt: Bool?
-    if isFileReady && (!isInMiniPlayer || miniPlayer.isVideoVisible || player.isShowVideoPendingInMiniPlayer) {
+    if isFileReady && (!isInMiniPlayer || miniPlayer.isVideoVisible || (newMusicModeGeo?.isVideoVisible ?? false)) {
       showDefaultArt = player.info.shouldShowDefaultArt
     } else {
       showDefaultArt = nil  // don't change existing visibility
@@ -892,6 +894,7 @@ extension PlayerWindowController {
       if isTogglingVideoView && !outputGeo.isVideoVisible {  // Hiding video
         if pip.status == .notInPIP {
           player.setVideoTrackDisabled()
+          videoView.removeFromSuperview()
         }
 
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
@@ -936,11 +939,6 @@ extension PlayerWindowController {
     guard hasChange else {
       log.verbose("No changes needed for music mode windowFrame or constraints")
       return geometry
-    }
-
-    if !geometry.isVideoVisible {
-      videoView.apply(nil)
-      videoView.removeFromSuperview()
     }
 
     /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint`!

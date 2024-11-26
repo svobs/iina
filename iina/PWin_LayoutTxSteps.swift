@@ -604,10 +604,6 @@ extension PlayerWindowController {
         // Update music mode UI
         updateTitle()
         applyThemeMaterial()
-
-        if !miniPlayer.isVideoVisible, pip.status == .notInPIP {
-          player.setVideoTrackDisabled()
-        }
       }
     }
 

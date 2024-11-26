@@ -289,7 +289,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "videoHidden") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
+    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "video=NO") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
   }
 
   static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {

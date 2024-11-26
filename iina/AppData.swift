@@ -188,6 +188,8 @@ struct Constants {
     /// `momentumScrollJustStarted` event, the scroll session should be considered ended.
     static let momentumScrollStartTimeout = 0.05
 
+    static let musicModeChangeTrackTimeout = 1.0
+
     static let historyTableCompleteFileStatusReload = 600.0
 
     /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.

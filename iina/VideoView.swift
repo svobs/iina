@@ -223,16 +223,10 @@ class VideoView: NSView {
     let aspectPriority: NSLayoutConstraint.Priority = .required
     let eqPriority: NSLayoutConstraint.Priority = .init(499)
 
-    if let geometry {
-      if !geometry.isVideoVisible {
-        margins = .zero
-        videoAspect = -1
-        log.verbose("VideoView: zeroing out constraints (video is not visible)")
-      } else {
-        margins = geometry.viewportMargins
-        videoAspect = geometry.videoViewAspect
-        log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
-      }
+    if let geometry, geometry.isVideoVisible {
+      margins = geometry.viewportMargins
+      videoAspect = geometry.videoViewAspect
+      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
     } else {
       margins = .zero
       videoAspect = -1

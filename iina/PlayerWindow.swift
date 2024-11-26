@@ -242,6 +242,9 @@ class PlayerWindow: NSWindow {
       // Do not allow when in legacy full screen
       return !isFullScreen
     default:
+      if let pwc {
+        return pwc.validateUserInterfaceItem(item)
+      }
       return super.validateUserInterfaceItem(item)
     }
   }

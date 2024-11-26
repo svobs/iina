@@ -287,11 +287,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // -- screen
     fullScreen.action = #selector(PlayerWindowController.menuToggleFullScreen(_:))
-    if #available(macOS 10.12, *) {
-      pictureInPicture.action = #selector(PlayerWindowController.menuTogglePIP(_:))
-    } else {
-      videoMenu.removeItem(pictureInPicture)
-    }
+    pictureInPicture.action = #selector(PlayerWindowController.menuTogglePIP(_:))
     alwaysOnTop.action = #selector(PlayerWindowController.menuAlwaysOnTop(_:))
 
     // -- aspect
@@ -977,7 +973,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   private func matchKeyEquivalents(with userBindings: [InputBinding]) {
-    var bindableMenuItems: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
+    let bindableMenuItems: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (showCurrentFileInFinder, true, [IINACommand.showCurrentFileInFinder.rawValue], false, nil, nil),
       (deleteCurrentFile, true, [IINACommand.deleteCurrentFile.rawValue], false, nil, nil),
       (savePlaylist, true, [IINACommand.saveCurrentPlaylist.rawValue], false, nil, nil),
@@ -1045,11 +1041,8 @@ class MenuController: NSObject, NSMenuDelegate {
       (resetTextSize, false, ["set", "sub-scale", "1"], true, nil, nil),
       (alwaysOnTop, false, ["cycle", "ontop"], false, nil, nil),
       (fullScreen, false, ["cycle", "fullscreen"], false, nil, nil),
+      (pictureInPicture, true, [IINACommand.togglePIP.rawValue], false, nil, nil),
     ]
-
-    if #available(macOS 10.12, *) {
-      bindableMenuItems.append((pictureInPicture, true, [IINACommand.togglePIP.rawValue], false, nil, nil))
-    }
 
     var otherActionsMenuItems: [NSMenuItem] = []
 

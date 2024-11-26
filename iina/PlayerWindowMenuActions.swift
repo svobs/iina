@@ -523,10 +523,13 @@ extension PlayerWindowController {
     }
   }
 
-  func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-    switch menuItem.action {
+  // FIXME: this seems to never get called
+  func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+    switch item.action {
     case #selector(menuDeleteCurrentFile(_:)), #selector(menuShowCurrentFileInFinder(_:)):
       return player.info.currentURL != nil && !player.info.isNetworkResource
+    case #selector(menuTogglePIP(_:)):
+      return player.info.isVideoTrackSelected
     default:
       break
     }

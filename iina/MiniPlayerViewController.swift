@@ -282,34 +282,36 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBAction func toggleVideoViewVisibleState(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !isVideoVisible
-      log.verbose("Toggling videoView visibility from \((!showVideoView).yn) to \(showVideoView.yn)")
+      log.verbose("MusicMode: user clicked video toggle btn. Changing videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)")
 
-      /// If showing video, call `setVideoTrackEnabled(to: true)`, then do animations.
       if showVideoView {
-        player.setVideoTrackEnabled(showMiniPlayerVideo: true)
+        /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
+        player.setVideoTrackEnabled(thenShowMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackDisabled()`.
-        changeVideoViewVisibleState(to: false)
+        applyGeoForVideoView(setVisible: false)
       }
     })
   }
 
-  // TODO: develop a nice sliding animation if possible
-  func changeVideoViewVisibleState(to visible: Bool) {
-    windowController.animationPipeline.submitInstantTask{ [self] in
-      let currentGeo = windowController.musicModeGeoForCurrentFrame()
-      log.verbose{"MusicMode: applying videoView visibility: \(currentGeo.isVideoVisible.yesno) → \(visible.yesno)"}
-      let newGeo = currentGeo.withVideoViewVisible(visible)
+  /// Changes the window geometry to show/hide the video, with animation.
+  ///
+  /// Does nothing if not in music mode, or already in the visible state (idempotent).
+  /// Does not change the video track! If calling with `setVisible: true`, this should be called *after* video is enabled.
+  func applyGeoForVideoView(setVisible visible: Bool) {
+    let currentGeo = windowController.musicModeGeoForCurrentFrame()
+    log.verbose{"MusicMode: changing videoView visibility: \(currentGeo.isVideoVisible.yesno) → \(visible.yesno)"}
+    let newGeo = currentGeo.withVideoViewVisible(visible)
 
-      guard windowController.isInMiniPlayer, currentGeo.isVideoVisible != newGeo.isVideoVisible else {
-        log.debug{"Cancelling toggle of videoView visibility; isMiniPlayer=\(windowController.isInMiniPlayer.yn), current=\(currentGeo.isVideoVisible.yesno), new=\(newGeo.isVideoVisible.yesno)"}
-        return
-      }
+    guard windowController.isInMiniPlayer, currentGeo.isVideoVisible != newGeo.isVideoVisible else {
+      log.debug{"Cancelling toggle of videoView visibility (\(currentGeo.isVideoVisible.yesno) → \(newGeo.isVideoVisible.yesno), isMiniPlayer=\(windowController.isInMiniPlayer.yn))"}
+      return
+    }
 
-      player.mpv.queue.async { [self] in
-        log.verbose{"MusicMode: setting videoView visible=\(visible.yn), H=\(newGeo.videoHeight)"}
-        windowController.applyVideoGeoAtFileOpen(newGeo)
-      }
+    // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
+    player.mpv.queue.async { [self] in
+      log.verbose{"MusicMode: setting videoView visible=\(visible.yn), H=\(newGeo.videoHeight)"}
+      windowController.applyVideoGeoAtFileOpen(newGeo)
     }
   }
 

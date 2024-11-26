@@ -2798,7 +2798,9 @@ class PlayerCore: NSObject {
     }
 
     if didChange {
-      windowController.applyVideoGeoAtFileOpen()
+      if !isShowVideoPendingInMiniPlayer {
+        windowController.applyVideoGeoAtFileOpen()
+      }
       postNotification(.iinaVIDChanged)
     }
 
@@ -2807,15 +2809,18 @@ class PlayerCore: NSObject {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
 
-    if isShowVideoPendingInMiniPlayer {
+    /// This will refresh album art display.
+    /// Do this first, before `changeVideoViewVisibleState`, for a nicer animation.
+    DispatchQueue.main.async { [self] in
+      /// Must check `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
+      guard isShowVideoPendingInMiniPlayer else { return }
       isShowVideoPendingInMiniPlayer = false
-      /// This will refresh album art display.
-      /// Do this first, before `changeVideoViewVisibleState`, for a nicer animation.
-      DispatchQueue.main.async { [self] in
-        windowController.animationPipeline.submitInstantTask { [self] in
-          /// `showDefaultArt` should already have been handled by `applyVideoGeoAtFileOpen` so do not change here
-          windowController.miniPlayer.changeVideoViewVisibleState(to: true)
-        }
+      miniPlayerShowVideoTimer?.invalidate()
+      guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
+      log.verbose{"Showing videoView in music mode in response to vid change, forced=\(forceIfNoChange.yn)"}
+      windowController.animationPipeline.submitInstantTask { [self] in
+        /// `showDefaultArt` should already have been handled by `applyVideoGeoAtFileOpen` so do not change here
+        windowController.miniPlayer.applyGeoForVideoView(setVisible: true)
       }
     }
   }
@@ -2825,11 +2830,8 @@ class PlayerCore: NSObject {
   /// We can bridge the gap by setting a timer which will call `vidChanged`.
   @objc private func showVideoViewAfterVidChange() {
     guard isShowVideoPendingInMiniPlayer else { return }
-    miniPlayerShowVideoTimer?.invalidate()
-    guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
-
-    log.verbose("Forcing show of default album art")
     mpv.queue.async { [self] in
+      log.verbose("Forcing vidChanged() to show videoView")
       vidChanged(silent: true, forceIfNoChange: true)
     }
   }
@@ -2838,40 +2840,37 @@ class PlayerCore: NSObject {
   ///  Does nothing if already in the target state (idempotent).
   ///
   ///  See also: `setVideoTrackDisabled`
-  func setVideoTrackEnabled(showMiniPlayerVideo: Bool = false) {
+  func setVideoTrackEnabled(thenShowMiniPlayerVideo showMiniPlayerVideo: Bool = false) {
     assert(DispatchQueue.isExecutingIn(.main))
-    log.verbose{"Setting video track enabled, showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)"}
 
-    if info.isVideoTrackSelected {
-      // Don't need to change tracks if a track is already selected. But may still need to show videoView.
-      if showMiniPlayerVideo {
-        // Don't wait; execute now
-        windowController.miniPlayer.changeVideoViewVisibleState(to: true)
+    if showMiniPlayerVideo {
+      isShowVideoPendingInMiniPlayer = true
+
+      let hasVidTrack = !info.videoTracks.isEmpty
+      let isVideoTrackSelected = info.isVideoTrackSelected
+      log.verbose{"Setting video track enabled: hasVid=\(hasVidTrack.yn) isVidSelected=\(isVideoTrackSelected.yn) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
+      guard hasVidTrack && !isVideoTrackSelected else {
+        // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
+        // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
+        showVideoViewAfterVidChange()
+        return
       }
-    } else {
-      // No video track selected. Change to first video track found.
-      if showMiniPlayerVideo {
-        isShowVideoPendingInMiniPlayer = true
-        let hasVideoTrack = !info.videoTracks.isEmpty
-        if hasVideoTrack {
-          // Use timer to give mpv a chance to load the track before opening the videoView.
-          let changeVideoTrackTimeout: TimeInterval = 1.0
-          log.verbose("Will show music mode video after enabling video track (timeout: \(changeVideoTrackTimeout)s)")
-          miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: changeVideoTrackTimeout,
-                                                          target: self, selector: #selector(showVideoViewAfterVidChange),
-                                                          userInfo: nil, repeats: false)
 
-          guard isActive else { return }
-          log.verbose("Sending mpv request to select video track 1")
-          setTrack(1, forType: .video, silent: true)
-
-        } else {
-          // No tracks, so will not get a response from cycle command.
-          // Just finish immediately and show default album art
-          showVideoViewAfterVidChange()
-        }
-      }
+      // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
+      // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
+      let timeout = Constants.TimeInterval.musicModeChangeTrackTimeout
+      log.verbose{"Will show music mode video after enabling video track, timeout=\(timeout)s"}
+      miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: timeout,
+                                                      target: self, selector: #selector(showVideoViewAfterVidChange),
+                                                      userInfo: nil, repeats: false)
     }
+
+    guard isActive else {
+      log.verbose("Skipping enable of video track: player is not active")
+      return
+    }
+    log.verbose("Sending mpv request to select video track 1")
+    setTrack(1, forType: .video, silent: true)
   }
 
   ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
@@ -2904,13 +2903,13 @@ class PlayerCore: NSObject {
     let newVideoScale = mpv.getVideoScale()
     let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
     guard needsUpdate else {
-      log.verbose("Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed")
+      log.verbose{"Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed"}
       return
     }
 
     log.verbose{"Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)"}
     DispatchQueue.main.async { [self] in
-      log.verbose("Calling setVideoScale → \(newVideoScale)x")
+      log.verbose{"Calling setVideoScale → \(newVideoScale)x"}
       windowController.setVideoScale(newVideoScale)
     }
   }
@@ -2943,7 +2942,7 @@ class PlayerCore: NSObject {
   private func startWatchingSubFile() {
     guard let currentSubTrack = info.currentTrack(.sub) else { return }
     guard let externalFilename = currentSubTrack.externalFilename else {
-      log.verbose("Sub \(currentSubTrack.id) is not an external file")
+      log.verbose{"Sub \(currentSubTrack.id) is not an external file"}
       return
     }
 
