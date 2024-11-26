@@ -2841,6 +2841,7 @@ class PlayerCore: NSObject {
     }
   }
 
+  ///  Sets `vid=1` via mpv (if track exists), then if `showMiniPlayerVideo==true` and in music mode, shows `videoView`.
   ///  Does nothing if already in the target state (idempotent).
   ///
   ///  See also: `setVideoTrackDisabled`
@@ -2849,35 +2850,38 @@ class PlayerCore: NSObject {
     log.verbose("Setting video track enabled, showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
 
     if info.isVideoTrackSelected {
+      // Don't need to change tracks if a track is already selected. But may still need to show videoView.
       if showMiniPlayerVideo {
         // Don't wait; execute now
         windowController.miniPlayer.changeVideoViewVisibleState(to: true)
       }
     } else {
-      // No video track selected. Change to first video track found:
+      // No video track selected. Change to first video track found.
       if showMiniPlayerVideo {
         isShowVideoPendingInMiniPlayer = true
         let hasVideoTrack = !info.videoTracks.isEmpty
         if hasVideoTrack {
-          let cycleVideoTrackTimeout: TimeInterval = 1.0
-          log.verbose("Will show music mode video after cycle video track (cycle timeout: \(cycleVideoTrackTimeout)s)")
-          miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: cycleVideoTrackTimeout,
-                                                          target: self, selector: #selector(self.showVideoViewAfterVidChange),
+          // Use timer to give mpv a chance to load the track before opening the videoView.
+          let changeVideoTrackTimeout: TimeInterval = 1.0
+          log.verbose("Will show music mode video after enabling video track (timeout: \(changeVideoTrackTimeout)s)")
+          miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: changeVideoTrackTimeout,
+                                                          target: self, selector: #selector(showVideoViewAfterVidChange),
                                                           userInfo: nil, repeats: false)
+
+          guard isActive else { return }
+          log.verbose("Sending mpv request to select video track 1")
+          setTrack(1, forType: .video, silent: true)
+
         } else {
           // No tracks, so will not get a response from cycle command.
           // Just finish immediately and show default album art
           showVideoViewAfterVidChange()
-          return
         }
       }
-      guard isActive else { return }
-      log.verbose("Sending mpv request to select video track 1")
-      setTrack(1, forType: .video, silent: true)
     }
   }
 
-  ///  Does nothing if already in the target state (idempotent).
+  ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
   ///
   ///  See also: `setVideoTrackEnabled`
   func setVideoTrackDisabled() {
