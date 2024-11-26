@@ -752,8 +752,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     player.mpv.queue.async { [self] in
       let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-//      let mpvMeta: (String, String, String)? = isPlaying ? player.getMusicMetadata() : nil
-
       PlayerCore.playlistQueue.async { [self] in
         if isPlaying || Preference.bool(for: .prefetchPlaylistVideoDuration) {
           let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
@@ -764,8 +762,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           }
         }
 
-
-        if existingCachedMeta == nil {  // FIXME: better change detection
+        // FIXME: better change detection
+        if existingCachedMeta == nil {
           DispatchQueue.main.async { [self] in
             /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)

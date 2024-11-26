@@ -1303,7 +1303,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  // FIXME: use mpv aspect-name where possible instead!
   func _setVideoAspectOverride(_ aspectString: String) {
     log.verbose{"Got request to set videoAspectOverride to: \(aspectString.quoted)"}
     assert(DispatchQueue.isExecutingIn(mpv.queue))

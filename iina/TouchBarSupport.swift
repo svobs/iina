@@ -154,7 +154,6 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
 
     case .togglePIP:
       let item = NSCustomTouchBarItem(identifier: identifier)
-      // FIXME: we might need a better icon for this
       item.view = NSButton(image: Bundle.main.image(forResource: "pip")!, target: self, action: #selector(self.touchBarTogglePIP(_:)))
       item.customizationLabel = NSLocalizedString("touchbar.toggle_pip", comment: "Toggle PIP")
       return item

@@ -349,7 +349,6 @@ extension PlayerWindowController {
       player.setSubScale(1)
       return
     }
-    // FIXME: better refactor this part
     let amount = sender.tag > 0 ? 0.1 : -0.1
     let currentScale = player.mpv.getDouble(MPVOption.Subtitles.subScale)
     let displayValue = currentScale >= 1 ? currentScale : -1/currentScale

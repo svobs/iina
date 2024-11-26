@@ -234,11 +234,16 @@ extension PlayerWindowController {
           let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
 
           // Apply crop first. Then aspect
-          // FIXME: Cropped+Rotated is broken! Need to rotate crop box coordinates to match image rotation!
           let croppedImage: CGImage
           let rotatedImage = ffThumbnail.image
           if let normalizedCropRect = videoGeo.cropRectNormalized {
-            croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
+            if videoGeo.userRotation != 0 {
+              // FIXME: Need to rotate crop box coordinates to match image rotation
+              log.warn("Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead")
+              croppedImage = rotatedImage
+            } else {
+              croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
+            }
           } else {
             croppedImage = rotatedImage
           }

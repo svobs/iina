@@ -177,7 +177,7 @@ class CustomTitleBarViewController: NSViewController {
 
     let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
 
-    // FIXME: apply colors to buttons in inactive windows when toggling fadeable views!
+    // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
     let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
 
     for view in [leadingSidebarToggleButton, documentIconButton, trailingSidebarToggleButton, onTopButton,

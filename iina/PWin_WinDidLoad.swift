@@ -72,9 +72,6 @@ extension PlayerWindowController {
     /// NOTE: this will likely execute *after* `_showWindow()`
     animationPipeline.submitInstantTask{ [self] in
 
-      // FIXME: stick to individual side of screen
-      // FIXME: parent playlist
-
       // Top bar: other init
       topBarView.clipsToBounds = true
       topBarBottomBorder.fillColor = NSColor.titleBarBorder

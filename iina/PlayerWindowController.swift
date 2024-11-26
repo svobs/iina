@@ -9,6 +9,10 @@
 import Cocoa
 
 
+// FIXME: handle PiP with multiple windows
+// FIXME: support parent playlist
+// FIXME: stick window to individual side of screen
+// FIXME: persist mpv properties in saved player state
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {
