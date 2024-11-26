@@ -244,7 +244,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   private func _togglePlaylist() {
-    guard let window = windowController.window else { return }
     let showPlaylist = !isPlaylistVisible
     log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
     let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
@@ -270,13 +269,13 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       newWindowFrame.size.height = max(Constants.Distance.MusicMode.oscHeight, newWindowFrame.size.height - currentDisplayedPlaylistHeight)
     }
 
-    let heightDifference = newWindowFrame.height - window.frame.height
+    let heightDifference = newWindowFrame.height - currentMusicModeGeo.windowFrame.height
     // adjust window origin to expand downwards
     newWindowFrame.origin.y = newWindowFrame.origin.y - heightDifference
 
     // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
     let newMusicModeGeometry = currentMusicModeGeo.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
-    windowController.applyMusicModeGeoInAnimationPipeline(from: currentMusicModeGeo, to: newMusicModeGeometry)
+    windowController.buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeometry, thenRun: true)
   }
 
   @IBAction func toggleVideoViewVisibleState(_ sender: Any) {

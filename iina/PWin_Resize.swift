@@ -613,7 +613,7 @@ extension PlayerWindowController {
       let currentMusicModeGeo = musicModeGeoForCurrentFrame()
       guard let newMusicModeGeo = currentMusicModeGeo.scaleViewport(to: desiredViewportSize) else { return }
       log.verbose{"Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeo.windowFrame)"}
-      applyMusicModeGeoInAnimationPipeline(from: currentMusicModeGeo, to: newMusicModeGeo)
+      buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeo, thenRun: true)
     default:
       return
     }
@@ -804,23 +804,14 @@ extension PlayerWindowController {
     return tasks
   }
 
-  // MARK: - Apply Geometry - Music Mode
+  // MARK: - Apply Geometry: Music Mode
 
-  /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation
-  func applyMusicModeGeoInAnimationPipeline(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
-                                            duration: CGFloat = IINAAnimation.DefaultDuration,
-                                            setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true,
-                                            showDefaultArt: Bool? = nil) {
-    let tasks = buildApplyMusicModeGeoTasks(from: inputGeo, to: outputGeo,
-                                            duration: duration, setFrame: setFrame,
-                                            updateCache: updateCache, showDefaultArt: showDefaultArt)
-    animationPipeline.submit(tasks)
-  }
-
+  @discardableResult
   func buildApplyMusicModeGeoTasks(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
                                    duration: CGFloat = IINAAnimation.DefaultDuration,
                                    setFrame: Bool = true, updateCache: Bool = true,
-                                   showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
+                                   showDefaultArt: Bool? = nil,
+                                   thenRun: Bool = false) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
 
     let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
@@ -888,6 +879,9 @@ extension PlayerWindowController {
       updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
     })
 
+    if thenRun {
+      animationPipeline.submit(tasks)
+    }
     return tasks
   }
 
@@ -903,10 +897,6 @@ extension PlayerWindowController {
 
     // This is only needed to achieve "fade-in" effect when opening window:
     updateWindowBorderAndOpacity()
-
-    // Update defaults:
-    Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
-    Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
 
     updateMusicModeButtonsVisibility(using: geometry)
 
@@ -937,17 +927,21 @@ extension PlayerWindowController {
       videoView.apply(convertedGeo)
     }
 
-    if updateCache {
-      musicModeGeo = geometry
-      player.saveState()
-    }
-
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
     if !shouldDisableConstraint {
       viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+    }
+
+    // Update defaults:
+    Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
+    Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
+
+    if updateCache {
+      musicModeGeo = geometry
+      player.saveState()
     }
 
     return geometry
