@@ -84,30 +84,11 @@ extension PlayerWindowController {
       }
 
 
-      /// This is copied from `resizeSubviewsForWindowResize`, but the animation seems to look worse when run from a function call.
-      /// Possibly a timing issue? It doesn't help that AppKit is calling `setFrame` after this method returns, and we cannot access
-      /// that code to ensure it is encapsulated within the same animation transaction as the code below. But this solution
-      /// seems to get us 99% there; the video only exhibits a small noticeable wobble for some limited cases ...
+      /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
+      /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
+      /// only exhibits a small noticeable wobble for some limited cases ...
       IINAAnimation.disableAnimation { [self] in
-        videoView.apply(newGeometry)
-
-        if newGeometry.mode == .musicMode {
-          // Re-evaluate space requirements for labels. May need to start scrolling.
-          // Will also update saved state
-          miniPlayer.windowDidResize()
-        } else if newGeometry.mode.isInteractiveMode {
-          // Update interactive mode selectable box size. Origin is relative to viewport origin
-          let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
-          cropSettingsView?.cropBoxView.resized(with: newVideoRect)
-        }
-
-        // Only resize OSD if it is already showing a message. It will always be sized prior to displaying a new message.
-        if osd.animationState == .shown {
-          updateOSDTextSize(from: newGeometry)
-          if player.info.isFileLoadedAndSized {
-            setOSDViews()
-          }
-        }
+        resizeSubviewsForWindowResize(using: newGeometry)
       }
 
       return newGeometry.windowFrame.size
@@ -447,7 +428,7 @@ extension PlayerWindowController {
 
           notOpen = true
         }
-        
+
         if let resizedGeo = resizeAfterFileOpen(notOpen: notOpen, newVidGeo: newVidGeo) {
           newGeo = resizedGeo
         } else {
@@ -600,7 +581,7 @@ extension PlayerWindowController {
         let newGeometry = newGeoUnconstrained.refit(fitOption)
 
         log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVidGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
-        applyWindowGeoInAnimationPipeline(newGeometry)
+        buildApplyWindowGeoTasks(newGeometry, thenRun: true)
       }
     }
   }
@@ -626,7 +607,7 @@ extension PlayerWindowController {
       let fitOption: ScreenFitOption = centerOnScreen ? .centerInside : .stayInside
       let newGeometry = newGeoUnconstrained.refit(fitOption)
       log.verbose{"Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(newGeometry.windowFrame)"}
-      applyWindowGeoInAnimationPipeline(newGeometry, duration: duration)
+      buildApplyWindowGeoTasks(newGeometry, duration: duration, thenRun: true)
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
       let currentMusicModeGeo = musicModeGeoForCurrentFrame()
@@ -657,7 +638,7 @@ extension PlayerWindowController {
     resizeViewport(to: desiredViewportSize)
   }
 
-  func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWinGeometry? = nil) {
+  private func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWinGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }
 
     let newViewportSize = newGeometry?.viewportSize ?? viewportView.frame.size
@@ -767,27 +748,23 @@ extension PlayerWindowController {
     player.window.setFrameImmediately(geometry)
   }
 
-  /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated.
+  /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated. Windowed mode only!
   ///
-  /// Also updates cached `windowedModeGeo` and saves updated state. Windowed mode only!
-  func applyWindowGeoInAnimationPipeline(_ newGeometry: PWinGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
-                                         timing: CAMediaTimingFunctionName = .easeInEaseOut,
-                                         showDefaultArt: Bool? = nil) {
-    let tasks = buildApplyWindowGeoTasks(newGeometry, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
-    animationPipeline.submit(tasks)
-  }
-
-  func buildApplyWindowGeoTasks(_ newGeometry: PWinGeometry, 
+  /// Also updates cached `windowedModeGeo` and saves updated state.
+  @discardableResult
+  func buildApplyWindowGeoTasks(_ newGeometry: PWinGeometry,
                                 duration: CGFloat = IINAAnimation.DefaultDuration,
                                 timing: CAMediaTimingFunctionName = .easeInEaseOut,
-                                showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
+                                showDefaultArt: Bool? = nil,
+                                thenRun: Bool = false) -> [IINAAnimation.Task] {
 
     var tasks: [IINAAnimation.Task] = []
+
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.videoLayer.enterAsynchronousMode()
 
-      log.verbose{"ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) showDefaultArt=\(showDefaultArt?.yn ?? "nil") video=\(newGeometry)"}
+      log.verbose{"ApplyWindowGeo: showDefaultArt=\(showDefaultArt?.yn ?? "nil"), newGeo=\(newGeometry)"}
       assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
       hideSeekPreview()
@@ -820,6 +797,10 @@ extension PlayerWindowController {
       player.events.emit(.windowSizeAdjusted, data: newGeometry.windowFrame)
     })
 
+    if thenRun {
+      animationPipeline.submit(tasks)
+      return []
+    }
     return tasks
   }
 

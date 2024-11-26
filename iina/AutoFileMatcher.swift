@@ -239,7 +239,7 @@ class AutoFileMatcher {
 
       // if no match
       if matchedSubs.isEmpty {
-        log.debug{"No matched subs for \(video.filename.pii.quoted)"}
+        log.trace{"No matched subs for \(video.filename.pii.quoted)"}
         unmatchedVideos.append(video)
       } else {
         log.debug{"Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)"}

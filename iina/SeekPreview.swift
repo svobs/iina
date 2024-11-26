@@ -215,7 +215,7 @@ extension PlayerWindowController {
 
       let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
 
-      log.verbose{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
+      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
       timeLabelHorizontalCenterConstraint.constant = timeLabelCenterX
       timeLabelVerticalSpaceConstraint.constant = timeLabelOriginY
 
@@ -239,7 +239,7 @@ extension PlayerWindowController {
           if let normalizedCropRect = videoGeo.cropRectNormalized {
             if videoGeo.userRotation != 0 {
               // FIXME: Need to rotate crop box coordinates to match image rotation
-              log.warn("Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead")
+              log.warn{"Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead"}
               croppedImage = rotatedImage
             } else {
               croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
