@@ -177,7 +177,12 @@ struct Constants {
 
     /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
     /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
-    static let minScrollWheelTimeThreshold = 0.08
+    static let minQualifyingScrollWheelDuration = 0.08
+
+    /// When starting another smooth scroll after the last one ends, if less than this amount of time has passed since the last scroll ended,
+    /// then `minQualifyingScrollWheelDuration` will be ignored and the new scroll session will start immediately. This increases responsiveness
+    /// when the user is trying to scroll long distances by rapidly moving their fingers in a repeated motion.
+    static let instantConsecutiveScrollStartWindow = 0.1
 
     /// May need adjustment for optimal results
     static let stepScrollSessionTimeout = 0.1

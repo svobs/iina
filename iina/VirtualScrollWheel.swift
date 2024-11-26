@@ -38,7 +38,7 @@ class ScrollSession {
   var sensitivity: CGFloat = 1.0
   /// Lock for `eventsPending`
   let lock = Lock()
-  /// During the `minScrollWheelTimeThreshold` time period, no scroll is executed. But simply dropping any user input during
+  /// During the `minQualifyingScrollWheelDuration` time period, no scroll is executed. But simply dropping any user input during
   /// that time can feel laggy. For a much smoother user experience, this list holds the accumulated events until start, then
   /// execute them as if they had started when the user started their scroll action.
   var eventsPending: [NSEvent] = []
@@ -94,7 +94,7 @@ class ScrollSession {
 ///
 /// For Apple devices, the out-of-the-box functionality is a bit too sensitive. So this class also add logic to measure the
 /// time the user is actively scrolling and ignore any potential scroll sessions which shorter than
-/// `Constants.TimeInterval.minScrollWheelTimeThreshold` to help avoid unwanted scrolling. Specifically, it starts the timer
+/// `Constants.TimeInterval.minQualifyingScrollWheelDuration` to help avoid unwanted scrolling. Specifically, it starts the timer
 /// when a `.mayBegin` or `.began` state is seen in `.phase`, and if `.ended` or `.cancelled` is seen too soon, all remaining
 /// received events are discarded (including momentum scroll events) until the next `.mayBegin` or `.began` is seen for `.phase`.
 ///
@@ -117,6 +117,8 @@ class VirtualScrollWheel {
   /// Non-nil only while a scroll session is active. A new instance is created each time a new session starts.
   private var currentSession: ScrollSession? = nil
 
+  private var lastSessionEndTime: TimeInterval = 0
+
   /// This reflects the current logical/virtual scroll state of this `VirtualScrollWheel`, which may be completely different
   /// from the underlying source of scroll wheel `NSEvent`s.
   private var state: ScrollState = .notScrolling
@@ -138,7 +140,7 @@ class VirtualScrollWheel {
   ///
   /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
   /// - This will be at most once per scroll.
-  /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
+  /// - Will not be called if the user scroll duration is shorter than `minQualifyingScrollWheelDuration`.
   func scrollSessionWillBegin(_ session: ScrollSession) {
   }
 
@@ -250,6 +252,7 @@ class VirtualScrollWheel {
 #endif
 
     currentSession = nil
+    lastSessionEndTime = Date().timeIntervalSince1970
   }
 
   private func changeState(with event: NSEvent) {
@@ -265,8 +268,9 @@ class VirtualScrollWheel {
     case .notScrolling:
       notScrolling()
 
-    case .didStepScroll:  // Non-Apple device
-      resetScrollSessionTimer(timeout: Constants.TimeInterval.stepScrollSessionTimeout)
+      // - Non-Apple device:
+    case .didStepScroll:   // STEP
+      restartScrollSessionTimer(timeout: Constants.TimeInterval.stepScrollSessionTimeout)
       if case .didStepScroll = state {
         // Continuing scroll session. No state changes needed
         break
@@ -280,6 +284,8 @@ class VirtualScrollWheel {
 
       scrollSessionWillBegin(newSession)
 
+      // - Smooth Scroll:
+
     case .smoothScrollMayBegin:
       state = newState
       let newSession = ScrollSession()
@@ -292,9 +298,22 @@ class VirtualScrollWheel {
       case .smoothScrollMayBegin(let intentStartTime):
         guard let currentSession else { Logger.fatal("No current session for state \(state) → \(newState)") }
 
-        let timeElapsed = Date().timeIntervalSince1970 - intentStartTime
-        if timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold {
-          log.verbose("Time elapsed (\(timeElapsed.stringTrunc3f)) ≥ minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
+        let now = Date().timeIntervalSince1970
+        var startScrolling = false
+
+        let timeElapsedSinceLastSessionEnd = now - lastSessionEndTime
+        if timeElapsedSinceLastSessionEnd < Constants.TimeInterval.instantConsecutiveScrollStartWindow {
+          startScrolling = true
+          log.verbose{"Time elapsed since last scroll (\(timeElapsedSinceLastSessionEnd.stringTrunc3f)) < instantConsecutiveScrollStartWindow (\(timeElapsedSinceLastSessionEnd.logStr)): starting new scroll session immediately"}
+        } else {
+          let timeElapsedSinceIntentStart = Date().timeIntervalSince1970 - intentStartTime
+          if timeElapsedSinceIntentStart >= Constants.TimeInterval.minQualifyingScrollWheelDuration {
+            startScrolling = true
+            log.verbose("Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session")
+          }
+        }
+
+        if startScrolling {
           state = .smoothScrolling
           scrollSessionWillBegin(currentSession)
         }
@@ -309,12 +328,14 @@ class VirtualScrollWheel {
       switch state {
       case .smoothScrolling:
         state = .smoothScrollJustEnded
-        resetScrollSessionTimer(timeout: Constants.TimeInterval.momentumScrollStartTimeout)
+        restartScrollSessionTimer(timeout: Constants.TimeInterval.momentumScrollStartTimeout)
       default:
         notScrolling()
       }
 
-    case .momentumScrollJustStarted:
+      // - Momentum Scroll:
+
+    case .momentumScrollJustStarted:  // START
       switch state {
       case .smoothScrollJustEnded:
         scrollSessionTimer?.invalidate()
@@ -326,7 +347,7 @@ class VirtualScrollWheel {
         notScrolling()
       }
 
-    case .momentumScrolling:
+    case .momentumScrolling:  // Continue
       switch state {
       case .momentumScrollJustStarted, .momentumScrolling:
         scrollSessionTimer?.invalidate()
@@ -335,7 +356,7 @@ class VirtualScrollWheel {
         notScrolling()
       }
 
-    case .momentumScrollJustEnded:
+    case .momentumScrollJustEnded:  // END
       switch state {
       case .momentumScrollJustStarted, .momentumScrolling:
         endScrollSession()
@@ -345,7 +366,7 @@ class VirtualScrollWheel {
     }
   }
 
-  private func resetScrollSessionTimer(timeout: TimeInterval) {
+  private func restartScrollSessionTimer(timeout: TimeInterval) {
     scrollSessionTimer?.invalidate()
     scrollSessionTimer = Timer.scheduledTimer(timeInterval: timeout, target: self,
                                        selector: #selector(self.scrollSessionDidTimeOut), userInfo: nil, repeats: false)

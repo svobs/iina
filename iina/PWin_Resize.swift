@@ -438,18 +438,16 @@ extension PlayerWindowController {
       let newGeo: PWinGeometry
       switch windowState {
 
-      case .notOpen:
-        // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
-        duration = IINAAnimation.InitialVideoReconfigDuration
-        timing = .linear
-
-        fallthrough
-
-      case .alreadyOpen:
+      case .notOpen, .alreadyOpen:
         var notOpen = false
         if case .notOpen = windowState {
+          // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
+          duration = IINAAnimation.InitialVideoReconfigDuration
+          timing = .linear
+
           notOpen = true
         }
+        
         if let resizedGeo = resizeAfterFileOpen(notOpen: notOpen, newVidGeo: newVidGeo) {
           newGeo = resizedGeo
         } else {
@@ -701,8 +699,6 @@ extension PlayerWindowController {
     }
   }
 
-  // MARK: - Apply PWinGeometry
-
   /// Use for actively resizing the window (i.e., not in response to WindowWillResize).
   ///
   /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or
@@ -750,9 +746,12 @@ extension PlayerWindowController {
     player.events.emit(.windowResized, data: window.frame)
   }
 
+  // MARK: - Apply Geometry - NOT Music Mode
+
   /// Set the window frame and if needed the content view frame to appropriately use the full screen.
   /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
   func applyLegacyFSGeo(_ geometry: PWinGeometry) {
+    assert(geometry.mode.isFullScreen, "Expected applyLegacyFSGeo to be called with full screen geometry but got \(geometry)")
     let currentLayout = currentLayout
 
     if currentLayout.hasFloatingOSC {
@@ -823,6 +822,8 @@ extension PlayerWindowController {
 
     return tasks
   }
+
+  // MARK: - Apply Geometry - Music Mode
 
   /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation
   func applyMusicModeGeoInAnimationPipeline(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
