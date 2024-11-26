@@ -298,7 +298,7 @@ extension PlayerWindowController {
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
-      return geo.musicMode.refit().toPWinGeometry()
+      return geo.musicMode.refitted().toPWinGeometry()
     }
   }
 
@@ -343,7 +343,7 @@ extension PlayerWindowController {
 
     case .musicMode:
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
-      let musicModeGeoCorrected = geo.musicMode.clone(video: geo.video).refit()
+      let musicModeGeoCorrected = geo.musicMode.clone(video: geo.video).refitted()
       return musicModeGeoCorrected.toPWinGeometry()
 
     }
@@ -477,7 +477,7 @@ extension PlayerWindowController {
                                                                    insideBottom: insideBottomBarHeight,
                                                                    insideLeading: insideLeadingBarWidth,
                                                                    keepFullScreenDimensions: true)
-    return resizedBarsGeo.refit()
+    return resizedBarsGeo.refitted()
   }
 
 }

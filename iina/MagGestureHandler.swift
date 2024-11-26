@@ -154,7 +154,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         return nil
       }
       let newWidth = round(windowController.musicModeGeo.windowFrame.width * scale)
-      var newMusicModeGeometry = windowController.musicModeGeo.scaleVideo(to: newWidth)!
+      var newMusicModeGeometry = windowController.musicModeGeo.scalingVideo(to: newWidth)!
       windowController.log.verbose("Scaling pinched video in music mode, result: \(newMusicModeGeometry)")
 
       IINAAnimation.disableAnimation{
@@ -171,12 +171,12 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
     /// Using `noConstraints` here has the bonus effect of allowing viewport to be resized via pinch when the video is already maximized
     /// (only useful when in windowed mode and `lockViewportToVideoSize` is disabled)
-    let intendedGeo = originalGeometry.scaleViewport(to: newViewportSize, fitOption: .noConstraints, mode: currentLayout.mode)
+    let intendedGeo = originalGeometry.scalingViewport(to: newViewportSize, fitOption: .noConstraints, mode: currentLayout.mode)
     // User has actively resized the video. Assume this is the new intended resolution, even if it is outside the current screen size.
     // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.
     windowController.player.info.intendedViewportSize = intendedGeo.viewportSize
 
-    let newGeometry = intendedGeo.refit(.stayInside)
+    let newGeometry = intendedGeo.refitted(using: .stayInside)
     windowController.applyWindowResize(usingGeometry: newGeometry)
     return newGeometry
   }

@@ -664,25 +664,25 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         // Option A: resize height based on requested width
         let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
                                               height: round(requestedViewportSize.width / video.videoAspectCAR))
-        chosenGeo = self.scaleViewport(to: resizedWidthViewportSize)
+        chosenGeo = scalingViewport(to: resizedWidthViewportSize)
       } else {
         // Option B: resize width based on requested height
         let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * video.videoAspectCAR),
                                                height: requestedViewportSize.height)
-        chosenGeo = self.scaleViewport(to: resizedHeightViewportSize)
+        chosenGeo = scalingViewport(to: resizedHeightViewportSize)
       }
     } else {
       /// If `!inLiveResize`: resize request is not coming from the user. Could be BetterTouchTool, Retangle, or some window manager, or the OS.
       /// These tools seem to expect that both dimensions of the returned size are less than the requested dimensions, so check for this.
-      /// If `lockViewportToVideoSize && !inLiveResize`: scale window to requested size; `refit()` below will constrain as needed.
+      /// If `lockViewportToVideoSize && !inLiveResize`: scale window to requested size; `refitted()` below will constrain as needed.
       chosenGeo = self.scaleWindow(to: requestedSize)
     }
 
     return chosenGeo
   }
 
-  func refit(_ newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
-    return scaleViewport(fitOption: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
+  func refitted(using newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
+    return scalingViewport(fitOption: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }
 
   /// Computes a new `PWinGeometry`, attempting to attain the given window size.
@@ -697,7 +697,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     } else {
       requestedViewportSize = nil
     }
-    return scaleViewport(to: requestedViewportSize, screenID: screenID, fitOption: fitOption)
+    return scalingViewport(to: requestedViewportSize, screenID: screenID, fitOption: fitOption)
   }
 
   /// Computes a new `PWinGeometry` from this one:
@@ -709,11 +709,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// and `windowFrame` will be resized accordingly; otherwise, (3) `Preference.bool(for: .lockViewportToVideoSize)` will be used.
   /// • If `screenID` is provided, it will be associated with the resulting `PWinGeometry`; otherwise `self.screenID` will be used.
   /// • If `fitOption` is provided, it will be applied to the resulting `PWinGeometry`; otherwise `self.fitOption` will be used.
-  func scaleViewport(to desiredSize: NSSize? = nil,
-                     screenID: String? = nil,
-                     fitOption: ScreenFitOption? = nil,
-                     lockViewportToVideoSize: Bool? = nil,
-                     mode: PlayerWindowMode? = nil) -> PWinGeometry {
+  func scalingViewport(to desiredSize: NSSize? = nil,
+                       screenID: String? = nil,
+                       fitOption: ScreenFitOption? = nil,
+                       lockViewportToVideoSize: Bool? = nil,
+                       mode: PlayerWindowMode? = nil) -> PWinGeometry {
     guard video.videoAspectCAR >= 0 else {
       log.error{"[geo] PWinGeometry cannot scale viewport: videoAspectCAR (\(video.videoAspectCAR)) is invalid!"}
       return self
@@ -797,7 +797,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return self.clone(windowFrame: newWindowFrame, screenID: newScreenID, fitOption: newFitOption, mode: mode)
   }
 
-  func scaleVideo(to desiredVideoSize: NSSize,
+  func scalingVideo(to desiredVideoSize: NSSize,
                   screenID: String? = nil,
                   fitOption: ScreenFitOption? = nil,
                   lockViewportToVideoSize: Bool? = nil,
@@ -850,7 +850,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                height: scaledViewportWithoutMargins.height + minViewportMargins.totalHeight)
     }
 
-    return scaleViewport(to: newViewportSize, screenID: screenID, fitOption: fitOption, mode: mode)
+    return scalingViewport(to: newViewportSize, screenID: screenID, fitOption: fitOption, mode: mode)
   }
 
   func resizeMinimally(forNewVideoGeo newVidGeo: VideoGeometry, intendedViewportSize: NSSize? = nil) -> PWinGeometry {
@@ -876,7 +876,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     log.verbose("[applyVideoGeo D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
-    return clone(video: newVidGeo).scaleViewport(to: desiredViewportSize)
+    return clone(video: newVidGeo).scalingViewport(to: desiredViewportSize)
   }
 
   // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving
@@ -965,49 +965,54 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                                      leading: outsideLeading)
 
     if keepFullScreenDimensions {
-      resizedBarsGeo = preserveFullScreenDimensions(of: resizedBarsGeo)
+      resizedBarsGeo = stickWindowDimensionsWhichFillScreen(of: resizedBarsGeo)
     }
     return resizedBarsGeo
   }
 
-  private func preserveFullScreenDimensions(of geo: PWinGeometry) -> PWinGeometry {
+  private func stickWindowDimensionsWhichFillScreen(of geo: PWinGeometry) -> PWinGeometry {
     guard let screenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: geo.fitOption) else { return geo }
-    let isFullScreenWidth = windowFrame.width == screenFrame.width
-    let isFullScreenHeight = windowFrame.height == screenFrame.height
+    let fillHeightOfScreen = screenFrame.height - windowFrame.height <= 0
+    let fillWidthOfScreen = screenFrame.width - windowFrame.width <= 0
 
     let ΔOutsideWidth = geo.outsideBars.totalWidth - outsideBars.totalWidth
     let ΔOutsideHeight = geo.outsideBars.totalHeight - outsideBars.totalHeight
 
-    log.debug("[ResizeBars] ΔW:\(ΔOutsideWidth.logStr) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight.logStr) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
+    log.debug("[ResizeBars] W={Δ:\(ΔOutsideWidth.logStr) fill:\(fillWidthOfScreen.yn)}, H={Δ:\(ΔOutsideHeight.logStr) fill:\(fillHeightOfScreen.yn)) moveToKeepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
 
-    let resizedViewport: NSSize
+    let newViewportSize: NSSize
     // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
-    if ΔOutsideWidth != 0, isFullScreenWidth {
+    if ΔOutsideWidth != 0, fillWidthOfScreen {
       let newViewportWidth = screenFrame.width - geo.outsideBars.totalWidth
-      let widthRatio = newViewportWidth / viewportSize.width
-      let newViewportHeight = isFullScreenHeight ? viewportSize.height : round(viewportSize.height * widthRatio)
-      resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
-    } else if ΔOutsideHeight != 0, isFullScreenHeight {
+      let newViewportHeight: CGFloat
+      if fillHeightOfScreen {
+        newViewportHeight = screenFrame.height - geo.outsideBars.totalHeight
+      } else {
+        let widthRatio = newViewportWidth / viewportSize.width
+        newViewportHeight = (viewportSize.height * widthRatio).rounded()
+      }
+      newViewportSize = NSSize(width: newViewportWidth, height: newViewportHeight)
+    } else if ΔOutsideHeight != 0, fillHeightOfScreen {
       // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
       let newViewportHeight = screenFrame.height - geo.outsideBars.totalHeight
       let heightRatio = newViewportHeight / viewportSize.height
-      let newViewportWidth = isFullScreenWidth ? viewportSize.width : round(viewportSize.width * heightRatio)
-      resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
+      let newViewportWidth = fillWidthOfScreen ? viewportSize.width : round(viewportSize.width * heightRatio)
+      newViewportSize = NSSize(width: newViewportWidth, height: newViewportHeight)
     } else {
       return geo
     }
 
-    var resizedGeo = geo.scaleViewport(to: resizedViewport, mode: geo.mode)
+    var resizedGeo = geo.scalingViewport(to: newViewportSize, mode: geo.mode)
 
     if !resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
       /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize==false`.
-      // Use previous origin, because scaleViewport() causes it to move when we don't want it to.
-      let newOrigin = CGPoint(x: isFullScreenWidth ? windowFrame.origin.x : resizedGeo.windowFrame.origin.x,
-                              y: isFullScreenHeight ? windowFrame.origin.y : resizedGeo.windowFrame.origin.y)
+      /// Use previous origin, because scalingViewport() causes it to move when we don't want it to.
+      let newOrigin = CGPoint(x: fillWidthOfScreen ? windowFrame.origin.x : resizedGeo.windowFrame.origin.x,
+                              y: fillHeightOfScreen ? windowFrame.origin.y : resizedGeo.windowFrame.origin.y)
       let newWindowFrame = NSRect(origin: newOrigin, size: resizedGeo.windowFrame.size)
       resizedGeo = resizedGeo.clone(windowFrame: newWindowFrame)
     }
-    /// Else window origin was already changed by `scaleViewport` to keep it on screen. No change needed
+    /// Else window origin was already changed by `scalingViewport` to keep it on screen. No change needed
     return resizedGeo
   }
 
@@ -1171,7 +1176,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      insideTop: 0, insideTrailing: 0,
                                      insideBottom: 0, insideLeading: 0,
                                      keepFullScreenDimensions: !lockViewportToVideoSize)
-    return resizedGeo.refit()
+    return resizedGeo.refitted()
   }
 
   /// Transition `windowedInteractive` mode geometry to `windowed` geometry.

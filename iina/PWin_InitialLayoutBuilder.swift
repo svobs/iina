@@ -322,11 +322,11 @@ extension PlayerWindowController {
       /// well-defined based on current user prefs and/or last closed window.
       let mouseLoc = PlayerCore.mouseLocationAtLastOpen ?? NSEvent.mouseLocation
       let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
-      let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: videoGeo).refit(.stayInside)
+      let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: videoGeo).refitted(using: .stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
       log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoGeo.videoAspectCAR), windowSize=\(windowSize)")
-      windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
+      windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refitted(using: .stayInside)
     }
 
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: videoGeo)

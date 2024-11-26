@@ -331,12 +331,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         // Option A: resize height based on requested width
         let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
                                               height: round(requestedViewportSize.width / currentGeo.video.videoAspectCAR))
-        newGeo = currentGeo.scaleViewport(to: resizedWidthViewportSize)!
+        newGeo = currentGeo.scalingViewport(to: resizedWidthViewportSize)!
       } else {
         // Option B: resize width based on requested height
         let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.video.videoAspectCAR),
                                                height: requestedViewportSize.height)
-        newGeo = currentGeo.scaleViewport(to: resizedHeightViewportSize)!
+        newGeo = currentGeo.scalingViewport(to: resizedHeightViewportSize)!
       }
 
     } else {  // general case
@@ -440,6 +440,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     let desiredGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: video,
                                        isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     // Resize as needed to fit on screen:
-    return desiredGeo.refit()
+    return desiredGeo.refitted()
   }
 }

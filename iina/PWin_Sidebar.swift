@@ -938,16 +938,16 @@ extension PlayerWindowController {
       /// accomodate the change in video height.
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
-        newGeo = resizedPlaylistGeo.scaleViewport(to: desiredViewportSize)
+        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize)
       } else {
         /// If `lockViewportToVideoSize` is `false`, window size won't change.
         /// But call `refit` to recalculate videoSize or other internal vars
-        newGeo = resizedPlaylistGeo.refit()
+        newGeo = resizedPlaylistGeo.refitted()
       }
     } else {  /// `.insideViewport`: needs to refit in case window is so small that the viewport is larger than the video
       let insideBarsNew = oldGeo.insideBars.clone(leading: newPlaylistWidth)
       let resizedPlaylistGeo = oldGeo.clone(insideBars: insideBarsNew)
-      newGeo = resizedPlaylistGeo.refit()
+      newGeo = resizedPlaylistGeo.refitted()
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
@@ -984,13 +984,13 @@ extension PlayerWindowController {
 
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
-        newGeo = resizedPlaylistGeo.scaleViewport(to: desiredViewportSize)
+        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize)
       } else {
-        newGeo = resizedPlaylistGeo.refit()
+        newGeo = resizedPlaylistGeo.refitted()
       }
     } else {  /// `.insideViewport`
       let resizedPlaylistGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(trailing: newPlaylistWidth))
-      newGeo = resizedPlaylistGeo.refit()
+      newGeo = resizedPlaylistGeo.refitted()
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)

@@ -530,7 +530,7 @@ extension PlayerWindowController {
         var preferredGeo = windowGeo
         if Preference.bool(for: .lockViewportToVideoSize), let intendedViewportSize = player.info.intendedViewportSize  {
           log.verbose{"[applyVideoGeo C-6] Using intendedViewportSize \(intendedViewportSize)"}
-          preferredGeo = windowGeo.scaleViewport(to: intendedViewportSize)
+          preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
         }
         log.verbose{"[applyVideoGeo C-7] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)"}
         return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
@@ -542,12 +542,12 @@ extension PlayerWindowController {
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {
         log.verbose{"[applyVideoGeo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)"}
-        return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
+        return windowGeo.scalingViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
         let scaledVideoSize = newVidGeo.videoSizeCAR * resizeRatio
         log.verbose{"[applyVideoGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)"}
-        let centeredScaledGeo = windowGeo.scaleVideo(to: scaledVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
+        let centeredScaledGeo = windowGeo.scalingVideo(to: scaledVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = centeredScaledGeo.viewportSize
         log.verbose{"[applyVideoGeo C-3] After scaleVideo: \(centeredScaledGeo)"}
@@ -575,10 +575,10 @@ extension PlayerWindowController {
 
         // FIXME: regression: viewport keeps expanding when video runs into screen boundary
         let videoSizeScaled = oldVidGeo.videoSizeCAR * desiredVideoScale
-        let newGeoUnconstrained = windowedGeoForCurrentFrame().scaleVideo(to: videoSizeScaled, fitOption: .noConstraints)
+        let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingVideo(to: videoSizeScaled, fitOption: .noConstraints)
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         let fitOption: ScreenFitOption = .stayInside
-        let newGeometry = newGeoUnconstrained.refit(fitOption)
+        let newGeometry = newGeoUnconstrained.refitted(using: fitOption)
 
         log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVidGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
         buildApplyWindowGeoTasks(newGeometry, thenRun: true)
@@ -597,7 +597,7 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
-      let newGeoUnconstrained = windowedGeoForCurrentFrame().scaleViewport(to: desiredViewportSize,
+      let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingViewport(to: desiredViewportSize,
                                                                            fitOption: .noConstraints)
       if currentLayout.mode == .windowedNormal {
         // User has actively resized the video. Assume this is the new preferred resolution
@@ -605,13 +605,13 @@ extension PlayerWindowController {
       }
 
       let fitOption: ScreenFitOption = centerOnScreen ? .centerInside : .stayInside
-      let newGeometry = newGeoUnconstrained.refit(fitOption)
+      let newGeometry = newGeoUnconstrained.refitted(using: fitOption)
       log.verbose{"Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(newGeometry.windowFrame)"}
       buildApplyWindowGeoTasks(newGeometry, duration: duration, thenRun: true)
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
       let currentMusicModeGeo = musicModeGeoForCurrentFrame()
-      guard let newMusicModeGeo = currentMusicModeGeo.scaleViewport(to: desiredViewportSize) else { return }
+      guard let newMusicModeGeo = currentMusicModeGeo.scalingViewport(to: desiredViewportSize) else { return }
       log.verbose{"Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeo.windowFrame)"}
       buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeo, thenRun: true)
     default:
@@ -891,7 +891,7 @@ extension PlayerWindowController {
   @discardableResult
   func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, 
                          updateCache: Bool = true) -> MusicModeGeometry {
-    let geometry = geometry.refit()  // enforces internal constraints, and constrains to screen
+    let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
     log.verbose{"Applying \(geometry), setFrame=\(setFrame.yn) updateCache=\(updateCache.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()

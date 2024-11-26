@@ -1283,9 +1283,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         } else if layout.mode == .windowedNormal {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
           /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
-          /// By calling `refit()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.
+          /// By calling `refitted()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.
           let oldGeo = windowedModeGeo
-          let newGeo = oldGeo.refit()
+          let newGeo = oldGeo.refitted()
           guard !newGeo.hasEqual(windowFrame: oldGeo.windowFrame, videoSize: oldGeo.videoSize) else {
             log.verbose("WndDidChangeScreenParams: in windowed mode; no change to windowFrame")
             return
@@ -1601,10 +1601,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
                                        height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 
               log.verbose{"EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)"}
-              uncroppedClosedBarsGeo = uncroppedClosedBarsGeo.scaleViewport(to: newViewportSize)
+              uncroppedClosedBarsGeo = uncroppedClosedBarsGeo.scalingViewport(to: newViewportSize)
             } else {
               // If not locking viewport to video, just reuse viewport
-              uncroppedClosedBarsGeo = uncroppedClosedBarsGeo.refit()
+              uncroppedClosedBarsGeo = uncroppedClosedBarsGeo.refitted()
             }
             log.verbose{"EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedClosedBarsGeo)"}
 

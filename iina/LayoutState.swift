@@ -627,7 +627,7 @@ class LayoutState {
                                                           insideLeading: insideLeadingBarWidth,
                                                           video: video,
                                                           keepFullScreenDimensions: keepFullScreenDimensions)
-    return resizedBarsGeo.refit()
+    return resizedBarsGeo.refitted()
   }
 
   func buildFullScreenGeometry(inScreenID screenID: String, video: VideoGeometry) -> PWinGeometry {
@@ -659,7 +659,7 @@ class LayoutState {
                              outsideBars: outsideBars,
                              insideBars: insideBars,
                              video: video)
-      return geo.scaleViewport()
+      return geo.scalingViewport()
     case .musicMode:
       let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, video: video,
                                            isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
@@ -675,7 +675,7 @@ class LayoutState {
     let videoSize = videoGeo.videoSizeRaw
     let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
     let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: videoGeo)
-    return geo.refit(.centerInside)
+    return geo.refitted(using: .centerInside)
   }
 
 

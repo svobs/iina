@@ -164,7 +164,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// 3. `playlistWrapperView`: Visible if `isPlaylistVisible` is true. Height is user resizable, and must be >= `PlaylistMinHeight`
   /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
   /// height-bounded instead of width-bounded.
-  func refit() -> MusicModeGeometry {
+  func refitted() -> MusicModeGeometry {
     let containerFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: .stayInside)!
 
     /// When the window's width changes, the video scales to match while keeping its aspect ratio,
@@ -216,12 +216,12 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return fittedGeo
   }
 
-  func scaleViewport(to desiredSize: NSSize? = nil,
+  func scalingViewport(to desiredSize: NSSize? = nil,
                      screenID: String? = nil) -> MusicModeGeometry? {
-    return scaleVideo(to: desiredSize?.width, screenID: screenID)
+    return scalingVideo(to: desiredSize?.width, screenID: screenID)
   }
 
-  func scaleVideo(to desiredWidth: CGFloat? = nil,
+  func scalingVideo(to desiredWidth: CGFloat? = nil,
                   screenID: String? = nil) -> MusicModeGeometry? {
 
     var newVideoWidth = desiredWidth ?? windowFrame.width
