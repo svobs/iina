@@ -950,6 +950,14 @@ extension FileHandle {
 }
 
 extension String {
+  init(_ optionalInt: Int?) {
+    if let optionalInt {
+      self.init(optionalInt)
+    } else {
+      self.init("nil")
+    }
+  }
+
   var md5: String {
     get {
       return self.data(using: .utf8)!.md5

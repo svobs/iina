@@ -2762,15 +2762,8 @@ class PlayerCore: NSObject {
     log.debug("Track list changed")
     guard reloadTrackInfo() else { return }
     reloadSelectedTracks()
-    log.verbose("Posting iinaTracklistChanged vid=\(optString(info.vid)) aid=\(optString(info.aid)) sid=\(optString(info.sid))")
+    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))")
     postNotification(.iinaTracklistChanged)
-  }
-
-  private func optString(_ num: Int?) -> String {
-    if let num = num {
-      return String(num)
-    }
-    return "nil"
   }
 
   func vfChanged() {
@@ -2830,7 +2823,7 @@ class PlayerCore: NSObject {
   /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
   /// But it will not be called if there is no change (i.e. there are no video tracks at all).
   /// We can bridge the gap by setting a timer which will call `vidChanged`.
-  @objc func showVideoViewAfterVidChange() {
+  @objc private func showVideoViewAfterVidChange() {
     guard isShowVideoPendingInMiniPlayer else { return }
     miniPlayerShowVideoTimer?.invalidate()
     guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
