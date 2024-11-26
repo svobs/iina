@@ -325,18 +325,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return viewportSize.width - insideBars.totalWidth
   }
 
-  var outsideBarsTotalWidth: CGFloat {
-    return outsideBars.totalWidth
-  }
-
-  var outsideBarsTotalHeight: CGFloat {
-    return outsideBars.totalHeight
-  }
-
-  var outsideBarsTotalSize: NSSize {
-    return outsideBars.totalSize
-  }
-
   var hasTopPaddingForCameraHousing: Bool {
     return topMarginHeight > 0
   }
@@ -407,8 +395,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   fileprivate func computeMaxViewportSize(in containerSize: NSSize) -> NSSize {
     // Resize only the video. Panels outside the video do not change size.
     // To do this, subtract the "outside" panels from the container frame
-    return NSSize(width: containerSize.width - outsideBarsTotalWidth,
-                  height: containerSize.height - outsideBarsTotalHeight - topMarginHeight)
+    return NSSize(width: containerSize.width - outsideBars.totalWidth,
+                  height: containerSize.height - outsideBars.totalHeight - topMarginHeight)
   }
 
   // Computes & returns the max video size with proper aspect ratio which can fit in the given container,
@@ -702,8 +690,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                    screenID: String? = nil,
                    fitOption: ScreenFitOption? = nil) -> PWinGeometry {
     let requestedViewportSize: NSSize?
-    if let desiredWindowSize = desiredWindowSize {
-      let outsideBarsTotalSize = outsideBarsTotalSize
+    if let desiredWindowSize {
+      let outsideBarsTotalSize = outsideBars.totalSize
       requestedViewportSize = NSSize(width: desiredWindowSize.width - outsideBarsTotalSize.width,
                                      height: desiredWindowSize.height - outsideBarsTotalSize.height)
     } else {
@@ -727,7 +715,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                      lockViewportToVideoSize: Bool? = nil,
                      mode: PlayerWindowMode? = nil) -> PWinGeometry {
     guard video.videoAspectCAR >= 0 else {
-      log.error("[geo] PWinGeometry cannot scale viewport: videoAspectCAR (\(video.videoAspectCAR)) is invalid!")
+      log.error{"[geo] PWinGeometry cannot scale viewport: videoAspectCAR (\(video.videoAspectCAR)) is invalid!"}
       return self
     }
 
@@ -737,7 +725,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
     // do not center in screen again unless explicitly requested
     let newFitOption = fitOption ?? (self.fitOption == .centerInside ? .stayInside : self.fitOption)
-    let outsideBarsSize = self.outsideBarsTotalSize
+    let outsideBarsSize = outsideBars.totalSize
     let newScreenID = screenID ?? self.screenID
     let containerFrame: NSRect? = PWinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
     let maxViewportSize: NSSize?
@@ -987,21 +975,21 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let isFullScreenWidth = windowFrame.width == screenFrame.width
     let isFullScreenHeight = windowFrame.height == screenFrame.height
 
-    let ΔOutsideWidth = geo.outsideBarsTotalWidth - outsideBarsTotalWidth
-    let ΔOutsideHeight = geo.outsideBarsTotalHeight - outsideBarsTotalHeight
+    let ΔOutsideWidth = geo.outsideBars.totalWidth - outsideBars.totalWidth
+    let ΔOutsideHeight = geo.outsideBars.totalHeight - outsideBars.totalHeight
 
     log.debug("[ResizeBars] ΔW:\(ΔOutsideWidth.logStr) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight.logStr) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
 
     let resizedViewport: NSSize
     // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
     if ΔOutsideWidth != 0, isFullScreenWidth {
-      let newViewportWidth = screenFrame.width - geo.outsideBarsTotalWidth
+      let newViewportWidth = screenFrame.width - geo.outsideBars.totalWidth
       let widthRatio = newViewportWidth / viewportSize.width
       let newViewportHeight = isFullScreenHeight ? viewportSize.height : round(viewportSize.height * widthRatio)
       resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
     } else if ΔOutsideHeight != 0, isFullScreenHeight {
       // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
-      let newViewportHeight = screenFrame.height - geo.outsideBarsTotalHeight
+      let newViewportHeight = screenFrame.height - geo.outsideBars.totalHeight
       let heightRatio = newViewportHeight / viewportSize.height
       let newViewportWidth = isFullScreenWidth ? viewportSize.width : round(viewportSize.width * heightRatio)
       resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
@@ -1061,9 +1049,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // 3. Otherwise default to desiredVideoSize.
     if isWidthSet && !isHeightSet {
       // Calculate height based on width and aspect
-      let newViewportWidth = newWindowSize.width - outsideBarsTotalWidth
+      let newViewportWidth = newWindowSize.width - outsideBars.totalWidth
       let newViewportHeight = round(newViewportWidth / video.videoAspectCAR)
-      newWindowSize.height = newViewportHeight + (outsideBarsTotalHeight + topMarginHeight)
+      newWindowSize.height = newViewportHeight + (outsideBars.totalHeight + topMarginHeight)
 
       var mustRecomputeWidth = false
       if newWindowSize.height > maxWindowSize.height {
@@ -1076,15 +1064,15 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
       if mustRecomputeWidth {
         // Recalculate width based on height and aspect
-        let newViewportHeight = newWindowSize.height - (outsideBarsTotalHeight + topMarginHeight)
+        let newViewportHeight = newWindowSize.height - (outsideBars.totalHeight + topMarginHeight)
         let newViewportWidth = round(newViewportHeight * video.videoAspectCAR)
-        newWindowSize.width = newViewportWidth + outsideBarsTotalWidth
+        newWindowSize.width = newViewportWidth + outsideBars.totalWidth
       }
     } else if !isWidthSet && isHeightSet {
       // Calculate width based on height and aspect
-      let newViewportHeight = newWindowSize.height - (outsideBarsTotalHeight + topMarginHeight)
+      let newViewportHeight = newWindowSize.height - (outsideBars.totalHeight + topMarginHeight)
       let newViewportWidth = round(newViewportHeight * video.videoAspectCAR)
-      newWindowSize.width = newViewportWidth + outsideBarsTotalWidth
+      newWindowSize.width = newViewportWidth + outsideBars.totalWidth
 
       var mustRecomputeHeight = false
       if newWindowSize.width > maxWindowSize.width {
@@ -1097,9 +1085,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
       if mustRecomputeHeight {
         // Recalculate height based on width and aspect
-        let newViewportWidth = newWindowSize.width - outsideBarsTotalWidth
+        let newViewportWidth = newWindowSize.width - outsideBars.totalWidth
         let newViewportHeight = round(newViewportWidth / video.videoAspectCAR)
-        newWindowSize.height = newViewportHeight + (outsideBarsTotalHeight + topMarginHeight)
+        newWindowSize.height = newViewportHeight + (outsideBars.totalHeight + topMarginHeight)
       }
     }
 

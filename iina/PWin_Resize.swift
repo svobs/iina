@@ -695,7 +695,7 @@ extension PlayerWindowController {
       let layout = currentLayout
       let isTransientResize = newGeometry != nil
       let isFullScreen = currentLayout.isFullScreen
-      log.verbose{"ApplyWindowResize: fs=\(isFullScreen.yn) newGeo=\(newGeometry?.description ?? "nil")"}
+      log.verbose{"ApplyWindowResize: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
 
       // These may no longer be aligned correctly. Just hide them
       hideSeekPreview()
@@ -707,6 +707,7 @@ extension PlayerWindowController {
         let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
 
         if isFullScreen {
+          // custom FS
           resizeSubviewsForWindowResize(using: geo)
         } else {
           /// This will also update `videoView`
