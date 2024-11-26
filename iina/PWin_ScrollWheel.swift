@@ -9,15 +9,17 @@
 import Foundation
 
 
-/// An instance of this is stored in the `PlayerWindowController` instance. Also see its `playSliderAction(_:)
-class PlaySliderScrollWheel: VirtualScrollWheel {
+/// Processes scroll wheel events for a play slider.
+///
+/// Also see `playSliderAction(_:)` in `PlayerWindowController`.
+class PlaySliderScrollWheel: SliderScrollWheelDelegate {
   /** We need to pause the video when a user starts seeking by scrolling.
    This property records whether the video is paused initially so we can
    recover the status when scrolling finished. */
   private var wasPlayingBeforeSeeking = false
 
   override func scrollSessionWillBegin(_ session: ScrollSession) {
-    guard let player = delegateSlider?.thisPlayer else { return }
+    guard let player = slider.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek began")
     // pause video when seek begins
@@ -32,7 +34,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
-    guard let player = delegateSlider?.thisPlayer else { return }
+    guard let player = slider.thisPlayer else { return }
 
     session.modelValueAtEnd = player.info.playbackPositionSec
 
@@ -42,30 +44,43 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
       player.resume()
       wasPlayingBeforeSeeking = false
     }
+
+    // Need to call this to enable debug logging
+    super.scrollSessionDidEnd(session)
   }
 
-  override func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
-    guard let player = delegateSlider?.thisPlayer else { return }
+  override func scrollDidUpdate(_ session: ScrollSession) {
+    guard let player = slider.thisPlayer else { return }
     guard let position = player.info.playbackPositionSec,
           let duration = player.info.playbackDurationSec else { return }
+    let valueDelta: CGFloat = session.consumePendingEvents(for: slider)
     let newAbsolutePosition = (position + Double(valueDelta)).clamped(to: 0.0...duration)
     // Use modelValueAtEnd to keep track of last seek, to prevent sending duplicate seek requests
     guard session.modelValueAtEnd != newAbsolutePosition else { return }
     session.modelValueAtEnd = newAbsolutePosition
     player.windowController.seekFromPlaySlider(absoluteSecond: newAbsolutePosition, forceExactSeek: false)
   }
-}  // end class
+
+}  /// end `class PlaySliderScrollWheel`
 
 
-/// An instance of this is stored in the `PlayerWindowController` instance. Also see its `volumeSliderAction(_:)
-class VolumeSliderScrollWheel: VirtualScrollWheel {
+/// Processes scroll wheel events for a volume slider.
+///
+/// Also see `volumeSliderAction(_:)` in `PlayerWindowController`.
+class VolumeSliderScrollWheel: SliderScrollWheelDelegate {
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     session.sensitivity = Preference.volumeScrollSensitivity()
-    session.valueAtStart = delegateSlider?.doubleValue
+    session.valueAtStart = slider.doubleValue
   }
-}  // end class
+
+}  /// end `class VolumeSliderScrollWheel`
 
 
+/// A virtual scroll wheel which contains logic needed to start a scroll wheel session, and when a scroll session is able to start,
+/// chooses between `PlaySliderScrollWheel` or `VolumeSliderScrollWheel`, and sends all scroll events to the chosen object for the
+/// remainder of the session.
+///
+/// An instance of this class is used to handle scroll wheel events inside a single player. See `PlayerWindowController.scrollWheel`
 class PWinScrollWheel: VirtualScrollWheel {
   /// One of `playSliderScrollWheel`, `volumeSliderScrollWheel`, or `nil`
   private(set) var delegate: VirtualScrollWheel? = nil
@@ -106,27 +121,25 @@ class PWinScrollWheel: VirtualScrollWheel {
 
     switch scrollAction {
     case .seek:
-      delegate = wc.playSliderScrollWheel
+      delegate = wc.playSlider.scrollWheelDelegate!
     case .volume:
-      delegate = wc.volumeSliderScrollWheel
+      delegate = wc.volumeSlider.scrollWheelDelegate!
     default:
       delegate = nil
     }
 
-    guard let delegate else { return }
-    delegateSlider = delegate.delegateSlider
+    delegate?.scrollSessionWillBegin(session)
+  }
 
-    delegate.scrollSessionWillBegin(session)
+  override func scrollDidUpdate(_ session: ScrollSession) {
+    delegate?.scrollDidUpdate(session)
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
     delegate?.scrollSessionDidEnd(session)
   }
 
-  override func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
-    delegate?.scrollDidUpdate(valueDelta: valueDelta, with: session)
-  }
-}
+}  /// end `class PWinScrollWheel`
 
 
 extension PlayerWindowController {

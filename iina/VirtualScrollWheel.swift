@@ -79,7 +79,86 @@ class ScrollSession {
   }
 }
 
-/// This class provides a wrapper API over Apple's APIs to simplify scroll wheel handling.
+/// A subclass of `VirtualScrollWheel` which handles all scroll wheel events for a given `ScrollableSlider`.
+class SliderScrollWheelDelegate: VirtualScrollWheel {
+  let slider: ScrollableSlider
+
+  init(slider: ScrollableSlider, _ log: Logger.Subsystem) {
+    self.slider = slider
+    super.init()
+    self.log = log
+  }
+
+  /// Called zero-to-many times after `scrollSessionWillBegin` & before `scrollSessionDidEnd`.
+  /// Subclasses should override.
+  override func scrollDidUpdate(_ session: ScrollSession) {
+    let valueDelta: CGFloat = session.consumePendingEvents(for: slider)
+    let newValue = (slider.doubleValue + Double(valueDelta)).clamped(to: slider.range)
+    // Prevent very tiny gestures from activating the scroll action.
+    // Some actions (e.g. volume) should show an OSD even if slider.doubleValue doesn't change,
+    // like when they are at max, so that user receives feedback. A sizeable valueDelta.magnitude
+    // can indicate a user intent in this case.
+    guard newValue != slider.doubleValue || valueDelta.magnitude > 1.0 else { return }
+    slider.doubleValue = newValue
+    slider.sendAction(slider.action, to: slider.target)
+  }
+
+  override func scrollSessionDidEnd(_ session: ScrollSession) {
+#if DEBUG
+    if DebugConfig.enableScrollWheelDebug, let player = slider.thisPlayer {
+      let timeTotal = session.startTime.timeIntervalToNow
+      let timeUser: TimeInterval
+      let timeMsg: String
+      if let momTime = session.momentumStartTime?.timeIntervalToNow {
+        timeUser = timeTotal - momTime
+        timeMsg = "\(timeUser.string2FractionDigits)s user  +  \(momTime.string2FractionDigits)s inertia  =  \(timeTotal.string2FractionDigits)s"
+      } else {
+        timeUser = timeTotal
+        timeMsg = "\(timeTotal.string2FractionDigits)s"
+      }
+      let actionsPerSec = CGFloat(session.actionCount) / timeTotal
+      let actionRatio = CGFloat(session.actionCount) / CGFloat(session.totalEventCount)
+      let deltaPerUserSec = session.rawDeltaTotal / timeUser
+      let accelerationPerUserSec = deltaPerUserSec / timeUser
+      let valueChange: String
+      if let valueAtStart = session.valueAtStart {
+        let valueAtEnd = slider.doubleValue
+        valueChange = "  ⏐  \((valueAtEnd - valueAtStart).stringMaxFrac2) ⱽᴬᴸᵁᴱ"
+      } else {
+        valueChange = ""
+      }
+      let modelValueChange: String
+      if let modelValueAtStart = session.modelValueAtStart, let modelValueAtEnd = session.modelValueAtEnd {
+        let change = modelValueAtEnd - modelValueAtStart
+        modelValueChange = "  ⏐ Δt:  \(change.stringMaxFrac4)s"
+      } else {
+        modelValueChange = ""
+      }
+      let msg = "ScrollWheel Δ: ⏐  \(session.rawDeltaTotal.string2FractionDigits) ᴿᴬᵂ\(valueChange)\(modelValueChange)"
+      let detail = [
+        "Time:       \t\(timeMsg)",
+        "Events:     \t\(session.totalEventCount)",
+        "Actions:    \t\(session.actionCount)    (\(actionsPerSec.stringMaxFrac2)/s, \(actionRatio.stringMaxFrac2)/event)",
+        "Sensitivity: \(session.sensitivity.stringMaxFrac2)",
+        "Avg.Speed:  \(deltaPerUserSec.stringMaxFrac2)/s",
+        "Accel:      \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
+      ].joined(separator: "\n")
+      player.sendOSD(.debug(msg, detail))
+    }
+#endif
+  }
+
+  func configure(_ slider: ScrollableSlider, _ log: Logger.Subsystem) {
+    self.log = log
+    slider.scrollWheelDelegate = self
+  }
+
+}
+
+/// This class provides a wrapper API over Apple's APIs to simplify scroll wheel handling. This is an abstract base class which is
+/// intended to be overridden & is not usable out of the box.
+///
+/// See subclass `SliderScrollWheelDelegate` for something more useful.
 ///
 /// Internally this class maintains its own state machine which it updates from the `phase` & `momentumPhase` properties
 /// of each `NSEvent` (see `mapPhasesToScrollState`) which is received by the `scrollWheel` method of the view being scrolled,
@@ -109,15 +188,14 @@ class ScrollSession {
 /// from the `notScrolling` state to the `didStepScroll` state, then keeping a `Timer` so that the session ends when no events
 /// are received for `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
-  var delegateSlider: ScrollableSlider? = nil
   var log: Logger.Subsystem = Logger.log
 
   /// Contains data for the current scroll session.
   ///
   /// Non-nil only while a scroll session is active. A new instance is created each time a new session starts.
-  private var currentSession: ScrollSession? = nil
+  fileprivate var currentSession: ScrollSession? = nil
 
-  private var lastSessionEndTime: TimeInterval = 0
+  private(set) var lastSessionEndTime: TimeInterval = 0
 
   /// This reflects the current logical/virtual scroll state of this `VirtualScrollWheel`, which may be completely different
   /// from the underlying source of scroll wheel `NSEvent`s.
@@ -128,9 +206,8 @@ class VirtualScrollWheel {
   func scrollWheel(with event: NSEvent) {
     currentSession?.addPendingEvent(event)
     changeState(with: event)
-    if let currentSession, let delegateSlider, isScrolling() {
-      let scrollDelta: CGFloat = currentSession.consumePendingEvents(for: delegateSlider)
-      scrollDidUpdate(valueDelta: scrollDelta, with: currentSession)
+    if let currentSession, isScrolling() {
+      scrollDidUpdate(currentSession)
     }
   }
 
@@ -145,25 +222,17 @@ class VirtualScrollWheel {
   }
 
 
+  /// Called zero-to-many times after `scrollSessionWillBegin` & before `scrollSessionDidEnd`.
+  /// Subclasses should override.
+  func scrollDidUpdate(_ session: ScrollSession) {
+  }
+
+
   /// Called after scroll ends. Subclasses should override.
   ///
   /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
   /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
   func scrollSessionDidEnd(_ session: ScrollSession) {
-  }
-
-  /// Called zero-to-many times after `scrollSessionWillBegin` & before `scrollSessionDidEnd`.
-  /// Subclasses should override.
-  func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
-    guard let slider = delegateSlider else { return }
-    let newValue = (slider.doubleValue + Double(valueDelta)).clamped(to: slider.range)
-    // Prevent very tiny gestures from activating the scroll action.
-    // Some actions (e.g. volume) should show an OSD even if slider.doubleValue doesn't change,
-    // like when they are at max, so that user receives feedback. A sizeable valueDelta.magnitude
-    // can indicate a user intent in this case.
-    guard newValue != slider.doubleValue || valueDelta.magnitude > 1.0 else { return }
-    slider.doubleValue = newValue
-    slider.sendAction(slider.action, to: slider.target)
   }
 
   /// Returns true if in one of the scrolling states (i.e. a scroll session is currently active)
@@ -187,12 +256,6 @@ class VirtualScrollWheel {
     }
   }
 
-  func configure(_ slider: ScrollableSlider, _ log: Logger.Subsystem) {
-    self.log = log
-    self.delegateSlider = slider
-    slider.scrollWheelDelegate = self
-  }
-
   // MARK: - Internal state machine
 
   private func notScrolling() {
@@ -208,48 +271,6 @@ class VirtualScrollWheel {
     state = .notScrolling
 
     scrollSessionDidEnd(session)
-
-#if DEBUG
-    if DebugConfig.enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
-      let timeTotal = session.startTime.timeIntervalToNow
-      let timeUser: TimeInterval
-      let timeMsg: String
-      if let momTime = session.momentumStartTime?.timeIntervalToNow {
-        timeUser = timeTotal - momTime
-        timeMsg = "\(timeUser.string2FractionDigits)s user  +  \(momTime.string2FractionDigits)s inertia  =  \(timeTotal.string2FractionDigits)s"
-      } else {
-        timeUser = timeTotal
-        timeMsg = "\(timeTotal.string2FractionDigits)s"
-      }
-      let actionsPerSec = CGFloat(session.actionCount) / timeTotal
-      let actionRatio = CGFloat(session.actionCount) / CGFloat(session.totalEventCount)
-      let deltaPerUserSec = session.rawDeltaTotal / timeUser
-      let accelerationPerUserSec = deltaPerUserSec / timeUser
-      let valueChange: String
-      if let valueAtStart = session.valueAtStart, let valueAtEnd = delegateSlider?.doubleValue {
-        valueChange = "  ⏐  \((valueAtEnd - valueAtStart).stringMaxFrac2) ⱽᴬᴸᵁᴱ"
-      } else {
-        valueChange = ""
-      }
-      let modelValueChange: String
-      if let modelValueAtStart = session.modelValueAtStart, let modelValueAtEnd = session.modelValueAtEnd {
-        let change = modelValueAtEnd - modelValueAtStart
-        modelValueChange = "  ⏐ Δt:  \(change.stringMaxFrac4)s"
-      } else {
-        modelValueChange = ""
-      }
-      let msg = "ScrollWheel Δ: ⏐  \(session.rawDeltaTotal.string2FractionDigits) ᴿᴬᵂ\(valueChange)\(modelValueChange)"
-      let detail = [
-        "Time:       \t\(timeMsg)",
-        "Events:     \t\(session.totalEventCount)",
-        "Actions:    \t\(session.actionCount)    (\(actionsPerSec.stringMaxFrac2)/s, \(actionRatio.stringMaxFrac2)/event)",
-        "Sensitivity: \(session.sensitivity.stringMaxFrac2)",
-        "Avg.Speed:  \(deltaPerUserSec.stringMaxFrac2)/s",
-        "Accel:      \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
-      ].joined(separator: "\n")
-      player.sendOSD(.debug(msg, detail))
-    }
-#endif
 
     currentSession = nil
     lastSessionEndTime = Date().timeIntervalSince1970

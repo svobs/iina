@@ -53,12 +53,9 @@ extension PlayerWindowController {
     contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
 
     // scroll wheel
-
+    playSlider.scrollWheelDelegate = PlaySliderScrollWheel(slider: playSlider, log)
+    volumeSlider.scrollWheelDelegate = VolumeSliderScrollWheel(slider: volumeSlider, log)
     windowScrollWheel = PWinScrollWheel(self)
-
-    playSliderScrollWheel.configure(playSlider, log)
-
-    volumeSliderScrollWheel.configure(volumeSlider, log)
 
     playlistView.windowController = self
     quickSettingView.windowController = self
