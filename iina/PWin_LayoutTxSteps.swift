@@ -349,7 +349,7 @@ extension PlayerWindowController {
       let bottomBarHeight = transition.inputLayout.bottomBarPlacement == .insideViewport ? middleGeo.insideBars.bottom : middleGeo.outsideBars.bottom
       updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
 
-      if !transition.isExitingFullScreen {
+      if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
                                   layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
       }
@@ -817,7 +817,7 @@ extension PlayerWindowController {
     // Update sidebar vertical alignments
     updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
 
-    if outputLayout.enableOSC && outputLayout.hasFloatingOSC {
+    if outputLayout.hasFloatingOSC {
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
       currentControlBar = controlBarFloating
 
