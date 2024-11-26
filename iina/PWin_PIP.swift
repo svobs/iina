@@ -65,7 +65,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       miniPlayer.loadIfNeeded()
       if isInMiniPlayer && !miniPlayer.isVideoVisible {
         // need to re-enable video
-        player.setVideoTrackEnabled(true)
+        player.setVideoTrackEnabled()
       }
 
       doPIPEntry(usePipBehavior: usePipBehavior)
@@ -218,7 +218,12 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       if isInMiniPlayer {
         miniPlayer.loadIfNeeded()
-        miniPlayer.applyVideoTrackFromVideoVisibility()
+        if !miniPlayer.isVideoVisible {
+          player.setVideoTrackDisabled()
+        } else {
+          player.setVideoTrackEnabled()
+        }
+
       }
 
       // If using legacy windowed mode, need to manually add title to Window menu & Dock

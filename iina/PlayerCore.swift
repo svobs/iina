@@ -2841,47 +2841,53 @@ class PlayerCore: NSObject {
     }
   }
 
-  ///  `showMiniPlayerVideo` is only used if `enable` is true.
-  ///  Does nothing if already in the target state
-  func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
+  ///  Does nothing if already in the target state (idempotent).
+  ///
+  ///  See also: `setVideoTrackDisabled`
+  func setVideoTrackEnabled(showMiniPlayerVideo: Bool = false) {
     assert(DispatchQueue.isExecutingIn(.main))
-    log.verbose("Setting video track enabled=\(enable.yesno), showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
+    log.verbose("Setting video track enabled, showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
 
-    // Remove these. They screw up PIP drag
-    if enable {
-      if info.isVideoTrackSelected {
-        if showMiniPlayerVideo {
-          // Don't wait; execute now
-          windowController.miniPlayer.changeVideoViewVisibleState(to: true)
-        }
-      } else {
-        // No video track selected. Change to first video track found:
-        if showMiniPlayerVideo {
-          isShowVideoPendingInMiniPlayer = true
-          let hasVideoTrack = !info.videoTracks.isEmpty
-          if hasVideoTrack {
-            let cycleVideoTrackTimeout: TimeInterval = 1.0
-            log.verbose("Will show music mode video after cycle video track (cycle timeout: \(cycleVideoTrackTimeout)s)")
-            miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: cycleVideoTrackTimeout,
-                                                            target: self, selector: #selector(self.showVideoViewAfterVidChange),
-                                                            userInfo: nil, repeats: false)
-          } else {
-            // No tracks, so will not get a response from cycle command.
-            // Just finish immediately and show default album art
-            showVideoViewAfterVidChange()
-            return
-          }
-        }
-        guard isActive else { return }
-        log.verbose("Sending mpv request to select video track 1")
-        setTrack(1, forType: .video, silent: true)
+    if info.isVideoTrackSelected {
+      if showMiniPlayerVideo {
+        // Don't wait; execute now
+        windowController.miniPlayer.changeVideoViewVisibleState(to: true)
       }
-    } else {  // disable
-      // Change video track to None
+    } else {
+      // No video track selected. Change to first video track found:
+      if showMiniPlayerVideo {
+        isShowVideoPendingInMiniPlayer = true
+        let hasVideoTrack = !info.videoTracks.isEmpty
+        if hasVideoTrack {
+          let cycleVideoTrackTimeout: TimeInterval = 1.0
+          log.verbose("Will show music mode video after cycle video track (cycle timeout: \(cycleVideoTrackTimeout)s)")
+          miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: cycleVideoTrackTimeout,
+                                                          target: self, selector: #selector(self.showVideoViewAfterVidChange),
+                                                          userInfo: nil, repeats: false)
+        } else {
+          // No tracks, so will not get a response from cycle command.
+          // Just finish immediately and show default album art
+          showVideoViewAfterVidChange()
+          return
+        }
+      }
       guard isActive else { return }
-      log.verbose("Sending request to mpv: set video track to 0")
-      setTrack(0, forType: .video, silent: true)
+      log.verbose("Sending mpv request to select video track 1")
+      setTrack(1, forType: .video, silent: true)
     }
+  }
+
+  ///  Does nothing if already in the target state (idempotent).
+  ///
+  ///  See also: `setVideoTrackEnabled`
+  func setVideoTrackDisabled() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    log.verbose("Setting video track disabled")
+
+    // Change video track to None
+    guard isActive else { return }
+    log.verbose("Sending request to mpv: set video track to 0")
+    setTrack(0, forType: .video, silent: true)
   }
 
   func windowScaleChanged() {

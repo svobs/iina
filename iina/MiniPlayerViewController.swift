@@ -284,23 +284,14 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       let showVideoView = !isVideoVisible
       log.verbose("Toggling videoView visibility from \((!showVideoView).yn) to \(showVideoView.yn)")
 
-      /// If showing video, call `setVideoTrackEnabled(true)`, then do animations.
+      /// If showing video, call `setVideoTrackEnabled(to: true)`, then do animations.
       if showVideoView {
-        player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
+        player.setVideoTrackEnabled(showMiniPlayerVideo: true)
       } else {
-        /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
+        /// If hiding video, do animations first, then call `setVideoTrackDisabled()`.
         changeVideoViewVisibleState(to: false)
       }
     })
-  }
-
-  /// Special case when exiting PiP
-  func applyVideoTrackFromVideoVisibility() {
-    if !isVideoVisible && windowController.pip.status == .notInPIP {
-      player.setVideoTrackEnabled(false)
-    } else {
-      player.setVideoTrackEnabled(true)
-    }
   }
 
   // TODO: develop a nice sliding animation if possible

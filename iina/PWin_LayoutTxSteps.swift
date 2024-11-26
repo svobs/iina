@@ -147,7 +147,7 @@ extension PlayerWindowController {
 
       if transition.isExitingMusicMode && !miniPlayer.isVideoVisible {
         // Video was disabled in music mode, but need to restore it now
-        player.setVideoTrackEnabled(true)
+        player.setVideoTrackEnabled()
       }
     }
 
@@ -606,7 +606,7 @@ extension PlayerWindowController {
         applyThemeMaterial()
 
         if !miniPlayer.isVideoVisible, pip.status == .notInPIP {
-          player.setVideoTrackEnabled(false)
+          player.setVideoTrackDisabled()
         }
       }
     }
@@ -1099,7 +1099,7 @@ extension PlayerWindowController {
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
       if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
-        player.setVideoTrackEnabled(false)
+        player.setVideoTrackDisabled()
       } else {
         player.updateMPVWindowScale(using: transition.outputGeometry)
       }

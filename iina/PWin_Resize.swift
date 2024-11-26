@@ -891,7 +891,7 @@ extension PlayerWindowController {
 
       if isTogglingVideoView && !outputGeo.isVideoVisible {  // Hiding video
         if pip.status == .notInPIP {
-          player.setVideoTrackEnabled(false)
+          player.setVideoTrackDisabled()
         }
 
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
