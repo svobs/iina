@@ -149,16 +149,17 @@ extension PlayerWindowController {
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
     let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
-    log.verbose{"[applyVideoGeo FileOpen] Calling applyVideoGeoTransform, vid=\(String(vidTrackID)), audioStatus=\(currentMediaAudioStatus)"}
+    log.verbose{"[applyVideoGeoAtFileOpen] Calling applyVideoGeoTransform, vid=\(String(vidTrackID)), audioStatus=\(currentMediaAudioStatus)"}
 
+    let tfName = "FileOpen"
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard player.state.isNotYet(.stopping) else {
-        log.verbose{"[applyVideoGeo FileOpen] File loaded but player status is \(player.state); aborting"}
+        log.verbose{"[applyVideoGeo \(tfName)] File loaded but player status is \(player.state); aborting"}
         return nil
       }
 
       if isInMiniPlayer, geo.musicMode.isVideoVisible, !player.info.isRestoring, currentMediaAudioStatus == .isAudioWithArtHidden {
-        log.verbose{"[applyVideoGeo FileOpen] Player is in music mode + media is audio + has album art but is not showing it. Will try to enable video track"}
+        log.verbose{"[applyVideoGeo \(tfName)] Player is in music mode + media is audio + has album art but is not showing it. Will try to enable video track"}
         player.setVideoTrackEnabled(thenShowMiniPlayerVideo: true)
         return nil
       }
@@ -197,7 +198,7 @@ extension PlayerWindowController {
         userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
         if userAspectLabelDerived != videoGeo.userAspectLabel {
           // Not necessarily an error? Need to improve aspect name matching logic
-          log.debug{"[applyVideoGeo FileOpen] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(videoGeo.userAspectLabel.quoted))"}
+          log.debug{"[applyVideoGeo \(tfName)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(videoGeo.userAspectLabel.quoted))"}
         }
       }
 
@@ -221,17 +222,17 @@ extension PlayerWindowController {
       }
 
       if let ffMeta {
-        log.debug{"[applyVideoGeo FileOpen] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}
+        log.debug{"[applyVideoGeo \(tfName)] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}
         return videoGeo.substituting(ffMeta)
       } else if currentMediaAudioStatus.isAudio {
         // Square album art
-        log.debug{"[applyVideoGeo FileOpen] Using albumArtGeometry because current media is audio"}
+        log.debug{"[applyVideoGeo \(tfName)] Using albumArtGeometry because current media is audio"}
         return VideoGeometry.albumArtGeometry(log)
       } else {
-        log.debug{"[applyVideoGeo FileOpen] Derived videoGeo \(videoGeo)"}
+        log.debug{"[applyVideoGeo \(tfName)] Derived videoGeo \(videoGeo)"}
         return videoGeo
       }
-    }
+    }  // end of transform block
 
     let doAfter = { [self] in
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
@@ -246,7 +247,7 @@ extension PlayerWindowController {
       updateWindowBorderAndOpacity()
     }
 
-    applyVideoGeoTransform("FileOpen", transform, newMusicModeGeo, fileJustOpened: true, then: doAfter)
+    applyVideoGeoTransform(tfName, transform, newMusicModeGeo, fileJustOpened: true, then: doAfter)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
@@ -264,13 +265,13 @@ extension PlayerWindowController {
     let isFileReady = player.info.isFileLoadedAndSized
     // Check state so that we don't duplicate work. Don't change in miniPlayer if videoView not visible
     let showDefaultArt: Bool?
-    if isFileReady && (!isInMiniPlayer || miniPlayer.isVideoVisible || (newMusicModeGeo?.isVideoVisible ?? false)) {
+    if isFileReady, !isInMiniPlayer || miniPlayer.isVideoVisible || (newMusicModeGeo?.isVideoVisible ?? false) {
       showDefaultArt = player.info.shouldShowDefaultArt
     } else {
       showDefaultArt = nil  // don't change existing visibility
     }
 
-    log.verbose{"[applyVideoGeo \(transformName)] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)"}
+    log.verbose{"[applyVideoGeo \(transformName)] Start: restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)"}
 
     var abortedInMpvQueue = false
 
@@ -448,18 +449,18 @@ extension PlayerWindowController {
         return []
       }
 
-      log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(windowState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
+      log.debug("[applyVideoGeo] Will apply windowed result (newOpenedFile=\(windowState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreenNormal:
       let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                    intendedViewportSize: player.info.intendedViewportSize)
       let fsGeo = newLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
-      log.debug{"[applyVideoGeo Apply] Applying FS result: \(fsGeo)"}
+      log.debug{"[applyVideoGeo] Will apply FS result: \(fsGeo)"}
 
       return [IINAAnimation.Task(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-        log.verbose{"[applyVideoGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
+        log.verbose{"[applyVideoGeo]: Updating videoView (FS), videoSize: \(fsGeo.videoSize), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
         videoView.apply(fsGeo)
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
         windowedModeGeo = newWinGeo
@@ -759,13 +760,14 @@ extension PlayerWindowController {
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
+    log.verbose{"ApplyWindowGeo: showDefaultArt=\(showDefaultArt?.yn ?? "nil"), run=\(thenRun.yn) newGeo=\(newGeometry)"}
+
     var tasks: [IINAAnimation.Task] = []
 
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.videoLayer.enterAsynchronousMode()
 
-      log.verbose{"ApplyWindowGeo: showDefaultArt=\(showDefaultArt?.yn ?? "nil"), newGeo=\(newGeometry)"}
       assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
       hideSeekPreview()

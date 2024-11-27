@@ -1682,7 +1682,7 @@ class PlayerCore: NSObject {
   }
 
   func _addToPlaylist(_ urlPath: String) {
-    log.debug("Appending to mpv playlist: \(urlPath.pii.quoted)")
+    log.verbose("Appending to mpv playlist: \(urlPath.pii.quoted)")
     mpv.command(.loadfile, args: [urlPath, "append"])
   }
 
@@ -2399,6 +2399,7 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
+    log.debug("Calling applyVideoGeoAtFileOpen from fileLoaded")
     windowController.applyVideoGeoAtFileOpen()
 
     // Launch auto-load tasks on background thread
@@ -2798,6 +2799,7 @@ class PlayerCore: NSObject {
 
     if didChange {
       if !isShowVideoPendingInMiniPlayer {
+        log.verbose{"Calling applyVideoGeoAtFileOpen from vidChanged (to: \(vid))"}
         windowController.applyVideoGeoAtFileOpen()
       }
       postNotification(.iinaVIDChanged)

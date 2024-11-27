@@ -784,7 +784,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Don't wait for load for network stream; open immediately & show loading msg
     player.mpv.queue.async { [self] in
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-        log.verbose("Current playback is network resource; applying VideoGeometry now")
+        log.verbose("Current playback is network resource: calling applyVideoGeoAtFileOpen now")
         applyVideoGeoAtFileOpen()
       }
     }
@@ -811,8 +811,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         forceDraw()  // needed if restoring while paused
       })
 
-      animationTasks += pendingVideoGeoUpdateTasks
+      let pendingTasks = pendingVideoGeoUpdateTasks
       pendingVideoGeoUpdateTasks = []
+      if !pendingTasks.isEmpty {
+        log.verbose{"After opening window: will run \(pendingTasks.count) pending vidGeo update tasks"}
+        animationTasks += pendingTasks
+      }
 
       animationTasks.append(.instantTask { [self] in
         // Make sure to save after opening (possibly new) window

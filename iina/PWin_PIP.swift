@@ -194,6 +194,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
   func pipDidClose(_ pipController: PIPViewController) {
     guard !AppDelegate.shared.isTerminating else { return }
+    guard let window else { return }
 
     // seems to require separate animation blocks to work properly
     var tasks: [IINAAnimation.Task] = []
@@ -203,10 +204,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       tasks.append(IINAAnimation.Task({ [self] in
         showWindow(self)
 
-        if let window {
-          log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
-          isWindowHidden = false
-        }
+        log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
+        isWindowHidden = false
       }))
     }
 
