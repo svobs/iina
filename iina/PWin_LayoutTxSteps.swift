@@ -485,7 +485,7 @@ extension PlayerWindowController {
         if !bottomBarView.subviews.contains(oscBottomMainView) {
           bottomBarView.addSubview(oscBottomMainView, positioned: .below, relativeTo: bottomBarTopBorder)
           // Match leading/trailing spacing of title bar icons above
-          oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconSpacingH, trailing: Constants.Distance.titleBarIconSpacingH)
+          oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing, trailing: Constants.Distance.titleBarIconHSpacing)
         }
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)

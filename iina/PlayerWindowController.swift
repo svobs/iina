@@ -32,28 +32,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
   }()
 
-  /**
-   `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
-   the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
-   Note that we can't use this trick to get it from our window instance directly, because our window has the
-   `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
-   */
-  static let standardTitleBarHeight: CGFloat = {
-    // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
-    let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
-    let dummyFrameRect = NSWindow.frameRect(forContentRect: dummyContentRect, styleMask: .titled)
-    let titleBarHeight = dummyFrameRect.height - dummyContentRect.height
-    return titleBarHeight
-  }()
-
-  static let reducedTitleBarHeight: CGFloat = {
-    if let heightOfCloseButton = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.height {
-      // add 2 because button's bounds seems to be a bit larger than its visible size
-      return standardTitleBarHeight - ((standardTitleBarHeight - heightOfCloseButton) / 2 + 2)
-    }
-    Logger.log("reducedTitleBarHeight may be incorrect (could not get close button)", level: .error)
-    return standardTitleBarHeight
-  }()
+  static let standardTitleBarHeight = Constants.Distance.standardTitleBarHeight
 
   // MARK: - Objects, Views
 

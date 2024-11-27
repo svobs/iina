@@ -136,15 +136,6 @@ struct Constants {
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
   }
-  struct SizeLimit {
-    static let maxCachedVideoSizes: Int = 100000
-    static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
-    static let mpvOptionsTableMaxRowsPerOperation: Int = 1000
-    static let inspectorWatchTableMaxRowsPerOperation: Int = 1000
-
-    // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
-    static let maxConfFileLinesAccepted = 10000
-  }
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
 
@@ -242,12 +233,28 @@ struct Constants {
     /// This needs to fit floating OSC + the margin around it
     static let minWidthBetweenInsideSidebars: CGFloat = 220
 
-    /// Sidebar tab buttons
+    /// Tab buttons downshift
     static let defaultDownshift: CGFloat = 0
+    /// Tab buttons height
     static let defaultTabHeight: CGFloat = 48
     static let musicModeTabHeight: CGFloat = 32
     static let minTabHeight: CGFloat = 16
     static let maxTabHeight: CGFloat = 70
+  }
+  struct SizeLimit {
+    static let maxCachedVideoSizes: Int = 100000
+    static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
+    static let mpvOptionsTableMaxRowsPerOperation: Int = 1000
+    static let inspectorWatchTableMaxRowsPerOperation: Int = 1000
+
+    // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
+    static let maxConfFileLinesAccepted = 10000
+  }
+  /// Based on mpv default
+  struct DefaultVideoSize {
+    static let rawWidth: Int = 640
+    static let rawHeight: Int = 480
+    static let aspectLabel = "4:3"
   }
   struct WindowedMode {
     static let minViewportSize = CGSize(width: 285, height: 120)
@@ -263,12 +270,6 @@ struct Constants {
     static let viewportMargins = MarginQuad(top: PlayerWindowController.standardTitleBarHeight, trailing: 24,
                                          bottom: PlayerWindowController.standardTitleBarHeight, leading: 24)
   }
-  /// Based on mpv default
-  struct DefaultVideoSize {
-    static let rawWidth: Int = 640
-    static let rawHeight: Int = 480
-    static let aspectLabel = "4:3"
-  }
   struct AlbumArt {
     static let rawWidth: Int = 1600
     static let rawHeight: Int = 1600
@@ -279,13 +280,38 @@ struct Constants {
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
 
+    static let floatingOSCPlaySliderKnobHeight: CGFloat = 15
+
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 200
 
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
 
-    static let titleBarIconSpacingH: CGFloat = 8
+    static let titleBarIconHSpacing: CGFloat = 8
+
+    /**
+     `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
+     the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
+     Note that we can't use this trick to get it from our window instance directly, because our window has the
+     `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
+     */
+    static let standardTitleBarHeight: CGFloat = {
+      // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
+      let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
+      let dummyFrameRect = NSWindow.frameRect(forContentRect: dummyContentRect, styleMask: .titled)
+      let titleBarHeight = dummyFrameRect.height - dummyContentRect.height
+      return titleBarHeight
+    }()
+
+    static let reducedTitleBarHeight: CGFloat = {
+      if let heightOfCloseButton = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.height {
+        // add 2 because button's bounds seems to be a bit larger than its visible size
+        return standardTitleBarHeight - ((standardTitleBarHeight - heightOfCloseButton) / 2 + 2)
+      }
+      Logger.log("reducedTitleBarHeight may be incorrect (could not get close button)", level: .error)
+      return standardTitleBarHeight
+    }()
 
     struct Thumbnail {
       static let minHeight: CGFloat = 24
@@ -302,14 +328,7 @@ struct Constants {
 
       static let playSliderKnobHeight: CGFloat = 12
     }
-
-    struct PWinGeometry {
-      static let minViewportHeight = PlayerWindowController.standardTitleBarHeight + 80
-    }
-
-    static let musicModePlaySliderKnobHeight: CGFloat = 12
-    static let floatingOSCPlaySliderKnobHeight: CGFloat = 15
-  }
+  }  /// end `struct Distance`
   struct Color {
     static let defaultWindowBackgroundColor = CGColor.black
     static let interactiveModeBackground = NSColor.windowBackgroundColor.cgColor

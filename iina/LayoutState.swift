@@ -562,9 +562,8 @@ class LayoutState {
         outputLayout.controlBarFloating = .showFadeableNonTopBar  // floating is always fadeable
       case .top:
         if outputLayout.titleBar.isShowable {
-          // If legacy window mode, do not show title bar.
-          // Otherwise reduce its height a bit because it will share space with OSC
-          outputLayout.titleBarHeight = PlayerWindowController.reducedTitleBarHeight
+          // Reduce title height a bit because it will share space with OSC
+          outputLayout.titleBarHeight = Constants.Distance.reducedTitleBarHeight
         }
 
         let visibility: VisibilityMode = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
@@ -574,15 +573,14 @@ class LayoutState {
         outputLayout.bottomBarView = (outputLayout.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
         outputLayout.bottomBarHeight = layoutSpec.controlBarGeo.barHeight
       }
-    } else {  // No OSC
-      if layoutSpec.mode == .musicMode || layoutSpec.isInteractiveMode {
-        assert(outputLayout.bottomBarPlacement == .outsideViewport)
-        outputLayout.bottomBarView = .showAlways
-
-        if layoutSpec.isInteractiveMode {
-          outputLayout.bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
-        }
-      }
+    } else if layoutSpec.mode == .musicMode {
+      assert(outputLayout.bottomBarPlacement == .outsideViewport)
+      outputLayout.bottomBarView = .showAlways
+    } else if layoutSpec.isInteractiveMode {
+      assert(outputLayout.bottomBarPlacement == .outsideViewport)
+      outputLayout.bottomBarView = .showAlways
+      
+      outputLayout.bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
     }
 
     /// Sidebar tabHeight and downshift.

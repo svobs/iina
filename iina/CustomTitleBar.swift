@@ -51,7 +51,7 @@ class CustomTitleBarViewController: NSViewController {
     leadingStackView.orientation = .horizontal
     leadingStackView.distribution = .fill
     leadingStackView.detachesHiddenViews = true
-    let iconSpacingH = Constants.Distance.titleBarIconSpacingH
+    let iconSpacingH = Constants.Distance.titleBarIconHSpacing
     leadingStackView.spacing = iconSpacingH
     leadingStackView.alignment = .centerY
     leadingStackView.setHuggingPriority(.required, for: .horizontal)
