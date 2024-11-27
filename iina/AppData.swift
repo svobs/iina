@@ -175,6 +175,10 @@ struct Constants {
     /// when the user is trying to scroll long distances by rapidly moving their fingers in a repeated motion.
     static let instantConsecutiveScrollStartWindow = 0.1
 
+    static let windowDidChangeScreenParametersThrottlingDelay = 0.2
+    static let windowDidChangeScreenThrottlingDelay = 0.2
+    static let windowDidMoveProcessingDelay = 0.2
+
     /// May need adjustment for optimal results
     static let stepScrollSessionTimeout = 0.1
 

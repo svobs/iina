@@ -196,7 +196,7 @@ struct PlayerSaveState: CustomStringConvertible {
     /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
     props[PropName.videoGeo.rawValue] = geo.video.toCSV()
 
-    let screenMetaCSVList: [String] = wc.cachedScreens.values.map{$0.toCSV()}
+    let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
     props[PropName.screens.rawValue] = screenMetaCSVList
 
     if let size = info.intendedViewportSize {

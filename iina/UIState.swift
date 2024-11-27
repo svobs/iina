@@ -100,11 +100,26 @@ class UIState {
   var windowsMinimized = Set<String>()
   var openSheetsDict: [String: Set<String>] = [:]
 
+  var cachedScreens: [UInt32: ScreenMeta] = [:]
+
   init() {
     let nextID = Preference.integer(for: .launchCount) + 1
     Preference.set(nextID, for: .launchCount)
     currentLaunchID = nextID
     currentLaunchName = UIState.launchName(forID: nextID)
+    updateCachedScreens()
+  }
+
+  func updateCachedScreens() {
+    let newScreenMap = NSScreen.screens.map{ScreenMeta.from($0)}.reduce(Dictionary<UInt32, ScreenMeta>(), {(dict, screenMeta) in
+      var dict = dict
+      dict[screenMeta.displayID] = screenMeta
+      _ = Logger.getOrCreatePII(for: screenMeta.name)
+      return dict
+    })
+
+    // Update the cached value
+    cachedScreens = newScreenMap
   }
 
   /// See comments in `AppDelegqate.windowWillBeginSheet`

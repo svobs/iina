@@ -32,8 +32,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
   }()
 
-  static let standardTitleBarHeight = Constants.Distance.standardTitleBarHeight
-
   // MARK: - Objects, Views
 
   var bestScreen: NSScreen {
@@ -41,8 +39,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   /** For blacking out other screens. */
-  var cachedScreens: [UInt32: ScreenMeta] = PlayerWindowController.buildScreenMap()
   var blackWindows: [NSWindow] = []
+
+  static let standardTitleBarHeight = Constants.Distance.standardTitleBarHeight
 
   /** The quick setting sidebar (video, audio, subtitles). */
   let quickSettingView = QuickSettingViewController()
@@ -580,17 +579,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  static func buildScreenMap() -> [UInt32 : ScreenMeta] {
-    let newMap = NSScreen.screens.map{ScreenMeta.from($0)}.reduce(Dictionary<UInt32, ScreenMeta>(), {(dict, screenMeta) in
-      var dict = dict
-      dict[screenMeta.displayID] = screenMeta
-      _ = Logger.getOrCreatePII(for: screenMeta.name)
-      return dict
-    })
-    Logger.log.verbose{"Built screen meta: \(newMap.values)"}
-    return newMap
   }
 
   /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
@@ -1165,7 +1153,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     denyNextWindowResize = true
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
-    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidChangeScreenThrottlingDelay) { [self] in
       guard ticket == screenChangedTicketCounter else { return }
       guard let window = window, let screen = window.screen else { return }
       guard !isClosing else { return }
@@ -1232,17 +1220,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
-    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.2) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.windowDidChangeScreenParametersThrottlingDelay) { [self] in
       guard ticket == screenParamsChangedTicketCounter else { return }
 
-      let screens = PlayerWindowController.buildScreenMap()
-      let screenIDs = screens.keys.sorted()
-      let cachedScreenIDs = cachedScreens.keys.sorted()
-      log.verbose{"WndDidChangeScreenParams (tkt \(ticket)): screenIDs was \(cachedScreenIDs), is now \(screenIDs)"}
-
-      // Update the cached value
-      cachedScreens = screens
-
+      UIState.shared.updateCachedScreens()
+      log.verbose{"Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
       videoView.refreshAll()
 
       guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
@@ -1252,7 +1234,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // is disconnected. In legacy full screen mode IINA is responsible for adjusting the window's
       // frame.
       // Use very short duration. This usually gets triggered at the end when entering fullscreen, when the dock and/or menu bar are hidden.
-      animationPipeline.submitTask(duration: IINAAnimation.FullScreenTransitionDuration * 0.2, { [self] in
+      animationPipeline.submitTask(duration: IINAAnimation.VideoReconfigDuration, { [self] in
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
@@ -1282,7 +1264,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // We can get here if external calls from accessibility APIs change the window location.
     // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidMoveProcessingDelay) { [self] in
       animationPipeline.submitInstantTask({ [self] in
         let layout = currentLayout
         if layout.isLegacyFullScreen {
