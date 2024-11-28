@@ -1912,7 +1912,7 @@ extension NSLayoutConstraint.Priority {
 }
 
 extension NSView {
-  var thisPlayer: PlayerCore? {
+  var associatedPlayer: PlayerCore? {
     return (window?.windowController as? PlayerWindowController)?.player
   }
 

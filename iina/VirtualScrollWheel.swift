@@ -105,7 +105,7 @@ class SliderScrollWheelDelegate: VirtualScrollWheel {
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
 #if DEBUG
-    if DebugConfig.enableScrollWheelDebug, let player = slider.thisPlayer {
+    if DebugConfig.enableScrollWheelDebug, let player = slider.associatedPlayer {
       let timeTotal = session.startTime.timeIntervalToNow
       let timeUser: TimeInterval
       let timeMsg: String

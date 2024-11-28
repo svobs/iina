@@ -19,7 +19,7 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
   private var wasPlayingBeforeSeeking = false
 
   override func scrollSessionWillBegin(_ session: ScrollSession) {
-    guard let player = slider.thisPlayer else { return }
+    guard let player = slider.associatedPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek began")
     // pause video when seek begins
@@ -34,7 +34,7 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
-    guard let player = slider.thisPlayer else { return }
+    guard let player = slider.associatedPlayer else { return }
 
     session.modelValueAtEnd = player.info.playbackPositionSec
 
@@ -50,7 +50,7 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
   }
 
   override func scrollDidUpdate(_ session: ScrollSession) {
-    guard let player = slider.thisPlayer else { return }
+    guard let player = slider.associatedPlayer else { return }
     guard let position = player.info.playbackPositionSec,
           let duration = player.info.playbackDurationSec else { return }
     let valueDelta: CGFloat = session.consumePendingEvents(for: slider)
