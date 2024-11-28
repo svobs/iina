@@ -2399,8 +2399,8 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    log.debug("Calling applyVideoGeoAtFileOpen from fileLoaded")
-    windowController.applyVideoGeoAtFileOpen()
+    log.debug("Calling applyVideoGeoForTrackChange from fileLoaded")
+    windowController.applyVideoGeoForTrackChange()
 
     // Launch auto-load tasks on background thread
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -2799,8 +2799,8 @@ class PlayerCore: NSObject {
 
     if didChange {
       if !isShowVideoPendingInMiniPlayer {
-        log.verbose{"Calling applyVideoGeoAtFileOpen from vidChanged (to: \(vid))"}
-        windowController.applyVideoGeoAtFileOpen()
+        log.verbose{"Calling applyVideoGeoForTrackChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn))"}
+        windowController.applyVideoGeoForTrackChange()
       }
       postNotification(.iinaVIDChanged)
     }
@@ -2820,7 +2820,7 @@ class PlayerCore: NSObject {
       guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
       log.verbose{"Showing videoView in music mode in response to vid change, forced=\(forceIfNoChange.yn)"}
       windowController.animationPipeline.submitInstantTask { [self] in
-        /// `showDefaultArt` should already have been handled by `applyVideoGeoAtFileOpen` so do not change here
+        /// `showDefaultArt` should already have been handled by `applyVideoGeoForTrackChange` so do not change here
         windowController.miniPlayer.applyGeoForVideoView(setVisible: true)
       }
     }

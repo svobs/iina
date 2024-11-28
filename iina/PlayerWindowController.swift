@@ -9,10 +9,12 @@
 import Cocoa
 
 
+// FIXME: BUG: Playlist disappears if already showing in sidebar when entering music mode! Looks like musicModeGeo calculation is wrongly sized at open
 // FIXME: handle PiP with multiple windows
 // FIXME: support parent playlist
 // FIXME: stick window to individual side of screen
 // FIXME: persist mpv properties in saved player state
+// FIXME: use proper layers when drawing sliders
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {
@@ -784,8 +786,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Don't wait for load for network stream; open immediately & show loading msg
     player.mpv.queue.async { [self] in
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-        log.verbose("Current playback is network resource: calling applyVideoGeoAtFileOpen now")
-        applyVideoGeoAtFileOpen()
+        log.verbose("Current playback is network resource: calling applyVideoGeoForTrackChange now")
+        applyVideoGeoForTrackChange()
       }
     }
   }

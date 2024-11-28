@@ -1115,7 +1115,7 @@ extension PlayerWindowController {
 
       // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
       // animation task, which means that frames will not be updated yet & can't be measured correctly
-      if Logger.isEnabled(.error) && pip.status == .notInPIP && player.state.isNotYet(.stopping) {
+      if Logger.isEnabled(.error) && pip.status == .notInPIP && player.state.isNotYet(.stopping) && player.info.isVideoTrackSelected {
         let vidSizeA = videoView.frame.size
         let vidSizeE = transition.outputGeometry.videoSize
         let viewportSizeA = viewportView.frame.size
@@ -1123,7 +1123,8 @@ extension PlayerWindowController {
         let winSizeA = window.frame.size
         let winSizeE = transition.outputGeometry.windowFrame.size
 
-        let isWrongVidSize = (vidSizeE.area > 0 && vidSizeA.area > 0) &&
+        let enableVidCheck = !player.info.currentMediaAudioStatus.isAudio
+        let isWrongVidSize = enableVidCheck && (vidSizeE.area > 0 && vidSizeA.area > 0) &&
           ((vidSizeE.width != vidSizeA.width) || (vidSizeE.height != vidSizeA.height))
         let isWrongWinSize = (winSizeE.width != winSizeA.width) || (winSizeE.height != winSizeA.height)
 
@@ -1138,7 +1139,7 @@ extension PlayerWindowController {
           let wrong = "ⓧ"
           let lines = ["[\(transition.name)] ❌ Sanity check failed!",
                        "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.aspectMultiplier?.logStr ?? "nil")",
-                       "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
+                       "  VideoSize: Expect=\(enableVidCheck ? vidSizeE.description : "NA") Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                        "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",
                        "  VidMargins: \(transition.outputGeometry.viewportMargins)",  // Size should == viewport - video. (Unless video is wrong)

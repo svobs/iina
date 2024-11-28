@@ -243,24 +243,6 @@ class VideoView: NSView {
                        aspectIsActive: videoAspect > 0.0, aspectPriority: aspectPriority)
   }
 
-  // Perhaps this is being superstitious, but if for any reason the constraints are not working, make sure the desired
-  // video size is represented by this property.
-  override var intrinsicContentSize: NSSize {
-    log.verbose("VideoView: intrinsicContentSize called")  // TODO: remove this
-    if let wc = associatedPlayer?.windowController {
-      switch wc.currentLayout.mode {
-      case .windowedNormal, .windowedInteractive:
-        return wc.geo.windowed.videoSize
-      case .fullScreenNormal, .fullScreenInteractive:
-        let fsGeo = wc.currentLayout.buildFullScreenGeometry(in: wc.bestScreen, video: wc.geo.video)
-        return fsGeo.videoSize
-      case .musicMode:
-        return wc.geo.musicMode.videoSize ?? .zero
-      }
-    }
-    return super.intrinsicContentSize
-  }
-
   // MARK: - Mouse events
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {

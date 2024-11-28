@@ -140,18 +140,25 @@ extension PlayerWindowController {
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
   /// If current media's vid track changed, may need to apply new geometry
-  func applyVideoGeoAtFileOpen(_ newMusicModeGeo: MusicModeGeometry? = nil) { // TODO: rename/refactor. Not just at file open now!
+  func applyVideoGeoForTrackChange(_ newMusicModeGeo: MusicModeGeometry? = nil) { // TODO: rename/refactor. Not just at file open now!
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
     guard let currentPlayback = player.info.currentPlayback else { return }
     let currentMediaAudioStatus = player.info.currentMediaAudioStatus
     let vidTrackID = player.info.vid
+    guard let vidTrackID, currentPlayback.vidTrackLastSized != vidTrackID else {
+      log.verbose{"[applyVideoGeoForTrackChange] Aborting: video track (\(String(vidTrackID))) is nil or hasn't changed"}
+      return
+    }
+    // Set immediately to prevent future duplicate calls from continuing
+    currentPlayback.vidTrackLastSized = vidTrackID
+
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
     let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
-    log.verbose{"[applyVideoGeoAtFileOpen] Calling applyVideoGeoTransform, vid=\(String(vidTrackID)), audioStatus=\(currentMediaAudioStatus)"}
+    log.verbose{"[applyVideoGeoForTrackChange] Calling applyVideoGeoTransform, vid=\(String(vidTrackID)), audioStatus=\(currentMediaAudioStatus)"}
 
-    let tfName = "FileOpen"
+    let tfName = "TrackChanged"
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard player.state.isNotYet(.stopping) else {
         log.verbose{"[applyVideoGeo \(tfName)] File loaded but player status is \(player.state); aborting"}
@@ -247,14 +254,14 @@ extension PlayerWindowController {
       updateWindowBorderAndOpacity()
     }
 
-    applyVideoGeoTransform(tfName, transform, newMusicModeGeo, fileJustOpened: true, then: doAfter)
+    applyVideoGeoTransform(tfName, transform, newMusicModeGeo, trackChanged: true, then: doAfter)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ transformName: String,
                               _ videoTransform: @escaping VideoGeometry.Transform,
                               _ newMusicModeGeo: MusicModeGeometry? = nil,
-                              fileJustOpened: Bool = false,
+                              trackChanged: Bool = false,
                               then doAfter: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     let isRestoring = player.info.isRestoring
@@ -265,7 +272,7 @@ extension PlayerWindowController {
     /// If `showDefaultArt == nil`, don't change existing visibility.
     let shouldDecideDefaultArtStatus = player.info.isFileLoadedAndSized && (!isInMiniPlayer || miniPlayer.isVideoVisible || (newMusicModeGeo?.isVideoVisible ?? false))
     let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
-    log.verbose{"[applyVideoGeo \(transformName)] Start: restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)"}
+    log.verbose{"[applyVideoGeo \(transformName)] Start: restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), trackChanged=\(trackChanged.yn)"}
 
     var abortedInMpvQueue = false
 
@@ -341,7 +348,7 @@ extension PlayerWindowController {
         
         let newLayout: LayoutState  // kludge/workaround for timing issue, see below
         let state: WindowStateAtManualOpen
-        if fileJustOpened {
+        if trackChanged {
           if isRestoring, let priorState {
             state = .restoring(playerState: priorState)
             isInitialSizeDone = true
@@ -424,9 +431,8 @@ extension PlayerWindowController {
         resizedGeo = applyResizePrefsForWindowedFileOpen(alreadyOpen: false, newVidGeo: newVidGeo)
       case .alreadyOpen:
         resizedGeo = applyResizePrefsForWindowedFileOpen(alreadyOpen: true, newVidGeo: newVidGeo)
-        assert(resizedGeo != nil, "applyResizePrefsForWindowedFileOpen returned nil when window state == alreadyOpen!!")
       case .notApplicable:
-        // Not a new file. Some other change to a video geo property
+        // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
       }
 
