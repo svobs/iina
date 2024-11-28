@@ -1210,10 +1210,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     /// We have `croppedVideoViewSize` which is most consistent with `PWinGeometry` constructor.
     /// Now need to find x & y offsets to determine how much margin to add to each of the 4 sides.
-    var cropRectScaledToWindow = NSRect(x: cropRect.origin.x * scaleRatio,
-                                        y: cropRect.origin.y * scaleRatio,
-                                        width: cropRect.width * scaleRatio,
-                                        height: cropRect.height * scaleRatio)
+    /// Need to round each value to integers to satisfy various sanity checks.
+    var cropRectScaledToWindow = NSRect(x: (cropRect.origin.x * scaleRatio).rounded(),
+                                        y: (cropRect.origin.y * scaleRatio).rounded(),
+                                        width: (cropRect.width * scaleRatio).rounded(),
+                                        height: (cropRect.height * scaleRatio).rounded())
 
     // This will use .mpvAspect - need to be consistent with rounding!
     let croppedVideoAspect = newVidGeo.videoAspectC

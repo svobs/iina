@@ -8,7 +8,7 @@
 
 import Cocoa
 
-
+// FIXME: add logic to music mode video toggle to preserve vid=0
 // FIXME: BUG: Playlist disappears if already showing in sidebar when entering music mode! Looks like musicModeGeo calculation is wrongly sized at open
 // FIXME: handle PiP with multiple windows
 // FIXME: support parent playlist
