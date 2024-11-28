@@ -62,7 +62,7 @@
                                 <constraint firstItem="jAX-WD-i2a" firstAttribute="top" secondItem="Cef-Fd-eDH" secondAttribute="top" constant="6" id="gHa-e1-bbE"/>
                             </constraints>
                         </customView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="OSC-Buttons-Overlay View">
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="Controller-Buttons-Panel View">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
                                 <button translatesAutoresizingMaskIntoConstraints="NO" id="BS3-lV-sRn" userLabel="Volume Button">

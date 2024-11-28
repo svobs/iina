@@ -9,12 +9,12 @@
 import Cocoa
 
 // FIXME: add logic to music mode video toggle to preserve vid=0
-// FIXME: BUG: Playlist disappears if already showing in sidebar when entering music mode! Looks like musicModeGeo calculation is wrongly sized at open
-// FIXME: handle PiP with multiple windows
-// FIXME: support parent playlist
-// FIXME: stick window to individual side of screen
-// FIXME: persist mpv properties in saved player state
 // FIXME: use proper layers when drawing sliders
+// FIXME: Add Sparkle back in
+// FIXME: handle PiP with multiple windows
+// TODO: support parent playlist
+// TODO: stick window to individual side of screen
+// TODO: persist mpv properties in saved player state
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {
