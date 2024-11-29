@@ -2911,7 +2911,7 @@ class PlayerCore: NSObject {
     log.verbose{"Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)"}
     DispatchQueue.main.async { [self] in
       log.verbose{"Calling setVideoScale → \(newVideoScale)x"}
-      windowController.setVideoScale(newVideoScale)
+      windowController.changeVideoScale(to: newVideoScale)
     }
   }
 

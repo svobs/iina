@@ -646,9 +646,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes.
-  func resizeWindow(to requestedSize: NSSize,
-                    lockViewportToVideoSize: Bool,
-                    inLiveResize: Bool, isLiveResizingWidth: Bool) -> PWinGeometry {
+  func resizingWindow(to requestedSize: NSSize,
+                      lockViewportToVideoSize: Bool,
+                      inLiveResize: Bool, isLiveResizingWidth: Bool) -> PWinGeometry {
     guard mode.isWindowed else {
       log.error("[geo] PWinGeometry cannot resize window: mode (\(mode)) is not windowed!")
       return self

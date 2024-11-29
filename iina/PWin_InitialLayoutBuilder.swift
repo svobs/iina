@@ -12,30 +12,59 @@ import Foundation
 extension PlayerWindowController {
 
 
-  enum WindowStateAtManualOpen: CustomStringConvertible {
-    /// Not manually opening the file (i.e. current media changed via playlist navigation)
-    case notApplicable
-
-    /// Opening window (or reopening closed window) for new file
-    case notOpen
-
-    /// Reusing the existing window for new file
-    case alreadyOpen
-
-    /// Restoring the window from prior launch
+  enum SessionChangeType: CustomStringConvertible {
+    /// Restoring the session from prior launch
     case restoring(playerState: PlayerSaveState)
+
+    /// Opening window (or reopening closed window) for new session & new file.
+    case creatingNew
+
+    /// Reusing an already open window, and discarding its current session, for new session & new file.
+    case newReplacingExisting
+
+    /// Existing window & session, but new file (i.e. current media is changing via playlist navigation).
+    case existingSession_startingNewPlayback
+
+    /// Existing window, session, file.
+    case existingSession_samePlayback
 
     /// Need to specify this so that `playerState` is not included...
     var description: String {
       switch self {
-      case .notApplicable:
-        "notApplicable"
-      case .notOpen:
-        "notOpen"
-      case .alreadyOpen:
-        "alreadyOpen"
       case .restoring:
         "restoring"
+      case .creatingNew:
+        "creatingNew"
+      case .newReplacingExisting:
+        "newReplacingExisting"
+      case .existingSession_startingNewPlayback:
+        "existingSession_startingNewPlayback"
+      case .existingSession_samePlayback:
+        "existingSession_samePlayback"
+      }
+    }
+
+    var isOpeningFile: Bool {
+      switch self {
+      case .restoring,
+          .existingSession_samePlayback:
+        return false
+      case .creatingNew,
+          .newReplacingExisting,
+          .existingSession_startingNewPlayback:
+        return true
+      }
+    }
+
+    ///
+    var isOpeningFileManually: Bool {
+      switch self {
+      case .restoring:
+        return false
+      case .creatingNew, .newReplacingExisting:
+        return true
+      case .existingSession_startingNewPlayback, .existingSession_samePlayback:
+        return false
       }
     }
   }
@@ -47,8 +76,8 @@ extension PlayerWindowController {
   /// 2. Reusing existing window for new file
   /// 3. Restoring from prior launch.
   ///
-  /// See `WindowStateAtManualOpen`.
-  func buildWindowInitialLayoutTasks(windowState: WindowStateAtManualOpen,
+  /// See `SessionChangeType`.
+  func buildWindowInitialLayoutTasks(sessionChange: SessionChangeType,
                                      currentPlayback: Playback,
                                      currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
                                      newVidGeo: VideoGeometry,
@@ -60,7 +89,7 @@ extension PlayerWindowController {
     var tasks: [IINAAnimation.Task]
     let initialLayout: LayoutState
 
-    switch windowState {
+    switch sessionChange {
     case .restoring(let priorState):
       if let priorLayoutSpec = priorState.layoutSpec {
         log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from prior window state")
@@ -86,7 +115,7 @@ extension PlayerWindowController {
                                    isRestoringFromPrevLaunch: isRestoring,
                                    needsNativeFullScreen: needsNativeFullScreen)
 
-    case .alreadyOpen:
+    case .newReplacingExisting:
       initialLayout = currentLayout
       log.verbose("[applyVideoGeo FileOpen] Opening a new file in an already open window, mode=\(initialLayout.mode)")
       guard let window = self.window else { return (initialLayout, []) }
@@ -107,7 +136,7 @@ extension PlayerWindowController {
       // No additional layout needed
       tasks = []
 
-    case .notOpen:
+    case .creatingNew:
       log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowedNormal
 
@@ -133,7 +162,7 @@ extension PlayerWindowController {
       tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
-      Logger.fatal("Invalid WindowStateAtManualOpen state: \(windowState)")
+      Logger.fatal("Invalid SessionChangeType state: \(sessionChange)")
     }
 
     tasks.append(.instantTask{ [self] in
@@ -172,7 +201,7 @@ extension PlayerWindowController {
       playlistView.scrollPlaylistToCurrentItem()
 
       // FIXME: here be race conditions
-      if case .alreadyOpen = windowState {
+      if case .newReplacingExisting = sessionChange {
         // Need to switch to music mode?
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {

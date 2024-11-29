@@ -37,10 +37,17 @@ class PlayerWindow: NSWindow {
    Note: if `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    pwc?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
+    // Make sure all layout updates are in the same transaction:
+//    CATransaction.begin()
+//    CATransaction.setDisableActions(true)
+//    defer {
+//      CATransaction.commit()
+//    }
+
+    pwc?.resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
     guard !frame.equalTo(geometry.windowFrame) else {
-      log.verbose("[setFrame] no change, skipping")
+      log.verbose("[PWin.setFrame] No change to windowFrame; returning")
       return
     }
 
@@ -262,6 +269,6 @@ class PlayerWindow: NSWindow {
   override func zoom(_ sender: Any?) {
     super.zoom(sender)
     // Need to update VideoView constraints and other things
-    pwc?.applyWindowResize()
+    pwc?.resizeWindowImmediately()
   }
 }

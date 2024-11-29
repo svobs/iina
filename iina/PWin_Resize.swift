@@ -60,11 +60,6 @@ extension PlayerWindowController {
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
 
-      let currentLayout = currentLayout
-      guard currentLayout.isWindowed else {
-        log.error{"WinWillResize: requested mode is invalid: \(currentLayout.spec.mode). Will fall back to windowedModeGeo"}
-        return windowedModeGeo.windowFrame.size
-      }
       guard !player.info.isRestoring else {
         log.error{"WinWillResize was fired while restoring! Returning existing geometry: \(windowedModeGeo.windowFrame.size)"}
         return windowedModeGeo.windowFrame.size
@@ -73,7 +68,7 @@ extension PlayerWindowController {
       assert(currentGeo.mode == currentLayout.mode,
              "WinWillResize: currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
 
-      let newGeometry = currentGeo.resizeWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
+      let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
                                                 inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
 
       log.verbose{"WinWillResize will return \(newGeometry.windowFrame.size)"}
@@ -88,7 +83,7 @@ extension PlayerWindowController {
       /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
       /// only exhibits a small noticeable wobble for some limited cases ...
       IINAAnimation.disableAnimation { [self] in
-        resizeSubviewsForWindowResize(using: newGeometry)
+        resizeWindowSubviews(using: newGeometry)
       }
 
       return newGeometry.windowFrame.size
@@ -110,17 +105,69 @@ extension PlayerWindowController {
     }
   }
 
-  func resizeSubviewsForWindowResize(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
+  /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
+  /// without animation (i.e., immediately).
+  /// Do not call in response to WindowWillResize, because this can call `setFrameImmediately`.
+  /// Do not call if layout needs to change. For that, use a LayoutTransition.
+  ///
+  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or
+  /// moved
+  /// Not animated.
+  /// Can be used in windowed or full screen modes.
+  /// Can be used in music mode only if playlist is hidden.
+  func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
+    guard let window else { return }
+    videoView.videoLayer.enterAsynchronousMode()
+
+    IINAAnimation.disableAnimation { [self] in
+      let layout = currentLayout
+      let isTransientResize = newGeometry != nil
+      let isFullScreen = layout.isFullScreen
+      log.verbose{"ResizeWindowImmediately: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
+
+      // These may no longer be aligned correctly. Just hide them
+      hideSeekPreview()
+
+      if !layout.isNativeFullScreen {
+        let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
+
+        if isFullScreen {
+          // custom FS
+          resizeWindowSubviews(using: geo)
+        } else {
+          /// This will also update `videoView`
+          player.window.setFrameImmediately(geo, notify: false)
+        }
+      }
+
+      if !isFullScreen && !isTransientResize {
+        player.saveState()
+        if layout.mode == .windowedNormal {
+          log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
+          player.updateMPVWindowScale(using: windowedModeGeo)
+        }
+      }
+    }
+
+    player.events.emit(.windowResized, data: window.frame)
+  }
+
+  /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
+  func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     videoView.videoLayer.enterAsynchronousMode()
 
     if updateVideoView {
       videoView.apply(newGeometry)
     }
 
+    // Update floating control bar position if applicable
+    adjustFloatingControllerOrigin(for: newGeometry)
+
     if newGeometry.mode == .musicMode {
+      miniPlayer.loadIfNeeded()
       // Re-evaluate space requirements for labels. May need to start scrolling.
-      // Will also update saved state
-      miniPlayer.windowDidResize()
+      // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled elsewhere.
+      miniPlayer.resetScrollingLabels()
     } else if newGeometry.mode.isInteractiveMode {
       // Update interactive mode selectable box size. Origin is relative to viewport origin
       let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
@@ -347,20 +394,20 @@ extension PlayerWindowController {
         }
         
         let newLayout: LayoutState  // kludge/workaround for timing issue, see below
-        let state: WindowStateAtManualOpen
+        let sessionChange: SessionChangeType
         if trackChanged {
           if isRestoring, let priorState {
-            state = .restoring(playerState: priorState)
+            sessionChange = .restoring(playerState: priorState)
             isInitialSizeDone = true
           } else if !isInitialSizeDone {
             isInitialSizeDone = true
-            state = .notOpen
+            sessionChange = .creatingNew
           } else {
-            state = .alreadyOpen
+            sessionChange = .newReplacingExisting
           }
 
-          log.verbose{"[applyVideoGeo \(transformName)] WindowState=\(state) showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
-          let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(windowState: state,
+          log.verbose{"[applyVideoGeo \(transformName)] sessionChange=\(sessionChange) showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
+          let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(sessionChange: sessionChange,
                                                                                      currentPlayback: currentPlayback,
                                                                                      currentMediaAudioStatus: currentMediaAudioStatus,
                                                                                      newVidGeo: newVidGeo,
@@ -369,21 +416,21 @@ extension PlayerWindowController {
 
           animationPipeline.submit(windowOpenLayoutTasks)
         } else {
-          state = .notApplicable
+          sessionChange = .existingSession_startingNewPlayback
           newLayout = currentLayout
         }
 
 
         /// These tasks should not execute until *after* `super.showWindow` is called.
         pendingVideoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newMusicModeGeo: newMusicModeGeo,
-                                                              newLayout: newLayout, windowState: state,
+                                                              newLayout: newLayout, sessionChange: sessionChange,
                                                               showDefaultArt: showDefaultArt, didRotate: didRotate)
 
         if let doAfter {
           pendingVideoGeoUpdateTasks.append(.instantTask(doAfter))
         }
 
-        if case .notApplicable = state {
+        if case .existingSession_startingNewPlayback = sessionChange {
           animationPipeline.submit(pendingVideoGeoUpdateTasks)
           pendingVideoGeoUpdateTasks = []
         }
@@ -395,7 +442,7 @@ extension PlayerWindowController {
   private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
                                         newMusicModeGeo: MusicModeGeometry? = nil,
                                         newLayout: LayoutState,
-                                        windowState: WindowStateAtManualOpen,
+                                        sessionChange: SessionChangeType,
                                         showDefaultArt: Bool? = nil,
                                         didRotate: Bool) -> [IINAAnimation.Task] {
 
@@ -416,29 +463,29 @@ extension PlayerWindowController {
     pip.controller.aspectRatio = newVidGeo.videoSizeCAR
 
     switch newLayout.mode {
-    case .windowedNormal:
 
+    case .windowedNormal:
       let resizedGeo: PWinGeometry?
 
-      switch windowState {
+      switch sessionChange {
       case .restoring(_):
         log.verbose{"[applyVideoGeo] Restore is in progress; aborting"}
         return []
-      case .notOpen:
-        // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
+      case .creatingNew:
+        // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
         duration = IINAAnimation.InitialVideoReconfigDuration
         timing = .linear
-        resizedGeo = applyResizePrefsForWindowedFileOpen(alreadyOpen: false, newVidGeo: newVidGeo)
-      case .alreadyOpen:
-        resizedGeo = applyResizePrefsForWindowedFileOpen(alreadyOpen: true, newVidGeo: newVidGeo)
-      case .notApplicable:
+        fallthrough
+      case .newReplacingExisting, .existingSession_startingNewPlayback:
+        resizedGeo = applyResizePrefsForWindowedFileOpen(isOpeningFileManually: sessionChange.isOpeningFileManually, newVidGeo: newVidGeo)
+      case .existingSession_samePlayback:
         // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
       }
 
       let newGeo = resizedGeo ?? windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                               intendedViewportSize: player.info.intendedViewportSize)
-      log.debug("[applyVideoGeo] Will apply windowed result (newOpenedFile=\(windowState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
+      log.debug("[applyVideoGeo] Will apply windowed result (newOpenedFile=\(sessionChange), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreenNormal:
@@ -460,7 +507,7 @@ extension PlayerWindowController {
       })]
 
     case .musicMode:
-      if case .notOpen = windowState {
+      if case .creatingNew = sessionChange {
         log.verbose{"[applyVideoGeo] Music mode already handled for opened window: \(musicModeGeo)"}
         return []
       }
@@ -488,19 +535,19 @@ extension PlayerWindowController {
 
   /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.
   /// Returns `nil` if no applicable settings were found/applied, and should fall back to minimal resize.
-  private func applyResizePrefsForWindowedFileOpen(alreadyOpen: Bool, newVidGeo: VideoGeometry) -> PWinGeometry? {
+  private func applyResizePrefsForWindowedFileOpen(isOpeningFileManually: Bool, newVidGeo: VideoGeometry) -> PWinGeometry? {
     // resize option applies
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
     case .always:
       log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='Always' → will resize window")
     case .onlyWhenOpen:
-      if alreadyOpen {
-        log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='OnlyWhenOpen', but alreadyOpen=Y → will resize minimally")
+      if !isOpeningFileManually {
+        log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='OnlyWhenOpen', but isOpeningFileManually=N → will resize minimally")
         return nil
       }
     case .never:
-      if alreadyOpen {
+      if !isOpeningFileManually {
         log.verbose("[applyVideoGeo C-1] FileOpened (not manually) & resizeTiming='Never' → will resize minimally")
         return nil
       }
@@ -548,14 +595,32 @@ extension PlayerWindowController {
 
   // MARK: - Other window geometry functions
 
-  func setVideoScale(_ desiredVideoScale: Double) {
+  func changeVideoScale(to desiredVideoScale: Double) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowedNormal else { return }
+
     guard desiredVideoScale > 0.0 else {
       log.verbose("SetVideoScale: requested scale is invalid: \(desiredVideoScale)")
       return
     }
+
+    /*
+     TODO: refactor applyVideoGeoTransform so it can include this
+
+     applyVideoGeoTransform("VideoScale", { [self] videoGeo in
+     // Not supported in music mode at this time. Need to resolve backing scale bugs
+     guard currentLayout.mode == .windowedNormal else { return nil }
+
+     // TODO: if Preference.bool(for: .usePhysicalResolution) {}
+
+     // FIXME: regression: viewport keeps expanding when video runs into screen boundary
+     let videoSizeScaled = videoGeo.videoSizeCAR * desiredVideoScale
+     return nil
+     })
+
+
+     */
 
     player.mpv.queue.async { [self] in
       let oldVidGeo = player.videoGeo
@@ -628,7 +693,7 @@ extension PlayerWindowController {
     resizeViewport(to: desiredViewportSize)
   }
 
-  private func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWinGeometry? = nil) {
+  private func adjustFloatingControllerOrigin(for newGeometry: PWinGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }
 
     let newViewportSize = newGeometry?.viewportSize ?? viewportView.frame.size
@@ -668,54 +733,6 @@ extension PlayerWindowController {
         }
       }
     }
-  }
-
-  /// Use for actively resizing the window (i.e., not in response to WindowWillResize).
-  ///
-  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or
-  /// moved.
-  /// Not animated.
-  /// Can be used in windowed or full screen modes.
-  /// Can be used in music mode only if playlist is hidden.
-  func applyWindowResize(usingGeometry newGeometry: PWinGeometry? = nil) {
-    guard let window else { return }
-    videoView.videoLayer.enterAsynchronousMode()
-
-    IINAAnimation.disableAnimation { [self] in
-      let layout = currentLayout
-      let isTransientResize = newGeometry != nil
-      let isFullScreen = currentLayout.isFullScreen
-      log.verbose{"ApplyWindowResize: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
-
-      // These may no longer be aligned correctly. Just hide them
-      hideSeekPreview()
-
-      // Update floating control bar position if applicable
-      updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
-
-      if !layout.isNativeFullScreen {
-        let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
-
-        if isFullScreen {
-          // custom FS
-          resizeSubviewsForWindowResize(using: geo)
-        } else {
-          /// This will also update `videoView`
-          player.window.setFrameImmediately(geo, notify: false)
-        }
-      }
-
-      // Do not cache supplied geometry. Assume caller will handle it.
-      if !isFullScreen && !isTransientResize {
-        player.saveState()
-        if currentLayout.mode == .windowedNormal {
-          log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
-          player.updateMPVWindowScale(using: windowedModeGeo)
-        }
-      }
-    }
-
-    player.events.emit(.windowResized, data: window.frame)
   }
 
   // MARK: - Apply Geometry - NOT Music Mode

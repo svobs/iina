@@ -177,7 +177,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     windowController.player.info.intendedViewportSize = intendedGeo.viewportSize
 
     let newGeometry = intendedGeo.refitted(using: .stayInside)
-    windowController.applyWindowResize(usingGeometry: newGeometry)
+    windowController.resizeWindowImmediately(using: newGeometry)
     return newGeometry
   }
 }

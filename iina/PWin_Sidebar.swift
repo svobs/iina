@@ -405,7 +405,7 @@ extension PlayerWindowController {
     let trailingSidebar = layout.trailingSidebar
 
     if let goal = leadingGoal {
-      log.verbose("Setting leadingSidebar visibility to \(goal)")
+      log.verbose("[\(transition.name)] Setting leadingSidebar visibility to \(goal)")
       var shouldShow = false
       let sidebarWidth: CGFloat
       switch goal {
@@ -416,7 +416,7 @@ extension PlayerWindowController {
         if let lastVisibleTab = leadingSidebar.lastVisibleTab {
           sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
         } else {
-          log.error("Failed to find lastVisibleTab for leadingSidebar")
+          log.error("[\(transition.name)] Failed to find lastVisibleTab for leadingSidebar")
           sidebarWidth = 0
         }
       }
@@ -428,7 +428,7 @@ extension PlayerWindowController {
     }
 
     if let goal = trailingGoal {
-      log.verbose("Setting trailingSidebar visibility to \(goal)")
+      log.verbose("[\(transition.name)] Setting trailingSidebar visibility to \(goal)")
       var shouldShow = false
       let sidebarWidth: CGFloat
       switch goal {
@@ -439,7 +439,7 @@ extension PlayerWindowController {
         if let lastVisibleTab = trailingSidebar.lastVisibleTab {
           sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
         } else {
-          log.error("Failed to find lastVisibleTab for trailingSidebar")
+          log.error("[\(transition.name)] Failed to find lastVisibleTab for trailingSidebar")
           sidebarWidth = 0
         }
       }
@@ -591,7 +591,7 @@ extension PlayerWindowController {
     // Make it the active tab in its parent tab group (can do this whether or not it's shown):
     switchToTabInTabGroup(tab: tab)
 
-    window?.layoutIfNeeded()
+    sidebarView.needsUpdateConstraints = true
   }
 
   /**
@@ -625,7 +625,7 @@ extension PlayerWindowController {
 
   private func updateLeadingSidebarWidth(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
                                          ΔWindowWidth: CGFloat) {
-    Logger.log("\(visible ? "Showing" : "Hiding") leadingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)", level: .verbose, subsystem: player.subsystem)
+    log.verbose("\(visible ? "Showing" : "Hiding") leadingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
 
     let coefficients = getLeadingSidebarWidthCoefficients(visible: visible, placement: placement, ΔWindowWidth: ΔWindowWidth)
     viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
@@ -664,7 +664,7 @@ extension PlayerWindowController {
 
   private func updateTrailingSidebarWidth(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
                                           ΔWindowWidth: CGFloat) {
-    Logger.log("\(visible ? "Showing" : "Hiding") trailingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)", level: .verbose, subsystem: player.subsystem)
+    log.verbose("\(visible ? "Showing" : "Hiding") trailingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
     let coefficients = getTrailingSidebarWidthCoefficients(visible: visible, placement: placement, ΔWindowWidth: ΔWindowWidth)
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
     viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.animateToConstant(coefficients.1 * newWidth)
@@ -678,20 +678,18 @@ extension PlayerWindowController {
     switch tab.group {
     case .playlist:
       guard let tabType = PlaylistViewController.TabViewType(name: tab.name) else {
-        Logger.log("Cannot switch to tab \(tab.name.quoted): could not convert to PlaylistView tab!",
-                   level: .error, subsystem: player.subsystem)
+        log.error("Cannot switch to tab \(tab.name.quoted): could not convert to PlaylistView tab!")
         return
       }
       log.verbose("Switching to tab \(tab.name.quoted) in playlistView")
-      self.playlistView.pleaseSwitchToTab(tabType)
+      playlistView.pleaseSwitchToTab(tabType)
     case .settings:
       guard let tabType = QuickSettingViewController.TabViewType(name: tab.name) else {
-        Logger.log("Cannot switch to tab \(tab.name.quoted): could not convert to QuickSettingView tab!",
-                   level: .error, subsystem: player.subsystem)
+        log.error("Cannot switch to tab \(tab.name.quoted): could not convert to QuickSettingView tab!")
         return
       }
       log.verbose("Switching to tab \(tab.name.quoted) in quickSettingView")
-      self.quickSettingView.pleaseSwitchToTab(tabType)
+      quickSettingView.pleaseSwitchToTab(tabType)
     }
   }
 
@@ -699,7 +697,7 @@ extension PlayerWindowController {
   // the tracking information here can be updated.
   func didChangeTab(to tabName: String) {
     guard let tab = Sidebar.Tab(name: tabName) else {
-      Logger.log("Could not find a matching sidebar tab for \(tabName.quoted)!", level: .error, subsystem: player.subsystem)
+      log.error("Could not find a matching sidebar tab for \(tabName.quoted)!")
       return
     }
     log.verbose("Changing to tab: \(tabName.quoted)")
@@ -729,7 +727,7 @@ extension PlayerWindowController {
         return sidebar
       }
     }
-    Logger.log("No sidebar found for tab group \(tabGroup.rawValue.quoted)!", level: .error, subsystem: player.subsystem)
+    log.error("No sidebar found for tab group \(tabGroup.rawValue.quoted)!")
     return nil
   }
 
@@ -840,7 +838,7 @@ extension PlayerWindowController {
 
   func startResizingSidebar(with event: NSEvent) -> Bool {
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
-      Logger.log("User started resize of leading sidebar", level: .verbose, subsystem: player.subsystem)
+      log.verbose("User started resize of leading sidebar")
       leadingSidebarIsResizing = true
       if currentLayout.isWindowed {
         // Update to latest frame in case window has moved
@@ -890,7 +888,7 @@ extension PlayerWindowController {
       }
 
       if let newGeo {
-        applyWindowResize(usingGeometry: newGeo)
+        resizeWindowImmediately(using: newGeo)
 
         switch currentLayout.mode {
         case .windowedNormal:

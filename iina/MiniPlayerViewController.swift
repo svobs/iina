@@ -371,12 +371,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     return newGeo.windowFrame.size
   }
 
-  func windowDidResize() {
-    loadIfNeeded()
-    resetScrollingLabels()
-    // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled below.
-  }
-
   func saveCurrentPlaylistHeightToPrefs() {
     guard isPlaylistVisible else { return }
 

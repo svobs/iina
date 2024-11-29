@@ -304,7 +304,7 @@ extension PlayerWindowController {
     if animated {
       var tasks: [IINAAnimation.Task] = []
 
-      tasks.append(IINAAnimation.Task(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
+      tasks.append(.init(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
         // Don't hide overlays when in PIP or when they are not actually shown
         seekPreview.animationState = .willHide
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
@@ -315,7 +315,7 @@ extension PlayerWindowController {
         }
       })
 
-      tasks.append(IINAAnimation.Task(duration: 0) { [self] in
+      tasks.append(.init(duration: 0) { [self] in
         // if no interrupt then hide animation
         guard seekPreview.animationState == .willHide else { return }
         seekPreview.animationState = .hidden

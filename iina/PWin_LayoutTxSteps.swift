@@ -468,38 +468,43 @@ extension PlayerWindowController {
       }
     }
 
-    // - Leading Sidebar
-    if transition.isHidingLeadingSidebar, let visibleTab = transition.inputLayout.leadingSidebar.visibleTab {
-      /// Finish closing (if closing).
-      /// Remove `tabGroupView` from its parent (also removes constraints):
-      let viewController = (visibleTab.group == .playlist) ? playlistView : quickSettingView
+    /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
+    func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
+      log.verbose("Removing sidebar tab group view for \(group)")
+      let viewController = (group == .playlist) ? playlistView : quickSettingView
       /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
       viewController.view.removeFromSuperview()
-    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab {  // Opening
-      if transition.isShowingLeadingSidebar {
-        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-      } else if transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
-        // Tab group is already showing, but just need to switch tab
-        switchToTabInTabGroup(tab: tabToShow)
-      }
+    }
+
+    // - Leading Sidebar
+    if transition.isHidingLeadingSidebar, let visibleTab = transition.inputLayout.leadingSidebar.visibleTab {
+      /// Finish closing (if closing)
+      removeSidebarTabGroupView(group: visibleTab.group)
+    } else if transition.isShowingLeadingSidebar {
+      // Opening the sidebar from closed state
+      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
+              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
+              transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
+      // Tab group is already showing, but just need to switch tab
+      switchToTabInTabGroup(tab: tabToShow)
     }
 
     // - Trailing Sidebar
     if transition.isHidingTrailingSidebar, let visibleTab = transition.inputLayout.trailingSidebar.visibleTab {
       /// Finish closing (if closing).
-      /// Remove `tabGroupView` from its parent (also removes constraints):
-      let viewController = (visibleTab.group == .playlist) ? playlistView : quickSettingView
       /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-      viewController.view.removeFromSuperview()
-    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab {  // Opening
-      if transition.isShowingTrailingSidebar {
-        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-      } else if transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
-        // Tab group is already showing, but just need to switch tab
-        switchToTabInTabGroup(tab: tabToShow)
-      }
+      removeSidebarTabGroupView(group: visibleTab.group)
+    } else if transition.isShowingTrailingSidebar {
+      // Opening the sidebar from closed state
+      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
+              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
+              transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
+      // Tab group is already showing, but just need to switch tab
+      switchToTabInTabGroup(tab: tabToShow)
     }
 
     // [Re-]add OSC:
