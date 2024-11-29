@@ -11,7 +11,6 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
-
   enum SessionChangeType: CustomStringConvertible {
     /// Restoring the session from prior launch
     case restoring(playerState: PlayerSaveState)
