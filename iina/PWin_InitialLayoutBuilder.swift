@@ -11,6 +11,9 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
+  /// Identifies the type of session change being executed, if any.
+  ///
+  /// Each `PlayerWindow` has a session associated with it. The session's state can be saved using `PlayerSaveState`.
   enum SessionChangeType: CustomStringConvertible {
     /// Restoring the session from prior launch
     case restoring(playerState: PlayerSaveState)
@@ -24,8 +27,11 @@ extension PlayerWindowController {
     /// Existing window & session, but new file (i.e. current media is changing via playlist navigation).
     case existingSession_startingNewPlayback
 
+    /// Existing window, session, & file, but current video track was changed.
+    case existingSession_videoTrackChangedForSamePlayback
+
     /// Existing window, session, file.
-    case existingSession_samePlayback
+    case existingSession_noPlaybackChange
 
     /// Need to specify this so that `playerState` is not included...
     var description: String {
@@ -38,32 +44,50 @@ extension PlayerWindowController {
         "newReplacingExisting"
       case .existingSession_startingNewPlayback:
         "existingSession_startingNewPlayback"
-      case .existingSession_samePlayback:
-        "existingSession_samePlayback"
+      case .existingSession_videoTrackChangedForSamePlayback:
+        "existingSession_videoTrackChangedForSamePlayback"
+      case .existingSession_noPlaybackChange:
+        "existingSession_noPlaybackChange"
       }
     }
 
-    var isOpeningFile: Bool {
+    var isOpeningWindow: Bool {
       switch self {
       case .restoring,
-          .existingSession_samePlayback:
+          .creatingNew,
+          .newReplacingExisting:
+        return true
+      default:
         return false
-      case .creatingNew,
+      }
+    }
+
+    /// Consistent with terminology used in Settings window's UI.
+    ///
+    /// See also: `isOpeningFileManually`.
+    var isOpeningFile: Bool {
+      switch self {
+      case .existingSession_videoTrackChangedForSamePlayback,
+          .existingSession_noPlaybackChange:
+        return false
+      case .restoring,
+          .creatingNew,
           .newReplacingExisting,
           .existingSession_startingNewPlayback:
         return true
       }
     }
 
-    ///
+    /// Consistent with terminology used in Settings window's UI.
     var isOpeningFileManually: Bool {
       switch self {
-      case .restoring:
+      case .existingSession_startingNewPlayback,
+          .existingSession_videoTrackChangedForSamePlayback,
+          .existingSession_noPlaybackChange:
         return false
-      case .creatingNew, .newReplacingExisting:
+      case .restoring,
+          .creatingNew, .newReplacingExisting:
         return true
-      case .existingSession_startingNewPlayback, .existingSession_samePlayback:
-        return false
       }
     }
   }
@@ -82,6 +106,10 @@ extension PlayerWindowController {
                                      newVidGeo: VideoGeometry,
                                      showDefaultArt: Bool? = nil) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
+
+    guard sessionChange.isOpeningFile, let window = window else {
+      return (currentLayout, [])
+    }
 
     var isRestoring = false
     var needsNativeFullScreen = false
@@ -117,7 +145,6 @@ extension PlayerWindowController {
     case .newReplacingExisting:
       initialLayout = currentLayout
       log.verbose("[applyVideoGeo FileOpen] Opening a new file in an already open window, mode=\(initialLayout.mode)")
-      guard let window = self.window else { return (initialLayout, []) }
 
       /// `windowFrame` may be slightly off; update it
       if initialLayout.mode == .windowedNormal {
@@ -161,7 +188,7 @@ extension PlayerWindowController {
       tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
-      Logger.fatal("Invalid SessionChangeType state: \(sessionChange)")
+      Logger.fatal("Invalid SessionChangeType for initial layout: \(sessionChange)")
     }
 
     tasks.append(.instantTask{ [self] in
@@ -174,7 +201,7 @@ extension PlayerWindowController {
         }
         /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
         log.verbose("Posting windowIsReadyToShow")
-        window?.postWindowIsReadyToShow()
+        window.postWindowIsReadyToShow()
       }
 
       player.refreshSyncUITimer()

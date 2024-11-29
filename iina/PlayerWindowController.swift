@@ -138,6 +138,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var isPausedDueToInactive: Bool = false
   var isPausedDueToMiniaturization: Bool = false
   var isPausedPriorToInteractiveMode: Bool = false
+  // TODO: also `player.pendingResumeWhenShowingWindow`
 
   var floatingOSCCenterRatioH = CGFloat(Preference.float(for: .controlBarPositionHorizontal))
   var floatingOSCOriginRatioV = CGFloat(Preference.float(for: .controlBarPositionVertical))
@@ -861,8 +862,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     player.stop()
 
     guard !AppDelegate.shared.isTerminating else { return }
-    
-    isInitialSizeDone = false  // reset for reopen
 
     // stop tracking mouse event
     if let window, let contentView = window.contentView {
@@ -876,7 +875,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
 
-    /// Use `!player.info.isFileLoadedAndSized` to prevent saving if there was an error loading video
+    /// Use `player.info.isFileLoadedAndSized` to prevent from saving when there was an error loading video
     if player.info.isFileLoadedAndSized {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
@@ -915,6 +914,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     player.mpv.queue.async { [self] in
+      isInitialSizeDone = false  // reset for reopen
       player.info.currentPlayback = nil
       osd.clearQueuedOSDs()
     }
@@ -1801,9 +1801,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.updatePlaybackTimeInfo()
     }
 
-    /// Make sure `isInitialSizeDone` is true before displaying, or else OSD text can be incorrectly stretched horizontally.
+    /// Make sure window is done being sized before displaying, or else OSD text can be incorrectly stretched horizontally.
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
-    if isInitialSizeDone && player.info.isFileLoadedAndSized {
+    if player.info.isFileLoadedAndSized {
       // Run all tasks in the OSD queue until it is depleted
       osd.queueLock.withLock {
         while !osd.queue.isEmpty {

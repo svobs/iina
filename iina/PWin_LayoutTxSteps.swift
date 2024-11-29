@@ -442,7 +442,7 @@ extension PlayerWindowController {
       removeToolBar()
     }
 
-    if !outputLayout.enableOSC && !outputLayout.isMusicMode {
+    if !outputLayout.hasControlBar {
       fragPositionSliderView?.removeFromSuperview()
     }
 
@@ -466,14 +466,6 @@ extension PlayerWindowController {
           addVideoViewToWindow()
         }
       }
-    }
-
-    /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
-    func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
-      log.verbose("Removing sidebar tab group view for \(group)")
-      let viewController = (group == .playlist) ? playlistView : quickSettingView
-      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-      viewController.view.removeFromSuperview()
     }
 
     // - Leading Sidebar
@@ -1493,7 +1485,7 @@ extension PlayerWindowController {
     cropController.cropBoxView.resized(with: NSRect(origin: .zero, size: videoViewSize))
   }
 
-  // Either legacy FS or windowed
+  /// Either legacy FS or windowed
   private func setWindowStyleToLegacy() {
     guard let window = window else { return }
     guard window.styleMask.contains(.titled) else { return }
@@ -1504,7 +1496,7 @@ extension PlayerWindowController {
     window.styleMask.insert(.miniaturizable)
   }
 
-  // "Native" == "titled"
+  /// "Native" == `.titled` style mask
   private func setWindowStyleToNative() {
     guard let window = window else { return }
 
@@ -1518,6 +1510,14 @@ extension PlayerWindowController {
       customTitleBar.removeAndCleanUp()
       self.customTitleBar = nil
     }
+  }
+
+  /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
+  private func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
+    log.verbose("Removing sidebar tab group view for \(group)")
+    let viewController = group == .playlist ? playlistView : quickSettingView
+    /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
+    viewController.view.removeFromSuperview()
   }
 
   private func resetViewsForModeTransition() {
