@@ -16,11 +16,17 @@ class PlayerCore: NSObject {
 
     case started
 
+    // TODO: add states for playing, paused
+
     /// Whether stopping of this player has been initiated.
     case stopping
 
-    /// Whether mpv playback has stopped and the media has been unloaded.
-    case stopped
+    /// Playback has stopped and the media has been unloaded.
+    ///
+    /// This is the initial state of a player. The player returns to this state when a
+    /// [MPV_EVENT_PROPERTY_CHANGE](https://mpv.io/manual/stable/#command-interface-mpv-event-property-change)
+    /// for the `idle-active` property is received with a value of `true`.
+    case idle
 
     /// Whether shutdown of this player has been initiated.
     case shuttingDown
@@ -162,7 +168,7 @@ class PlayerCore: NSObject {
   }
 
   var isActive: Bool {
-    return state.isAtLeast(.started) && state.isNotYet(.stopping)
+    return state.isAtLeast(.started) && state.isNotYet(.stopping) && state != .idle
   }
 
   var isShuttingDown: Bool {
@@ -177,8 +183,8 @@ class PlayerCore: NSObject {
     state.isAtLeast(.stopping)
   }
 
-  var isStopped: Bool {
-    state.isAtLeast(.stopped)
+  var isIdle: Bool {
+    state == .idle
   }
 
   var isRestoring: Bool {
@@ -454,12 +460,12 @@ class PlayerCore: NSObject {
       if !windowController.sessionState.isRestoring {
         windowController.sessionState = windowController.sessionState.newSession()
       }
-      log.debug{"Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn), sessionState=\(windowController.sessionState)"}
+      log.debug{"Opening PlayerWindow for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
 
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       // Reset state flags
-      if state == .stopping || state == .stopped {
+      if state == .stopping || state == .idle {
         state = .started
       }
 
@@ -690,7 +696,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
     let isNormalSpeed = info.playSpeed == 1
     mpv.queue.async { [self] in
-      guard !info.isIdle, !isStopping else { return }
+      guard isActive else { return }
       /// Set this so that callbacks will fire even though `info.isPaused` was already set
       info.pauseStateWasChangedLocally = true
       mpv.setFlag(MPVOption.PlaybackControl.pause, true)
@@ -776,7 +782,7 @@ class PlayerCore: NSObject {
 
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
       // initiated directly through mpv.
-      guard state.isNotYet(.stopped) else { return }
+      guard state != .idle else { return }
       log.debug("Stopping playback")
 
       // Do not enqueue after window is closed (and info.currentPlayback is nil)
@@ -786,9 +792,7 @@ class PlayerCore: NSObject {
       }
       mpv.command(.stop, level: .verbose)
 
-      if state.rawValue < LifecycleState.stopped.rawValue {
-        state = .stopped
-      }
+
     }
   }
 
@@ -799,7 +803,8 @@ class PlayerCore: NSObject {
   func playbackStopped() {
     log.debug("Playback has stopped")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    /// Do not set `isStopped` here. This method seems to get called when it shouldn't (e.g., when changing current pos in playlist)
+    /// Do not set player's state = `stopped` here. This method seems to get called when it shouldn't
+    /// (e.g., when changing current pos in playlist)
 
     DispatchQueue.main.async { [self] in
       postNotification(.iinaPlayerStopped)
@@ -1234,7 +1239,7 @@ class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       if !paused {
-        if state == .stopping || state == .stopped {
+        if state == .stopping || state == .idle {
           state = .started
         }
       }
@@ -2223,6 +2228,9 @@ class PlayerCore: NSObject {
   /// A [MPV_EVENT_START_FILE](https://mpv.io/manual/stable/#command-interface-mpv-event-start-file) was received.
   func fileStarted(path: String, playlistPos: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    if isIdle {
+      state = .started
+    }
     guard !isStopping else { return }
 
     guard let playbackFromPath = Playback(urlPath: path, playlistPos: playlistPos, state: .started) else {
@@ -2345,7 +2353,7 @@ class PlayerCore: NSObject {
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
-    if state == .stopping || state == .stopped {
+    if state == .stopping || state == .idle {
       state = .started
     }
 
@@ -2496,12 +2504,12 @@ class PlayerCore: NSObject {
   func fileEnded(dueToStopCommand: Bool) {
     // if receive end-file when loading file, might be error
     // wait for idle
-    if !info.isFileLoaded {
+    if info.isFileLoaded {
+      info.shouldAutoLoadFiles = false
+    } else {
       if !dueToStopCommand {
         receivedEndFileWhileLoading = true
       }
-    } else {
-      info.shouldAutoLoadFiles = false
     }
     if dueToStopCommand {
       playbackStopped()
@@ -2576,8 +2584,10 @@ class PlayerCore: NSObject {
       // Check for stopping status also. Sometimes libmpv doesn't post stop message.
       closeWindow()
     }
-    info.isIdle = true
-    receivedEndFileWhileLoading = false
+    if state.isAtLeast(.started) {
+      state = .idle
+      receivedEndFileWhileLoading = false
+    }
   }
 
   func mediaTitleChanged() {
@@ -2628,8 +2638,6 @@ class PlayerCore: NSObject {
   func playbackRestarted() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
-
-    info.isIdle = false
 
     DispatchQueue.main.async { [self] in
       windowController.updateUI()
@@ -3492,8 +3500,9 @@ class PlayerCore: NSObject {
   }
 
   private func _reloadPlaylist(silent: Bool = false) {
-    log.verbose("Reloading playlist")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isStopping else { return }
+    log.verbose("Reloading playlist")
     var newPlaylist: [MPVPlaylistItem] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
     log.verbose{"Reloaded playlist will have \(playlistCount) items"}

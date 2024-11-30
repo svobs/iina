@@ -1261,8 +1261,6 @@ class MPVController: NSObject {
       /// Do not use `playlist_entry_id`. It doesn't make sense outside of FileStarted & FileEnded
       let playlistPos = getInt(MPVProperty.playlistPos)
 
-      player.info.isIdle = false
-
       player.fileStarted(path: path, playlistPos: playlistPos)
 
     case MPV_EVENT_FILE_LOADED:

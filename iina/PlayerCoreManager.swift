@@ -136,8 +136,8 @@ class PlayerCoreManager {
   private func _findIdlePlayerCore() -> PlayerCore? {
     var firstIdlePlayer: PlayerCore? = nil
     for p in _playerCores {
-      let isPlayerIdle = p.info.isIdle && p.isStopped && !p.info.isFileLoaded
-      Logger.log("Player-\(p.label): idle:\(p.info.isIdle.yn) stopped:\(p.isStopped.yn) fileLoaded:\(p.info.isFileLoaded.yn) → IDLE=\(isPlayerIdle.yesno)")
+      let isPlayerIdle = p.isIdle && !p.info.isFileLoaded
+      Logger.log("Player-\(p.label): idle:\(p.isIdle.yn) fileLoaded:\(p.info.isFileLoaded.yn) → IDLE=\(isPlayerIdle.yesno)")
       if firstIdlePlayer == nil && isPlayerIdle {
         firstIdlePlayer = p
       }
@@ -148,7 +148,7 @@ class PlayerCoreManager {
   func getNonIdle() -> [PlayerCore] {
     var cores: [PlayerCore]? = nil
     lock.withLock {
-      cores = _playerCores.filter { $0.state.isAtLeast(.started) && !$0.info.isIdle }
+      cores = _playerCores.filter { $0.isActive }
     }
     return cores!
   }

@@ -30,8 +30,6 @@ class PlaybackInfo {
 
   // MARK: - Playback lifecycle state
 
-  var isIdle: Bool = true
-
   var priorStateBuildNumber: Int = Int(InfoDictionary.shared.version.1)!
 
   var isFileLoaded: Bool {

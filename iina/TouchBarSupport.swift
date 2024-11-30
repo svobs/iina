@@ -356,8 +356,8 @@ class TouchBarPlaySliderCell: NSSliderCell {
 
   override func drawKnob(_ knobRect: NSRect) {
     guard let playerCore else { return }
+    guard playerCore.isActive else { return }
     let info = playerCore.info
-    guard !info.isIdle else { return }
     if isTouching, let dur = info.playbackDurationSec,
         let tb = info.currentPlayback?.thumbnails?.getThumbnail(forSecond: (doubleValue / 100) * dur) {
       let image = tb.nsImage
