@@ -895,7 +895,7 @@ extension PlayerWindowController {
         cropController.cropBoxView.isHidden = true
         cropController.cropBoxView.alphaValue = 0
         cropController.cropBoxView.layoutSubtreeIfNeeded()
-      } else if !player.info.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
+      } else if !player.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
         // if restoring, there will be a brief delay before getting player info, which is ok
         Utility.showAlert("no_video_track")
       }
@@ -1017,7 +1017,7 @@ extension PlayerWindowController {
       }
 
       if player.info.isPaused {
-        if !player.info.isRestoring && Preference.bool(for: .playWhenEnteringFullScreen) {
+        if !player.isRestoring && Preference.bool(for: .playWhenEnteringFullScreen) {
           player.resume()
         } else {
           // When playback is paused the display link is stopped in order to avoid wasting energy on

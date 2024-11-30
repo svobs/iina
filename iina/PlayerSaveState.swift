@@ -344,7 +344,7 @@ struct PlayerSaveState: CustomStringConvertible {
         player.log.trace{"Skipping player state save: player window is not loaded"}
         return
       }
-      guard !player.info.isRestoring else {
+      guard !player.isRestoring else {
         player.log.trace{"Skipping player state save: still restoring previous state"}
         return
       }
@@ -606,13 +606,13 @@ struct PlayerSaveState: CustomStringConvertible {
       log.verbose("Restoring from prior launch: \(self)")
     }
     let info = player.info
-    info.priorState = self
-    info.isRestoring = true
 
     info.priorStateBuildNumber = int(for: .buildNumber) ?? info.priorStateBuildNumber
 
     let windowController = player.windowController!
     windowController.geo = self.geoSet
+    assert(windowController.sessionState.isUnused, "Invalid sessionState for restore: \(windowController.sessionState)")
+    windowController.sessionState = .restoring(playerState: self)
 
     log.verbose("Screens from prior launch: \(self.screens)")
 

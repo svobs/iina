@@ -8,6 +8,121 @@
 
 import Foundation
 
+
+/// Each `PlayerWindow` has a session associated with it. The session's state can be saved using `PlayerSaveState`.
+/// This class helps keep track of the lifecycle state of the session.
+enum PWinSessionState: CustomStringConvertible {
+  /// Restoring the session from prior launch.
+  /// `playerState`: contains state data needed to restore the UI state from a previous launch, loaded from prefs.
+  case restoring(playerState: PlayerSaveState)
+
+  /// Opening window (or reopening closed window) for new session & new file.
+  case creatingNew
+
+  /// Reusing an already open window, and discarding its current session, for new session & new file.
+  case newReplacingExisting
+
+  /// Existing window & session, but new file (i.e. current media is changing via playlist navigation).
+  /// See also: `isOpeningFile`.
+  case existingSession_startingNewPlayback
+
+  /// Existing window, session, & file, but current video track was changed.
+  case existingSession_videoTrackChangedForSamePlayback
+
+  /// Existing window, session, file.
+  case existingSession_continuing
+
+  case noSession
+
+  /// Need to specify this so that `playerState` is not included...
+  var description: String {
+    switch self {
+    case .restoring:
+      "restoring"
+    case .creatingNew:
+      "creatingNew"
+    case .newReplacingExisting:
+      "newReplacingExisting"
+    case .existingSession_startingNewPlayback:
+      "existingSession_startingNewPlayback"
+    case .existingSession_videoTrackChangedForSamePlayback:
+      "existingSession_videoTrackChangedForSamePlayback"
+    case .existingSession_continuing:
+      "existingSession_continuing"
+    case .noSession:
+      "noSession"
+    }
+  }
+
+  /// Changes to a new state based on the current state, assuming the action is to create a new session.
+  func newSession() -> PWinSessionState {
+    switch self {
+    case .existingSession_continuing:
+      return .newReplacingExisting
+    case .noSession:
+      return .creatingNew
+    default:
+      Logger.fatal("Unexpected sessionState for newSession(): \(self)")
+    }
+  }
+
+  /// Is `true` only while restore from previous launch is still in progress; `false` otherwise.
+  var isRestoring: Bool {
+    if case .restoring = self {
+      return true
+    }
+    return false
+  }
+
+  /// Returns true if starting or resuming a session.
+  var isStartingSession: Bool {
+    return isOpeningFileManually  // just this for now
+  }
+
+  /// Consistent with terminology used in Settings window's UI.
+  ///
+  /// Note that case `.restoring` is considered to be opening a file and thus returns `true`.
+  /// See also: `isOpeningFileManually`.
+  var isOpeningFile: Bool {
+    switch self {
+    case .restoring,
+        .creatingNew,
+        .newReplacingExisting,
+        .existingSession_startingNewPlayback:
+      return true
+    case .existingSession_videoTrackChangedForSamePlayback,
+        .existingSession_continuing,
+        .noSession:
+      return false
+    }
+  }
+
+  /// Consistent with terminology used in Settings window's UI.
+  ///
+  /// Note that case `.restoring` is considered to be opening a file and thus returns `true`.
+  var isOpeningFileManually: Bool {
+    switch self {
+    case .restoring,
+        .creatingNew,
+        .newReplacingExisting:
+      return true
+    case .existingSession_startingNewPlayback,
+        .existingSession_videoTrackChangedForSamePlayback,
+        .existingSession_continuing,
+        .noSession:
+      return false
+    }
+  }
+
+  var isUnused: Bool {
+    if case .noSession = self {
+      return true
+    }
+    return false
+  }
+}
+
+
 extension PlayerWindowController {
   enum TrackingArea: Int {
     static let key: String = "area"

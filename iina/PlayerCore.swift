@@ -181,6 +181,10 @@ class PlayerCore: NSObject {
     state.isAtLeast(.stopped)
   }
 
+  var isRestoring: Bool {
+    return windowController.sessionState.isRestoring
+  }
+
   var isInMiniPlayer: Bool {
     return windowController.isInMiniPlayer
   }
@@ -447,7 +451,10 @@ class PlayerCore: NSObject {
     mpv.queue.sync { [self] in
       let path = playback.path
       info.currentPlayback = playback
-      log.debug{"Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn)"}
+      if !windowController.sessionState.isRestoring {
+        windowController.sessionState = windowController.sessionState.newSession()
+      }
+      log.debug{"Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn), sessionState=\(windowController.sessionState)"}
 
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
@@ -460,7 +467,7 @@ class PlayerCore: NSObject {
       MediaMetaCache.shared.ensureVideoMetaIsCached(forURL: info.currentURL, log)
 
       DispatchQueue.main.async { [self] in
-        if !info.isRestoring {
+        if !windowController.sessionState.isRestoring {
           windowController.osd.clearQueuedOSDs()
         }
 
@@ -473,7 +480,7 @@ class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path])
 
-          if info.isRestoring, let mpvRestoreWorkItem {
+          if let mpvRestoreWorkItem {
             mpvRestoreWorkItem()
             return
           } else if pauseUntilWindowOpen {
@@ -2277,7 +2284,7 @@ class PlayerCore: NSObject {
     }
 
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
-    if info.isRestoring, let priorState = info.priorState,
+    if let priorState = windowController.priorStateIfRestoring,
        let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
       log.debug("Restoring \(playlistPathList.count) items into playlist")
       _addToPlaylist(pathListIncludingCurrent: playlistPathList)
@@ -2317,7 +2324,7 @@ class PlayerCore: NSObject {
     guard !isStopping else { return }
 
     // If restoring, playback was already paused (and will not be unpaused until window is ready to show)
-    if !info.isRestoring {
+    if !isRestoring {
       let pause = Preference.bool(for: .pauseWhenOpen)
       mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
     }
@@ -2376,13 +2383,12 @@ class PlayerCore: NSObject {
     }
 
     // Cache these vars to keep them constant for background tasks
-    let isRestoring = info.isRestoring
-    let priorState = info.priorState
+    let priorStateIfRestoring = windowController.priorStateIfRestoring
 
     // Sync tracks
-    if isRestoring, let priorState {
-      if priorState.string(for: .playPosition) != nil {
-        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist 
+    if let priorStateIfRestoring {
+      if priorStateIfRestoring.string(for: .playPosition) != nil {
+        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist
         /// is started. Run this on the mpv queue to ensure proper ordering.
         log.verbose("Clearing mpv 'start' option now that restore is complete")
         mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
@@ -2409,7 +2415,7 @@ class PlayerCore: NSObject {
     PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
       fileLoaded_backgroundQueueWork(for: currentPlayback, currentTicket: currentTicket,
                                      shouldAutoLoadFiles: shouldAutoLoadFiles,
-                                     isRestoring: isRestoring, priorState: priorState)
+                                     priorStateIfRestoring: priorStateIfRestoring)
     }
 
     // History thread: update history given new playback URL
@@ -2448,8 +2454,9 @@ class PlayerCore: NSObject {
   private func fileLoaded_backgroundQueueWork(for currentPlayback: Playback,
                                               currentTicket: Int,
                                               shouldAutoLoadFiles: Bool,
-                                              isRestoring: Bool, priorState: PlayerSaveState?) {
+                                              priorStateIfRestoring: PlayerSaveState?) {
     assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
+    let isRestoring = priorStateIfRestoring != nil
 
     // add files in same folder
     if shouldAutoLoadFiles {
@@ -2475,7 +2482,7 @@ class PlayerCore: NSObject {
     self.autoSearchOnlineSub()
 
     // Set SID & S2ID now that all subs are available
-    if isRestoring, let priorState {
+    if let priorState = priorStateIfRestoring {
       if let priorSID = priorState.int(for: .sid) {
         setTrack(priorSID, forType: .sub, silent: true)
       }
@@ -2511,7 +2518,7 @@ class PlayerCore: NSObject {
 
   func aidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !info.isRestoring, !isStopping else { return }
+    guard !isRestoring, !isStopping else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     guard info.isFileLoaded else {
@@ -2655,7 +2662,7 @@ class PlayerCore: NSObject {
 
   func sidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !info.isRestoring, !isStopping else { return }
+    guard !windowController.sessionState.isRestoring, !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard info.isFileLoaded else {
       log.verbose("SID changed to \(sid) but file is not loaded; ignoring")
@@ -2675,7 +2682,7 @@ class PlayerCore: NSObject {
 
   func secondarySidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !info.isRestoring, !isStopping else { return }
+    guard !isRestoring, !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard info.isFileLoaded else {
       log.verbose("SSID changed to \(ssid) but file is not loaded; ignoring")
@@ -2778,7 +2785,7 @@ class PlayerCore: NSObject {
 
   func vidChanged(silent: Bool = false, forceIfNoChange: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !info.isRestoring, !isStopping else { return }
+    guard !isRestoring, !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     let didChange = vid != info.vid
     guard didChange || forceIfNoChange else { return }
@@ -3255,7 +3262,7 @@ class PlayerCore: NSObject {
 
   func canShowOSD() -> Bool {
     /// Note: use `loaded` (querying `isWindowLoaded` will initialize windowController unexpectedly)
-    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || info.isRestoring || isInInteractiveMode {
+    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || isRestoring || isInInteractiveMode {
       return false
     }
     if isInMiniPlayer && !Preference.bool(for: .enableOSDInMusicMode) {

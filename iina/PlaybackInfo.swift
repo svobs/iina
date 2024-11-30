@@ -32,12 +32,6 @@ class PlaybackInfo {
 
   var isIdle: Bool = true
 
-  /// Is `true` only while restore from previous launch is still in progress; `false` otherwise.
-  var isRestoring = false
-
-  /// Contains info needed to restore the UI state from a previous launch. Should only be used if `isRestoring==true`
-  var priorState: PlayerSaveState? = nil
-
   var priorStateBuildNumber: Int = Int(InfoDictionary.shared.version.1)!
 
   var isFileLoaded: Bool {

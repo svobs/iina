@@ -11,87 +11,6 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
-  /// Identifies the type of session change being executed, if any.
-  ///
-  /// Each `PlayerWindow` has a session associated with it. The session's state can be saved using `PlayerSaveState`.
-  enum SessionChangeType: CustomStringConvertible {
-    /// Restoring the session from prior launch
-    case restoring(playerState: PlayerSaveState)
-
-    /// Opening window (or reopening closed window) for new session & new file.
-    case creatingNew
-
-    /// Reusing an already open window, and discarding its current session, for new session & new file.
-    case newReplacingExisting
-
-    /// Existing window & session, but new file (i.e. current media is changing via playlist navigation).
-    case existingSession_startingNewPlayback
-
-    /// Existing window, session, & file, but current video track was changed.
-    case existingSession_videoTrackChangedForSamePlayback
-
-    /// Existing window, session, file.
-    case existingSession_noPlaybackChange
-
-    /// Need to specify this so that `playerState` is not included...
-    var description: String {
-      switch self {
-      case .restoring:
-        "restoring"
-      case .creatingNew:
-        "creatingNew"
-      case .newReplacingExisting:
-        "newReplacingExisting"
-      case .existingSession_startingNewPlayback:
-        "existingSession_startingNewPlayback"
-      case .existingSession_videoTrackChangedForSamePlayback:
-        "existingSession_videoTrackChangedForSamePlayback"
-      case .existingSession_noPlaybackChange:
-        "existingSession_noPlaybackChange"
-      }
-    }
-
-    var isOpeningWindow: Bool {
-      switch self {
-      case .restoring,
-          .creatingNew,
-          .newReplacingExisting:
-        return true
-      default:
-        return false
-      }
-    }
-
-    /// Consistent with terminology used in Settings window's UI.
-    ///
-    /// See also: `isOpeningFileManually`.
-    var isOpeningFile: Bool {
-      switch self {
-      case .existingSession_videoTrackChangedForSamePlayback,
-          .existingSession_noPlaybackChange:
-        return false
-      case .restoring,
-          .creatingNew,
-          .newReplacingExisting,
-          .existingSession_startingNewPlayback:
-        return true
-      }
-    }
-
-    /// Consistent with terminology used in Settings window's UI.
-    var isOpeningFileManually: Bool {
-      switch self {
-      case .existingSession_startingNewPlayback,
-          .existingSession_videoTrackChangedForSamePlayback,
-          .existingSession_noPlaybackChange:
-        return false
-      case .restoring,
-          .creatingNew, .newReplacingExisting:
-        return true
-      }
-    }
-  }
-
   /// Builds tasks to transition the window to its "initial" layout.
   ///
   /// Sets the window layout when one of the following is happening:
@@ -99,28 +18,26 @@ extension PlayerWindowController {
   /// 2. Reusing existing window for new file
   /// 3. Restoring from prior launch.
   ///
-  /// See `SessionChangeType`.
-  func buildWindowInitialLayoutTasks(sessionChange: SessionChangeType,
+  /// See `PWinSessionState`.
+  func buildWindowInitialLayoutTasks(sessionState: PWinSessionState,
                                      currentPlayback: Playback,
                                      currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
                                      newVidGeo: VideoGeometry,
                                      showDefaultArt: Bool? = nil) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard sessionChange.isOpeningFile, let window = window else {
+    guard sessionState.isStartingSession, let window = window else {
       return (currentLayout, [])
     }
 
-    var isRestoring = false
     var needsNativeFullScreen = false
     var tasks: [IINAAnimation.Task]
     let initialLayout: LayoutState
 
-    switch sessionChange {
+    switch sessionState {
     case .restoring(let priorState):
       if let priorLayoutSpec = priorState.layoutSpec {
         log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from prior window state")
-        isRestoring = true
 
         let initialLayoutSpec: LayoutSpec
         if priorLayoutSpec.isNativeFullScreen {
@@ -139,7 +56,7 @@ extension PlayerWindowController {
 
       let newGeoSet = configureFromRestore(priorState, initialLayout)
       tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet,
-                                   isRestoringFromPrevLaunch: isRestoring,
+                                   isRestoringFromPrevLaunch: true,
                                    needsNativeFullScreen: needsNativeFullScreen)
 
     case .newReplacingExisting:
@@ -188,7 +105,7 @@ extension PlayerWindowController {
       tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
-      Logger.fatal("Invalid SessionChangeType for initial layout: \(sessionChange)")
+      Logger.fatal("Invalid PWinSessionState for initial layout: \(sessionState)")
     }
 
     tasks.append(.instantTask{ [self] in
@@ -227,7 +144,7 @@ extension PlayerWindowController {
       playlistView.scrollPlaylistToCurrentItem()
 
       // FIXME: here be race conditions
-      if case .newReplacingExisting = sessionChange {
+      if case .newReplacingExisting = sessionState {
         // Need to switch to music mode?
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {

@@ -25,7 +25,7 @@ extension PlayerWindowController {
     var middleGeometry: PWinGeometry?
     let outputGeometry: PWinGeometry
 
-    /// Should only be true when setting layout on window open. See `buildWindowInitialLayoutTasks()`.
+    /// Should only be true when setting layout on session open. See `buildWindowInitialLayoutTasks()`.
     let isWindowInitialLayout: Bool
 
     var tasks: [IINAAnimation.Task] = []

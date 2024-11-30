@@ -111,7 +111,7 @@ class VideoView: NSView {
 
   func refreshAll() {
     // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.windowController.loaded, player.isActive && !player.info.isRestoring else { return }
+    guard player.windowController.loaded, player.isActive && !player.isRestoring else { return }
     updateDisplayLink()
     refreshContentsScale()
     refreshEdrMode()
@@ -568,9 +568,8 @@ extension VideoView {
 
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }
-    let isRestoring = player.info.isRestoring
     // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.isActive, !isRestoring else { return }
+    guard player.isActive, !player.isRestoring else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 

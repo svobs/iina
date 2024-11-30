@@ -360,7 +360,7 @@ class MPVController: NSObject {
 
     // User default settings
 
-    if !player.info.isRestoring {
+    if !player.isRestoring {
       if Preference.bool(for: .enableInitialVolume) {
         setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false,
                       level: .verbose)
@@ -433,7 +433,7 @@ class MPVController: NSObject {
                   level: .verbose)
     setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback", level: .verbose)
 
-    if !player.info.isRestoring {  // if restoring, will use stored windowFrame instead
+    if !player.isRestoring {  // if restoring, will use stored windowFrame instead
       setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
                     level: .verbose)
     }

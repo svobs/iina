@@ -124,8 +124,8 @@ extension PlayerWindowController {
       // Update to corect values before displaying. Only useful when restoring at launch
       updateUI()
 
-      if player.info.isRestoring {
-        if let priorState = player.info.priorState, let layoutSpec = priorState.layoutSpec {
+      if let priorState = priorStateIfRestoring {
+        if let layoutSpec = priorState.layoutSpec {
           // Preemptively set window frames to prevent windows from "jumping" during restore
           if layoutSpec.mode == .musicMode {
             let geo = priorState.geoSet.musicMode.toPWinGeometry()

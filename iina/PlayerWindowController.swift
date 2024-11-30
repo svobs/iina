@@ -87,6 +87,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
+  var sessionState: PWinSessionState = .noSession
+  var priorStateIfRestoring: PlayerSaveState? {
+    if case .restoring(let priorState) = sessionState {
+      return priorState
+    }
+    return nil
+  }
+
   // - Mutually exclusive state bools:
 
   // TODO: replace these vars with window state var:
@@ -94,7 +102,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// .openLiveResizingWidth, .openLiveResizingHeight, .openDragging, .openHidden, .openMiniturized, .openMiniturizedPiP,
   /// .openInFullScreen, .closing]
   var loaded = false  // TODO: -> .isAtLeast(.loadedButClosed)
-  var isInitialSizeDone = false // TODO: -> willOpen
   var isWindowMiniturized = false
   var isWindowMiniaturizedDueToPip = false
   var isWindowPipDueToInactiveSpace = false
@@ -624,7 +631,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     videoView.refreshAll()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
-    if !player.info.isRestoring {  // this can mess up music mode restore
+    if !sessionState.isRestoring {  // this can mess up music mode restore
       let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
       videoView.apply(geo)
     }
@@ -765,13 +772,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     co.addAllObservers()
 
-    if !player.info.isRestoring {
+    if !sessionState.isRestoring {
       AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
     }
 
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in
-      if let priorState = player.info.priorState {
+      if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)
       }
 
@@ -906,15 +913,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       })
     }
 
-    if player.info.isRestoring {
-      log.debug("Discarding unfinished restore of window")
-      // May not have finishing restoring when user closes. Make sure to clean up here
-      player.info.priorState = nil
-      player.info.isRestoring = false
-    }
-
     player.mpv.queue.async { [self] in
-      isInitialSizeDone = false  // reset for reopen
+
+      // May not have finishing restoring when user closes. Make sure to clean up here
+      if case .restoring = sessionState {
+        log.debug("Discarding unfinished restore of window")
+        sessionState = .noSession  // reset for reopen
+      }
+
       player.info.currentPlayback = nil
       osd.clearQueuedOSDs()
     }
@@ -1185,7 +1191,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         player.events.emit(.windowScreenChanged)
       })
 
-      guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
+      guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 
       animationPipeline.submitTask(timing: .easeInEaseOut, { [self] in
         let screenID = bestScreen.screenID
@@ -1233,7 +1239,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       log.verbose{"Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
       videoView.refreshAll()
 
-      guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
+      guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 
       // In normal full screen mode AppKit will automatically adjust the window frame if the window
       // is moved to a new screen such as when the window is on an external display and that display
@@ -1265,7 +1271,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func windowDidMove(_ notification: Notification) {
-    guard !isAnimating, !isAnimatingLayoutTransition, !isMagnifying, !player.info.isRestoring else { return }
+    guard !isAnimating, !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
     guard let window = window else { return }
 
     // We can get here if external calls from accessibility APIs change the window location.
@@ -1836,7 +1842,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // resulting in this function being called before mpv has set its position and duration
     // properties. Confirm the window and file have been loaded.
 
-    guard loaded, player.info.isFileLoaded || player.info.isRestoring else { return }
+    guard loaded, player.info.isFileLoaded || player.isRestoring else { return }
     // The mpv documentation for the duration property indicates mpv is not always able to determine
     // the video duration in which case the property is not available.
     guard let duration = player.info.playbackDurationSec,
@@ -1860,7 +1866,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func updateVolumeUI() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard loaded, !isClosing else { return }
-    guard player.info.isFileLoaded || player.info.isRestoring else { return }
+    guard player.info.isFileLoaded || player.isRestoring else { return }
 
     let volume = player.info.volume
     let isMuted = player.info.isMuted

@@ -44,7 +44,7 @@ extension PlayerWindowController {
     }
     let currentPlayback = player.info.currentPlayback
     // Need to check state of current playback to avoid race conditions
-    guard loaded, !player.info.isRestoring, player.state.isAtLeast(.started),
+    guard loaded, !sessionState.isRestoring, player.state.isAtLeast(.started),
        let currentPlayback, currentPlayback.state.isAtLeast(.loaded),
           let window, window.isOpen else {
       return nil
