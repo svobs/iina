@@ -60,8 +60,8 @@ enum OSDMessage {
   case mute(Int)
   case unMute(Int)
   case screenshot
-  case abLoop(PlaybackInfo.LoopStatus)
-  case abLoopUpdate(PlaybackInfo.LoopStatus, String)
+  case abLoop(LoopStatus)
+  case abLoopUpdate(LoopStatus, String)
   case stop
   case chapter(String)
   case track(MPVTrack)

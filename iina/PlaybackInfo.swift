@@ -16,24 +16,12 @@ class PlaybackInfo {
     self.log = log
   }
 
-  /// Enumeration representing the status of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
-  ///
-  /// The A-B loop command cycles mpv through these states:
-  /// - Cleared (looping disabled)
-  /// - A loop point set
-  /// - B loop point set (looping enabled)
-  enum LoopStatus: Int {
-    case cleared = 0
-    case aSet
-    case bSet
-  }
-
   // MARK: - Playback lifecycle state
 
   var priorStateBuildNumber: Int = Int(InfoDictionary.shared.version.1)!
 
   var isFileLoaded: Bool {
-    return currentPlayback?.isFileLoaded ?? false
+    return currentPlayback?.state.isAtLeast(.loaded) ?? false
   }
 
   var isFileLoadedAndSized: Bool {

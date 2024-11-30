@@ -144,6 +144,18 @@ extension PlayerWindowController {
 }  // extension PlayerWindowController
 
 
+/// Enumeration representing the status of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
+///
+/// The A-B loop command cycles mpv through these states:
+/// - Cleared (looping disabled)
+/// - A loop point set
+/// - B loop point set (looping enabled)
+enum LoopStatus: Int {
+  case cleared = 0
+  case aSet
+  case bSet
+}
+
 
 enum PlayerWindowMode: Int {
   /// Note: both `windowed` & `windowedInteractive` modes are considered windowed"

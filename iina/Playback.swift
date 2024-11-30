@@ -13,9 +13,6 @@ import Foundation
 /// An instance of this class should be created as soon as the user indicates their intent to play the media,
 /// and should not be reused for subsequent play(s).
 class Playback: CustomStringConvertible {
-  var description: String {
-    return "Playback(plPos:\(playlistPos) status:\(state) path:\(path.pii.quoted))"
-  }
 
   /// State of the individual playack
   enum LifecycleState: Int, StateEnum, CustomStringConvertible {
@@ -47,14 +44,8 @@ class Playback: CustomStringConvertible {
     func isNotYet(_ status: LifecycleState) -> Bool {
       return rawValue < status.rawValue
     }
-  }  /// `Playback.LifecycleState`
+  }  /// end `enum Playback.LifecycleState`
 
-  let url: URL
-  let mpvMD5: String
-
-  var playlistPos: Int
-
-  var parentPlaylist: String = ""
 
   /// Lifecycle state of this playback
   var state: LifecycleState {
@@ -64,6 +55,13 @@ class Playback: CustomStringConvertible {
       }
     }
   }
+
+  let url: URL
+  let mpvMD5: String
+
+  var playlistPos: Int
+
+  var parentPlaylist: String = ""
 
   /// This must match the current `vid` track for the given media when determining whether a complete update is needed to VideoGeometry.
   ///
@@ -80,12 +78,12 @@ class Playback: CustomStringConvertible {
 
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
-  var isFileLoaded: Bool {
-    return state.isAtLeast(.loaded)
-  }
-
   var displayName: String {
     return Playback.displayName(from: url)
+  }
+
+  var description: String {
+    return "Playback(plPos:\(playlistPos) status:\(state) path:\(path.pii.quoted))"
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
