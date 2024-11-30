@@ -87,7 +87,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  var sessionState: PWinSessionState = .noSession
+  var sessionState: PWinSessionState = .noSession {
+    didSet {
+      log.verbose("Updated sessionState ≔ \(sessionState)")
+    }
+  }
   var priorStateIfRestoring: PlayerSaveState? {
     if case .restoring(let priorState) = sessionState {
       return priorState
@@ -918,10 +922,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // May not have finishing restoring when user closes. Make sure to clean up here
       if case .restoring = sessionState {
         log.debug("Discarding unfinished restore of window")
-        sessionState = .noSession  // reset for reopen
       }
 
       player.info.currentPlayback = nil
+      sessionState = .noSession  // reset for reopen
       osd.clearQueuedOSDs()
     }
   }

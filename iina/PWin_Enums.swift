@@ -23,7 +23,7 @@ enum PWinSessionState: CustomStringConvertible {
   case newReplacingExisting
 
   /// Existing window & session, but new file (i.e. current media is changing via playlist navigation).
-  /// See also: `isOpeningFile`.
+  /// See also: `isChangingVideoTrack`.
   case existingSession_startingNewPlayback
 
   /// Existing window, session, & file, but current video track was changed.
@@ -79,25 +79,26 @@ enum PWinSessionState: CustomStringConvertible {
     return isOpeningFileManually  // just this for now
   }
 
-  /// Consistent with terminology used in Settings window's UI.
+  /// Most similar to the term "Opening file" in Settings window's UI, but also applies when changing video track
+  /// in the same file.
   ///
   /// Note that case `.restoring` is considered to be opening a file and thus returns `true`.
   /// See also: `isOpeningFileManually`.
-  var isOpeningFile: Bool {
+  var isChangingVideoTrack: Bool {
     switch self {
     case .restoring,
         .creatingNew,
         .newReplacingExisting,
-        .existingSession_startingNewPlayback:
+        .existingSession_startingNewPlayback,
+        .existingSession_videoTrackChangedForSamePlayback:
       return true
-    case .existingSession_videoTrackChangedForSamePlayback,
-        .existingSession_continuing,
+    case .existingSession_continuing,
         .noSession:
       return false
     }
   }
 
-  /// Consistent with terminology used in Settings window's UI.
+  /// Most similar to the term "Opening file manually" in Settings window's UI.
   ///
   /// Note that case `.restoring` is considered to be opening a file and thus returns `true`.
   var isOpeningFileManually: Bool {

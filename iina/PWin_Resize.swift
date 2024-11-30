@@ -193,16 +193,15 @@ extension PlayerWindowController {
     guard let currentPlayback = player.info.currentPlayback else { return }
     let audioStatus = player.info.currentMediaAudioStatus
     let vidTrackID = player.info.vid
-//    guard trackDidChange else {
-//      log.verbose{"[applyVideoGeoForTrackChange] Aborting: video track (\(String(vidTrackID))) is nil or hasn't changed"}
-//      return
-//    }
 
     if case .existingSession_continuing = sessionState {
       if currentPlayback.state.isNotYet(.loadedAndSized) {
         self.sessionState = .existingSession_startingNewPlayback
       } else if vidTrackID != nil && currentPlayback.vidTrackLastSized != vidTrackID {
         self.sessionState = .existingSession_videoTrackChangedForSamePlayback
+      } else {
+        log.verbose{"[applyVideoGeoForTrackChange] Aborting: no session change, & video track (\(String(vidTrackID))) is nil or hasn't changed"}
+        return
       }
     }
 
@@ -295,6 +294,21 @@ extension PlayerWindowController {
     applyVideoGeoTransform(tfName, transform, newMusicModeGeo)
   }
 
+  struct TransitionContext {
+    let name: String
+    let oldVidGeo: VideoGeometry
+    let newVidGeo: VideoGeometry
+
+    let sessionState: PWinSessionState
+    let currentPlayback: Playback
+    let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
+    let showDefaultArt: Bool?
+
+    var isChangingRotation: Bool {
+      oldVidGeo.totalRotation != newVidGeo.totalRotation
+    }
+  }
+
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ transformName: String,
                               _ videoTransform: @escaping VideoGeometry.Transform,
@@ -317,7 +331,7 @@ extension PlayerWindowController {
           log.verbose{"[applyVideoGeo \(transformName)] Start: ΔSession=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
 
           let doAfterTask = IINAAnimation.Task.instantTask{ [self] in
-            if sessionState.isOpeningFile {
+            if sessionState.isChangingVideoTrack {
               // Need to call here to ensure file title OSD is displayed when navigating playlist...
               player.refreshSyncUITimer()
               updateUI()
@@ -354,7 +368,7 @@ extension PlayerWindowController {
             return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring) network=\(currentPlayback.isNetworkResource.yn)")
           }
 
-          if sessionState.isOpeningFile {
+          if sessionState.isChangingVideoTrack {
             // Clear status & state while still in mpv queue (but after making a local copy for final work)
             self.sessionState = .existingSession_continuing
 
@@ -459,10 +473,10 @@ extension PlayerWindowController {
         timing = .linear
         fallthrough
       case .newReplacingExisting,
-          .existingSession_startingNewPlayback:
+          .existingSession_startingNewPlayback,
+          .existingSession_videoTrackChangedForSamePlayback:
         resizedGeo = applyResizePrefsForWindowedFileOpen(isOpeningFileManually: sessionState.isOpeningFileManually, newVidGeo: newVidGeo)
-      case .existingSession_videoTrackChangedForSamePlayback,
-          .existingSession_continuing:
+      case .existingSession_continuing:
         // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
       case .noSession:

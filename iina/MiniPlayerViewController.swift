@@ -317,7 +317,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
     player.mpv.queue.async { [self] in
       log.verbose{"MusicMode: changing videoView show=\(visible.yn), H=\(newGeo.videoHeight)"}
-      player.info.currentPlayback?.vidTrackLastSized = nil
+      windowController.sessionState = .existingSession_videoTrackChangedForSamePlayback  // yes, kludge
       windowController.applyVideoGeoForTrackChange(newGeo)
     }
   }
