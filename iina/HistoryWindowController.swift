@@ -173,7 +173,13 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   func windowWillClose(_ notification: Notification) {
     log.verbose("History window will close")
+    // Invalidate ticket
+    $reloadTicketCounter.withLock { $0 += 1 }
     co.removeAllObservers()
+  }
+
+  private func isTicketStillValid(_ ticket: Int) -> Bool {
+    ticket == reloadTicketCounter
   }
 
   /// Can be called from any DispatchQueue
@@ -187,7 +193,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
     if isInitialLoadDone {
       backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-        guard ticket == reloadTicketCounter else { return }
+        guard isTicketStillValid(ticket) else { return }
         _reloadData(ticket: ticket)
       }
     } else {
@@ -231,19 +237,20 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     historyData = historyDataUpdated
     historyDataKeys = historyDataKeysUpdated
 
-    DispatchQueue.main.async {
-      self.adjustTimeColumnMinWidth()
-      self.outlineView.reloadData()
-      self.outlineView.expandItem(nil, expandChildren: true)
+    DispatchQueue.main.async { [self] in
+      guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
+      adjustTimeColumnMinWidth()
+      outlineView.reloadData()
+      outlineView.expandItem(nil, expandChildren: true)
 
-      self.log.verbose("Reloaded history table with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) in \(sw.secElapsedString) (tkt \(self.reloadTicketCounter))")
+      log.verbose("Reloaded history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn) in \(sw.secElapsedString) (tkt \(reloadTicketCounter))")
 
       if isInitialLoad {
-        self.isInitialLoadDone = true
+        isInitialLoadDone = true
       }
     }
 
-    guard isInitialLoad || ticket == reloadTicketCounter else { return }  // check ticket
+    guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
 
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
     // Network or file system can change over time and cause our info to become out of date.
@@ -265,11 +272,11 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
           watchLaterCount += 1
         }
         if (count %% 100) == 0 {
-          guard isInitialLoad || ticket == reloadTicketCounter else { return }  // check ticket
+          guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
         }
       }
     }
-    guard isInitialLoad || ticket == reloadTicketCounter else {return }  // check ticket
+    guard isInitialLoad || isTicketStillValid(ticket) else {return }  // check ticket
 
     self.fileExistsMap = fileExistsMap
     log.debug("Filled in fileExists for \(count) of \(historyList.count) histories in \(sw2.secElapsedString), wasFullReload=\(forceFullStatusReload.yn) watchLaterFilesLoaded=\(watchLaterCount) fileExistsMapSize=\(fileExistsMap.count)")
