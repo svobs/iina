@@ -8,6 +8,22 @@
 
 import Foundation
 
+struct VideoGeoTransformContext {
+  /// Name of the transform
+  let name: String
+  /// Transform this to new `VideoGeometry` using a `VideoGeometry.Transform`
+  let oldVideoGeo: VideoGeometry
+
+  // Other state at the time of transform (immutable)
+
+  let sessionState: PWinSessionState
+  let currentPlayback: Playback
+  let vidTrackID: Int
+  let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
+  let showDefaultArt: Bool?
+  let newMusicModeGeo: MusicModeGeometry?
+}
+
 /// `VideoGeometry`: collection of metadata for the current video.
 ///
 /// Mimics mpv's calculations rather than relying on the libmpv render API, which suffers from ambiguities
@@ -22,7 +38,7 @@ import Foundation
 ///           ➤ apply `totalRotation` (== `userRotation` + `codecRotation`)
 ///             ➤ `videoSizeCAR`
 struct VideoGeometry: Equatable, CustomStringConvertible {
-  typealias Transform = (VideoGeometry) -> VideoGeometry?
+  typealias Transform = (VideoGeoTransformContext) -> VideoGeometry?
 
   static func defaultGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
     let log = log ?? Logger.log

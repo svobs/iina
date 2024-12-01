@@ -1279,8 +1279,8 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.applyVideoGeoTransform("userRotation", { [self] videoGeo in
-      guard userRotation != videoGeo.userRotation else { return nil }
+    windowController.applyVideoGeoTransform("userRotation", { [self] cxt in
+      guard userRotation != cxt.oldVideoGeo.userRotation else { return nil }
       log.verbose{"[applyVideoGeo] Applying userRotation: \(userRotation)"}
       // Update window geometry
       sendOSD(.rotation(userRotation))
@@ -1321,8 +1321,8 @@ class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.applyVideoGeoTransform("aspectOverride", { [self] videoGeo in
-      guard videoGeo.userAspectLabel != aspectLabel else { return nil }
+    windowController.applyVideoGeoTransform("aspectOverride", { [self] cxt in
+      guard cxt.oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
       // Send update to mpv
       mpv.queue.async { [self] in
@@ -1335,8 +1335,8 @@ class PlayerCore: NSObject {
       sendOSD(.aspect(aspectLabel))
 
       // Change video size:
-      log.verbose{"[applyVideoGeo:transform] changing userAspectLabel: \(videoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
-      return videoGeo.clone(userAspectLabel: aspectLabel)
+      log.verbose{"[applyVideoGeo:transform] changing userAspectLabel: \(cxt.oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
+      return cxt.oldVideoGeo.clone(userAspectLabel: aspectLabel)
 
     }, then: { [self] in
       // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
@@ -3111,6 +3111,9 @@ class PlayerCore: NSObject {
       }
     }
 
+    // When fadeable views are hidden the time can get out of sync. This method will be called when
+    // the view becomes visible to sync the time. If the timer was not running the view must be
+    // updated now. Playback may be paused. If that is the case then the timer will not be started.
     if !wasTimerRunning {
       // Do not wait for first redraw
       windowController.updateUI()

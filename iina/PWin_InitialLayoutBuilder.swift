@@ -19,12 +19,13 @@ extension PlayerWindowController {
   /// 3. Restoring from prior launch.
   ///
   /// See `PWinSessionState`.
-  func buildWindowInitialLayoutTasks(sessionState: PWinSessionState,
-                                     currentPlayback: Playback,
-                                     currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
-                                     newVidGeo: VideoGeometry,
-                                     showDefaultArt: Bool? = nil) -> (LayoutState, [IINAAnimation.Task]) {
+  func buildWindowInitialLayoutTasks(_ cxt: VideoGeoTransformContext,
+                                     newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
+
+    let sessionState = cxt.sessionState
+    let currentMediaAudioStatus = cxt.currentMediaAudioStatus
+    let showDefaultArt = cxt.showDefaultArt
 
     guard sessionState.isStartingSession, let window = window else {
       return (currentLayout, [])
