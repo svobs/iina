@@ -474,10 +474,16 @@ extension PlayerWindowController {
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
       log.verbose{"[applyVideoGeo \(cxt.name)] Prev cached value of musicModeGeo: \(musicModeGeo)"}
+
       let musicModeGeoUpdated = musicModeGeoForCurrentFrame(newVidGeo: newVidGeo)
-      let geoSet = cxt.oldGeo.clone(musicMode: musicModeGeoUpdated)
-      let cxt2 = cxt.clone(oldGeo: geoSet)
-      let newMusicModeGeo = cxt2.oldGeo.musicMode  // TODO: use transform instead!
+      let newMusicModeGeo: MusicModeGeometry
+      if let musicModeTransform {
+        let mmContext = cxt.clone(oldGeo: cxt.oldGeo.clone(musicMode: musicModeGeoUpdated))
+        newMusicModeGeo = musicModeTransform(mmContext) ?? musicModeGeoUpdated
+      } else {
+        newMusicModeGeo = musicModeGeoUpdated
+      }
+
       if musicModeGeo.isVideoVisible != newMusicModeGeo.isVideoVisible {
         // Toggling videoView visiblity: use longer duration for nicety
         duration = IINAAnimation.DefaultDuration
