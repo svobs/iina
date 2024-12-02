@@ -2023,6 +2023,16 @@ extension NSView {
     return CGWindowListCreateImage(rect, .optionIncludingWindow, CGWindowID(window.windowNumber), CGWindowImageOption.bestResolution)
   }
 
+  /// Get `NSImage` representation of the view.
+  ///
+  /// - Returns: `NSImage` of view
+  /// Alternative to `snapshotImage()`. Simpler code which uses high-level, possibly less efficient APIs.
+  func image() -> NSImage {
+    let imageRepresentation = bitmapImageRepForCachingDisplay(in: bounds)!
+    cacheDisplay(in: bounds, to: imageRepresentation)
+    return NSImage(cgImage: imageRepresentation.cgImage!, size: bounds.size)
+  }
+
   var iinaAppearance: NSAppearance {
     if #available(macOS 10.14, *) {
       var theme: Preference.Theme = Preference.enum(for: .themeMaterial)
@@ -2042,4 +2052,25 @@ extension NSView {
     return self.effectiveAppearance
   }
 
+}
+
+
+extension CALayer {
+
+  /// Get `NSImage` representation of the layer.
+  ///
+  /// - Returns: `NSImage` of the layer.
+  /// Original source: https://stackoverflow.com/a/41387514/1347529
+  func image() -> NSImage {
+    let width = Int(bounds.width * contentsScale)
+    let height = Int(bounds.height * contentsScale)
+    let imageRepresentation = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+    imageRepresentation.size = bounds.size
+
+    let context = NSGraphicsContext(bitmapImageRep: imageRepresentation)!
+
+    render(in: context.cgContext)
+
+    return NSImage(cgImage: imageRepresentation.cgImage!, size: bounds.size)
+  }
 }

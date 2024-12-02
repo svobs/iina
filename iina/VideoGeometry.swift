@@ -12,7 +12,7 @@ struct VideoGeoTransformContext {
   /// Name of the transform
   let name: String
   /// Transform this to new `VideoGeometry` using a `VideoGeometry.Transform`
-  let oldVideoGeo: VideoGeometry
+  let oldGeo: GeometrySet
 
   // Other state at the time of transform (immutable)
 
@@ -22,6 +22,10 @@ struct VideoGeoTransformContext {
   let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
   let showDefaultArt: Bool?
   let newMusicModeGeo: MusicModeGeometry?
+
+  var oldVideoGeo: VideoGeometry {
+    oldGeo.video
+  }
 }
 
 /// `VideoGeometry`: collection of metadata for the current video.

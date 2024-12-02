@@ -187,8 +187,8 @@ extension PlayerWindowController {
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
   /// If current media's vid track changed, may need to apply new geometry
-  func applyVideoGeoForTrackChange(_ newMusicModeGeo: MusicModeGeometry? = nil) { // TODO: rename/refactor. Not just at file open now!
-    let transform: VideoGeometry.Transform = { [self] context in
+  func applyVideoGeoForTrackChange(_ newMusicModeGeo: MusicModeGeometry? = nil) {
+    let videoTransform: VideoGeometry.Transform = { [self] context in
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
       let vidTrackID = context.vidTrackID
@@ -286,7 +286,7 @@ extension PlayerWindowController {
       }
     }  // end of transform block
 
-    applyVideoGeoTransform("TrackChanged", transform, newMusicModeGeo)
+    applyVideoGeoTransform("TrackChanged", videoTransform, newMusicModeGeo)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
@@ -297,7 +297,7 @@ extension PlayerWindowController {
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitInstantTask { [self] in
-        let oldVideoGeo = geo.video
+        let oldGeo = geo
 
         player.mpv.queue.async { [self] in
           let sessionState = sessionState  // save in case it changes
@@ -350,7 +350,7 @@ extension PlayerWindowController {
             return abort("player stopping (status=\(player.state))")
           }
 
-          let cxt = VideoGeoTransformContext(name: transformName, oldVideoGeo: oldVideoGeo, sessionState: sessionState,
+          let cxt = VideoGeoTransformContext(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
                                              currentPlayback: currentPlayback, vidTrackID: player.info.vid ?? 0,
                                              currentMediaAudioStatus: player.info.currentMediaAudioStatus,
                                              showDefaultArt: showDefaultArt, newMusicModeGeo: newMusicModeGeo)
@@ -419,13 +419,13 @@ extension PlayerWindowController {
     let showDefaultArt = cxt.showDefaultArt
     let didRotate = cxt.oldVideoGeo.totalRotation != newVidGeo.totalRotation
 
-    // There's no good animation for rotation (yet), so just do as little animation as possible in this case
     var duration: CGFloat
-    if didRotate {
-      duration = 0.0
-    } else if newMusicModeGeo != nil {
+    if newMusicModeGeo != nil {
       // toggling videoView visiblity
       duration = IINAAnimation.DefaultDuration
+    } else if didRotate {
+      // There's no good animation for rotation (yet), so just do as little animation as possible in this case
+      duration = 0.0
     } else {
       duration = IINAAnimation.VideoReconfigDuration
     }

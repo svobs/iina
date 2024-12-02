@@ -180,6 +180,9 @@ class PlaybackInfo {
     return false
   }
 
+  /// Used to keep track of prev vid track if video track is disabled due to hiding videoView in music mode.
+  var vidDesired: Int?
+
   var isSubVisible = true
   var isSecondSubVisible = true
 
