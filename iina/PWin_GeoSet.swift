@@ -8,6 +8,29 @@
 
 import Foundation
 
+/// Can be used for `VideoGeometry` transforms, `PWinGeometry` transforms, or `MusicModeGeometry` transforms.
+struct GeometryTransformContext {
+  /// Name of the transform
+  let name: String
+  /// Contains most up-to-date version of the geometries (as well as possibly unapplied changes), which transforms should build
+  /// on top of. (The `PlayerWindowController`'s `geo` field should not be referenced).
+  let oldGeo: GeometrySet
+
+  // Other state at the time of transform (immutable)
+
+  let sessionState: PWinSessionState
+  let currentPlayback: Playback
+  let vidTrackID: Int
+  let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
+
+  func clone(oldGeo: GeometrySet? = nil) -> GeometryTransformContext {
+    return GeometryTransformContext(name: self.name, oldGeo: oldGeo ?? self.oldGeo,
+                                    sessionState: self.sessionState, currentPlayback: self.currentPlayback,
+                                    vidTrackID: self.vidTrackID, currentMediaAudioStatus: self.currentMediaAudioStatus)
+  }
+}
+
+
 /// Describes the current panel sizes & locations for all modes of a unique `PlayerWindow`.
 struct GeometrySet {
   /// The window geometry, whether in regular  or interactive mode.

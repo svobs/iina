@@ -187,7 +187,7 @@ extension PlayerWindowController {
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
   /// If current media's vid track changed, may need to apply new geometry
-  func applyVideoGeoForTrackChange(_ newMusicModeGeo: MusicModeGeometry? = nil) {
+  func applyVideoGeoForTrackChange( _ musicModeTransform: MusicModeGeometry.Transform? = nil) {
     let videoTransform: VideoGeometry.Transform = { [self] context in
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
@@ -248,14 +248,14 @@ extension PlayerWindowController {
       var userAspectLabelDerived = ""
       if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
         userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
-        if userAspectLabelDerived != context.oldVideoGeo.userAspectLabel {
+        if userAspectLabelDerived != context.oldGeo.video.userAspectLabel {
           // Not necessarily an error? Need to improve aspect name matching logic
-          log.debug{"[applyVideoGeo \(context.name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(context.oldVideoGeo.userAspectLabel.quoted))"}
+          log.debug{"[applyVideoGeo \(context.name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(context.oldGeo.video.userAspectLabel.quoted))"}
         }
       }
 
       // If opening window, videoGeo may still have the global (default) log. Update it
-      let videoGeo = context.oldVideoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
+      let videoGeo = context.oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
                                                codecAspectLabel: codecAspect,
                                                userAspectLabel: userAspectLabelDerived,
                                                userRotation: userRotation,
@@ -286,13 +286,13 @@ extension PlayerWindowController {
       }
     }  // end of transform block
 
-    applyVideoGeoTransform("TrackChanged", videoTransform, newMusicModeGeo)
+    applyVideoGeoTransform("TrackChanged", videoTransform, musicModeTransform)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ transformName: String,
                               _ videoTransform: @escaping VideoGeometry.Transform,
-                              _ newMusicModeGeo: MusicModeGeometry? = nil,
+                              _ musicModeTransform: MusicModeGeometry.Transform? = nil,
                               then doAfter: (() -> Void)? = nil) {
 
     animationPipeline.submitInstantTask { [self] in
@@ -339,20 +339,13 @@ extension PlayerWindowController {
           return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring) network=\(currentPlayback.isNetworkResource.yn)")
         }
 
-        /// Default album art: check state before doing anything so that we don't duplicate work. Don't change in miniPlayer if videoView not visible.
-        /// If `showDefaultArt == nil`, don't change existing visibility.
-        let shouldDecideDefaultArtStatus = currentPlayback.state.isAtLeast(.loadedAndSized) && (!isInMiniPlayer || miniPlayer.isVideoVisible || (newMusicModeGeo?.isVideoVisible ?? false))
-        let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
-        log.verbose{"[applyVideoGeo \(transformName)] Start: ΔSession=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
-
         guard !player.isStopping else {
           return abort("player stopping (status=\(player.state))")
         }
 
-        let cxt = VideoGeoTransformContext(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
+        let cxt = GeometryTransformContext(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
                                            currentPlayback: currentPlayback, vidTrackID: player.info.vid ?? 0,
-                                           currentMediaAudioStatus: player.info.currentMediaAudioStatus,
-                                           showDefaultArt: showDefaultArt, newMusicModeGeo: newMusicModeGeo)
+                                           currentMediaAudioStatus: player.info.currentMediaAudioStatus)
 
         guard let newVidGeo = videoTransform(cxt) else {
           return abort("transform \(transformName) returned nil")
@@ -378,17 +371,17 @@ extension PlayerWindowController {
         }
 
         animationPipeline.submitInstantTask { [self] in
-          log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(sessionState) showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
+          log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(sessionState)"}
           if sessionState.isStartingSession {
             let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(cxt, newVidGeo: newVidGeo)
             animationPipeline.submit(windowOpenLayoutTasks)
 
             /// These tasks should not execute until *after* `super.showWindow` is called.
-            var videoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: initialLayout, cxt)
+            var videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: initialLayout, cxt, musicModeTransform)
             videoGeoUpdateTasks.append(doAfterTask)
             pendingVideoGeoUpdateTasks = videoGeoUpdateTasks
           } else {
-            var videoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: currentLayout, cxt)
+            var videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: currentLayout, cxt, musicModeTransform)
             videoGeoUpdateTasks.append(doAfterTask)
             animationPipeline.submit(videoGeoUpdateTasks)
           }
@@ -398,19 +391,15 @@ extension PlayerWindowController {
   }
 
   /// Only `applyVideoGeoTransform` should call this.
-  private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry, newLayout: LayoutState,
-                                        _ cxt: VideoGeoTransformContext) -> [IINAAnimation.Task] {
+  private func buildGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry, newLayout: LayoutState,
+                                   _ cxt: GeometryTransformContext,
+                                   _ musicModeTransform: MusicModeGeometry.Transform? = nil) -> [IINAAnimation.Task] {
 
-    let newMusicModeGeo = cxt.newMusicModeGeo
     let sessionState = cxt.sessionState
-    let showDefaultArt = cxt.showDefaultArt
-    let didRotate = cxt.oldVideoGeo.totalRotation != newVidGeo.totalRotation
+    let didRotate = cxt.oldGeo.video.totalRotation != newVidGeo.totalRotation
 
     var duration: CGFloat
-    if newMusicModeGeo != nil {
-      // toggling videoView visiblity
-      duration = IINAAnimation.DefaultDuration
-    } else if didRotate {
+    if didRotate {
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       duration = 0.0
     } else {
@@ -429,7 +418,7 @@ extension PlayerWindowController {
 
       switch sessionState {
       case .restoring(_):
-        log.verbose{"[applyVideoGeo] Restore is in progress; aborting"}
+        log.verbose{"[applyVideoGeo \(cxt.name)] Restore is in progress; aborting"}
         return []
       case .creatingNew:
         // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
@@ -444,41 +433,58 @@ extension PlayerWindowController {
         // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
       case .noSession:
-        Logger.fatal("[applyVideoGeo] Invalid sessionState: \(sessionState)")
+        Logger.fatal("[applyVideoGeo \(cxt.name)] Invalid sessionState: \(sessionState)")
       }
 
       let newGeo = resizedGeo ?? windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                               intendedViewportSize: player.info.intendedViewportSize)
-      log.debug("[applyVideoGeo] Will apply windowed result (sessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
+
+      let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
+//      let windowedGeoUpdated = windowedGeoForCurrentFrame(newVidGeo: newVidGeo)
+//      let newGeoSet = cxt.oldGeo.clone(windowed: windowedGeoUpdated)
+
+      log.debug("[applyVideoGeo \(cxt.name)] Will apply windowed result (sessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreenNormal:
       let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                    intendedViewportSize: player.info.intendedViewportSize)
       let fsGeo = newLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
-      log.debug{"[applyVideoGeo] Will apply FS result: \(fsGeo)"}
+      log.debug{"[applyVideoGeo \(cxt.name)] Will apply FS result: \(fsGeo)"}
 
       return [.init(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-        log.verbose{"[applyVideoGeo]: Updating videoView (FS), videoSize: \(fsGeo.videoSize), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
+        log.verbose{"[applyVideoGeo \(cxt.name)]: Updating videoView (FS), videoSize=\(fsGeo.videoSize)"}
         videoView.apply(fsGeo)
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
         windowedModeGeo = newWinGeo
 
-        updateDefaultArtVisibility(to: showDefaultArt)
         resetRotationPreview()
         updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
       })]
 
     case .musicMode:
       if case .creatingNew = sessionState {
-        log.verbose{"[applyVideoGeo] Music mode already handled for opened window: \(musicModeGeo)"}
+        log.verbose{"[applyVideoGeo \(cxt.name)] Music mode already handled for opened window: \(musicModeGeo)"}
         return []
       }
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      log.verbose{"[applyVideoGeo] Prev cached value of musicModeGeo: \(musicModeGeo)"}
-      let newMusicModeGeo = newMusicModeGeo?.clone(video: newVidGeo) ?? musicModeGeoForCurrentFrame(newVidGeo: newVidGeo)
+      log.verbose{"[applyVideoGeo \(cxt.name)] Prev cached value of musicModeGeo: \(musicModeGeo)"}
+      let musicModeGeoUpdated = musicModeGeoForCurrentFrame(newVidGeo: newVidGeo)
+      let geoSet = cxt.oldGeo.clone(musicMode: musicModeGeoUpdated)
+      let cxt2 = cxt.clone(oldGeo: geoSet)
+      let newMusicModeGeo = cxt2.oldGeo.musicMode  // TODO: use transform instead!
+      if musicModeGeo.isVideoVisible != newMusicModeGeo.isVideoVisible {
+        // Toggling videoView visiblity: use longer duration for nicety
+        duration = IINAAnimation.DefaultDuration
+      }
+      /// Default album art: check state before doing anything so that we don't duplicate work. Don't change in miniPlayer if videoView not visible.
+      /// If `showDefaultArt == nil`, don't change existing visibility.
+      let shouldDecideDefaultArtStatus = musicModeGeo.isVideoVisible || newMusicModeGeo.isVideoVisible
+      let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
+      log.verbose{"[applyVideoGeo \(cxt.name)] Start: sessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
+
       log.verbose{"[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)"}
       return buildApplyMusicModeGeoTasks(from: musicModeGeo, to: newMusicModeGeo,
                                          duration: duration, showDefaultArt: showDefaultArt)

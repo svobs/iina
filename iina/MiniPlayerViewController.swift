@@ -305,20 +305,15 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// Does nothing if not in music mode, or already in the visible state (idempotent).
   /// Does not change the video track! If calling with `setVisible: true`, this should be called *after* video is enabled.
   func applyGeoForVideoView(setVisible visible: Bool) {
-    let currentGeo = windowController.musicModeGeoForCurrentFrame()
-    log.verbose{"MusicMode: changing videoView visibility: \(currentGeo.isVideoVisible.yesno) → \(visible.yesno)"}
-    let newGeo = currentGeo.withVideoViewVisible(visible)
-
-    guard windowController.isInMiniPlayer, currentGeo.isVideoVisible != newGeo.isVideoVisible else {
-      log.debug{"Cancelling toggle of videoView visibility (\(currentGeo.isVideoVisible.yesno) → \(newGeo.isVideoVisible.yesno), isMiniPlayer=\(windowController.isInMiniPlayer.yn))"}
-      return
-    }
-
     // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
     player.mpv.queue.async { [self] in
-      log.verbose{"MusicMode: changing videoView show=\(visible.yn), H=\(newGeo.videoHeight)"}
       windowController.sessionState = .existingSession_videoTrackChangedForSamePlayback
-      windowController.applyVideoGeoForTrackChange(newGeo)
+      windowController.applyVideoGeoForTrackChange({ [self] ctx in
+        let oldGeo = ctx.oldGeo.musicMode
+        let newGeo = oldGeo.withVideoViewVisible(visible)
+        log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → \(visible.yesno), H=\(newGeo.videoHeight)"}
+        return newGeo
+      })
     }
   }
 

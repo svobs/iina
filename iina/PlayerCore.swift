@@ -1280,7 +1280,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     windowController.applyVideoGeoTransform("userRotation", { [self] cxt in
-      guard userRotation != cxt.oldVideoGeo.userRotation else { return nil }
+      guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
       log.verbose{"[applyVideoGeo] Applying userRotation: \(userRotation)"}
       // Update window geometry
       sendOSD(.rotation(userRotation))
@@ -1289,8 +1289,6 @@ class PlayerCore: NSObject {
     }, then: { [self] in
       reloadQuickSettingsView()
 
-      // Thumb rotation needs updating:
-      reloadThumbnails(forMedia: info.currentPlayback)
       saveState()
     })
   }
@@ -1322,21 +1320,20 @@ class PlayerCore: NSObject {
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
     windowController.applyVideoGeoTransform("aspectOverride", { [self] cxt in
-      guard cxt.oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
+      let oldVideoGeo = cxt.oldGeo.video
+      guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
       // Send update to mpv
-      mpv.queue.async { [self] in
-        let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
-        log.verbose{"[applyVideoGeo:transform] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
-        mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
-      }
+      let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
+      log.verbose{"[applyVideoGeo:transform] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
+      mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
 
       // FIXME: Default aspect needs i18n
       sendOSD(.aspect(aspectLabel))
 
       // Change video size:
-      log.verbose{"[applyVideoGeo:transform] changing userAspectLabel: \(cxt.oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
-      return cxt.oldVideoGeo.clone(userAspectLabel: aspectLabel)
+      log.verbose{"[applyVideoGeo:transform] changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
+      return oldVideoGeo.clone(userAspectLabel: aspectLabel)
 
     }, then: { [self] in
       // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
@@ -2825,16 +2822,14 @@ class PlayerCore: NSObject {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
 
-    /// This will refresh album art display.
-    /// Do this first, before `changeVideoViewVisibleState`, for a nicer animation.
     DispatchQueue.main.async { [self] in
       /// Must check `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
       guard isShowVideoPendingInMiniPlayer else { return }
       isShowVideoPendingInMiniPlayer = false
       miniPlayerShowVideoTimer?.invalidate()
-      guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
-      log.verbose{"Showing videoView in music mode in response to vid change, forced=\(forceIfNoChange.yn)"}
       windowController.animationPipeline.submitInstantTask { [self] in
+        guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
+        log.verbose{"Showing videoView in music mode in response to vid change, forced=\(forceIfNoChange.yn)"}
         /// `showDefaultArt` should already have been handled by `applyVideoGeoForTrackChange` so do not change here
         windowController.miniPlayer.applyGeoForVideoView(setVisible: true)
       }

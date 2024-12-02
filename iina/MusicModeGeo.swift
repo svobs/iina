@@ -21,6 +21,8 @@ import Foundation
  A `MusicModeGeometry` object can be converted to a `PWinGeometry` via its `toPWinGeometry()` function.
  */
 struct MusicModeGeometry: Equatable, CustomStringConvertible {
+  typealias Transform = (GeometryTransformContext) -> MusicModeGeometry?
+
   let windowFrame: NSRect
   let screenID: String
   let isVideoVisible: Bool

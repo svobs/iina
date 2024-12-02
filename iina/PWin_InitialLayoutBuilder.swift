@@ -19,13 +19,12 @@ extension PlayerWindowController {
   /// 3. Restoring from prior launch.
   ///
   /// See `PWinSessionState`.
-  func buildWindowInitialLayoutTasks(_ cxt: VideoGeoTransformContext,
+  func buildWindowInitialLayoutTasks(_ cxt: GeometryTransformContext,
                                      newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let sessionState = cxt.sessionState
     let currentMediaAudioStatus = cxt.currentMediaAudioStatus
-    let showDefaultArt = cxt.showDefaultArt
 
     guard sessionState.isStartingSession, let window = window else {
       return (currentLayout, [])
@@ -125,6 +124,8 @@ extension PlayerWindowController {
       player.refreshSyncUITimer()
       player.touchBarSupport.setupTouchBarUI()
 
+      let shouldDecideDefaultArtStatus = !currentLayout.isMusicMode || (musicModeGeo.isVideoVisible)
+      let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
       if let showDefaultArt {
         // May need to set this while restoring a network audio stream
         updateDefaultArtVisibility(to: showDefaultArt)

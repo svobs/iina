@@ -51,14 +51,15 @@ extension PlayerCore {
 
     mpv.queue.async { [self] in
       windowController.applyVideoGeoTransform("setCrop", { [self] cxt in
-        guard cxt.oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
+        let oldVideoGeo = cxt.oldGeo.video
+        guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
 
-        log.verbose("Changing videoGeo selectedCropLabel \(cxt.oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+        log.verbose("Changing videoGeo selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
 
         let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
         sendOSD(.crop(osdLabel))
 
-        return cxt.oldVideoGeo.clone(selectedCropLabel: newCropLabel)
+        return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
 
       }, then: { [self] in
         /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
@@ -87,15 +88,16 @@ extension PlayerCore {
     }
 
     windowController.applyVideoGeoTransform("removeCrop", { [self] cxt in
-      guard let cropFilter = cxt.oldVideoGeo.cropFilter else { return nil }
-      guard cxt.oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
+      let oldVideoGeo = cxt.oldGeo.video
+      guard let cropFilter = oldVideoGeo.cropFilter else { return nil }
+      guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
 
       log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
 
       mpv.queue.async { [self] in
         removeVideoFilter(cropFilter, verify: false, notify: false)
       }
-      return cxt.oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
+      return oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
 
     }, then: { [self] in
       reloadQuickSettingsView()
@@ -106,14 +108,15 @@ extension PlayerCore {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     windowController.applyVideoGeoTransform("updateCrop", { [self] cxt in
-      guard cxt.oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
+      let oldVideoGeo = cxt.oldGeo.video
+      guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
 
-      log.verbose("[applyVideoGeo:transform]: changing selectedCropLabel \(cxt.oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+      log.verbose("[applyVideoGeo:transform]: changing selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
 
-      return cxt.oldVideoGeo.clone(selectedCropLabel: newCropLabel)
+      return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
 
     }, then: { [self] in
       reloadQuickSettingsView()
