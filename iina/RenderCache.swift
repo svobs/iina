@@ -7,12 +7,17 @@
 //
 
 
+/// In the future, the sliders should be entirely custom, instead of relying on legacy `NSSlider`. Then the knob & slider can be
+/// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
+/// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class RenderCache {
   static let shared = RenderCache()
+
   /// This should match `backingScaleFactor` from the current screen. At present
   /// (MacOS 15.1), this will always be `2.0`.
-  static let scaleFactor: CGFloat = 2.0
-  static let imgMarginRadius: CGFloat = 1.0
+  let scaleFactor: CGFloat = 2.0
+
+  // MARK: - Knob
 
   enum KnobType: Int {
     case mainKnob = 0
@@ -23,24 +28,33 @@ class RenderCache {
     case volumeKnobSelected
   }
 
-  // Bar
-  let barHeight: CGFloat = 3.0
-  let barCornerRadius_Scaled: CGFloat = 1.5 * scaleFactor
-  var barColorLeft = NSColor.controlAccentColor
-  var barColorLeftGlow = NSColor.controlAccentColor
-  var barColorRight = NSColor.mainSliderBarRight
+  init() {
+    knobMarginRadius_Scaled = knobMarginRadius * scaleFactor
+    barCornerRadius_Scaled = barCornerRadius * scaleFactor
+    barMarginRadius_Scaled = barMarginRadius * scaleFactor
+  }
 
-  // Knob
+  // - Knob Constants
+
+  let knobMarginRadius: CGFloat = 1.0
+  /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
+  var knobMarginRadius_Scaled: CGFloat
+  let knobCornerRadius: CGFloat = 1
+
   var mainKnobColor = NSColor.mainSliderKnob
   var mainKnobActiveColor = NSColor.mainSliderKnobActive
   var loopKnobColor = NSColor.mainSliderLoopKnob
-  /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
-  let scaledMarginRadius = RenderCache.imgMarginRadius * RenderCache.scaleFactor
-  let knobCornerRadius: CGFloat = 1
   let shadowColor = NSShadow().shadowColor!.cgColor
   let glowColor = NSColor.white.withAlphaComponent(1.0/3.0).cgColor
 
-  // MARK: - Knob
+  // count should equal number of KnobTypes
+  var cachedKnobs = [Knob?](repeating: nil, count: 6)
+
+  func invalidateCachedKnobs() {
+    for i in 0..<cachedKnobs.count {
+      cachedKnobs[i] = nil
+    }
+  }
 
   func getKnob(_ knobType: KnobType, darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
     if let cachedKnob = cachedKnobs[knobType.rawValue], cachedKnob.isDarkMode == darkMode,
@@ -66,18 +80,10 @@ class RenderCache {
 
     let knobHeightAdj = knobType == .loopKnob ? knob.loopKnobHeight : knob.mainKnobHeight
     let knobImageSize = Knob.imageSize(knobWidth: knobWidth, knobHeight: knobHeightAdj)
-    let drawRect = NSRect(x: round(knobRect.origin.x) - RenderCache.imgMarginRadius,
-                          y: knobRect.origin.y - RenderCache.imgMarginRadius + (0.5 * (knobRect.height - knobHeightAdj)),
+    let drawRect = NSRect(x: round(knobRect.origin.x) - RenderCache.shared.knobMarginRadius,
+                          y: knobRect.origin.y - RenderCache.shared.knobMarginRadius + (0.5 * (knobRect.height - knobHeightAdj)),
                           width: knobImageSize.width, height: knobImageSize.height)
     NSGraphicsContext.current!.cgContext.draw(image, in: drawRect)
-  }
-
-  // count should equal number of KnobTypes
-  var cachedKnobs = [Knob?](repeating: nil, count: 6)
-  func invalidateCachedKnobs() {
-    for i in 0..<cachedKnobs.count {
-      cachedKnobs[i] = nil
-    }
   }
 
   struct Knob {
@@ -118,14 +124,14 @@ class RenderCache {
     }
 
     static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat) -> CGImage {
-      let scaleFactor = RenderCache.scaleFactor
+      let scaleFactor = RenderCache.shared.scaleFactor
       let knobImageSizeScaled = Knob.imgSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
       let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
                                                height: knobImageSizeScaled.heightInt) { cgContext in
 
         // Round the X position for cleaner drawing
-        let pathRect = NSMakeRect(RenderCache.shared.scaledMarginRadius,
-                                  RenderCache.shared.scaledMarginRadius,
+        let pathRect = NSMakeRect(RenderCache.shared.knobMarginRadius_Scaled,
+                                  RenderCache.shared.knobMarginRadius_Scaled,
                                   knobWidth * scaleFactor,
                                   knobHeight * scaleFactor)
         let path = CGPath(roundedRect: pathRect, cornerWidth: RenderCache.shared.knobCornerRadius * scaleFactor,
@@ -172,8 +178,8 @@ class RenderCache {
     }
 
     static func imageSize(knobWidth: CGFloat, knobHeight: CGFloat) -> CGSize {
-      return CGSize(width: knobWidth + (2 * RenderCache.imgMarginRadius),
-                    height: knobHeight + (2 * RenderCache.imgMarginRadius))
+      return CGSize(width: knobWidth + (2 * RenderCache.shared.knobMarginRadius),
+                    height: knobHeight + (2 * RenderCache.shared.knobMarginRadius))
     }
 
     static func imgSizeScaled(knobWidth: CGFloat, knobHeight: CGFloat, scaleFactor: CGFloat) -> CGSize {
@@ -183,6 +189,16 @@ class RenderCache {
   }  // end struct Knob
 
   // MARK: - Bar
+
+  // Bar
+  let barHeight: CGFloat = 3.0
+  let barCornerRadius: CGFloat = 1.5
+  var barCornerRadius_Scaled: CGFloat
+  var barColorLeft = NSColor.controlAccentColor
+  var barColorLeftGlow = NSColor.controlAccentColor
+  var barColorRight = NSColor.mainSliderBarRight
+  let barMarginRadius: CGFloat = 1.0
+  var barMarginRadius_Scaled: CGFloat
 
   func updateBarColorsFromPrefs() {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
@@ -211,8 +227,6 @@ class RenderCache {
 
   struct Bar {
     static let baseChapterWidth: CGFloat = 3.0
-    static let imgMarginRadius: CGFloat = 1.0
-    static let scaledMarginRadius = imgMarginRadius * RenderCache.scaleFactor
     let image: CGImage
 
     /// `barWidth` does not include added leading or trailing margin
@@ -225,7 +239,7 @@ class RenderCache {
     static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
       // - Set up calculations
-      let scaleFactor = RenderCache.scaleFactor
+      let scaleFactor = RenderCache.shared.scaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
       let barHeight_Scaled = RenderCache.shared.barHeight * scaleFactor
@@ -255,14 +269,14 @@ class RenderCache {
           cgc.beginPath()
           let adjMinX: CGFloat = minX + halfChapterGapWidth
           let adjMaxX: CGFloat = maxX - halfChapterGapWidth
-          let segment = CGRect(x: adjMinX, y: Bar.scaledMarginRadius,
+          let segment = CGRect(x: adjMinX, y: RenderCache.shared.barMarginRadius_Scaled,
                                width: adjMaxX - adjMinX, height: barHeight_Scaled)
           cgc.addPath(CGPath(roundedRect: segment, cornerWidth:  cornerRadius_Scaled, cornerHeight:  cornerRadius_Scaled, transform: nil))
           cgc.setFillColor(barColor)
           cgc.fillPath()
         }
 
-        // Note that nothing is drawn for leading Bar.scaledMarginRadius or trailing Bar.scaledMarginRadius.
+        // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
         // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
         var segsMaxX: [Double]
         if chapters.count > 0, durationSec > 0 {
@@ -273,7 +287,7 @@ class RenderCache {
         segsMaxX.append(imgSizeScaled.width)  // add right end of bar
 
         var isRightOfKnob = false
-        var segMinX = Bar.scaledMarginRadius
+        var segMinX = RenderCache.shared.barMarginRadius_Scaled
         for segMaxX in segsMaxX {
           if isRightOfKnob {
             drawSeg(rightColor, minX: segMinX, maxX: segMaxX)
@@ -317,18 +331,18 @@ class RenderCache {
           let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
           if isRightOfKnob || startX > leftClipMaxX {
             isRightOfKnob = true
-            rectsRight.append(CGRect(x: startX, y: Bar.scaledMarginRadius,
+            rectsRight.append(CGRect(x: startX, y: RenderCache.shared.barMarginRadius_Scaled,
                                      width: endX - startX, height: barHeight_Scaled))
           } else if endX > leftClipMaxX {
             isRightOfKnob = true
-            rectsLeft.append(CGRect(x: startX, y: Bar.scaledMarginRadius,
+            rectsLeft.append(CGRect(x: startX, y: RenderCache.shared.barMarginRadius_Scaled,
                                     width: leftClipMaxX - startX, height: barHeight_Scaled))
 
             let start2ndX = leftClipMaxX
-            rectsRight.append(CGRect(x: start2ndX, y: Bar.scaledMarginRadius,
+            rectsRight.append(CGRect(x: start2ndX, y: RenderCache.shared.barMarginRadius_Scaled,
                                      width: endX - start2ndX, height: barHeight_Scaled))
           } else {
-            rectsLeft.append(CGRect(x: startX, y: Bar.scaledMarginRadius,
+            rectsLeft.append(CGRect(x: startX, y: RenderCache.shared.barMarginRadius_Scaled,
                                     width: endX - startX, height: barHeight_Scaled))
           }
         }
@@ -365,19 +379,20 @@ class RenderCache {
     }
 
     static func imageRect(in drawRect: CGRect) -> CGRect {
-      let imgHeight = (2 * Bar.imgMarginRadius) + RenderCache.shared.barHeight
+      let margin = RenderCache.shared.barMarginRadius
+      let imgHeight = (2 * margin) + RenderCache.shared.barHeight
       // can be negative:
       let spareHeight = drawRect.height - imgHeight
       let y = drawRect.origin.y + (spareHeight * 0.5)
-      return CGRect(x: drawRect.origin.x - Bar.imgMarginRadius, y: y,
-                    width: drawRect.width + (2 * Bar.imgMarginRadius), height: imgHeight)
+      return CGRect(x: drawRect.origin.x - margin, y: y,
+                    width: drawRect.width + (2 * margin), height: imgHeight)
     }
 
     static func imgSizeScaled(_ barWidth: CGFloat, scaleFactor: CGFloat) -> CGSize {
-      let marginPairSum = (2 * Bar.imgMarginRadius)
+      let marginPairSum = (2 * RenderCache.shared.barMarginRadius)
       let size = CGSize(width: barWidth + marginPairSum, height: marginPairSum + RenderCache.shared.barHeight)
       return size.multiplyThenRound(scaleFactor)
     }
-  }
+  }  /// end `struct Bar`
 
 }

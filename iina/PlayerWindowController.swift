@@ -9,7 +9,6 @@
 import Cocoa
 
 // FIXME: add logic to music mode video toggle to preserve vid=0
-// FIXME: use proper layers when drawing sliders
 // FIXME: Add Sparkle back in
 // FIXME: handle PiP with multiple windows
 // TODO: support parent playlist
