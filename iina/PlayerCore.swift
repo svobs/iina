@@ -3142,13 +3142,11 @@ class PlayerCore: NSObject {
     syncUITicketCounter += 1
     let syncUITicket = syncUITicketCounter
 
-    DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submitInstantTask { [self] in
-        guard syncUITicket == syncUITicketCounter else {
-          return
-        }
-        windowController.updateUI()
+    windowController.animationPipeline.submitInstantTask { [self] in
+      guard syncUITicket == syncUITicketCounter else {
+        return
       }
+      windowController.updateUI()
     }
   }
 

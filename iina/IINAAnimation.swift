@@ -134,6 +134,13 @@ extension IINAAnimation {
     private(set) var isRunning = false
     private var taskQueue = LinkedList<(Int, Task)>()
 
+    // Convenience function. Run the task with no animation / zero duration.
+    // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
+    func submitInstantTask(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+      // TODO: investigate smart enqueuing in main queue
+      submit(.instantTask(runFunc), then: doAfter)
+    }
+
     /// Convenience function. Same as `submit(Task)`
     func submitTask(duration: CGFloat? = nil, timing timingName: CAMediaTimingFunctionName? = nil,
                     _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
@@ -146,17 +153,20 @@ extension IINAAnimation {
       submit([task], then: doAfter)
     }
 
-    // Convenience function. Run the task with no animation / zero duration.
-    // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
-    func submitInstantTask(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
-      // TODO: investigate smart enqueuing in main queue
-      submit(.instantTask(runFunc), then: doAfter)
-    }
-
     /// Recursive function which enqueues each of the given `AnimationTask`s for execution, one after another.
     /// Will execute without animation if motion reduction is enabled, or if wrapped in a call to `IINAAnimation.disableAnimation()`.
     /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `IINAAnimation.DefaultDuration`.
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
+      if DispatchQueue.isExecutingIn(.main) {
+        _submit(tasks, then: doAfter)
+      } else {
+        DispatchQueue.main.async { [self] in
+          _submit(tasks, then: doAfter)
+        }
+      }
+    }
+
+    func _submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       // Fail if not running on main thread:
       assert(DispatchQueue.isExecutingIn(.main))
 
