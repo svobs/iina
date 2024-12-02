@@ -54,7 +54,7 @@ extension PlayerCore {
         let oldVideoGeo = cxt.oldGeo.video
         guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
 
-        log.verbose("Changing videoGeo selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+        log.verbose("[applyVideoGeo \(cxt.name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
 
         let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
         sendOSD(.crop(osdLabel))
@@ -62,13 +62,14 @@ extension PlayerCore {
         return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
 
       }, then: { [self] in
-        /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
-        let addSucceeded = addVideoFilter(vf)
-        if !addSucceeded {
-          log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
-          _removeCrop()
+        mpv.queue.async { [self] in
+          /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
+          let addSucceeded = addVideoFilter(vf)
+          if !addSucceeded {
+            log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
+            _removeCrop()
+          }
         }
-        reloadQuickSettingsView()
       })
     }
 
@@ -92,15 +93,10 @@ extension PlayerCore {
       guard let cropFilter = oldVideoGeo.cropFilter else { return nil }
       guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
 
-      log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
+      log.verbose("[applyVideoGeo \(cxt.name)] Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
 
-      mpv.queue.async { [self] in
-        removeVideoFilter(cropFilter, verify: false, notify: false)
-      }
+      removeVideoFilter(cropFilter, verify: false, notify: false)
       return oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
-
-    }, then: { [self] in
-      reloadQuickSettingsView()
     })
   }
 
@@ -111,15 +107,12 @@ extension PlayerCore {
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
 
-      log.verbose("[applyVideoGeo:transform]: changing selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+      log.verbose("[applyVideoGeo \(cxt.name)] Changing selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
 
       return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
-
-    }, then: { [self] in
-      reloadQuickSettingsView()
     })
   }
 }

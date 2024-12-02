@@ -37,7 +37,7 @@ extension PlayerWindowController {
     switch sessionState {
     case .restoring(let priorState):
       if let priorLayoutSpec = priorState.layoutSpec {
-        log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from prior window state")
+        log.verbose("[applyVideoGeo \(cxt.name)] Transitioning to initial layout from prior window state")
 
         let initialLayoutSpec: LayoutSpec
         if priorLayoutSpec.isNativeFullScreen {
@@ -49,7 +49,7 @@ extension PlayerWindowController {
         }
         initialLayout = LayoutState.buildFrom(initialLayoutSpec)
       } else {
-        log.error("[applyVideoGeo FileOpen] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
+        log.error("[applyVideoGeo \(cxt.name)] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
         let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
         initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       }
@@ -61,7 +61,7 @@ extension PlayerWindowController {
 
     case .newReplacingExisting:
       initialLayout = currentLayout
-      log.verbose("[applyVideoGeo FileOpen] Opening a new file in an already open window, mode=\(initialLayout.mode)")
+      log.verbose("[applyVideoGeo \(cxt.name)] Opening a new file in an already open window, mode=\(initialLayout.mode)")
 
       /// `windowFrame` may be slightly off; update it
       if initialLayout.mode == .windowedNormal {
@@ -80,16 +80,16 @@ extension PlayerWindowController {
       tasks = []
 
     case .creatingNew:
-      log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from app prefs")
+      log.verbose("[applyVideoGeo \(cxt.name)] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowedNormal
 
       if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus.isAudio {
-        log.debug("[applyVideoGeo FileOpen] Opened media is audio: will auto-switch to music mode")
+        log.debug("[applyVideoGeo \(cxt.name)] Opened media is audio: will auto-switch to music mode")
         mode = .musicMode
       } else if Preference.bool(for: .fullScreenWhenOpen) {
         player.didEnterFullScreenViaUserToggle = false
         let useLegacyFS = Preference.bool(for: .useLegacyFullScreen)
-        log.debug("[applyVideoGeo] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+        log.debug("[applyVideoGeo \(cxt.name)] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
         if useLegacyFS {
           mode = .fullScreenNormal
         } else {
@@ -150,13 +150,13 @@ extension PlayerWindowController {
         // Need to switch to music mode?
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {
-            log.verbose("[applyVideoGeo FileOpen] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+            log.verbose("[applyVideoGeo \(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
           } else if currentMediaAudioStatus.isAudio && !isInMiniPlayer && !isFullScreen {
-            log.debug("[applyVideoGeo FileOpen] Opened media is audio: auto-switching to music mode")
+            log.debug("[applyVideoGeo \(cxt.name)] Opened media is audio: auto-switching to music mode")
             player.enterMusicMode(automatically: true, withNewVidGeo: newVidGeo)
             return  // do not even try to go to full screen if already going to music mode
           } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
-            log.debug("[applyVideoGeo FileOpen] Opened media is not audio: auto-switching to normal window")
+            log.debug("[applyVideoGeo \(cxt.name)] Opened media is not audio: auto-switching to normal window")
             player.exitMusicMode(automatically: true, withNewVidGeo: newVidGeo)
             return  // do not even try to go to full screen if already going to windowed mode
           }
@@ -164,7 +164,7 @@ extension PlayerWindowController {
 
         // Need to switch to full screen?
         if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
-          log.debug("[applyVideoGeo FileOpen] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+          log.debug("[applyVideoGeo \(cxt.name)] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
           enterFullScreen()
         }
       }
@@ -273,13 +273,10 @@ extension PlayerWindowController {
   private func configureFromPrefs(_ initialLayout: LayoutState, _ videoGeo: VideoGeometry) -> GeometrySet {
     // Should only be here if window is a new window or was previously closed. Copy layout from the last closed window
 
-    let windowedModeGeo: PWinGeometry
     let musicModeGeo = PlayerWindowController.musicModeGeoLastClosed.clone(video: videoGeo)
 
-    if initialLayout.isFullScreen {
-      windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
-
-    } else if initialLayout.isMusicMode {
+    let windowedModeGeo: PWinGeometry
+    if initialLayout.isFullScreen || initialLayout.isMusicMode {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
 
     } else {

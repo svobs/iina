@@ -1281,15 +1281,10 @@ class PlayerCore: NSObject {
 
     windowController.applyVideoGeoTransform("userRotation", { [self] cxt in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
-      log.verbose{"[applyVideoGeo] Applying userRotation: \(userRotation)"}
+      log.verbose{"[applyVideoGeo \(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
-
-    }, then: { [self] in
-      reloadQuickSettingsView()
-
-      saveState()
     })
   }
 
@@ -1325,20 +1320,15 @@ class PlayerCore: NSObject {
 
       // Send update to mpv
       let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
-      log.verbose{"[applyVideoGeo:transform] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
+      log.verbose{"[applyVideoGeo \(cxt.name)] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
       mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
 
       // FIXME: Default aspect needs i18n
       sendOSD(.aspect(aspectLabel))
 
       // Change video size:
-      log.verbose{"[applyVideoGeo:transform] changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
+      log.verbose{"[applyVideoGeo \(cxt.name)] changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
       return oldVideoGeo.clone(userAspectLabel: aspectLabel)
-
-    }, then: { [self] in
-      // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
-      // immediately changes the selection to "Default".
-      reloadQuickSettingsView()
     })
   }
 

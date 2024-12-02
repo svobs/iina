@@ -309,6 +309,9 @@ extension PlayerWindowController {
             // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
             updateWindowBorderAndOpacity()
           }
+          // Always do this in case the video geometry changed:
+          player.reloadQuickSettingsView()
+
           if let doAfter {
             doAfter()
           }
