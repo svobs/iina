@@ -73,7 +73,7 @@ class AboutWindowController: IINAWindowController, NSWindowDelegate {
     let (version, build) = InfoDictionary.shared.version
     versionLabel.stringValue = "\(version) Build \(build)"
 
-    mpvVersionLabel.stringValue = PlayerCoreManager.shared.getOrCreateDemo().mpv.mpvVersion
+    mpvVersionLabel.stringValue = PlayerManager.shared.getOrCreateDemo().mpv.mpvVersion
     ffmpegVersionLabel.stringValue = "FFmpeg \(String(cString: av_version_info()))"
 
     // Use a localized date for the build date.

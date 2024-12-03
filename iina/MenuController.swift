@@ -748,7 +748,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   private func updateOpenMenuItems() {
-    if PlayerCoreManager.shared.getNonIdle().count == 0 {
+    if PlayerManager.shared.getNonIdle().count == 0 {
       open.title = stringForOpen
       openAlternative.title = stringForOpen
       openURL.title = stringForOpenURL

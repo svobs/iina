@@ -1,5 +1,5 @@
 //
-//  PlayerCoreManager.swift
+//  PlayerManager.swift
 //  iina
 //
 //  Created by Matt Svoboda on 8/4/23.
@@ -8,8 +8,8 @@
 
 import Foundation
 
-class PlayerCoreManager {
-  static var shared = PlayerCoreManager()
+class PlayerManager {
+  static var shared = PlayerManager()
 
   private let lock = Lock()
   private var playerCoreCounter = 0
@@ -27,7 +27,7 @@ class PlayerCoreManager {
     return player
   }
 
-  weak var _lastActivePlayer: PlayerCore?
+  weak private var _lastActivePlayer: PlayerCore?
   var lastActivePlayer: PlayerCore? {
     get {
       lock.withLock {
@@ -89,7 +89,7 @@ class PlayerCoreManager {
     return player
   }
 
-  func _getOrCreateFirst() -> PlayerCore {
+  private func _getOrCreateFirst() -> PlayerCore {
     var core: PlayerCore
     if _playerCores.isEmpty {
       core = _createNewPlayerCore()

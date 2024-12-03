@@ -392,7 +392,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       return cell
     case .value:
       if let textField = cell.textField {
-        if let player = PlayerCoreManager.shared.lastActivePlayer, !player.isStopping, let value = player.mpv.getString(property) {
+        if let player = PlayerManager.shared.lastActivePlayer, !player.isStopping, let value = player.mpv.getString(property) {
           textField.stringValue = value
           textField.textColor = .labelColor
         } else {

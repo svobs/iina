@@ -97,7 +97,7 @@ struct AppInputConfig {
 
       AppInputConfig.lastStartedVersion = requestedVersion
 
-      let player = PlayerCoreManager.shared.activePlayer ?? PlayerCoreManager.shared.getOrCreateDemo()
+      let player = PlayerManager.shared.activePlayer ?? PlayerManager.shared.getOrCreateDemo()
       guard let activePlayerInputContext = player.keyBindingContext else {
         Logger.fatal("AppInputConfig.rebuildCurrent(): player has no keyBindingContext!")  // should never happen
       }

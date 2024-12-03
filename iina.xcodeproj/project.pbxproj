@@ -382,7 +382,7 @@
 		D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */; };
 		D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DDB28533EE700CF7B35 /* InputSection.swift */; };
 		D1FD62AE2CBF6FBA00FFCF21 /* CocoaObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD62AD2CBF6F8100FFCF21 /* CocoaObserver.swift */; };
-		D1FF15752A7E072200C0CE86 /* PlayerCoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15742A7E072200C0CE86 /* PlayerCoreManager.swift */; };
+		D1FF15752A7E072200C0CE86 /* PlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15742A7E072200C0CE86 /* PlayerManager.swift */; };
 		D1FF15772A7E35F300C0CE86 /* WindowAutosaveName.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15762A7E35F300C0CE86 /* WindowAutosaveName.swift */; };
 		D1FF15792A7FA6A300C0CE86 /* PlayerSaveState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */; };
 		D1FF157B2A7FAE9100C0CE86 /* UIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF157A2A7FAE9100C0CE86 /* UIState.swift */; };
@@ -1900,7 +1900,7 @@
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
 		D1FD2DDB28533EE700CF7B35 /* InputSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSection.swift; sourceTree = "<group>"; };
 		D1FD62AD2CBF6F8100FFCF21 /* CocoaObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaObserver.swift; sourceTree = "<group>"; };
-		D1FF15742A7E072200C0CE86 /* PlayerCoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCoreManager.swift; sourceTree = "<group>"; };
+		D1FF15742A7E072200C0CE86 /* PlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerManager.swift; sourceTree = "<group>"; };
 		D1FF15762A7E35F300C0CE86 /* WindowAutosaveName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAutosaveName.swift; sourceTree = "<group>"; };
 		D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSaveState.swift; sourceTree = "<group>"; };
 		D1FF157A2A7FAE9100C0CE86 /* UIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIState.swift; sourceTree = "<group>"; };
@@ -2890,7 +2890,7 @@
 			isa = PBXGroup;
 			children = (
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
-				D1FF15742A7E072200C0CE86 /* PlayerCoreManager.swift */,
+				D1FF15742A7E072200C0CE86 /* PlayerManager.swift */,
 				D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
 				D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */,
@@ -3397,7 +3397,7 @@
 				D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */,
 				D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */,
 				D1F2D93C2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift in Sources */,
-				D1FF15752A7E072200C0CE86 /* PlayerCoreManager.swift in Sources */,
+				D1FF15752A7E072200C0CE86 /* PlayerManager.swift in Sources */,
 				D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */,
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,
 				D16A434D2CDDB75B0012D66F /* RenderCache.swift in Sources */,

@@ -807,7 +807,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard playlistRowIndex < playlistItems.count else { return nil }
       return playlistItems[playlistRowIndex].url
     }
-    PlayerCoreManager.shared.getIdleOrCreateNew().openURLs(urlList)
+    PlayerManager.shared.getIdleOrCreateNew().openURLs(urlList)
   }
 
   @IBAction func contextMenuRemove(_ sender: ContextMenuItem) {

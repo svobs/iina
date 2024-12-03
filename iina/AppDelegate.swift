@@ -568,7 +568,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         showLogWindow(self)
         wc = logWindow
       case .playerWindow(let id):
-        guard let player = PlayerCoreManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
+        guard let player = PlayerManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
         wc = player.windowController
       case .newFilter, .editFilter, .saveFilter:
         log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
@@ -941,7 +941,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    if let activePlayer = PlayerCoreManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
+    if let activePlayer = PlayerManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
       return false
     }
 
@@ -1066,7 +1066,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     DispatchQueue.main.async { [self] in
       Logger.log.debug("Opening URLs (count: \(urls.count))")
       // open pending files
-      let player = PlayerCoreManager.shared.getActiveOrCreateNew()
+      let player = PlayerManager.shared.getActiveOrCreateNew()
       startup.wcForOpenFile = player.windowController
       if player.openURLs(urls) == 0 {
         abortWaitForOpenFilePlayerStartup()
@@ -1124,7 +1124,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     
     if parsed.scheme != "iina" {
       // try to open the URL directly
-      let player = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
+      let player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       startup.openFileCalled = true
       startup.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
@@ -1150,9 +1150,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // new_window
       let player: PlayerCore
       if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
-        player = PlayerCoreManager.shared.getIdleOrCreateNew()
+        player = PlayerManager.shared.getIdleOrCreateNew()
       } else {
-        player = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
+        player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       }
 
       startup.openFileCalled = true
@@ -1160,7 +1160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       // enqueue
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
-         let lastActivePlayer = PlayerCoreManager.shared.lastActivePlayer,
+         let lastActivePlayer = PlayerManager.shared.lastActivePlayer,
          !lastActivePlayer.info.playlist.isEmpty {
         lastActivePlayer.addToPlaylist(urlValue)
         lastActivePlayer.sendOSD(.addToPlaylist(1))
@@ -1261,7 +1261,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationDidBecomeActive(_ notfication: Notification) {
     // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
     // Make sure to add them again if they are missing:
-    for player in PlayerCoreManager.shared.playerCores {
+    for player in PlayerManager.shared.playerCores {
       if player.windowController.loaded && !player.isShutDown {
         player.windowController.updateTitle()
       }
@@ -1379,7 +1379,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             HistoryController.shared.noteNewRecentDocumentURLs(urls)
           }
         }
-        let playerCore = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction)
+        let playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction)
         if playerCore.openURLs(panel.urls) == 0 {
           Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
           Utility.showAlert("nothing_to_open")
@@ -1468,7 +1468,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private func startFromCommandLine() {
     var lastPlayerCore: PlayerCore? = nil
     let getNewPlayerCore = { [self] () -> PlayerCore in
-      let pc = PlayerCoreManager.shared.getIdleOrCreateNew()
+      let pc = PlayerManager.shared.getIdleOrCreateNew()
       commandLineStatus.applyMPVArguments(to: pc)
       lastPlayerCore = pc
       return pc

@@ -93,7 +93,7 @@ class DurationDisplayTextField: ClickThroughTextField {
     let precision = UInt(sender.tag)
     DurationDisplayTextField.precision = precision
     Preference.set(Int(precision), for: .timeDisplayPrecision)
-    PlayerCoreManager.shared.playerCores.forEach { core in
+    PlayerManager.shared.playerCores.forEach { core in
       core.refreshSyncUITimer()
     }
   }

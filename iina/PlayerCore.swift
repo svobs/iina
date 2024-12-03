@@ -31,7 +31,7 @@ class PlayerCore: NSObject {
     /// Whether shutdown of this player has been initiated.
     case shuttingDown
 
-    /// Whether shutdown of this player has completed (mpv has shutdown).
+    /// Whether shutdown of this player has completed (mpv has shut down).
     case shutDown
 
     func isAtLeast(_ minState: LifecycleState) -> Bool {
@@ -45,23 +45,24 @@ class PlayerCore: NSObject {
 
   // MARK: - Multiple instances
 
-  /// TODO: make `lastActive` and `active` Optional, so creating an uncessary player randomly at startup isn't needed
-
   /// - Important: Code referencing this property **must** be run on the main thread as getting the value of this property _may_
   ///              result in a reference the `active` property and that requires use of the main thread.
   static var lastActive: PlayerCore? {
     get {
-      return PlayerCoreManager.shared.lastActivePlayer
+      assert(DispatchQueue.isExecutingIn(.main))
+      return PlayerManager.shared.lastActivePlayer
     }
     set {
-      PlayerCoreManager.shared.lastActivePlayer = newValue
+      assert(DispatchQueue.isExecutingIn(.main))
+      PlayerManager.shared.lastActivePlayer = newValue
     }
   }
 
   /// - Important: Code referencing this property **must** be run on the main thread because it references
   ///              [NSApplication.windowController`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
   static var active: PlayerCore? {
-    return PlayerCoreManager.shared.activePlayer
+    assert(DispatchQueue.isExecutingIn(.main))
+    return PlayerManager.shared.activePlayer
   }
 
   static var mouseLocationAtLastOpen: NSPoint? = nil
@@ -168,7 +169,7 @@ class PlayerCore: NSObject {
   }
 
   var isActive: Bool {
-    return state.isAtLeast(.started) && state.isNotYet(.stopping) && state != .idle
+    return state.isAtLeast(.started) && state.isNotYet(.stopping)
   }
 
   var isShuttingDown: Bool {
@@ -231,7 +232,7 @@ class PlayerCore: NSObject {
   }
 
   var isOnlyOpenPlayer: Bool {
-    for player in PlayerCoreManager.shared.playerCores {
+    for player in PlayerManager.shared.playerCores {
       if player != self && player.windowController.isOpen {
         return false
       }
@@ -304,7 +305,7 @@ class PlayerCore: NSObject {
   // MARK: - Plugins
 
   static func reloadPluginForAll(_ plugin: JavascriptPlugin) {
-    PlayerCoreManager.shared.playerCores.forEach { $0.reloadPlugin(plugin) }
+    PlayerManager.shared.playerCores.forEach { $0.reloadPlugin(plugin) }
     AppDelegate.shared.menuController?.updatePluginMenu()
   }
 
@@ -640,7 +641,7 @@ class PlayerCore: NSObject {
       mpv.mpvDestroy()
     }
     state = .shutDown
-    PlayerCoreManager.shared.removePlayer(withLabel: label)
+    PlayerManager.shared.removePlayer(withLabel: label)
     postNotification(.iinaPlayerShutdown)
     if isMPVInitiated {
       // Initiate application termination. AppKit requires this be done from the main thread,
@@ -3717,7 +3718,7 @@ class PlayerCore: NSObject {
       SleepPreventer.allowSleep()
       return
     }
-    let playing = PlayerCoreManager.shared.getNonIdle()
+    let playing = PlayerManager.shared.getNonIdle()
     // Look for players actively playing that are not in music mode and are not just playing audio.
     for player in playing {
       guard player.info.isPlaying,

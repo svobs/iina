@@ -161,13 +161,13 @@ class ShutdownHandler {
     })
 
     // Instruct any players that are already stopped to start shutting down.
-    for player in PlayerCoreManager.shared.playerCores {
+    for player in PlayerManager.shared.playerCores {
       if !player.isShutDown {
         player.log.verbose("Requesting shutdown of player")
         player.shutdown()
       }
     }
-    if let player = PlayerCoreManager.shared.demoPlayer {
+    if let player = PlayerManager.shared.demoPlayer {
       if !player.isShutDown {
         player.log.verbose("Requesting shutdown of demo player")
         player.shutdown()
@@ -180,10 +180,10 @@ class ShutdownHandler {
   @objc
   private func shutdownDidTimeout() {
     shutdownTimedOut = true
-    if !PlayerCoreManager.shared.allPlayersShutdown {
+    if !PlayerManager.shared.allPlayersShutdown {
       Logger.log("Timed out waiting for players to stop and shut down", level: .warning)
       // For debugging list players that have not terminated.
-      for player in PlayerCoreManager.shared.playerCores {
+      for player in PlayerManager.shared.playerCores {
         let label = player.label
         if !player.isShutDown {
           Logger.log("Player \(label) failed to shut down", level: .warning)
@@ -211,7 +211,7 @@ class ShutdownHandler {
 
   private func isReadyToTerminate() -> Bool {
     // If any player has not shut down then continue waiting.
-    let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
+    let allPlayersShutdown = PlayerManager.shared.allPlayersShutdown
     let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
     // If still still saving playback history then continue waiting.
     let tasksOutstanding = HistoryController.shared.tasksOutstanding

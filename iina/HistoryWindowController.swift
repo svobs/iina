@@ -305,7 +305,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   @objc func doubleAction() {
     if let selected = outlineView.item(atRow: outlineView.clickedRow) as? PlaybackHistory {
-      let player = PlayerCoreManager.shared.getActiveOrCreateNew()
+      let player = PlayerManager.shared.getActiveOrCreateNew()
       player.openURL(selected.url)
     }
   }
@@ -481,12 +481,12 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   @IBAction func playAction(_ sender: AnyObject) {
     guard let firstEntry = selectedEntries.first else { return }
-    PlayerCoreManager.shared.getActiveOrCreateNew().openURL(firstEntry.url)
+    PlayerManager.shared.getActiveOrCreateNew().openURL(firstEntry.url)
   }
 
   @IBAction func playInNewWindowAction(_ sender: AnyObject) {
     guard let firstEntry = selectedEntries.first else { return }
-    PlayerCoreManager.shared.getIdleOrCreateNew().openURL(firstEntry.url)
+    PlayerManager.shared.getIdleOrCreateNew().openURL(firstEntry.url)
   }
 
   @IBAction func showInFinderAction(_ sender: AnyObject) {

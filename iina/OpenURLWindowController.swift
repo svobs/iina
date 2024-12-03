@@ -128,7 +128,7 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
                                   port: url.port)
       }
       window?.close()
-      PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction).openURL(url)
+      PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction).openURL(url)
     } else {
       Utility.showAlert("wrong_url_format")
     }

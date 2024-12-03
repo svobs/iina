@@ -82,7 +82,7 @@ class JavascriptAPIGlobalController: JavascriptAPI, JavascriptAPIGlobalControlle
       childAPIs[id]?.messageHub.callListener(forEvent: name, withDataObject: data.toObject())
     } else if target.isString {
       let label = target.toString()
-      if let pc = PlayerCoreManager.shared.playerCores.first(where: { $0.label == label }) {
+      if let pc = PlayerManager.shared.playerCores.first(where: { $0.label == label }) {
         let childPluginInstance = pc.plugins.first { $0.plugin == pluginInstance.plugin }!
         let childAPI = childPluginInstance.apis["global"] as! JavascriptAPIGlobalChild
         childAPI.messageHub.callListener(forEvent: name, withDataObject: data.toObject())
