@@ -63,9 +63,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: State
 
   var startupHandler = StartupHandler()
-  // TODO: roll this into Startup class
-  private var commandLineStatus = CommandLineStatus()
-
   private var shutdownHandler = ShutdownHandler()
 
   private var lastClosedWindowName: String = ""
@@ -277,10 +274,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
     observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main,
-                                                            using: self.windowIsReadyToShow))
+                                                            using: self.startupHandler.windowIsReadyToShow))
 
     observers.append(NotificationCenter.default.addObserver(forName: .windowMustCancelShow, object: nil, queue: .main,
-                                                            using: self.windowMustCancelShow))
+                                                            using: self.startupHandler.windowMustCancelShow))
 
     // Check for legacy pref entries and migrate them to their modern equivalents.
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives
@@ -290,7 +287,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     confTableStateManager.startUp()
 
     HistoryController.shared.start()
-    
+
     // register for url event
     NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
 
@@ -300,7 +297,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // handle command line arguments
     let arguments = ProcessInfo.processInfo.arguments.dropFirst()
     if !arguments.isEmpty {
-      parseCommandLine(arguments)
+      startupHandler.parseCommandLine(arguments)
     }
   }
 
@@ -338,64 +335,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
     UserDefaults.standard.addObserver(self, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
 
-    // Restore window state *before* hooking up the listener which saves state.
-    restoreWindowsFromPreviousLaunch()
-
-    if commandLineStatus.isCommandLine {
-      startFromCommandLine()
-    }
-
-    startupHandler.state = .doneEnqueuing
-    // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
-    showWindowsIfReady()
+    startupHandler.doStartup()
   }
 
-  private func showWindowsIfReady() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard startupHandler.state == .doneEnqueuing else { return }
-    guard startupHandler.wcsReady.count == startupHandler.wcsToRestore.count else {
-      restartRestoreTimer()
-      return
-    }
-    // TODO: change this to support multi-window open for multiple files
-    guard !startupHandler.openFileCalled || startupHandler.wcForOpenFile != nil else { return }
-    let log = Logger.Subsystem.restore
-
-    log.verbose("All \(startupHandler.wcsToRestore.count) restored \(startupHandler.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
-    startupHandler.restoreTimer?.invalidate()
-
-    for wc in startupHandler.wcsToRestore {
-      if !(wc.window?.isMiniaturized ?? false) {
-        wc.showWindow(self)  // orders the window to the front
-      }
-    }
-    if let wcForOpenFile = startupHandler.wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
-      wcForOpenFile.showWindow(self)  // open last, thus making frontmost
-    }
-
-    if startupHandler.restoreOpenFileWindow {
-      // TODO: persist isAlternativeAction too
-      showOpenFileWindow(isAlternativeAction: false)
-    }
-
-    let didRestoreSomething = !startupHandler.wcsToRestore.isEmpty
-
-    if Preference.bool(for: .isRestoreInProgress) {
-      log.verbose("Done restoring windows")
-      Preference.set(false, for: .isRestoreInProgress)
-    }
-
-    startupHandler.state = .doneOpening
-
-    let didOpenSomething = didRestoreSomething || startupHandler.wcForOpenFile != nil
-    if !commandLineStatus.isCommandLine && !didOpenSomething {
-      // Fall back to default action:
-      doLaunchOrReopenAction()
-    }
-
-    /// Make sure to do this *after* `startupHandler.state = .doneOpening`:
-    dismissTimeoutAlertPanel()
-
+  /// Called by `startupHandler.showWindowsIfReady` when all restored windows are ready, or not restoring.
+  func addObserversAndActivateApp() {
     Logger.log("Adding window observers")
 
     // The "action on last window closed" action will vary slightly depending on which type of window was closed.
@@ -435,317 +379,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     NSApplication.shared.servicesProvider = self
   }
 
-  /// Returns `true` if any windows were restored; `false` otherwise.
-  @discardableResult
-  private func restoreWindowsFromPreviousLaunch() -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
-
-    guard UIState.shared.isRestoreEnabled else {
-      log.debug("Restore is disabled. Wll not restore windows")
-      return false
-    }
-
-    if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
-      log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
-      UIState.shared.disableSaveAndRestoreUntilNextLaunch()
-      return false
-    }
-
-    let pastLaunches: [UIState.LaunchState] = UIState.shared.collectLaunchStateForRestore()
-    log.verbose("Found \(pastLaunches.count) past launches to restore")
-    if pastLaunches.isEmpty {
-      return false
-    }
-
-    let stopwatch = Utility.Stopwatch()
-
-    let isRestoreApproved = checkForRestoreApproval()
-    if !isRestoreApproved {
-      // Clear out old state. It may have been causing errors, or user wants to start new
-      log.debug("User denied restore. Clearing all saved launch state.")
-      UIState.shared.clearAllSavedLaunches()
-      Preference.set(false, for: .isRestoreInProgress)
-      return false
-    }
-
-    // If too much time has passed (in particular if user took a long time to respond to confirmation dialog), consider the data stale.
-    // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
-    // Users who are quick with their user interface device probably know what they are doing and will be impatient.
-    let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
-    let savedWindowsBackToFront = UIState.shared.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
-
-    guard !savedWindowsBackToFront.isEmpty else {
-      log.debug("Nothing to restore: stored window list empty")
-      return false
-    }
-
-    if savedWindowsBackToFront.count == 1 {
-      let onlyWindow = savedWindowsBackToFront[0].saveName
-
-      if onlyWindow == WindowAutosaveName.inspector {
-        // Do not restore this on its own
-        log.verbose("Nothing to restore: only open window was Inspector")
-        return false
-      }
-
-      let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
-      if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
-          || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
-          || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        log.verbose("Nothing to restore: the only open window was identical to launch action (\(action))")
-        // Skip the prompts below because they are just unnecessary nagging
-        return false
-      }
-    }
-
-    log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
-    Preference.set(true, for: .isRestoreInProgress)
-
-    // Show windows one by one, starting at back and iterating to front:
-    for savedWindow in savedWindowsBackToFront {
-      log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
-
-      let wc: NSWindowController
-      switch savedWindow.saveName {
-      case .playbackHistory:
-        showHistoryWindow(self)
-        wc = historyWindow
-      case .welcome:
-        showWelcomeWindow()
-        wc = initialWindow
-      case .preferences:
-        showPreferencesWindow(self)
-        wc = preferenceWindowController
-      case .about:
-        showAboutWindow(self)
-        wc = aboutWindow
-      case .openFile:
-        // No windowController for Open File window. Set flag instead
-        startupHandler.restoreOpenFileWindow = true
-        UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
-        continue
-      case .openURL:
-        // TODO: persist isAlternativeAction too
-        showOpenURLWindow(isAlternativeAction: true)
-        wc = openURLWindow
-      case .inspector:
-        // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
-        // So just mark it as 'ready' and show with the rest when they are ready.
-        wc = inspector
-        startupHandler.wcsReady.insert(wc)
-      case .videoFilter:
-        showVideoFilterWindow(self)
-        wc = vfWindow
-      case .audioFilter:
-        showAudioFilterWindow(self)
-        wc = afWindow
-      case .logViewer:
-        showLogWindow(self)
-        wc = logWindow
-      case .playerWindow(let id):
-        guard let player = PlayerManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
-        wc = player.windowController
-      case .newFilter, .editFilter, .saveFilter:
-        log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
-        continue
-      default:
-        log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
-        continue
-      }
-
-      // Rebuild window maps as we go:
-      if savedWindow.isMinimized {
-        // No need worry about partial draws while minimized, so no need to add to wcsToRestore
-        wc.window?.miniaturize(self)
-        UIState.shared.windowsMinimized.insert(savedWindow.saveName.string)
-      } else {
-        // Add to list of windows to wait for, so we can show them all nicely
-        startupHandler.wcsToRestore.append(wc)
-        UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
-      }
-    }
-
-    return !startupHandler.wcsToRestore.isEmpty
-  }
-
-  /// If this returns true, restore should be attempted using the saved launch state.
-  /// If false is returned, then the saved launch state should be deleted and app should launch fresh.
-  private func checkForRestoreApproval() -> Bool {
-#if DEBUG
-    if DebugConfig.alwaysApproveRestore {
-      // skip approval to make testing easier
-      return true
-    }
-#endif
-
-    if Preference.bool(for: .isRestoreInProgress) {
-      // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
-      // Let user decide whether to try again or delete saved state.
-      Logger.Subsystem.restore.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
-      return Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
-    }
-
-    if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
-      Logger.Subsystem.restore.verbose("Prompting user whether to restore app state, per pref")
-      return Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
-    }
-    return true
-  }
-
-  @objc
-  func restoreTimedOut() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
-    guard startupHandler.state == .doneEnqueuing else {
-      log.error("Restore timed out but state is \(startupHandler.state)")
-      return
-    }
-
-    let namesReady = startupHandler.wcsReady.compactMap{$0.window?.savedStateName}
-    let wcsStalled: [NSWindowController] = startupHandler.wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
-    var namesStalled: [String] = []
-    for (index, wc) in wcsStalled.enumerated() {
-      let winID = wc.window!.savedStateName
-      let str: String
-      if index > Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
-        break
-      } else if index == Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
-        str = "…"
-      } else if let path = (wc as? PlayerWindowController)?.player.info.currentPlayback?.path {
-        str = "\(index+1). \(path.quoted)  [\(winID)]"
-      } else {
-        str = "\(index+1). \(winID)"
-      }
-      namesStalled.append(str)
-    }
-
-    log.debug("Restore timed out. Progress: \(namesReady.count)/\(startupHandler.wcsToRestore.count). Stalled: \(namesStalled)")
-    log.debug("Prompting user whether to discard them & continue, or quit")
-
-    let countFailed = "\(wcsStalled.count)"
-    let countTotal = "\(startupHandler.wcsToRestore.count)"
-    let namesStalledString = namesStalled.joined(separator: "\n")
-    let msgArgs = [countFailed, countTotal, namesStalledString]
-    let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, alertStyle: .critical)
-    startupHandler.restoreTimeoutAlertPanel = askPanel
-    let userResponse = askPanel.runModal()  // this will block for an indeterminate time
-
-    switch userResponse {
-    case .alertFirstButtonReturn:
-      log.debug("User chose button 1: keep waiting")
-      guard startupHandler.state != .doneOpening else {
-        log.debug("Looks like windows finished opening - no need to restart restore timer")
-        return
-      }
-      restartRestoreTimer()
-
-    case .alertSecondButtonReturn:
-      log.debug("User chose button 2: discard stalled windows & continue with partial restore")
-      startupHandler.restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
-      guard startupHandler.state != .doneOpening else {
-        log.debug("Looks like windows finished opening - no need to close anything")
-        return
-      }
-      for wcStalled in wcsStalled {
-        guard !startupHandler.wcsReady.contains(wcStalled) else {
-          log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
-          continue
-        }
-        log.verbose("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
-        if let pWin = wcStalled as? PlayerWindowController {
-          /// This will guarantee `windowMustCancelShow` notification is sent
-          pWin.player.closeWindow()
-        } else {
-          wcStalled.close()
-          // explicitly call this, as the line above may fail
-          wcStalled.window?.postWindowMustCancelShow()
-        }
-      }
-
-    case .alertThirdButtonReturn:
-      log.debug("User chose button 3: quit")
-      NSApp.terminate(nil)
-
-    default:
-      log.fatalError("User responded to Restore Timeout alert with unrecognized choice!")
-    }
-  }
-
-  private func dismissTimeoutAlertPanel() {
-    guard let restoreTimeoutAlertPanel = startupHandler.restoreTimeoutAlertPanel else { return }
-
-    /// Dismiss the prompt (if any). It seems we can't just call `close` on its `window` object, because the
-    /// responder chain is left unusable. Instead, click its default button after setting `startupHandler.state`.
-    let keepWaitingBtn = restoreTimeoutAlertPanel.buttons[0]
-    keepWaitingBtn.performClick(self)
-    startupHandler.restoreTimeoutAlertPanel = nil
-
-    /// This may restart the timer if not in the correct state, so account for that.
-  }
-
-  private func restartRestoreTimer() {
-    startupHandler.restoreTimer?.invalidate()
-
-    dismissTimeoutAlertPanel()
-
-    startupHandler.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
-                                                target: self, selector: #selector(self.restoreTimedOut), userInfo: nil, repeats: false)
-  }
-
-  private func abortWaitForOpenFilePlayerStartup() {
-    Logger.log.verbose("Aborting wait for Open File player startup")
-    startupHandler.openFileCalled = false
-    startupHandler.wcForOpenFile = nil
-    showWindowsIfReady()
-  }
-
-  // MARK: - Window notifications
-
-  /// Window is done loading and is ready to show.
-  private func windowIsReadyToShow(_ notification: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
-
-    guard let window = notification.object as? NSWindow else { return }
-    guard let wc = window.windowController else {
-      log.error("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!")
-      return
-    }
-
-    if Preference.bool(for: .isRestoreInProgress) {
-      startupHandler.wcsReady.insert(wc)
-
-      log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startupHandler.wcsReady.count)/\(startupHandler.state == .doneEnqueuing ? "\(startupHandler.wcsToRestore.count)" : "?")")
-
-      // Show all windows if ready
-      showWindowsIfReady()
-    } else if window.isMiniaturized {
-      log.verbose("OpenWindow: demiseiniaturizing window \(window.savedStateName.quoted)")
-      // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)
-      window.deminiaturize(self)
-    } else {
-      log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
-      wc.showWindow(window)
-    }
-  }
-
-  /// Window failed to load. Stop waiting for it
-  private func windowMustCancelShow(_ notification: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard let window = notification.object as? NSWindow else { return }
-    let log = Logger.Subsystem.restore
-
-    guard Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(startupHandler.wcsReady.count)/\(startupHandler.state == .doneEnqueuing ? "\(startupHandler.wcsToRestore.count)" : "?")")
-
-    // No longer waiting for this window
-    startupHandler.wcsToRestore.removeAll(where: { wc in
-      wc.window!.savedStateName == window.savedStateName
-    })
-
-    showWindowsIfReady()
-  }
+  // MARK: - Window Notifications
 
   /// Sheet window is opening. Track it like a regular window.
   ///
@@ -809,7 +443,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // This notification can sometimes happen if the app had multiple windows at shutdown.
       // We will ignore it in this case, because this is exactly the case that we want to save!
       guard !isTerminating else { return }
-      
+
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
       if UIState.shared.windowsMinimized.remove(activeWindowName) != nil {
@@ -1028,7 +662,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
-    
+
     // if installing a plugin package
     if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
       Logger.log("Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)")
@@ -1045,7 +679,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       let player = PlayerManager.shared.getActiveOrCreateNew()
       startupHandler.wcForOpenFile = player.windowController
       if player.openURLs(urls) == 0 {
-        abortWaitForOpenFilePlayerStartup()
+        startupHandler.abortWaitForOpenFilePlayerStartup()
 
         Logger.log("Notifying user nothing was opened", level: .verbose)
         Utility.showAlert("nothing_to_open")
@@ -1064,7 +698,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startupHandler.openFileCalled = true
     startupHandler.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
-      abortWaitForOpenFilePlayerStartup()
+      startupHandler.abortWaitForOpenFilePlayerStartup()
     }
   }
 
@@ -1089,7 +723,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
    - `full_screen`: 0 (default) or 1 to indicate whether open the media and enter fullscreen.
    - `pip`: 0 (default) or 1 to indicate whether open the media and enter pip.
    - `mpv_*`: additional mpv options to be passed. e.g. `mpv_volume=20`.
-     Options starting with `no-` are not supported.
+   Options starting with `no-` are not supported.
    */
   private func parsePendingURL(_ url: String) {
     Logger.log("Parsing URL \(url.pii)")
@@ -1097,18 +731,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Cannot parse URL using URLComponents", level: .warning)
       return
     }
-    
+
     if parsed.scheme != "iina" {
       // try to open the URL directly
       let player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       startupHandler.openFileCalled = true
       startupHandler.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
-        abortWaitForOpenFilePlayerStartup()
+        startupHandler.abortWaitForOpenFilePlayerStartup()
       }
       return
     }
-    
+
     // handle url scheme
     guard let host = parsed.host else { return }
 
@@ -1142,7 +776,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         lastActivePlayer.sendOSD(.addToPlaylist(1))
       } else {
         if player.openURLString(urlValue) == 0 {
-          abortWaitForOpenFilePlayerStartup()
+          startupHandler.abortWaitForOpenFilePlayerStartup()
         }
       }
 
@@ -1186,7 +820,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return true
   }
 
-  private func doLaunchOrReopenAction() {
+  func doLaunchOrReopenAction() {
     guard startupHandler.state == .doneOpening else {
       Logger.log.verbose("Still starting up; skipping actionAfterLaunch")
       return
@@ -1268,7 +902,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let screenshotPath = Preference.string(for: .screenshotFolder)!
     let absoluteScreenshotPath = NSString(string: screenshotPath).expandingTildeInPath
     let url = URL(fileURLWithPath: absoluteScreenshotPath, isDirectory: true)
-      NSWorkspace.shared.open(url)
+    NSWorkspace.shared.open(url)
   }
 
   @IBAction func menuSelectAudioDevice(_ sender: NSMenuItem) {
@@ -1391,173 +1025,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @IBAction
   func clearRecentDocuments(_ sender: Any?) {
     HistoryController.shared.clearRecentDocuments(sender)
-  }
-
-  // MARK: - Command Line
-  // TODO: refactor to put this all in CommandLineStatus class
-  private func parseCommandLine(_ args: ArraySlice<String>) {
-    var iinaArgs: [String] = []
-    var iinaArgFilenames: [String] = []
-    var dropNextArg = false
-
-    Logger.log("Command-line arguments \("\(args)".pii)")
-    for arg in args {
-      if dropNextArg {
-        dropNextArg = false
-        continue
-      }
-      if arg.first == "-" {
-        let indexAfterDash = arg.index(after: arg.startIndex)
-        if indexAfterDash == arg.endIndex {
-          // single '-'
-          commandLineStatus.isStdin = true
-        } else if arg[indexAfterDash] == "-" {
-          // args starting with --
-          iinaArgs.append(arg)
-        } else {
-          // args starting with -
-          dropNextArg = true
-        }
-      } else {
-        // assume args starting with nothing is a filename
-        iinaArgFilenames.append(arg)
-      }
-    }
-
-    commandLineStatus.parseArguments(iinaArgs)
-    Logger.log("Filenames from args: \(iinaArgFilenames)")
-    Logger.log("Derived mpv properties from args: \(commandLineStatus.mpvArguments)")
-
-    print(InfoDictionary.shared.printableBuildInfo)
-
-    guard !iinaArgFilenames.isEmpty || commandLineStatus.isStdin else {
-      print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
-      print("Please ignore this message if you are running in a debug environment.")
-      return
-    }
-
-    startupHandler.shouldIgnoreOpenFile = true
-    commandLineStatus.isCommandLine = true
-    commandLineStatus.filenames = iinaArgFilenames
-  }
-
-  private func startFromCommandLine() {
-    var lastPlayerCore: PlayerCore? = nil
-    let getNewPlayerCore = { [self] () -> PlayerCore in
-      let pc = PlayerManager.shared.getIdleOrCreateNew()
-      commandLineStatus.applyMPVArguments(to: pc)
-      lastPlayerCore = pc
-      return pc
-    }
-    if commandLineStatus.isStdin {
-      getNewPlayerCore().openURLString("-")
-    } else {
-      let validFileURLs: [URL] = commandLineStatus.filenames.compactMap { filename in
-        if Regex.url.matches(filename) {
-          return URL(string: filename.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? filename)
-        } else {
-          return FileManager.default.fileExists(atPath: filename) ? URL(fileURLWithPath: filename) : nil
-        }
-      }
-      guard !validFileURLs.isEmpty else {
-        Logger.log("No valid file URLs provided via command line! Nothing to do", level: .error)
-        return
-      }
-
-      if commandLineStatus.openSeparateWindows {
-        validFileURLs.forEach { url in
-          getNewPlayerCore().openURL(url)
-        }
-      } else {
-        getNewPlayerCore().openURLs(validFileURLs)
-      }
-    }
-
-    if let pc = lastPlayerCore {
-      if commandLineStatus.enterMusicMode {
-        Logger.log("Entering music mode as specified via command line", level: .verbose)
-        if commandLineStatus.enterPIP {
-          // PiP is not supported in music mode. Combining these options is not permitted and is
-          // rejected by iina-cli. The IINA executable must have been invoked directly with
-          // arguments.
-          Logger.log("Cannot specify both --music-mode and --pip", level: .error)
-          // Command line usage error.
-          exit(EX_USAGE)
-        }
-        pc.enterMusicMode()
-      } else if commandLineStatus.enterPIP {
-        Logger.log("Entering PIP as specified via command line", level: .verbose)
-        pc.windowController.enterPIP()
-      }
-    }
-  }
-}
-
-
-struct CommandLineStatus {
-  var isCommandLine = false
-  var isStdin = false
-  var openSeparateWindows = false
-  var enterMusicMode = false
-  var enterPIP = false
-  var mpvArguments: [(String, String)] = []
-  var iinaArguments: [(String, String)] = []
-  var filenames: [String] = []
-
-  mutating func parseArguments(_ args: [String]) {
-    mpvArguments.removeAll()
-    iinaArguments.removeAll()
-    for arg in args {
-      let splitted = arg.dropFirst(2).split(separator: "=", maxSplits: 1)
-      let name = String(splitted[0])
-      if (name.hasPrefix("mpv-")) {
-        // mpv args
-        let strippedName = String(name.dropFirst(4))
-        if strippedName == "-" {
-          isStdin = true
-        } else {
-          let argPair: (String, String)
-          if splitted.count <= 1 {
-            argPair = (strippedName, "yes")
-          } else {
-            argPair = (strippedName, String(splitted[1]))
-          }
-          mpvArguments.append(argPair)
-        }
-      } else {
-        // other args
-        if splitted.count <= 1 {
-          iinaArguments.append((name, "yes"))
-        } else {
-          iinaArguments.append((name, String(splitted[1])))
-        }
-        if name == "stdin" {
-          isStdin = true
-        }
-        if name == "separate-windows" {
-          openSeparateWindows = true
-        }
-        if name == "music-mode" {
-          enterMusicMode = true
-        }
-        if name == "pip" {
-          enterPIP = true
-        }
-      }
-    }
-  }
-
-  func applyMPVArguments(to playerCore: PlayerCore) {
-    Logger.log("Setting mpv properties from arguments: \(mpvArguments)")
-    for argPair in mpvArguments {
-      if argPair.0 == "shuffle" && argPair.1 == "yes" {
-        // Special handling for this one
-        Logger.log("Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist")
-        playerCore.addShufflePlaylistHook()
-        continue
-      }
-      playerCore.mpv.setString(argPair.0, argPair.1)
-    }
   }
 }
 
