@@ -2258,7 +2258,7 @@ class PlayerCore: NSObject {
       }
 
       if RemoteCommandController.shared.useSystemMediaControl {
-        NowPlayingInfoManager.updateInfo(withTitle: true)
+        NowPlayingInfoManager.updateInfo()
       }
     }
 
@@ -3757,23 +3757,25 @@ class NowPlayingInfoManager {
   ///         for more information.
   ///
   /// - Important: This method **must** be run on the main thread because it references `PlayerCore.lastActive`.
-  static func updateInfo(state: MPNowPlayingPlaybackState? = nil, withTitle: Bool = false) {
+  static func updateInfo() {
     let center = MPNowPlayingInfoCenter.default()
     var info = center.nowPlayingInfo ?? [String: Any]()
 
-    guard let activePlayer = PlayerCore.lastActive, !activePlayer.isStopping else { return }
+    guard let activePlayer = PlayerCore.lastActive, !activePlayer.isStopping else {
+      center.playbackState = .unknown
+      center.nowPlayingInfo = nil
+      return
+    }
 
-    if withTitle {
-      if activePlayer.info.currentMediaAudioStatus.isAudio {
-        info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
-        let (title, album, artist) = activePlayer.getMusicMetadata()
-        info[MPMediaItemPropertyTitle] = title
-        info[MPMediaItemPropertyAlbumTitle] = album
-        info[MPMediaItemPropertyArtist] = artist
-      } else {
-        info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
-        info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
-      }
+    if activePlayer.info.currentMediaAudioStatus.isAudio {
+      info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+      let (title, album, artist) = activePlayer.getMusicMetadata()
+      info[MPMediaItemPropertyTitle] = title
+      info[MPMediaItemPropertyAlbumTitle] = album
+      info[MPMediaItemPropertyArtist] = artist
+    } else {
+      info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
+      info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
     }
 
     let duration = activePlayer.info.playbackDurationSec ?? 0
@@ -3787,9 +3789,7 @@ class NowPlayingInfoManager {
 
     center.nowPlayingInfo = info
 
-    if state != nil {
-      center.playbackState = state!
-    } else if activePlayer.info.isFileLoaded {
+    if activePlayer.info.isFileLoaded {
       center.playbackState = activePlayer.info.isPaused ? .paused : .playing
     } else {
       center.playbackState = .unknown

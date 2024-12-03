@@ -1340,7 +1340,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         PlayerCore.lastActive = player
 
         if RemoteCommandController.shared.useSystemMediaControl {
-          NowPlayingInfoManager.updateInfo(withTitle: true)
+          NowPlayingInfoManager.updateInfo()
         }
         AppDelegate.shared.menuController?.updatePluginMenu()
 
@@ -1938,7 +1938,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Update status in menu bar menu (if enabled)
     if RemoteCommandController.shared.useSystemMediaControl {
-      NowPlayingInfoManager.updateInfo(withTitle: true)
+      NowPlayingInfoManager.updateInfo()
     }
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in

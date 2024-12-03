@@ -253,7 +253,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     RemoteCommandController.shared.update()
     if RemoteCommandController.shared.useSystemMediaControl {
-      NowPlayingInfoManager.updateInfo(state: .unknown, withTitle: true)
+      NowPlayingInfoManager.updateInfo()
     }
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
@@ -410,6 +410,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       player.windowController.windowWillClose()
       // Player window was closed; need to remove some additional state
       player.clearSavedState()
+
+      if !isTerminating && RemoteCommandController.shared.useSystemMediaControl {
+        NowPlayingInfoManager.updateInfo()
+      }
     }
 
     if window.isOnlyOpenWindow {
