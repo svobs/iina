@@ -17,34 +17,6 @@ fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
 fileprivate let AlternativeMenuItemTag = 1
 
-class Startup {
-
-  enum OpenWindowsState: Int {
-    case stillEnqueuing = 1
-    case doneEnqueuing
-    case doneOpening
-  }
-
-  var state: OpenWindowsState = .stillEnqueuing
-
-  var restoreTimer: Timer? = nil
-  var restoreTimeoutAlertPanel: NSAlert? = nil
-
-  /**
-   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
-   Mainly used to distinguish normal launches from others triggered by drag-and-dropping files.
-   */
-  var openFileCalled = false
-  var shouldIgnoreOpenFile = false
-
-  /// Try to wait until all windows are ready so that we can show all of them at once.
-  /// Make sure order of `wcsToRestore` is from back to front to restore the order properly
-  var wcsToRestore: [NSWindowController] = []
-  var wcForOpenFile: PlayerWindowController? = nil
-
-  var wcsReady = Set<NSWindowController>()
-}
-
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
@@ -90,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: State
 
-  var startup = Startup()
+  var startupHandler = StartupHandler()
   // TODO: roll this into Startup class
   private var commandLineStatus = CommandLineStatus()
 
@@ -373,50 +345,55 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       startFromCommandLine()
     }
 
-    startup.state = .doneEnqueuing
+    startupHandler.state = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     showWindowsIfReady()
   }
 
   private func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard startup.state == .doneEnqueuing else { return }
-    guard startup.wcsReady.count == startup.wcsToRestore.count else {
+    guard startupHandler.state == .doneEnqueuing else { return }
+    guard startupHandler.wcsReady.count == startupHandler.wcsToRestore.count else {
       restartRestoreTimer()
       return
     }
-    // TODO: change this for multi-window open
-    guard !startup.openFileCalled || startup.wcForOpenFile != nil else { return }
+    // TODO: change this to support multi-window open for multiple files
+    guard !startupHandler.openFileCalled || startupHandler.wcForOpenFile != nil else { return }
     let log = Logger.Subsystem.restore
 
-    log.verbose("All \(startup.wcsToRestore.count) restored \(startup.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
-    startup.restoreTimer?.invalidate()
+    log.verbose("All \(startupHandler.wcsToRestore.count) restored \(startupHandler.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
+    startupHandler.restoreTimer?.invalidate()
 
-    for wc in startup.wcsToRestore {
+    for wc in startupHandler.wcsToRestore {
       if !(wc.window?.isMiniaturized ?? false) {
         wc.showWindow(self)  // orders the window to the front
       }
     }
-    if let wcForOpenFile = startup.wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
+    if let wcForOpenFile = startupHandler.wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
       wcForOpenFile.showWindow(self)  // open last, thus making frontmost
     }
 
-    let didRestoreSomething = !startup.wcsToRestore.isEmpty
+    if startupHandler.restoreOpenFileWindow {
+      // TODO: persist isAlternativeAction too
+      showOpenFileWindow(isAlternativeAction: false)
+    }
+
+    let didRestoreSomething = !startupHandler.wcsToRestore.isEmpty
 
     if Preference.bool(for: .isRestoreInProgress) {
       log.verbose("Done restoring windows")
       Preference.set(false, for: .isRestoreInProgress)
     }
 
-    startup.state = .doneOpening
+    startupHandler.state = .doneOpening
 
-    let didOpenSomething = didRestoreSomething || startup.wcForOpenFile != nil
+    let didOpenSomething = didRestoreSomething || startupHandler.wcForOpenFile != nil
     if !commandLineStatus.isCommandLine && !didOpenSomething {
       // Fall back to default action:
       doLaunchOrReopenAction()
     }
 
-    /// Make sure to do this *after* `startup.state = .doneOpening`:
+    /// Make sure to do this *after* `startupHandler.state = .doneOpening`:
     dismissTimeoutAlertPanel()
 
     Logger.log("Adding window observers")
@@ -544,10 +521,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         showAboutWindow(self)
         wc = aboutWindow
       case .openFile:
-        // TODO: persist isAlternativeAction too
-        showOpenFileWindow(isAlternativeAction: true)
-        // No windowController for Open File window; will have to show it immediately
-        // TODO: show with others
+        // No windowController for Open File window. Set flag instead
+        startupHandler.restoreOpenFileWindow = true
+        UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
         continue
       case .openURL:
         // TODO: persist isAlternativeAction too
@@ -557,7 +533,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
         // So just mark it as 'ready' and show with the rest when they are ready.
         wc = inspector
-        startup.wcsReady.insert(wc)
+        startupHandler.wcsReady.insert(wc)
       case .videoFilter:
         showVideoFilterWindow(self)
         wc = vfWindow
@@ -585,12 +561,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         UIState.shared.windowsMinimized.insert(savedWindow.saveName.string)
       } else {
         // Add to list of windows to wait for, so we can show them all nicely
-        startup.wcsToRestore.append(wc)
+        startupHandler.wcsToRestore.append(wc)
         UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
       }
     }
 
-    return !startup.wcsToRestore.isEmpty
+    return !startupHandler.wcsToRestore.isEmpty
   }
 
   /// If this returns true, restore should be attempted using the saved launch state.
@@ -621,13 +597,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func restoreTimedOut() {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
-    guard startup.state == .doneEnqueuing else {
-      log.error("Restore timed out but state is \(startup.state)")
+    guard startupHandler.state == .doneEnqueuing else {
+      log.error("Restore timed out but state is \(startupHandler.state)")
       return
     }
 
-    let namesReady = startup.wcsReady.compactMap{$0.window?.savedStateName}
-    let wcsStalled: [NSWindowController] = startup.wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
+    let namesReady = startupHandler.wcsReady.compactMap{$0.window?.savedStateName}
+    let wcsStalled: [NSWindowController] = startupHandler.wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
     var namesStalled: [String] = []
     for (index, wc) in wcsStalled.enumerated() {
       let winID = wc.window!.savedStateName
@@ -644,21 +620,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       namesStalled.append(str)
     }
 
-    log.debug("Restore timed out. Progress: \(namesReady.count)/\(startup.wcsToRestore.count). Stalled: \(namesStalled)")
+    log.debug("Restore timed out. Progress: \(namesReady.count)/\(startupHandler.wcsToRestore.count). Stalled: \(namesStalled)")
     log.debug("Prompting user whether to discard them & continue, or quit")
 
     let countFailed = "\(wcsStalled.count)"
-    let countTotal = "\(startup.wcsToRestore.count)"
+    let countTotal = "\(startupHandler.wcsToRestore.count)"
     let namesStalledString = namesStalled.joined(separator: "\n")
     let msgArgs = [countFailed, countTotal, namesStalledString]
     let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, alertStyle: .critical)
-    startup.restoreTimeoutAlertPanel = askPanel
+    startupHandler.restoreTimeoutAlertPanel = askPanel
     let userResponse = askPanel.runModal()  // this will block for an indeterminate time
 
     switch userResponse {
     case .alertFirstButtonReturn:
       log.debug("User chose button 1: keep waiting")
-      guard startup.state != .doneOpening else {
+      guard startupHandler.state != .doneOpening else {
         log.debug("Looks like windows finished opening - no need to restart restore timer")
         return
       }
@@ -666,13 +642,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     case .alertSecondButtonReturn:
       log.debug("User chose button 2: discard stalled windows & continue with partial restore")
-      startup.restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
-      guard startup.state != .doneOpening else {
+      startupHandler.restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
+      guard startupHandler.state != .doneOpening else {
         log.debug("Looks like windows finished opening - no need to close anything")
         return
       }
       for wcStalled in wcsStalled {
-        guard !startup.wcsReady.contains(wcStalled) else {
+        guard !startupHandler.wcsReady.contains(wcStalled) else {
           log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
           continue
         }
@@ -697,30 +673,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func dismissTimeoutAlertPanel() {
-    guard let restoreTimeoutAlertPanel = startup.restoreTimeoutAlertPanel else { return }
+    guard let restoreTimeoutAlertPanel = startupHandler.restoreTimeoutAlertPanel else { return }
 
     /// Dismiss the prompt (if any). It seems we can't just call `close` on its `window` object, because the
-    /// responder chain is left unusable. Instead, click its default button after setting `startup.state`.
+    /// responder chain is left unusable. Instead, click its default button after setting `startupHandler.state`.
     let keepWaitingBtn = restoreTimeoutAlertPanel.buttons[0]
     keepWaitingBtn.performClick(self)
-    startup.restoreTimeoutAlertPanel = nil
+    startupHandler.restoreTimeoutAlertPanel = nil
 
     /// This may restart the timer if not in the correct state, so account for that.
   }
 
   private func restartRestoreTimer() {
-    startup.restoreTimer?.invalidate()
+    startupHandler.restoreTimer?.invalidate()
 
     dismissTimeoutAlertPanel()
 
-    startup.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
+    startupHandler.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
                                                 target: self, selector: #selector(self.restoreTimedOut), userInfo: nil, repeats: false)
   }
 
   private func abortWaitForOpenFilePlayerStartup() {
     Logger.log.verbose("Aborting wait for Open File player startup")
-    startup.openFileCalled = false
-    startup.wcForOpenFile = nil
+    startupHandler.openFileCalled = false
+    startupHandler.wcForOpenFile = nil
     showWindowsIfReady()
   }
 
@@ -738,9 +714,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     if Preference.bool(for: .isRestoreInProgress) {
-      startup.wcsReady.insert(wc)
+      startupHandler.wcsReady.insert(wc)
 
-      log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
+      log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startupHandler.wcsReady.count)/\(startupHandler.state == .doneEnqueuing ? "\(startupHandler.wcsToRestore.count)" : "?")")
 
       // Show all windows if ready
       showWindowsIfReady()
@@ -761,10 +737,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let log = Logger.Subsystem.restore
 
     guard Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
+    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(startupHandler.wcsReady.count)/\(startupHandler.state == .doneEnqueuing ? "\(startupHandler.wcsToRestore.count)" : "?")")
 
     // No longer waiting for this window
-    startup.wcsToRestore.removeAll(where: { wc in
+    startupHandler.wcsToRestore.removeAll(where: { wc in
       wc.window!.savedStateName == window.savedStateName
     })
 
@@ -930,7 +906,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
-    guard startup.state == .doneOpening else { return false }
+    guard startupHandler.state == .doneOpening else { return false }
 
     /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
     /// Another case is when the welcome window is closed prior to a new player window opening.
@@ -1047,8 +1023,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii})")
     // if launched from command line, should ignore openFile during launch
-    if startup.state.rawValue < Startup.OpenWindowsState.doneOpening.rawValue, startup.shouldIgnoreOpenFile {
-      startup.shouldIgnoreOpenFile = false
+    if startupHandler.state.rawValue < StartupHandler.OpenWindowsState.doneOpening.rawValue, startupHandler.shouldIgnoreOpenFile {
+      startupHandler.shouldIgnoreOpenFile = false
       return
     }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
@@ -1061,13 +1037,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    startup.openFileCalled = true
+    startupHandler.openFileCalled = true
 
     DispatchQueue.main.async { [self] in
       Logger.log.debug("Opening URLs (count: \(urls.count))")
       // open pending files
       let player = PlayerManager.shared.getActiveOrCreateNew()
-      startup.wcForOpenFile = player.windowController
+      startupHandler.wcForOpenFile = player.windowController
       if player.openURLs(urls) == 0 {
         abortWaitForOpenFilePlayerStartup()
 
@@ -1085,8 +1061,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let url = pboard.string(forType: .string) else { return }
 
     guard let player = PlayerCore.active else { return }
-    startup.openFileCalled = true
-    startup.wcForOpenFile = player.windowController
+    startupHandler.openFileCalled = true
+    startupHandler.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
       abortWaitForOpenFilePlayerStartup()
     }
@@ -1125,8 +1101,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if parsed.scheme != "iina" {
       // try to open the URL directly
       let player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
-      startup.openFileCalled = true
-      startup.wcForOpenFile = player.windowController
+      startupHandler.openFileCalled = true
+      startupHandler.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
         abortWaitForOpenFilePlayerStartup()
       }
@@ -1155,8 +1131,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       }
 
-      startup.openFileCalled = true
-      startup.wcForOpenFile = player.windowController
+      startupHandler.openFileCalled = true
+      startupHandler.wcForOpenFile = player.windowController
 
       // enqueue
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
@@ -1201,7 +1177,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // once it has been instructed to shutdown can trigger a crash. MUST NOT permit
     // reopening once termination has started.
     guard !isTerminating else { return false }
-    guard startup.state == .doneOpening else { return false }
+    guard startupHandler.state == .doneOpening else { return false }
     // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
     guard !hasVisibleWindows && !isShowingOpenFileWindow else { return true }
 
@@ -1211,7 +1187,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func doLaunchOrReopenAction() {
-    guard startup.state == .doneOpening else {
+    guard startupHandler.state == .doneOpening else {
       Logger.log.verbose("Still starting up; skipping actionAfterLaunch")
       return
     }
@@ -1460,7 +1436,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    startup.shouldIgnoreOpenFile = true
+    startupHandler.shouldIgnoreOpenFile = true
     commandLineStatus.isCommandLine = true
     commandLineStatus.filenames = iinaArgFilenames
   }
