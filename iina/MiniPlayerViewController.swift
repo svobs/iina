@@ -322,7 +322,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// `windowWillResize`, but specfically applied to window while in music mode
   func musicModeWindowWillResize(_ window: NSWindow, to requestedSize: NSSize, isLiveResizingWidth: Bool) -> NSSize {
     resetScrollingLabels()
-    let currentGeo = windowController.musicModeGeo
+    let currentGeo = windowController.musicModeGeoForCurrentFrame()
     var newGeo: MusicModeGeometry
 
     if window.inLiveResize, currentGeo.isVideoVisible && !currentGeo.isPlaylistVisible {
@@ -330,19 +330,20 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       let nonViewportAreaSize = currentGeo.windowFrame.size - currentGeo.viewportSize!
       let requestedViewportSize = requestedSize - nonViewportAreaSize
 
+      let scaledViewportSize: NSSize
       if isLiveResizingWidth {
         // Option A: resize height based on requested width
-        let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
-                                              height: round(requestedViewportSize.width / currentGeo.video.videoAspectCAR))
-        newGeo = currentGeo.scalingViewport(to: resizedWidthViewportSize)!
+        scaledViewportSize = NSSize(width: requestedViewportSize.width,
+                                    height: round(requestedViewportSize.width / currentGeo.video.videoAspectCAR))
       } else {
         // Option B: resize width based on requested height
-        let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.video.videoAspectCAR),
-                                               height: requestedViewportSize.height)
-        newGeo = currentGeo.scalingViewport(to: resizedHeightViewportSize)!
+        scaledViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.video.videoAspectCAR),
+                                    height: requestedViewportSize.height)
       }
+      newGeo = currentGeo.scalingViewport(to: scaledViewportSize)!
 
-    } else {  // general case
+    } else {
+      // general case
       /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
       /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
       /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
@@ -359,10 +360,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       newGeo = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID)
     }
 
-    IINAAnimation.disableAnimation {
-      /// This call is needed to update any necessary constraints & resize internal views
-      newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, updateCache: false)
-    }
+    /// This call is needed to update any necessary constraints & resize internal views
+    newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, updateCache: false)
     return newGeo.windowFrame.size
   }
 

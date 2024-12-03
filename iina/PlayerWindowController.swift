@@ -1126,16 +1126,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return fsGeo.windowFrame.size
   }
 
-  // MARK: - Other NSWindowDelegate notifications
-
-  /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
-  /// Do not use `windowDidEndLiveResize`! It is unreliable. Use `windowDidResize` instead.
-  /// Not currently used!
-//  func windowDidResize(_ notification: Notification) {
-    // Do not want to trigger this during layout transition. It will mess up the intended viewport size.
-//    guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
-//    log.verbose("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
-
   // MARK: - Window Delegate: window move, screen changes
 
   /// This does not appear to be called anymore in MacOS 14.5...
