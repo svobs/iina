@@ -217,15 +217,6 @@ extension PlayerWindowController {
       // This is optional but provides a better viewer experience.
       let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
 
-      if isInMiniPlayer, geo.musicMode.isVideoVisible, !player.isRestoring, context.currentMediaAudioStatus == .isAudioWithArtHidden {
-        log.verbose{"[applyVideoGeo \(context.name)] Player is in music mode + media is audio + has album art but is not showing it. Will try to enable video track"}
-        player.setVideoTrackEnabled(thenShowMiniPlayerVideo: true)
-        return nil
-      }
-
-      // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
-      let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
-
       // Sync video's raw dimensions from mpv.
       // This is especially important for streaming videos, which won't have cached ffMeta
       let vidWidth = player.mpv.getInt(MPVProperty.width)
@@ -260,6 +251,9 @@ extension PlayerWindowController {
           log.debug{"[applyVideoGeo \(context.name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(context.oldGeo.video.userAspectLabel.quoted))"}
         }
       }
+
+      // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
+      let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
 
       // If opening window, videoGeo may still have the global (default) log. Update it
       let videoGeo = context.oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
@@ -327,13 +321,7 @@ extension PlayerWindowController {
         /// Make sure `doAfter` is always executed
         func abort(_ reasonDebugMsg: String) {
           log.verbose{"[applyVideoGeo \(transformName)] Aborting: \(reasonDebugMsg)"}
-          if DispatchQueue.isExecutingIn(.main) {
-            animationPipeline.submit(doAfterTask)
-          } else {
-            DispatchQueue.main.async { [self] in
-              animationPipeline.submit(doAfterTask)
-            }
-          }
+          animationPipeline.submit(doAfterTask)
         }
 
         guard let currentPlayback = player.info.currentPlayback else {
@@ -810,11 +798,12 @@ extension PlayerWindowController {
     var tasks: [IINAAnimation.Task] = []
 
     let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
+    let isShowingVideoView = isTogglingVideoView && outputGeo.isVideoVisible
 
     // TASK 1: Background prep
     tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
-      if isTogglingVideoView, outputGeo.isVideoVisible {  // Showing video
+      if isShowingVideoView {
         // Show/hide art before showing videoView
         updateDefaultArtVisibility(to: showDefaultArt)
         addVideoViewToWindow(using: outputGeo)
@@ -861,8 +850,12 @@ extension PlayerWindowController {
 
       if isTogglingVideoView && !outputGeo.isVideoVisible {  // Hiding video
         if pip.status == .notInPIP {
-          player.setVideoTrackDisabled()
-          videoView.removeFromSuperview()
+          player.mpv.queue.async { [self] in
+            player._setVideoTrackDisabled()
+            DispatchQueue.main.async { [self] in
+              videoView.removeFromSuperview()
+            }
+          }
         }
 
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.

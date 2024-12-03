@@ -1885,7 +1885,7 @@ extension DispatchQueue {
   public static func isExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
     let isExpected = DispatchQueue.current == dq
     if !isExpected && logError {
-      Logger.log.error("ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))")
+      Logger.log.error{"ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))"}
     }
     return isExpected
   }

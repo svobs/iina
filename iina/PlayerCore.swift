@@ -2804,12 +2804,12 @@ class PlayerCore: NSObject {
         log.verbose{"Calling applyVideoGeoForTrackChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn))"}
         windowController.applyVideoGeoForTrackChange()
       }
-      postNotification(.iinaVIDChanged)
-    }
 
-    // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-    if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
-      sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+      // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
+      if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
+        sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+      }
+      postNotification(.iinaVIDChanged)
     }
 
     DispatchQueue.main.async { [self] in
@@ -2846,17 +2846,6 @@ class PlayerCore: NSObject {
 
     if showMiniPlayerVideo {
       isShowVideoPendingInMiniPlayer = true
-
-      let hasVidTrack = !info.videoTracks.isEmpty
-      let isVideoTrackSelected = info.isVideoTrackSelected
-      log.verbose{"Setting video track enabled: hasVid=\(hasVidTrack.yn) isVidSelected=\(isVideoTrackSelected.yn) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
-      guard hasVidTrack && !isVideoTrackSelected else {
-        // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
-        // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
-        showVideoViewAfterVidChange()
-        return
-      }
-
       // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
       // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
       let timeout = Constants.TimeInterval.musicModeChangeTrackTimeout
@@ -2866,12 +2855,37 @@ class PlayerCore: NSObject {
                                                       userInfo: nil, repeats: false)
     }
 
-    guard isActive else {
-      log.verbose("Skipping enable of video track: player is not active")
-      return
+    mpv.queue.async { [self] in
+      guard isActive else {
+        log.verbose("Skipping enable video track: player is not active")
+        return
+      }
+
+      _ = reloadTrackInfo()
+      let hasVidTrack = !info.videoTracks.isEmpty
+      let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+      let vidToSet: Int
+      if let vidOld = info.vidDisabled {
+        info.vidDisabled = nil
+        vidToSet = vidOld
+      } else {
+        vidToSet = 1
+      }
+      log.verbose{"Enabling video track: hasVid=\(hasVidTrack.yn) vidNow=\(vidNow) vidToSet=\(vidToSet) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
+      guard (hasVidTrack && vidNow != vidToSet) else {
+        info.vidDisabled = nil  // clear saved track
+        if showMiniPlayerVideo {
+          // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
+          // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
+          miniPlayerShowVideoTimer?.invalidate()
+          log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
+          vidChanged(silent: true, forceIfNoChange: true)
+        }
+        return
+      }
+
+      _setTrack(vidToSet, forType: .video, silent: true)
     }
-    log.verbose("Sending mpv request to select video track 1")
-    setTrack(1, forType: .video, silent: true)
   }
 
   ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
@@ -2879,12 +2893,28 @@ class PlayerCore: NSObject {
   ///  See also: `setVideoTrackEnabled`
   func setVideoTrackDisabled() {
     assert(DispatchQueue.isExecutingIn(.main))
-    log.verbose("Setting video track disabled")
+
+    mpv.queue.async { [self] in
+      _setVideoTrackDisabled()
+    }
+  }
+
+  func _setVideoTrackDisabled() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     // Change video track to None
-    guard isActive else { return }
-    log.verbose("Sending request to mpv: set video track to 0")
-    setTrack(0, forType: .video, silent: true)
+    let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+
+    if info.vidDisabled == nil {
+      log.verbose("Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0")
+      info.vidDisabled = vidNow
+    }
+    guard vidNow != 0 else {
+      log.verbose("Disabling video track: vid=0 already, skipping")
+      return
+    }
+    log.verbose("Setting vid=0")
+    _setTrack(0, forType: .video, silent: true)
   }
 
   func windowScaleChanged() {

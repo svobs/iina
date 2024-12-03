@@ -64,7 +64,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       // Special case if in music mode
       miniPlayer.loadIfNeeded()
       if isInMiniPlayer && !miniPlayer.isVideoVisible {
-        // need to re-enable video
+        // need to re-enable video to enter PiP
         player.setVideoTrackEnabled()
       }
 

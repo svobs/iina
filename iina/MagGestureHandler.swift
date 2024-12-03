@@ -38,7 +38,9 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         }
       }
     case .windowSize:
-      scaleWindow(recognizer: recognizer)
+      IINAAnimation.disableAnimation{ [self] in
+        scaleWindow(recognizer: recognizer)
+      }
     case .windowSizeOrFullScreen:
       guard !windowController.isAnimatingLayoutTransition else { return }
       guard let window = windowController.window, let screen = window.screen else { return }
@@ -84,7 +86,9 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
 
       // If full screen wasn't toggled, try window size:
-      scaleWindow(recognizer: recognizer)
+      IINAAnimation.disableAnimation{ [self] in
+        scaleWindow(recognizer: recognizer)
+      }
     }  // end switch
   }
 

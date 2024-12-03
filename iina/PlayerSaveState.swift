@@ -38,6 +38,7 @@ struct PlayerSaveState: CustomStringConvertible {
     case paused = "paused"              /// `MPVOption.PlaybackControl.pause`
 
     case vid = "vid"                    /// `MPVOption.TrackSelection.vid`
+    case vidDisabled = "vidDisabled"    /// IINA `info.vidDisabled`
     case aid = "aid"                    /// `MPVOption.TrackSelection.aid`
     case sid = "sid"                    /// `MPVOption.TrackSelection.sid`
     case s2id = "sid2"                  /// `MPVOption.Subtitles.secondarySid`
@@ -276,6 +277,8 @@ struct PlayerSaveState: CustomStringConvertible {
     if let intVal = info.secondSid {
       props[PropName.s2id.rawValue] = String(intVal)
     }
+    let vidDisabled = info.vidDisabled ?? -1
+    props[PropName.vidDisabled.rawValue] = String(vidDisabled)
     props[PropName.brightness.rawValue] = String(info.brightness)
     props[PropName.contrast.rawValue] = String(info.contrast)
     props[PropName.saturation.rawValue] = String(info.saturation)
@@ -687,6 +690,10 @@ struct PlayerSaveState: CustomStringConvertible {
     }
     if let s2id = int(for: .s2id) {
       info.secondSid = s2id
+    }
+
+    if let vidDisabled = int(for: .vidDisabled) {
+      info.vidDisabled = vidDisabled >= 0 ? vidDisabled : nil
     }
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
