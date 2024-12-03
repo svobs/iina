@@ -179,7 +179,7 @@ class PlayerManager {
     }
   }
 
-  var _activePlayer: PlayerCore? {
+  private var _activePlayer: PlayerCore? {
     if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController, wc.player.isActive {
       return wc.player
     } else {

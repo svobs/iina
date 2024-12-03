@@ -2863,16 +2863,23 @@ class PlayerCore: NSObject {
       }
 
       _ = reloadTrackInfo()
-      let hasVidTrack = !info.videoTracks.isEmpty
+      let vidTrackCount = info.videoTracks.count
+      let hasVidTrack = vidTrackCount > 0
       let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
       let vidToSet: Int
       if let vidOld = info.vidDisabled {
         info.vidDisabled = nil
-        vidToSet = vidOld
+        if vidOld < vidTrackCount {
+          vidToSet = vidOld
+        } else {
+          // vidDisabled is invalid. Can happen if media changed while disabled.
+          // Just fall back to 1:
+          vidToSet = 1
+        }
       } else {
         vidToSet = 1
       }
-      log.verbose{"Enabling video track: hasVid=\(hasVidTrack.yn) vidNow=\(vidNow) vidToSet=\(vidToSet) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
+      log.verbose{"Enabling video track: vidTrackCount=\(vidTrackCount) vidNow=\(vidNow) vidToSet=\(vidToSet) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
       guard (hasVidTrack && vidNow != vidToSet) else {
         info.vidDisabled = nil  // clear saved track
         if showMiniPlayerVideo {
