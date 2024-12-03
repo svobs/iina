@@ -375,6 +375,7 @@
 		D1EF40EB2C3BCEA800921252 /* Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EA2C3BCEA800921252 /* Playback.swift */; };
 		D1EF40ED2C3BD10B00921252 /* StateEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EC2C3BD10B00921252 /* StateEnum.swift */; };
 		D1F2B0992CFEFA4200F995B3 /* StartupHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */; };
+		D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */; };
 		D1F2D93C2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */; };
 		D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */; };
 		D1F68E752C6ABC22003D1208 /* movist-v2-default-input.conf in Resources */ = {isa = PBXBuildFile; fileRef = D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */; };
@@ -1894,6 +1895,7 @@
 		D1EF40EA2C3BCEA800921252 /* Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playback.swift; sourceTree = "<group>"; };
 		D1EF40EC2C3BD10B00921252 /* StateEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateEnum.swift; sourceTree = "<group>"; };
 		D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupHandler.swift; sourceTree = "<group>"; };
+		D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailsLogging.swift; sourceTree = "<group>"; };
 		D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_InitialLayoutBuilder.swift; sourceTree = "<group>"; };
 		D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Resize.swift; sourceTree = "<group>"; };
 		D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "movist-v2-default-input.conf"; sourceTree = "<group>"; };
@@ -2583,6 +2585,7 @@
 			children = (
 				D1D736172989693A000EB5F4 /* Player */,
 				84EB1ED91D2F51D3004FA5A1 /* AppDelegate.swift */,
+				D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */,
 				D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */,
 				D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
@@ -3356,6 +3359,7 @@
 				D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */,
 				8466BE181D5CDD0300039D03 /* QuickSettingViewController.swift in Sources */,
 				84A0BA9E1D2FAD4000BC8DA1 /* PlayerWindowController.swift in Sources */,
+				D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */,
 				E3785B092A83380E00787CB7 /* WebSocketServer.swift in Sources */,
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
 				D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */,

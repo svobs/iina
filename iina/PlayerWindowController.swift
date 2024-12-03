@@ -1339,7 +1339,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if isKey {
         PlayerCore.lastActive = player
 
-        if RemoteCommandController.useSystemMediaControl {
+        if RemoteCommandController.shared.useSystemMediaControl {
           NowPlayingInfoManager.updateInfo(withTitle: true)
         }
         AppDelegate.shared.menuController?.updatePluginMenu()
@@ -1935,6 +1935,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let hasLayoutChange = speedLabel.isHidden == showSpeedLabel
     let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration : 0
+
+    // Update status in menu bar menu (if enabled)
+    if RemoteCommandController.shared.useSystemMediaControl {
+      NowPlayingInfoManager.updateInfo(withTitle: true)
+    }
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.

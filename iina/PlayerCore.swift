@@ -2257,8 +2257,8 @@ class PlayerCore: NSObject {
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
       }
 
-      if RemoteCommandController.useSystemMediaControl {
-        NowPlayingInfoManager.updateInfo(state: .playing, withTitle: true)
+      if RemoteCommandController.shared.useSystemMediaControl {
+        NowPlayingInfoManager.updateInfo(withTitle: true)
       }
     }
 
@@ -2635,10 +2635,6 @@ class PlayerCore: NSObject {
       // again.
       if info.isPaused {
         videoView.displayIdle()
-      }
-
-      if RemoteCommandController.useSystemMediaControl {
-        NowPlayingInfoManager.updateInfo()
       }
 
       // End of seeking? Set short timer to hide seek time & thumbnail
@@ -3793,6 +3789,10 @@ class NowPlayingInfoManager {
 
     if state != nil {
       center.playbackState = state!
+    } else if activePlayer.info.isFileLoaded {
+      center.playbackState = activePlayer.info.isPaused ? .paused : .playing
+    } else {
+      center.playbackState = .unknown
     }
   }
 }

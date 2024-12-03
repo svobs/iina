@@ -45,9 +45,9 @@ class ShutdownHandler {
     removeAllMenuItems(AppDelegate.shared.dockMenu)
     // If supported and enabled disable all remote media commands. This also removes IINA from
     // the Now Playing widget.
-    if RemoteCommandController.useSystemMediaControl {
-      Logger.log("Disabling remote commands")
-      RemoteCommandController.disableAllCommands()
+    if RemoteCommandController.shared.useSystemMediaControl {
+      RemoteCommandController.shared.disableAllCommands()
+      RemoteCommandController.shared.useSystemMediaControl = false
     }
 
     if UIState.shared.isSaveEnabled {
