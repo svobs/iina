@@ -23,9 +23,9 @@ struct GeometryTransformContext {
   let vidTrackID: Int
   let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
 
-  func clone(oldGeo: GeometrySet? = nil) -> GeometryTransformContext {
+  func clone(oldGeo: GeometrySet? = nil, sessionState: PWinSessionState? = nil) -> GeometryTransformContext {
     return GeometryTransformContext(name: self.name, oldGeo: oldGeo ?? self.oldGeo,
-                                    sessionState: self.sessionState, currentPlayback: self.currentPlayback,
+                                    sessionState: sessionState ?? self.sessionState, currentPlayback: self.currentPlayback,
                                     vidTrackID: self.vidTrackID, currentMediaAudioStatus: self.currentMediaAudioStatus)
   }
 }

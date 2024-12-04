@@ -300,10 +300,11 @@ extension PlayerWindowController {
       let oldGeo = geo
 
       player.mpv.queue.async { [self] in
-        let sessionState = sessionState  // save in case it changes
-
         let doAfterTask = IINAAnimation.Task.instantTask{ [self] in
-          if sessionState.isChangingVideoTrack {
+          if self.sessionState.isChangingVideoTrack {
+            // Return to normal status:
+            self.sessionState = .existingSession_continuing
+
             // Need to call here to ensure file title OSD is displayed when navigating playlist...
             player.refreshSyncUITimer()
             updateUI()
@@ -341,7 +342,7 @@ extension PlayerWindowController {
           return abort("player stopping (status=\(player.state))")
         }
 
-        let cxt = GeometryTransformContext(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
+        var cxt = GeometryTransformContext(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
                                            currentPlayback: currentPlayback, vidTrackID: player.info.vid ?? 0,
                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus)
 
@@ -350,9 +351,6 @@ extension PlayerWindowController {
         }
 
         if sessionState.isChangingVideoTrack {
-          // Clear status & state while still in mpv queue (but after making a local copy for final work)
-          self.sessionState = .existingSession_continuing
-
           // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
           // The OSD can have weird stretching glitches if displayed while zooming open...
           if currentPlayback.state.isAtLeast(.loaded) {
@@ -369,8 +367,9 @@ extension PlayerWindowController {
         }
 
         animationPipeline.submitInstantTask { [self] in
-          log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(sessionState)"}
-          if sessionState.isStartingSession {
+          cxt = cxt.clone(sessionState: self.sessionState)
+          log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(cxt.sessionState)"}
+          if cxt.sessionState.isStartingSession {
             let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(cxt, newVidGeo: newVidGeo)
             animationPipeline.submit(windowOpenLayoutTasks)
 
@@ -424,10 +423,10 @@ extension PlayerWindowController {
         timing = .linear
         fallthrough
       case .newReplacingExisting,
-          .existingSession_startingNewPlayback,
-          .existingSession_videoTrackChangedForSamePlayback:
+          .existingSession_startingNewPlayback:
         resizedGeo = applyResizePrefsForWindowedFileOpen(isOpeningFileManually: sessionState.isOpeningFileManually, newVidGeo: newVidGeo)
-      case .existingSession_continuing:
+      case .existingSession_videoTrackChangedForSamePlayback,
+          .existingSession_continuing:
         // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
       case .noSession:

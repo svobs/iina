@@ -156,7 +156,7 @@ class MediaMetaCache {
       let newMeta = oldMeta.clone(duration: duration, progress: progress,
                                   title: title, album: album, artist: artist)
       cachedMeta[url] = newMeta
-      log.verbose("Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)")
+      log.verbose("Cache reloaded for \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)")
       return newMeta
     }
   }

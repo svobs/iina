@@ -1345,7 +1345,7 @@ class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.applyVideoGeoTransform("aspectOverride", { [self] cxt in
+    windowController.applyVideoGeoTransform("AspectOverride", { [self] cxt in
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
@@ -2197,9 +2197,9 @@ class PlayerCore: NSObject {
     let geometry = mpv.getString(MPVOption.Window.geometry) ?? ""
     let parsed = MPVGeometryDef.parse(geometry)
     if let parsed = parsed {
-      Logger.log("Got geometry from mpv: \(parsed)", level: .verbose, subsystem: subsystem)
+      log.verbose("Got geometry from mpv: \(parsed)")
     } else {
-      Logger.log("Got nil for mpv geometry!", level: .verbose, subsystem: subsystem)
+      log.verbose("Got nil for mpv geometry!")
     }
     return parsed
   }
