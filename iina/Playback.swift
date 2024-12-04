@@ -59,7 +59,8 @@ class Playback: CustomStringConvertible {
   let url: URL
   let mpvMD5: String
 
-  var playlistPos: Int
+  /// Can be `nil` if not loaded yet
+  var playlistPos: Int?
 
   var parentPlaylist: String = ""
 
@@ -83,11 +84,11 @@ class Playback: CustomStringConvertible {
   }
 
   var description: String {
-    return "Playback(plPos:\(playlistPos) status:\(state) path:\(path.pii.quoted))"
+    return "Playback(plPos:\(String(playlistPos)) status:\(state) path:\(path.pii.quoted))"
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
-  init(url: URL?, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
+  init(url: URL?, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
     let url = url ?? URL(string: "stdin")!
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
@@ -95,7 +96,7 @@ class Playback: CustomStringConvertible {
     self.state = state
   }
 
-  convenience init?(urlPath: String, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
+  convenience init?(urlPath: String, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
     let url = Playback.url(fromPath: urlPath)
     guard let url else { return nil }
     self.init(url: url, playlistPos: playlistPos, state: state)

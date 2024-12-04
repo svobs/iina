@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import MediaPlayer
 
 class PlayerCore: NSObject {
   /// Should always be updated in mpv DQ
@@ -2235,10 +2234,10 @@ class PlayerCore: NSObject {
       // update existing entry
       existingPlayback.playlistPos = playbackFromPath.playlistPos
       existingPlayback.state = playbackFromPath.state
-      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted),  PL#=\(playbackFromPath.playlistPos)")
+      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted),  PL#=\(String(playbackFromPath.playlistPos))")
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(playbackFromPath.playlistPos)")
+      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
       info.currentPlayback = playbackFromPath
       playback = playbackFromPath
     }
@@ -2257,9 +2256,7 @@ class PlayerCore: NSObject {
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
       }
 
-      if RemoteCommandController.shared.useSystemMediaControl {
-        NowPlayingInfoManager.updateInfo()
-      }
+      MediaPlayerIntegration.shared.update()
     }
 
     // set "date last opened" attribute
@@ -2400,6 +2397,9 @@ class PlayerCore: NSObject {
     _reloadChapters()
     syncAbLoop()
     // Done syncing tracks
+
+    // Do this *after* syncing playlist to update position & count
+    MediaPlayerIntegration.shared.update()
 
     log.debug("Calling applyVideoGeoForTrackChange from fileLoaded")
     windowController.applyVideoGeoForTrackChange()
@@ -2542,6 +2542,7 @@ class PlayerCore: NSObject {
     info.chapter = chapter
     log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
     syncUI(.chapterList)
+    MediaPlayerIntegration.shared.updateNowPlayingInfo()
     postNotification(.iinaMediaTitleChanged)
   }
 
@@ -3740,59 +3741,5 @@ class PlayerCore: NSObject {
     }
     // No players are actively playing.
     SleepPreventer.allowSleep()
-  }
-}
-
-class NowPlayingInfoManager {
-
-  /// Update the information shown by macOS in `Now Playing`.
-  ///
-  /// The macOS [Control Center](https://support.apple.com/guide/mac-help/quickly-change-settings-mchl50f94f8f/mac)
-  /// contains a `Now Playing` module. This module can also be configured to be directly accessible from the menu bar.
-  /// `Now Playing` displays the title of the media currently  playing and other information about the state of playback. It also can be
-  /// used to control playback. IINA is fully integrated with the macOS `Now Playing` module.
-  ///
-  /// - Note: See [Becoming a Now Playable App](https://developer.apple.com/documentation/mediaplayer/becoming_a_now_playable_app)
-  ///         and [MPNowPlayingInfoCenter](https://developer.apple.com/documentation/mediaplayer/mpnowplayinginfocenter)
-  ///         for more information.
-  ///
-  /// - Important: This method **must** be run on the main thread because it references `PlayerCore.lastActive`.
-  static func updateInfo() {
-    let center = MPNowPlayingInfoCenter.default()
-    var info = center.nowPlayingInfo ?? [String: Any]()
-
-    guard let activePlayer = PlayerCore.lastActive, !activePlayer.isStopping else {
-      center.playbackState = .unknown
-      center.nowPlayingInfo = nil
-      return
-    }
-
-    if activePlayer.info.currentMediaAudioStatus.isAudio {
-      info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
-      let (title, album, artist) = activePlayer.getMusicMetadata()
-      info[MPMediaItemPropertyTitle] = title
-      info[MPMediaItemPropertyAlbumTitle] = album
-      info[MPMediaItemPropertyArtist] = artist
-    } else {
-      info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
-      info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
-    }
-
-    let duration = activePlayer.info.playbackDurationSec ?? 0
-    let time = activePlayer.info.playbackPositionSec ?? 0
-    let speed = activePlayer.info.playSpeed
-
-    info[MPMediaItemPropertyPlaybackDuration] = duration
-    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
-    info[MPNowPlayingInfoPropertyPlaybackRate] = speed
-    info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
-
-    center.nowPlayingInfo = info
-
-    if activePlayer.info.isFileLoaded {
-      center.playbackState = activePlayer.info.isPaused ? .paused : .playing
-    } else {
-      center.playbackState = .unknown
-    }
   }
 }

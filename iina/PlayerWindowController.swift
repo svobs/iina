@@ -1338,10 +1338,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       log.verbose{"Window isKey=\(isKey.yesno)"}
       if isKey {
         PlayerCore.lastActive = player
-
-        if RemoteCommandController.shared.useSystemMediaControl {
-          NowPlayingInfoManager.updateInfo()
-        }
+        MediaPlayerIntegration.shared.update()
         AppDelegate.shared.menuController?.updatePluginMenu()
 
         if isFullScreen && Preference.bool(for: .blackOutMonitor) {
@@ -1937,9 +1934,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration : 0
 
     // Update status in menu bar menu (if enabled)
-    if RemoteCommandController.shared.useSystemMediaControl {
-      NowPlayingInfoManager.updateInfo()
-    }
+    MediaPlayerIntegration.shared.update()
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.

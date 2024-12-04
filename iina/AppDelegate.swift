@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import MediaPlayer
 import Sparkle
 
 let IINA_ENABLE_PLUGIN_SYSTEM = Preference.bool(for: .iinaEnablePluginSystem)
@@ -116,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
 
     case PK.useMediaKeys.rawValue:
-      RemoteCommandController.shared.update()
+      MediaPlayerIntegration.shared.update()
 
       // TODO: #1, see above
 //    case PK.hideWindowsWhenInactive.rawValue:
@@ -251,10 +250,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Note: UI state saving is disabled")
     }
 
-    RemoteCommandController.shared.update()
-    if RemoteCommandController.shared.useSystemMediaControl {
-      NowPlayingInfoManager.updateInfo()
-    }
+    MediaPlayerIntegration.shared.update()
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
@@ -411,9 +407,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // Player window was closed; need to remove some additional state
       player.clearSavedState()
 
-      if !isTerminating && RemoteCommandController.shared.useSystemMediaControl {
-        NowPlayingInfoManager.updateInfo()
-      }
+      MediaPlayerIntegration.shared.update()
     }
 
     if window.isOnlyOpenWindow {
@@ -910,104 +904,5 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @IBAction
   func clearRecentDocuments(_ sender: Any?) {
     HistoryController.shared.clearRecentDocuments(sender)
-  }
-}
-
-class RemoteCommandController {
-  static let shared = RemoteCommandController()
-  let remoteCommand = MPRemoteCommandCenter.shared()
-
-  var useSystemMediaControl = false
-
-  func update() {
-    let newEnablement = Preference.bool(for: .useMediaKeys)
-    guard useSystemMediaControl != newEnablement else { return }
-
-    useSystemMediaControl = newEnablement
-    if newEnablement {
-      setup()
-    } else {
-      disableAllCommands()
-    }
-  }
-
-  func setup() {
-    Logger.log("Setting up MediaPlayer integration")
-    remoteCommand.playCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.resume()
-      return .success
-    }
-    remoteCommand.pauseCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pause()
-      return .success
-    }
-    remoteCommand.togglePlayPauseCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.togglePause()
-      return .success
-    }
-    remoteCommand.stopCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.stop()
-      return .success
-    }
-    remoteCommand.nextTrackCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.navigateInPlaylist(nextMedia: true)
-      return .success
-    }
-    remoteCommand.previousTrackCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.navigateInPlaylist(nextMedia: false)
-      return .success
-    }
-    remoteCommand.changeRepeatModeCommand.addTarget { _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.nextLoopMode()
-      return .success
-    }
-    remoteCommand.changeShuffleModeCommand.isEnabled = false
-    // remoteCommand.changeShuffleModeCommand.addTarget {})
-    remoteCommand.changePlaybackRateCommand.supportedPlaybackRates = [0.5, 1, 1.5, 2]
-    remoteCommand.changePlaybackRateCommand.addTarget { event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
-      return .success
-    }
-    remoteCommand.skipForwardCommand.preferredIntervals = [15]
-    remoteCommand.skipForwardCommand.addTarget { event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
-      return .success
-    }
-    remoteCommand.skipBackwardCommand.preferredIntervals = [15]
-    remoteCommand.skipBackwardCommand.addTarget { event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
-      return .success
-    }
-    remoteCommand.changePlaybackPositionCommand.addTarget { event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.seek(absoluteSecond: (event as! MPChangePlaybackPositionCommandEvent).positionTime)
-      return .success
-    }
-  }
-
-  func disableAllCommands() {
-    Logger.log("Disabling remote commands")
-    remoteCommand.playCommand.removeTarget(nil)
-    remoteCommand.pauseCommand.removeTarget(nil)
-    remoteCommand.togglePlayPauseCommand.removeTarget(nil)
-    remoteCommand.stopCommand.removeTarget(nil)
-    remoteCommand.nextTrackCommand.removeTarget(nil)
-    remoteCommand.previousTrackCommand.removeTarget(nil)
-    remoteCommand.changeRepeatModeCommand.removeTarget(nil)
-    remoteCommand.changeShuffleModeCommand.removeTarget(nil)
-    remoteCommand.changePlaybackRateCommand.removeTarget(nil)
-    remoteCommand.skipForwardCommand.removeTarget(nil)
-    remoteCommand.skipBackwardCommand.removeTarget(nil)
-    remoteCommand.changePlaybackPositionCommand.removeTarget(nil)
   }
 }
