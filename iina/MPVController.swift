@@ -68,6 +68,7 @@ class MPVController: NSObject {
 
   struct UserData {
     static let screenshot: UInt64 = 1000000
+    static let screenshotRaw: UInt64 = 1000001
   }
 
   /// Version number of the libass library.
@@ -1306,6 +1307,21 @@ class MPVController: NSObject {
           return
         }
         player.screenshotCallback()
+      } else if reply == MPVController.UserData.screenshotRaw {
+        let code = event.pointee.error
+        guard code >= 0 else {
+          let error = String(cString: mpv_error_string(code))
+          player.log.error("Cannot take a screenshot, mpv API error: \(error), returnCalue: \(code)")
+          // Unfortunately the mpv API does not provide any details on the failure. The error
+          // code returned maps to "error running command", so all the alert can report is
+          // that we cannot take a screenshot.
+          DispatchQueue.main.async {
+            Utility.showAlert("screenshot.error_taking")
+          }
+          return
+        }
+
+        // TODO: implement parsing of screenshot-raw!
       }
 
     default:

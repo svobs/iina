@@ -940,7 +940,9 @@ class PlayerCore: NSObject {
   @discardableResult
   func screenshot(fromKeyBinding keyBinding: KeyMapping? = nil) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
-    
+
+    /// `screenshot-raw`? (i.e. not `screenshot`)
+    var isRaw: Bool = false
     let saveToFile = Preference.bool(for: .screenshotSaveToFile)
     let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
     guard saveToFile || saveToClipboard else {
@@ -961,9 +963,15 @@ class PlayerCore: NSObject {
       var canUseIINAScreenshot = true
 
       guard let rawAction = keyBinding.rawAction, let action = keyBinding.action,
-            let commandName = keyBinding.action?.first, commandName == MPVCommand.screenshot.rawValue else {
+            let commandName = keyBinding.action?.first,
+              (commandName == MPVCommand.screenshotRaw.rawValue || commandName == MPVCommand.screenshot.rawValue) else {
         log.error{"Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction?.quoted ?? "nil")"}
         return false
+      }
+      isRaw = commandName == MPVCommand.screenshotRaw.rawValue
+      if isRaw {
+        // Cannot yet support screenshot-raw
+        canUseIINAScreenshot = false
       }
       if action.count > 1 {
         commandFlags = action[1].split(separator: "+").map{String($0)}
@@ -978,7 +986,7 @@ class PlayerCore: NSObject {
             canUseIINAScreenshot = false
           default:
             // Unexpected flag. Let mpv decide how to handle
-            log.warn{"Unrecognized flag for mpv 'screenshot' command: '\(flag)'"}
+            log.warn{"Taking screenshot: Unrecognized flag for mpv '\(commandName)' command: '\(flag)'"}
             canUseIINAScreenshot = false
           }
         }
@@ -997,7 +1005,11 @@ class PlayerCore: NSObject {
 
     mpv.queue.async { [self] in
       guard isActive else { return }
-      mpv.asyncCommand(.screenshot, args: commandFlags, replyUserdata: MPVController.UserData.screenshot)
+      if isRaw {
+        mpv.asyncCommand(.screenshotRaw, args: commandFlags, replyUserdata: MPVController.UserData.screenshotRaw)
+      } else {
+        mpv.asyncCommand(.screenshot, args: commandFlags, replyUserdata: MPVController.UserData.screenshot)
+      }
     }
     return true
   }

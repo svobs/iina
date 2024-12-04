@@ -175,6 +175,9 @@ class MediaPlayerIntegration {
       info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
     }
     let artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
+//      if activePlayer.info.currentMediaAudioStatus == .isAudioWithArtShown {
+        // TODO: figure out a way to get album art from mpv
+//      }
       // Use thumbnail if available
       // TODO: cache this
       if let currentPosition = activePlayer.info.playbackPositionSec, activePlayer.info.isVideoTrackSelected,

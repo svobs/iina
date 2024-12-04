@@ -67,7 +67,8 @@ extension PlayerWindowController {
       }
       returnValue = 0
 
-    case MPVCommand.screenshot.rawValue:
+    case MPVCommand.screenshot.rawValue,
+      MPVCommand.screenshotRaw.rawValue:
       return player.screenshot(fromKeyBinding: keyBinding)
 
     default:
