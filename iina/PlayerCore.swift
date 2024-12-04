@@ -1038,13 +1038,11 @@ class PlayerCore: NSObject {
       }
     }
 
-    guard let screenshotImage = NSImage(contentsOf: lastScreenshotURL) else {
-      sendOSD(.screenshot)
-      if !saveToFile {
-        try? FileManager.default.removeItem(at: lastScreenshotURL)
-      }
+    guard let screenshotImage = createImage(lastScreenshotURL) else {
+      self.sendOSD(.screenshot)
       return
     }
+
     if saveToClipboard {
       NSPasteboard.general.clearContents()
       NSPasteboard.general.writeObjects([screenshotImage])

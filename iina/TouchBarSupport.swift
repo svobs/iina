@@ -363,7 +363,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
       let image = tb.nsImage
       NSGraphicsContext.saveGraphicsState()
       NSBezierPath(roundedRect: knobRect, xRadius: 3, yRadius: 3).setClip()
-      let origSize = image.size.crop(withAspect: Aspect(size: knobRect.size))
+      let origSize = image.size.crop(withAspect: knobRect.size.aspect)
       let origRect = NSRect(x: (image.size.width - origSize.width) / 2,
                             y: (image.size.height - origSize.height) / 2,
                             width: origSize.width,

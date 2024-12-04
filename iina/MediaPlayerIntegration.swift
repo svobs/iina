@@ -178,12 +178,15 @@ class MediaPlayerIntegration {
       // Use thumbnail if available
       // TODO: cache this
       if let currentPosition = activePlayer.info.playbackPositionSec, activePlayer.info.isVideoTrackSelected,
-         let thumbnail = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: currentPosition) {
-        return NSImage(cgImage: thumbnail.image.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt), size: displaySize)
-      } else {
-        // Default album art
-        return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
+         let thumbImg = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: currentPosition)?.image {
+        // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
+        let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
+        if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
+          return previewImg
+        }
       }
+      // Default album art
+      return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
     })
     info[MPMediaItemPropertyArtwork] = artwork
 

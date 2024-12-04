@@ -207,8 +207,7 @@ extension NSSize {
    - Parameter aspectRect: A rectangle or size structure that contains the desired aspect ratio.
    - Returns: The cropped `NSSize` that fits within the given aspect ratio.
    */
-  func crop(withAspect aspectRect: Aspect) -> NSSize {
-    let targetAspect = aspectRect.value
+  func crop(withAspect targetAspect: CGFloat) -> NSSize {
     if aspect > targetAspect {  // self is wider, crop width, use same height
       return NSSize(width: round(height * targetAspect), height: height)
     } else {
@@ -216,8 +215,17 @@ extension NSSize {
     }
   }
 
-  func getCropRect(withAspect aspect: Aspect) -> NSRect {
+  func getCropRect(withAspect aspect: CGFloat) -> NSRect {
     let croppedSize = crop(withAspect: aspect)
+    let cropped = NSMakeRect(round((width - croppedSize.width) / 2),
+                             round((height - croppedSize.height) / 2),
+                             croppedSize.width,
+                             croppedSize.height)
+    return cropped
+  }
+
+  func getCropRect(withAspect aspect: Aspect) -> NSRect {
+    let croppedSize = crop(withAspect: aspect.value)
     let cropped = NSMakeRect(round((width - croppedSize.width) / 2),
                              round((height - croppedSize.height) / 2),
                              croppedSize.width,
@@ -1258,6 +1266,14 @@ extension CGImage {
   }
 
 
+  func toNSImage() -> NSImage {
+    NSImage(cgImage: self, size: size())
+  }
+
+  func size() -> CGSize {
+    return CGSize(width: width, height: height)
+  }
+
   /// Builds a bitmap image efficiently using CoreGraphics APIs.
   ///
   /// If it's found useful for any more situations, should put in its own class
@@ -2016,27 +2032,9 @@ extension NSView {
     }
   }
 
-  func snapshotImage() -> CGImage? {
-    guard let window = window, let screen = window.screen, let contentView = window.contentView else { return nil }
-    if #available(macOS 10.15, *) {
-//      CGRequestScreenCaptureAccess()
-    } else {
-      // Fallback on earlier versions
-    }
-    let originRect = self.convert(self.bounds, to:contentView)
-    var rect = originRect
-    rect.origin.x += window.frame.origin.x
-    rect.origin.y = 0
-    rect.origin.y += screen.frame.size.height - window.frame.origin.y - window.frame.size.height
-    rect.origin.y += window.frame.size.height - originRect.origin.y - originRect.size.height
-    guard window.windowNumber > 0 else { return nil }
-    return CGWindowListCreateImage(rect, .optionIncludingWindow, CGWindowID(window.windowNumber), CGWindowImageOption.bestResolution)
-  }
-
   /// Get `NSImage` representation of the view.
   ///
   /// - Returns: `NSImage` of view
-  /// Alternative to `snapshotImage()`. Simpler code which uses high-level, possibly less efficient APIs.
   func image() -> NSImage {
     let imageRepresentation = bitmapImageRepForCachingDisplay(in: bounds)!
     cacheDisplay(in: bounds, to: imageRepresentation)

@@ -149,7 +149,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     }
 
     if let aspect = Aspect(string: cropLabel)  {
-      let cropped = videoSizeRaw.crop(withAspect: aspect)
+      let cropped = videoSizeRaw.crop(withAspect: aspect.value)
       log.verbose("Building crop filter from requested string \(cropLabel.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
       guard cropped.width > 0 && cropped.height > 0 else {
         log.error("Cannot build crop filter from \(cropped); width or height is <= 0")
