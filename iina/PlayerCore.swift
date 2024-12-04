@@ -2234,7 +2234,7 @@ class PlayerCore: NSObject {
       // update existing entry
       existingPlayback.playlistPos = playbackFromPath.playlistPos
       existingPlayback.state = playbackFromPath.state
-      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted),  PL#=\(String(playbackFromPath.playlistPos))")
+      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
     } else {
       // New media, perhaps initiated by mpv
       log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
@@ -2367,7 +2367,7 @@ class PlayerCore: NSObject {
     }
 
     // Kick off thumbnails load/gen - it can happen in background
-    reloadThumbnails(forMedia: currentPlayback)
+    reloadThumbnails()
 
     checkUnsyncedWindowOptions()
     if !reloadTrackInfo() {
@@ -2397,9 +2397,6 @@ class PlayerCore: NSObject {
     _reloadChapters()
     syncAbLoop()
     // Done syncing tracks
-
-    // Do this *after* syncing playlist to update position & count
-    MediaPlayerIntegration.shared.update()
 
     log.debug("Calling applyVideoGeoForTrackChange from fileLoaded")
     windowController.applyVideoGeoForTrackChange()
@@ -3351,14 +3348,21 @@ class PlayerCore: NSObject {
     AppDelegate.shared.windowWillClose(window)
   }
 
-  func reloadThumbnails(forMedia currentPlayback: Playback?) {
-    guard let currentPlayback else {
-      log.debug("Cannot generate thumbnails: no file active")
-      return
-    }
+  func reloadThumbnails() {
     DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
-      guard !info.isNetworkResource, let url = info.currentURL, let mpvMD5 = info.mpvMd5 else {
-        log.debug("Thumbnails reload stopped because cannot get file path")
+      guard let currentPlayback = info.currentPlayback else {
+        log.debug("Thumbnails reload stopped because no current playback")
+        touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+        return
+      }
+      let videoTrackID = info.vid
+      guard let videoTrackID, videoTrackID > 0 else {
+        log.debug("Thumbnails reload stopped: invalid/missing video track \(String(videoTrackID))")
+        clearExistingThumbnails(for: currentPlayback)
+        return
+      }
+      guard !currentPlayback.isNetworkResource else {
+        log.verbose("Thumbnails reload stopped current media is network")
         clearExistingThumbnails(for: currentPlayback)
         return
       }
@@ -3403,18 +3407,19 @@ class PlayerCore: NSObject {
         let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
 
         if let oldThumbs = currentPlayback.thumbnails {
-          if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == url.path,
+          if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
+             oldThumbs.videoTrackID == videoTrackID,
              thumbnailWidth == oldThumbs.thumbnailWidth,
              videoGeo.totalRotation == oldThumbs.rotationDegrees {
-            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for file (\(thumbnailWidth)px, \(videoGeo.totalRotation)°). Nothing to do"}
+            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) (\(thumbnailWidth)px, \(videoGeo.totalRotation)°). Nothing to do"}
             return
           } else {
             clearExistingThumbnails(for: currentPlayback)
           }
         }
 
-        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: url.path, mediaFilePathMD5: mpvMD5,
-                                                                  thumbnailWidth: thumbnailWidth, rotationDegrees: videoGeo.totalRotation)
+        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: currentPlayback.url.path, mediaFilePathMD5: currentPlayback.mpvMD5,
+                                                                  videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth, rotationDegrees: videoGeo.totalRotation)
         currentPlayback.thumbnails = newMediaThumbnailLoader
         guard queueTicket == thumbnailQueueTicket else { return }
         newMediaThumbnailLoader.loadThumbnails()

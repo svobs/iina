@@ -206,7 +206,7 @@ extension PlayerWindowController {
 
       log.verbose("Pref \(key.rawValue.quoted) changed: requesting thumbs regen")
       // May need to remove thumbs or generate new ones: let method below figure it out:
-      player.reloadThumbnails(forMedia: player.info.currentPlayback)
+      player.reloadThumbnails()
 
     case .showChapterPos:
       if let newValue = newValue as? Bool {

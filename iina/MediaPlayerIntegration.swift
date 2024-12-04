@@ -15,12 +15,16 @@ class MediaPlayerIntegration {
   private let remoteCommand = MPRemoteCommandCenter.shared()
 
   func update() {
-    guard !AppDelegate.shared.isTerminating else { return }
-    let newEnablement = Preference.bool(for: .useMediaKeys)
-    updateEnablement(to: newEnablement)
+    DispatchQueue.execSyncOrAsyncIfNotIn(.main) { [self] in
+      guard !AppDelegate.shared.isTerminating else { return }
+      let newEnablement = Preference.bool(for: .useMediaKeys)
+      updateEnablement(to: newEnablement)
+    }
   }
 
-  func updateEnablement(to newEnablement: Bool) {
+  private func updateEnablement(to newEnablement: Bool) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     let didChange: Bool = $enabled.withLock {
       let didChange = $0 != newEnablement
       if didChange {
@@ -37,9 +41,7 @@ class MediaPlayerIntegration {
     }
 
     if newEnablement {
-      DispatchQueue.execSyncOrAsyncIfNotIn(.main) { [self] in
-        updateNowPlayingInfo()
-      }
+      updateNowPlayingInfo()
     }
   }
 
@@ -127,6 +129,7 @@ class MediaPlayerIntegration {
     remoteCommand.changePlaybackPositionCommand.removeTarget(nil)
   }
 
+
   /// Update the information shown by macOS in `Now Playing`.
   ///
   /// The macOS [Control Center](https://support.apple.com/guide/mac-help/quickly-change-settings-mchl50f94f8f/mac)
@@ -160,6 +163,18 @@ class MediaPlayerIntegration {
       info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
       info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
     }
+    let artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
+      // Use thumbnail if available
+      // TODO: cache this
+      if let currentPosition = activePlayer.info.playbackPositionSec, activePlayer.info.isVideoTrackSelected,
+         let thumbnail = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: currentPosition) {
+        return NSImage(cgImage: thumbnail.image.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt), size: displaySize)
+      } else {
+        // Default album art
+        return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
+      }
+    })
+    info[MPMediaItemPropertyArtwork] = artwork
 
     let duration = activePlayer.info.playbackDurationSec ?? 0
     let time = activePlayer.info.playbackPositionSec ?? 0
@@ -169,20 +184,6 @@ class MediaPlayerIntegration {
     info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
     info[MPNowPlayingInfoPropertyPlaybackRate] = speed
     info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
-
-    if let currentPlayback = activePlayer.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded) {
-      if let playlistPos = currentPlayback.playlistPos {
-        info[MPNowPlayingInfoPropertyPlaybackQueueIndex] = playlistPos
-        info[MPNowPlayingInfoPropertyPlaybackQueueCount] = activePlayer.info.playlist.count
-        info[MPNowPlayingInfoPropertyChapterNumber] = activePlayer.info.chapter
-        info[MPNowPlayingInfoPropertyChapterCount] = activePlayer.info.chapters.count
-      } else {
-        info[MPNowPlayingInfoPropertyPlaybackQueueIndex] = nil
-        info[MPNowPlayingInfoPropertyPlaybackQueueCount] = nil
-        info[MPNowPlayingInfoPropertyChapterNumber] = nil
-        info[MPNowPlayingInfoPropertyChapterCount] = nil
-      }
-    }
 
     center.nowPlayingInfo = info
 

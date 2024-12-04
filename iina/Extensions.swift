@@ -2019,7 +2019,7 @@ extension NSView {
   func snapshotImage() -> CGImage? {
     guard let window = window, let screen = window.screen, let contentView = window.contentView else { return nil }
     if #available(macOS 10.15, *) {
-      CGRequestScreenCaptureAccess()
+//      CGRequestScreenCaptureAccess()
     } else {
       // Fallback on earlier versions
     }

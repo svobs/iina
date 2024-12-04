@@ -22,6 +22,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   let queueTicket: Int
   let mediaFilePath: String
   let mediaFilePathMD5: String
+  let videoTrackID: Int
   let thumbnailWidth: Int
   let rotationDegrees: Int
 
@@ -41,11 +42,12 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     return player.log
   }
 
-  init(_ player: PlayerCore, queueTicket: Int, mediaFilePath: String, mediaFilePathMD5: String, thumbnailWidth: Int, rotationDegrees: Int) {
+  init(_ player: PlayerCore, queueTicket: Int, mediaFilePath: String, mediaFilePathMD5: String, videoTrackID: Int, thumbnailWidth: Int, rotationDegrees: Int) {
     self.player = player
     self.queueTicket = queueTicket
     self.mediaFilePath = mediaFilePath
     self.mediaFilePathMD5 = mediaFilePathMD5
+    self.videoTrackID = videoTrackID
     self.thumbnailWidth = thumbnailWidth
     self.rotationDegrees = rotationDegrees
   }

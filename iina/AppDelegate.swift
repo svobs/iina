@@ -505,7 +505,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: - Application termination
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-    assert(DispatchQueue.isExecutingIn(.main))
     Logger.log("App should terminate")
     if shutdownHandler.beginShutdown() {
       return .terminateNow

@@ -10,6 +10,9 @@ import Cocoa
 
 fileprivate let outlineBorderWidth: CGFloat = 1
 
+/// Stores the thumbnail image in the seek preview UI, if configured.
+///
+/// See: `SeekPreview.swift`
 class ThumbnailPeekView: NSImageView {
 
   var widthConstraint: NSLayoutConstraint!

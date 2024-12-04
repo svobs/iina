@@ -365,7 +365,7 @@ extension PlayerWindowController {
         }
 
         if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
-          player.reloadThumbnails(forMedia: currentPlayback)
+          player.reloadThumbnails()
         }
 
         animationPipeline.submitInstantTask { [self] in
