@@ -239,6 +239,27 @@ class PlayerCore: NSObject {
     return true
   }
 
+  var canSkipBackward: Bool {
+    isActive && (info.isPlaying || (info.playbackPositionSec ?? 0.0) > 0.0)
+  }
+
+  var canSkipForward: Bool {
+    guard isActive else { return false }
+    guard let pos = info.playbackPositionSec, let dur = info.playbackDurationSec else { return true }
+    return !info.isPaused || pos < dur
+  }
+
+  var canPlayPrevTrack: Bool {
+    guard isActive, let currentPlayback = info.currentPlayback else { return false }
+    return (currentPlayback.playlistPos ?? 0) > 1
+  }
+
+  var canPlayNextTrack: Bool {
+    guard isActive, let currentPlayback = info.currentPlayback, currentPlayback.state.isAtLeast(.loaded) else { return false }
+    let playlistCount = info.playlist.count
+    return (currentPlayback.playlistPos ?? 0) < playlistCount - 1
+  }
+
   /// The A loop point established by the [mpv](https://mpv.io/manual/stable/) A-B loop command.
   var abLoopA: Double {
     /// Returns the value of the A loop point, a timestamp in seconds if set, otherwise returns zero.

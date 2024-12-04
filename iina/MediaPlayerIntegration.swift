@@ -51,64 +51,75 @@ class MediaPlayerIntegration {
 
   private func attachRemoteCommands() {
     Logger.log("Attaching MediaPlayer remote commands")
-    remoteCommand.playCommand.addTarget { _ in
+    remoteCommand.playCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.resume()
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.pauseCommand.addTarget { _ in
+    remoteCommand.pauseCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.pause()
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.togglePlayPauseCommand.addTarget { _ in
+    remoteCommand.togglePlayPauseCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.togglePause()
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.stopCommand.addTarget { _ in
+    remoteCommand.stopCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.stop()
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.nextTrackCommand.addTarget { _ in
+    remoteCommand.nextTrackCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.navigateInPlaylist(nextMedia: true)
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.previousTrackCommand.addTarget { _ in
+    remoteCommand.previousTrackCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.navigateInPlaylist(nextMedia: false)
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.changeRepeatModeCommand.addTarget { _ in
+    remoteCommand.changeRepeatModeCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.nextLoopMode()
+      updateCommandEnablements(for: player)
       return .success
     }
     remoteCommand.changeShuffleModeCommand.isEnabled = false
     // remoteCommand.changeShuffleModeCommand.addTarget {})
     remoteCommand.changePlaybackRateCommand.supportedPlaybackRates = [0.5, 1, 1.5, 2]
-    remoteCommand.changePlaybackRateCommand.addTarget { event in
+    remoteCommand.changePlaybackRateCommand.addTarget { [self] event in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
+      updateCommandEnablements(for: player)
       return .success
     }
     remoteCommand.skipForwardCommand.preferredIntervals = [15]
-    remoteCommand.skipForwardCommand.addTarget { event in
+    remoteCommand.skipForwardCommand.addTarget { [self] event in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+      updateCommandEnablements(for: player)
       return .success
     }
     remoteCommand.skipBackwardCommand.preferredIntervals = [15]
-    remoteCommand.skipBackwardCommand.addTarget { event in
+    remoteCommand.skipBackwardCommand.addTarget { [self] event in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+      updateCommandEnablements(for: player)
       return .success
     }
-    remoteCommand.changePlaybackPositionCommand.addTarget { event in
+    remoteCommand.changePlaybackPositionCommand.addTarget { [self] event in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.seek(absoluteSecond: (event as! MPChangePlaybackPositionCommandEvent).positionTime)
+      updateCommandEnablements(for: player)
       return .success
     }
   }
@@ -122,7 +133,7 @@ class MediaPlayerIntegration {
     remoteCommand.nextTrackCommand.removeTarget(nil)
     remoteCommand.previousTrackCommand.removeTarget(nil)
     remoteCommand.changeRepeatModeCommand.removeTarget(nil)
-    remoteCommand.changeShuffleModeCommand.removeTarget(nil)
+//    remoteCommand.changeShuffleModeCommand.removeTarget(nil)
     remoteCommand.changePlaybackRateCommand.removeTarget(nil)
     remoteCommand.skipForwardCommand.removeTarget(nil)
     remoteCommand.skipBackwardCommand.removeTarget(nil)
@@ -192,5 +203,14 @@ class MediaPlayerIntegration {
     } else {
       center.playbackState = .unknown
     }
+
+    updateCommandEnablements(for: activePlayer)
+  }
+
+  private func updateCommandEnablements(for player: PlayerCore) {
+    remoteCommand.skipBackwardCommand.isEnabled = player.canSkipBackward
+    remoteCommand.skipForwardCommand.isEnabled = player.canSkipForward
+    remoteCommand.previousTrackCommand.isEnabled = player.canPlayPrevTrack
+    remoteCommand.nextTrackCommand.isEnabled = player.canPlayNextTrack
   }
 }
