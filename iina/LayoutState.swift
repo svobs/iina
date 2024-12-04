@@ -30,7 +30,7 @@ struct LayoutSpec {
   /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
-  let oscBackgroundIsClear = false // TODO: still WIP
+  let oscStyle: Preference.OSCStyle
 
   let controlBarGeo: ControlBarGeometry
 
@@ -62,6 +62,7 @@ struct LayoutSpec {
       self.bottomBarPlacement = bottomBarPlacement
       self.enableOSC = enableOSC
       self.interactiveMode = nil
+      self.oscStyle = /*TODO: (enableOSC && oscPosition == .bottom && bottomBarPlacement == .insideViewport) ? .clearGradient :*/ .visualEffectView
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       // Override most properties for music mode & interactive mode
       self.leadingSidebar = leadingSidebar.clone(visibility: .hide)
@@ -70,6 +71,7 @@ struct LayoutSpec {
       self.bottomBarPlacement = .outsideViewport
       self.enableOSC = false
       self.interactiveMode = interactiveMode
+      self.oscStyle = .visualEffectView
     }
 
     self.isLegacyStyle = isLegacyStyle
@@ -272,6 +274,10 @@ struct LayoutSpec {
     }
     return (shouldCloseLeadingSidebar, shouldCloseTrailingSidebar)
   }
+
+  var oscBackgroundIsClear: Bool {
+    return oscStyle != .visualEffectView
+  }
 }
 
 /// `LayoutState`: data structure which contains all the variables which describe a single layout configuration of the `PlayerWindow`.
@@ -318,6 +324,10 @@ class LayoutState {
   var topOSCHeight: CGFloat = 0
 
   // MARK: Derived / computed properties
+
+  var oscStyle: Preference.OSCStyle {
+    return spec.oscStyle
+  }
 
   var topBarHeight: CGFloat {
     self.titleBarHeight + self.topOSCHeight

@@ -261,7 +261,7 @@ extension PlayerWindowController {
       cropController.cropBoxView.alphaValue = 0
     }
 
-    if transition.isTopBarPlacementChanging || transition.isBottomBarPlacementChanging || transition.isTogglingVisibilityOfAnySidebar {
+    if transition.isTopBarPlacementChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingVisibilityOfAnySidebar {
       hideSeekPreview()
     }
   }
@@ -401,6 +401,11 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.isBottomBarPlacementOrStyleChanging {
+      initBottomBarView(in: window.contentView!, style: transition.outputLayout.oscStyle)
+      updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
+    }
+
     // Allow for showing/hiding each button individually
 
     applyHiddenOnly(visibility: outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
@@ -444,10 +449,6 @@ extension PlayerWindowController {
 
     if !outputLayout.hasControlBar {
       fragPositionSliderView?.removeFromSuperview()
-    }
-
-    if transition.isBottomBarPlacementChanging {
-      updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good

@@ -43,10 +43,6 @@ extension PlayerWindowController {
       self.isWindowInitialLayout = isWindowInitialLayout
     }
 
-    var isOSCChanging: Bool {
-      return (inputLayout.enableOSC != outputLayout.enableOSC) || (inputLayout.oscPosition != outputLayout.oscPosition)
-    }
-
     // Always need to execute this step. But may not need to use an animation
     var needsAnimationForShowFadeables: Bool {
       return !outputLayout.isInteractiveMode && needsFadeOutOldViews
@@ -78,7 +74,7 @@ extension PlayerWindowController {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }
-      return isHidingLeadingSidebar || isHidingTrailingSidebar || isTopBarPlacementChanging || isBottomBarPlacementChanging
+      return isHidingLeadingSidebar || isHidingTrailingSidebar || isTopBarPlacementChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
@@ -88,7 +84,7 @@ extension PlayerWindowController {
     // Always need to execute this step. But may not need to use an animation
     var needsAnimationForOpenFinalPanels: Bool {
       return (inputGeometry.topMarginHeight != outputGeometry.topMarginHeight)
-      || isShowingLeadingSidebar || isShowingTrailingSidebar || isTopBarPlacementChanging || isBottomBarPlacementChanging
+      || isShowingLeadingSidebar || isShowingTrailingSidebar || isTopBarPlacementChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.topBarHeight != outputLayout.topBarHeight)
@@ -172,6 +168,10 @@ extension PlayerWindowController {
 
     var isBottomBarPlacementChanging: Bool {
       return inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
+    }
+
+    var isBottomBarPlacementOrStyleChanging: Bool {
+      return inputLayout.oscStyle != outputLayout.oscStyle
     }
 
     var isLeadingSidebarPlacementChanging: Bool {

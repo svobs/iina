@@ -654,6 +654,24 @@ struct Preference {
     }
   }
 
+  enum OSCStyle: Int, InitializingFromKey {
+    case visualEffectView = 1
+    case clearGradient
+
+    static var defaultValue = OSCStyle.visualEffectView
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    init?(_ intValue: Int?) {
+      guard let intValue = intValue else {
+        return nil
+      }
+      self.init(rawValue: intValue)
+    }
+  }
+
   enum ShowTopBarTrigger: Int, InitializingFromKey {
     case windowHover = 1
     case topBarHover

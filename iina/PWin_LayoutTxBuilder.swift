@@ -419,7 +419,7 @@ extension PlayerWindowController {
     // BOTTOM
     let insideBottomBarHeight: CGFloat
     let outsideBottomBarHeight: CGFloat
-    if !transition.isWindowInitialLayout && transition.isBottomBarPlacementChanging || transition.isTogglingMusicMode {
+    if !transition.isWindowInitialLayout && transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingMusicMode {
       // close completely. will animate reopening if needed later
       insideBottomBarHeight = 0
       outsideBottomBarHeight = 0

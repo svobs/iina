@@ -105,7 +105,7 @@ extension PlayerWindowController {
 
       initSeekPreview(in: contentView)
       initTitleBarAccessories()
-      initBottomBarView(in: contentView, useVisualEffectView: true)
+      initBottomBarView(in: contentView, style: .visualEffectView)
       initSpeedLabel()
       initPlaybackBtnsView()
       initVolumeView()
@@ -246,9 +246,9 @@ extension PlayerWindowController {
     addTitleBarAccessoryViews()
   }
 
-  private func initBottomBarView(in contentView: NSView, useVisualEffectView: Bool) {
+  func initBottomBarView(in contentView: NSView, style: Preference.OSCStyle) {
     bottomBarView.removeFromSuperview()
-    bottomBarView = useVisualEffectView ? NSVisualEffectView() : NSView()
+    bottomBarView = style == .visualEffectView ? NSVisualEffectView() : NSView()
 
     contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     bottomBarView.clipsToBounds = true
