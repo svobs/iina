@@ -174,23 +174,25 @@ class MediaPlayerIntegration {
       info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
       info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
     }
-    let artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
-//      if activePlayer.info.currentMediaAudioStatus == .isAudioWithArtShown {
-        // TODO: figure out a way to get album art from mpv
-//      }
-      // Use thumbnail if available
-      // TODO: cache this
-      if let currentPosition = activePlayer.info.playbackPositionSec, activePlayer.info.isVideoTrackSelected,
-         let thumbImg = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: currentPosition)?.image {
-        // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
-        let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
-        if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
-          return previewImg
+    let artwork: MPMediaItemArtwork?
+    if activePlayer.info.isVideoTrackSelected, (activePlayer.info.currentPlayback?.thumbnails?.thumbnails.count ?? 0) > 0 {
+      artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
+        // TODO: figure out a way to use screenshot-raw from mpv instead!
+        // Use thumbnail if available
+        if let currentPosition = activePlayer.info.playbackPositionSec, activePlayer.info.isVideoTrackSelected,
+           let thumbImg = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: currentPosition)?.image {
+          // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
+          let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
+          if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
+            return previewImg
+          }
         }
-      }
-      // Default album art
-      return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
-    })
+        // Default album art
+        return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
+      })
+    } else {
+      artwork = nil
+    }
     info[MPMediaItemPropertyArtwork] = artwork
 
     let duration = activePlayer.info.playbackDurationSec ?? 0
