@@ -456,6 +456,7 @@ extension PlayerWindowController {
 
     case .windowedNormal:
       let resizedGeo: PWinGeometry?
+      let intendedViewportSize: CGSize?
 
       switch sessionState {
       case .restoring(_):
@@ -469,16 +470,17 @@ extension PlayerWindowController {
       case .newReplacingExisting,
           .existingSession_startingNewPlayback:
         resizedGeo = applyResizePrefsForWindowedFileOpen(isOpeningFileManually: sessionState.isOpeningFileManually, newVidGeo: newVidGeo)
+        intendedViewportSize = nil  // do not use this for new session
       case .existingSession_videoTrackChangedForSamePlayback,
           .existingSession_continuing:
         // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
+        intendedViewportSize = player.info.intendedViewportSize
       case .noSession:
         Logger.fatal("[applyVideoGeo \(cxt.name)] Invalid sessionState: \(sessionState)")
       }
 
-      let newGeo = resizedGeo ?? windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
-                                                                              intendedViewportSize: player.info.intendedViewportSize)
+      let newGeo = resizedGeo ?? windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo, intendedViewportSize: intendedViewportSize)
 
       let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
 //      let windowedGeoUpdated = windowedGeoForCurrentFrame(newVidGeo: newVidGeo)
