@@ -212,9 +212,11 @@ extension PlayerWindowController {
         log.debug{"[applyVideoGeo \(context.name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
         return nil
       }
-      guard vidTrackID != context.currentPlayback.vidTrackLastSized else {
-        log.debug{"[applyVideoGeo \(context.name)] Aborting transform, vid=\(String(vidTrackID)) != vidTrackLastSized \(String(context.currentPlayback.vidTrackLastSized))"}
-        return nil
+
+      if context.currentMediaAudioStatus.isAudio || vidTrackID == 0 {
+        // Square album art
+        log.debug{"[applyVideoGeo \(context.name)] Using albumArtGeometry because current media is audio"}
+        return VideoGeometry.albumArtGeometry(log)
       }
 
       // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
@@ -231,6 +233,9 @@ extension PlayerWindowController {
         rawWidth = vidWidth
         rawHeight = vidHeight
       } else {
+        if vidTrackID != 0 {
+          log.warn("[applyVideoGeo \(context.name)]: mpv returned 0 for video dimensions, using cached video info instead")
+        }
         rawWidth = nil
         rawHeight = nil
       }
@@ -281,10 +286,6 @@ extension PlayerWindowController {
       if let ffMeta {
         log.debug{"[applyVideoGeo \(context.name)] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}
         return videoGeo.substituting(ffMeta)
-      } else if context.currentMediaAudioStatus.isAudio {
-        // Square album art
-        log.debug{"[applyVideoGeo \(context.name)] Using albumArtGeometry because current media is audio"}
-        return VideoGeometry.albumArtGeometry(log)
       } else {
         log.debug{"[applyVideoGeo \(context.name)] Derived videoGeo \(videoGeo)"}
         return videoGeo
@@ -334,11 +335,9 @@ extension PlayerWindowController {
           return abort("currentPlayback is nil")
         }
 
-        // Need to load file before we can know its video geometry
-        // ...Unless we are restoring. But then we still want to wait until all windows have finished loading,
-        // so that we can open them all at once
-        // ...But streaming files can often fail to connect. So reopen those right away if restoring, since we already
-        // have their saved geometry anyway.
+        // File needs to be loaded before we can know its video geometry.
+        // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
+        // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
         guard currentPlayback.state.isAtLeast(.loaded) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
           return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring) network=\(currentPlayback.isNetworkResource.yn)")
         }
@@ -367,50 +366,11 @@ extension PlayerWindowController {
         }
 
         animationPipeline.submitInstantTask { [self] in
-          var imminentTasks: [IINAAnimation.Task] = []
           log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(cxt.sessionState)"}
 
-          let doAfterTask = IINAAnimation.Task.instantTask{ [self] in
+          let doAfterTask = buildEndTask(cxt, newVidGeo: newVidGeo, onSuccess: onSuccess)
 
-            if cxt.sessionState.isChangingVideoTrack {
-              // Set to prevent future duplicate calls from continuing
-              currentPlayback.vidTrackLastSized = cxt.vidTrackID
-              // Return to normal status:
-              sessionState = .existingSession_continuing
-
-              // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
-              // The OSD can have weird stretching glitches if displayed while zooming open...
-              if currentPlayback.state == .loaded {
-                // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
-                log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID)"}
-                currentPlayback.state = .loadedAndSized
-
-                // If is network resource, may not be loaded yet. If file, it will be.
-                player.postNotification(.iinaFileLoaded)
-                player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
-              }
-            }
-
-            // Plugs loophole when restoring:
-            videoView.refreshAllState()
-
-            // Need to call here to ensure file title OSD is displayed when navigating playlist...
-            player.refreshSyncUITimer()
-            updateUI()
-            // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
-            updateWindowBorderAndOpacity()
-
-            // Always do this in case the video geometry changed:
-            player.reloadQuickSettingsView()
-
-            if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
-              player.reloadThumbnails()
-            }
-
-            if let onSuccess {
-              onSuccess()
-            }
-          }
+          var imminentTasks: [IINAAnimation.Task] = []
           if cxt.sessionState.isStartingSession {
             let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(cxt, newVidGeo: newVidGeo)
             imminentTasks.append(contentsOf: windowOpenLayoutTasks)
@@ -424,9 +384,53 @@ extension PlayerWindowController {
             imminentTasks.append(contentsOf: videoGeoUpdateTasks)
             imminentTasks.append(doAfterTask)
           }
+
           animationPipeline.submit(imminentTasks)
         }
 
+      }
+    }
+  }
+
+  /// Cleanup, update `sessionState` & UI.
+  private func buildEndTask(_ cxt: GeometryTransformContext, newVidGeo: VideoGeometry, onSuccess: (() -> Void)? = nil) -> IINAAnimation.Task {
+    IINAAnimation.Task.instantTask{ [self] in
+      if cxt.sessionState.isChangingVideoTrack {
+        // Set to prevent future duplicate calls from continuing
+        cxt.currentPlayback.vidTrackLastSized = cxt.vidTrackID
+        // Return to normal status:
+        sessionState = .existingSession_continuing
+
+        // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
+        // The OSD can have weird stretching glitches if displayed while zooming open...
+        if cxt.currentPlayback.state == .loaded {
+          // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
+          log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID)"}
+          cxt.currentPlayback.state = .loadedAndSized
+
+          // If is network resource, may not be loaded yet. If file, it will be.
+          player.postNotification(.iinaFileLoaded)
+          player.events.emit(.fileLoaded, data: cxt.currentPlayback.url.absoluteString)
+        }
+      }
+
+      // Plugs loophole when restoring:
+      videoView.refreshAllState()
+
+      // Need to call here to ensure file title OSD is displayed when navigating playlist...
+      player.refreshSyncUITimer()
+      // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
+      updateWindowBorderAndOpacity()
+
+      // Always do this in case the video geometry changed:
+      player.reloadQuickSettingsView()
+
+      if newVidGeo.totalRotation != cxt.currentPlayback.thumbnails?.rotationDegrees {
+        player.reloadThumbnails()
+      }
+
+      if let onSuccess {
+        onSuccess()
       }
     }
   }
