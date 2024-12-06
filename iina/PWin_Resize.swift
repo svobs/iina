@@ -165,14 +165,16 @@ extension PlayerWindowController {
   /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
   func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     videoView.videoLayer.enterAsynchronousMode()
-
     if updateVideoView {
+      // Not sure if this helps fix the aspect constraint transition
+      CATransaction.begin()
       videoView.apply(newGeometry)
+      CATransaction.commit()
     }
-
+    
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)
-
+    
     if newGeometry.mode == .musicMode {
       miniPlayer.loadIfNeeded()
       // Re-evaluate space requirements for labels. May need to start scrolling.
@@ -183,7 +185,7 @@ extension PlayerWindowController {
       let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
       cropSettingsView?.cropBoxView.resized(with: newVideoRect)
     }
-
+    
     if osd.animationState == .shown {
       updateOSDTextSize(from: newGeometry)
       if player.info.isFileLoadedAndSized {
@@ -352,13 +354,12 @@ extension PlayerWindowController {
                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus)
 
         if let stateChange {
-          if let newSessionState = stateChange(cxt) {
-            cxt = cxt.clone(sessionState: newSessionState)
-          } else {
+          guard let newSessionState = stateChange(cxt) else {
             return abort("state change func returned nil from sessionState=\(sessionState)")
           }
+          cxt = cxt.clone(sessionState: newSessionState)
         } else {
-          log.verbose{"[applyVideoGeo \(transformName) Using unaltered current sessionState: \(cxt.sessionState)"}
+          log.verbose{"[applyVideoGeo \(transformName)] Reusing current sessionState: \(cxt.sessionState)"}
         }
 
         guard let newVidGeo = videoTransform(cxt) else {
@@ -373,6 +374,9 @@ extension PlayerWindowController {
             if sessionState.isChangingVideoTrack {
               // Return to normal status:
               self.sessionState = .existingSession_continuing
+
+              // Plugs loophole when restoring:
+              videoView.refreshAllState()
 
               // Need to call here to ensure file title OSD is displayed when navigating playlist...
               player.refreshSyncUITimer()

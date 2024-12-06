@@ -38,11 +38,11 @@ class PlayerWindow: NSWindow {
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
     // Make sure all layout updates are in the same transaction:
-//    CATransaction.begin()
-//    CATransaction.setDisableActions(true)
-//    defer {
-//      CATransaction.commit()
-//    }
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer {
+      CATransaction.commit()
+    }
 
     pwc?.resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 

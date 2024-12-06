@@ -109,7 +109,7 @@ class VideoView: NSView {
     return false
   }
 
-  func refreshAll() {
+  func refreshAllState() {
     // Do not execute if hidden during restore! Some of these calls may cause the window to show
     guard player.windowController.loaded, player.isActive && !player.isRestoring else { return }
     updateDisplayLink()
