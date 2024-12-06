@@ -434,6 +434,7 @@ class MPVController: NSObject {
                   level: .verbose)
     setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback", level: .verbose)
 
+    // FIXME: set this strategically, based on when to resize.
     setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
                   level: .verbose)
 

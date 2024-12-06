@@ -2196,14 +2196,16 @@ class PlayerCore: NSObject {
   }
 
   func getMPVGeometry() -> MPVGeometryDef? {
-    let geometry = mpv.getString(MPVOption.Window.geometry) ?? ""
-    let parsed = MPVGeometryDef.parse(geometry)
-    if let parsed = parsed {
-      log.verbose("Got geometry from mpv: \(parsed)")
+    /// Cannot rely on mpv instance to have `MPVOption.Window.geometry` set. If configured to only set when opening manually, it doesn't
+    /// make sense to keep it set. Just load the pref value directly.
+    let geometryString = Preference.string(for: .initialWindowSizePosition) ?? ""
+    if let mpvGeometry = MPVGeometryDef.parse(geometryString) {
+      log.verbose("Parsed mpv geometry from prefs: \(mpvGeometry)")
+      return mpvGeometry
     } else {
-      log.verbose("Got nil for mpv geometry!")
+      log.verbose("Got nil for mpv geometry from prefs!")
+      return nil
     }
-    return parsed
   }
 
   /// Uses an mpv `on_before_start_file` hook to honor mpv's `shuffle` command via IINA CLI.

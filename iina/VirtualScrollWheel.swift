@@ -268,12 +268,15 @@ class VirtualScrollWheel {
 
   private func endScrollSession() {
     guard let session = currentSession else { Logger.fatal("currentSession==nil for state \(state) → \(ScrollState.notScrolling)") }
+    currentSession = nil
+    let wasScrolling = isScrolling()
     state = .notScrolling
 
-    scrollSessionDidEnd(session)
+    guard wasScrolling else { return }
 
-    currentSession = nil
+    scrollSessionDidEnd(session)
     lastSessionEndTime = Date().timeIntervalSince1970
+    log.verbose("ScrollWheel session ended. Time=\(lastSessionEndTime)")
   }
 
   private func changeState(with event: NSEvent) {
