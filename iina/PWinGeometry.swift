@@ -248,7 +248,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) windowFrame=\(windowFrame) video=\(video))"
+    return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) \(video) windowFrame=\(windowFrame))"
   }
 
   var log: Logger.Subsystem { video.log }

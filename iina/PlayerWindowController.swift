@@ -883,10 +883,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Reset state flags
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
+    let wasSessionFinishedOpening = sessionState.hasOpenSession
     sessionState = .noSession  // reset for reopen
 
-    /// Use `player.info.isFileLoadedAndSized` to prevent from saving when there was an error loading video
-    if player.info.isFileLoadedAndSized {
+    /// Use value of `sessionState.hasOpenSession` to prevent from saving when there was an error loading video
+    if wasSessionFinishedOpening {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         musicModeGeo = musicModeGeoForCurrentFrame()
@@ -900,24 +901,30 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .hide),
                                                trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .hide))
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec, totalStartingDuration: 0, totalEndingDuration: 0)
+
       // Just like at window restore, do all the layout in one block
       animationPipeline.submit(.instantTask { [self] in
+        log.verbose("Resetting window geometry for close")
+        pendingVideoGeoUpdateTasks = []
         do {
           for task in resetTransition.tasks {
             try task.runFunc()
           }
 
-          // The user may expect both to be updated
-          PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
-          PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
         } catch {
           log.error("Failed to run reset layout tasks: \(error)")
         }
+
+        // The user may expect both to be updated.
+        // Make sure to set these *after* running the above layout tasks, to ensure correct geometry.
+        PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
+        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
+
+        log.verbose{"Done: window cleanup on main DQ"}
       })
     }
 
     player.mpv.queue.async { [self] in
-
       // May not have finishing restoring when user closes. Make sure to clean up here
       if case .restoring = sessionState {
         log.debug("Discarding unfinished restore of window")
@@ -925,6 +932,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       player.info.currentPlayback = nil
       osd.clearQueuedOSDs()
+      log.verbose{"Done: window cleanup on mpv DQ"}
     }
   }
 

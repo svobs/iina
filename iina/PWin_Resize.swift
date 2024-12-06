@@ -77,7 +77,7 @@ extension PlayerWindowController {
         let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
                                                     inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
 
-        if currentLayout.mode == .windowedNormal && inLiveResize {
+        if currentLayout.mode == .windowedNormal {
           // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
           player.info.intendedViewportSize = newGeometry.viewportSize
         }
@@ -371,41 +371,41 @@ extension PlayerWindowController {
           log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(cxt.sessionState)"}
 
           let doAfterTask = IINAAnimation.Task.instantTask{ [self] in
-            if sessionState.isChangingVideoTrack {
+
+            if cxt.sessionState.isChangingVideoTrack {
+              // Set to prevent future duplicate calls from continuing
+              currentPlayback.vidTrackLastSized = cxt.vidTrackID
               // Return to normal status:
-              self.sessionState = .existingSession_continuing
+              sessionState = .existingSession_continuing
 
-              // Plugs loophole when restoring:
-              videoView.refreshAllState()
-
-              // Need to call here to ensure file title OSD is displayed when navigating playlist...
-              player.refreshSyncUITimer()
-              updateUI()
-              // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
-              updateWindowBorderAndOpacity()
-            }
-            // Always do this in case the video geometry changed:
-            player.reloadQuickSettingsView()
-
-            if sessionState.isChangingVideoTrack {
               // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
               // The OSD can have weird stretching glitches if displayed while zooming open...
               if currentPlayback.state == .loaded {
                 // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
                 log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID)"}
                 currentPlayback.state = .loadedAndSized
+
                 // If is network resource, may not be loaded yet. If file, it will be.
                 player.postNotification(.iinaFileLoaded)
                 player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
               }
-              // Set immediately to prevent future duplicate calls from continuing
-              currentPlayback.vidTrackLastSized = cxt.vidTrackID
             }
+
+            // Plugs loophole when restoring:
+            videoView.refreshAllState()
+
+            // Need to call here to ensure file title OSD is displayed when navigating playlist...
+            player.refreshSyncUITimer()
+            updateUI()
+            // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
+            updateWindowBorderAndOpacity()
+
+            // Always do this in case the video geometry changed:
+            player.reloadQuickSettingsView()
 
             if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
               player.reloadThumbnails()
             }
-
 
             if let onSuccess {
               onSuccess()
@@ -456,7 +456,6 @@ extension PlayerWindowController {
 
     case .windowedNormal:
       let resizedGeo: PWinGeometry?
-      let intendedViewportSize: CGSize?
 
       switch sessionState {
       case .restoring(_):
@@ -466,20 +465,20 @@ extension PlayerWindowController {
         // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
         duration = IINAAnimation.InitialVideoReconfigDuration
         timing = .linear
-        fallthrough
-      case .newReplacingExisting,
-          .existingSession_startingNewPlayback:
-        resizedGeo = applyResizePrefsForWindowedFileOpen(isOpeningFileManually: sessionState.isOpeningFileManually, newVidGeo: newVidGeo)
-        intendedViewportSize = nil  // do not use this for new session
+        resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: newVidGeo)
+      case .newReplacingExisting:
+        resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: newVidGeo)
+      case .existingSession_startingNewPlayback:
+        resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: newVidGeo)
       case .existingSession_videoTrackChangedForSamePlayback,
           .existingSession_continuing:
         // Not a new file. Some other change to a video geo property. Fall through and resize minimally
         resizedGeo = nil
-        intendedViewportSize = player.info.intendedViewportSize
       case .noSession:
         Logger.fatal("[applyVideoGeo \(cxt.name)] Invalid sessionState: \(sessionState)")
       }
 
+      var intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
       let newGeo = resizedGeo ?? windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo, intendedViewportSize: intendedViewportSize)
 
       let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
@@ -490,8 +489,9 @@ extension PlayerWindowController {
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreenNormal:
+      var intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
       let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
-                                                                   intendedViewportSize: player.info.intendedViewportSize)
+                                                                   intendedViewportSize: intendedViewportSize)
       let fsGeo = newLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
       log.debug{"[applyVideoGeo \(cxt.name)] Will apply FS result: \(fsGeo)"}
 
@@ -554,19 +554,19 @@ extension PlayerWindowController {
 
   /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.
   /// Returns `nil` if no applicable settings were found/applied, and should fall back to minimal resize.
-  private func applyResizePrefsForWindowedFileOpen(isOpeningFileManually: Bool, newVidGeo: VideoGeometry) -> PWinGeometry? {
+  private func applyResizePrefsForWindowedFileOpen(_ cxt: GeometryTransformContext, newVidGeo: VideoGeometry) -> PWinGeometry? {
     // resize option applies
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
     case .always:
       log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='Always' → will resize window")
     case .onlyWhenOpen:
-      if !isOpeningFileManually {
+      if !cxt.sessionState.isOpeningFileManually {
         log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='OnlyWhenOpen', but isOpeningFileManually=N → will resize minimally")
         return nil
       }
     case .never:
-      if !isOpeningFileManually {
+      if !cxt.sessionState.isOpeningFileManually {
         log.verbose("[applyVideoGeo C-1] FileOpened (not manually) & resizeTiming='Never' → will resize minimally")
         return nil
       }
@@ -582,18 +582,26 @@ extension PlayerWindowController {
     switch resizeScheme {
     case .mpvGeometry:
       // check if have mpv geometry set (initial window position/size)
-      if let mpvGeometry = player.getMPVGeometry() {
-        var preferredGeo = windowGeo
-        if Preference.bool(for: .lockViewportToVideoSize), let intendedViewportSize = player.info.intendedViewportSize  {
-          log.verbose{"[applyVideoGeo C-6] Using intendedViewportSize \(intendedViewportSize)"}
-          preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
+      guard let mpvGeometry = player.getMPVGeometry() else {
+        if cxt.sessionState.isOpeningFileManually {
+          log.debug{"[applyVideoGeo C-5] No mpv geometry found. Will fall back to windowedModeGeoLastClosed"}
+          return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
+                                                           video: newVidGeo, keepFullScreenDimensions: true)
+        } else {
+          log.debug{"[applyVideoGeo C-8] No mpv geometry found. Will fall back to minimal resize"}
+          return nil
         }
-        log.verbose{"[applyVideoGeo C-7] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)"}
-        return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
-      } else {
-        log.debug{"[applyVideoGeo C-5] No mpv geometry found. Will fall back to default scheme"}
-        return nil
       }
+
+      var preferredGeo = windowGeo
+      if Preference.bool(for: .lockViewportToVideoSize), cxt.sessionState.canUseIntendedViewportSize,
+         let intendedViewportSize = player.info.intendedViewportSize {
+        log.verbose{"[applyVideoGeo C-6] Using intendedViewportSize \(intendedViewportSize)"}
+        preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
+      }
+      log.verbose{"[applyVideoGeo C-7] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)"}
+      return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
+
     case .simpleVideoSizeMultiple:
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {

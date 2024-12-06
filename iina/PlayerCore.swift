@@ -2434,11 +2434,18 @@ class PlayerCore: NSObject {
     // Done syncing tracks
 
     let stateChange: ((GeometryTransformContext) -> PWinSessionState?) = { [self] context in
-      log.debug("Calling applyVideoGeoForStateChange from fileLoaded; sessionState=\(context.sessionState)")
-      if case .existingSession_continuing = context.sessionState {
+      log.verbose("Calling applyVideoGeoForStateChange from fileLoaded; sessionState=\(context.sessionState)")
+      switch context.sessionState {
+      case .existingSession_continuing:
         return .existingSession_startingNewPlayback
+      default:
+        if context.sessionState.isOpeningFile {
+          return context.sessionState
+        } else {
+          log.verbose("Not the right sessionState; will let another handler take this")
+          return nil
+        }
       }
-      return context.sessionState
     }
     windowController.applyVideoGeoForStateChange(stateChange: stateChange)
 
@@ -2836,23 +2843,21 @@ class PlayerCore: NSObject {
       info.vid = vid
     }
 
-    let stateChangeFunc: (GeometryTransformContext) -> PWinSessionState? = { [self] cxt in
-      if case .existingSession_continuing = windowController.sessionState {
-        if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
-          return .existingSession_videoTrackChangedForSamePlayback
-        } else {
-          log.verbose{"[applyVideoGeo \(cxt.name)] Aborting: no session change, & video track (\(String(cxt.vidTrackID))) is nil or hasn't changed"}
-          return nil
-        }
-      }
-      return windowController.sessionState
-    }
-
     if didChange {
       if !isShowVideoPendingInMiniPlayer {
         // Vid changed, but not from toggling music ode
-        log.verbose{"Calling applyVideoGeoForStateChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn))"}
-        windowController.applyVideoGeoForStateChange(stateChange: stateChangeFunc)
+
+        windowController.applyVideoGeoForStateChange(stateChange: { [self] cxt in
+          log.verbose{"Calling applyVideoGeoForStateChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
+          if case .existingSession_continuing = cxt.sessionState {
+            if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
+              return .existingSession_videoTrackChangedForSamePlayback
+            } else {
+              return cxt.sessionState
+            }
+          }
+          return nil  // abort
+        })
       }
 
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility

@@ -268,8 +268,8 @@ class VirtualScrollWheel {
 
   private func endScrollSession() {
     guard let session = currentSession else { Logger.fatal("currentSession==nil for state \(state) → \(ScrollState.notScrolling)") }
-    currentSession = nil
     let wasScrolling = isScrolling()
+    currentSession = nil
     state = .notScrolling
 
     guard wasScrolling else { return }

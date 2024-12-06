@@ -67,17 +67,6 @@ enum PWinSessionState: CustomStringConvertible {
     }
   }
 
-//  func trackChanged() -> PWinSessionState {
-//    if currentPlayback.state.isNotYet(.loadedAndSized) {
-//      sessionState = .existingSession_startingNewPlayback
-//    } else if currentPlayback.vidTrackLastSized != vidTrackID {
-//      sessionState = .existingSession_videoTrackChangedForSamePlayback
-//    } else {
-//      log.verbose{"[applyVideoGeo \(context.name)] Aborting: no session change, & video track (\(String(vidTrackID))) is nil or hasn't changed"}
-//      return nil
-//    }
-//  }
-
   /// Is `true` only while restore from previous launch is still in progress; `false` otherwise.
   var isRestoring: Bool {
     if case .restoring = self {
@@ -86,11 +75,14 @@ enum PWinSessionState: CustomStringConvertible {
     return false
   }
 
+  /// Returns `true` if session finished its initial load. May be changing tracks or files within the session.
+  var hasOpenSession: Bool {
+    return !isNone && !isOpeningFileManually
+  }
+
   /// Returns true if starting or resuming a session.
-  ///
-  /// Currently this is equivalent to `isOpeningFileManually`.
   var isStartingSession: Bool {
-    return isOpeningFileManually  // just this for now
+    return !isNone && isOpeningFileManually
   }
 
   /// Most similar to the term "Opening file" in Settings window's UI, but also applies when changing video track
@@ -107,6 +99,20 @@ enum PWinSessionState: CustomStringConvertible {
         .existingSession_videoTrackChangedForSamePlayback:
       return true
     case .existingSession_continuing,
+        .noSession:
+      return false
+    }
+  }
+
+  var isOpeningFile: Bool {
+    switch self {
+    case .restoring,
+        .creatingNew,
+        .newReplacingExisting,
+        .existingSession_startingNewPlayback:
+      return true
+    case .existingSession_videoTrackChangedForSamePlayback,
+        .existingSession_continuing,
         .noSession:
       return false
     }
@@ -131,6 +137,13 @@ enum PWinSessionState: CustomStringConvertible {
 
   var isNone: Bool {
     if case .noSession = self {
+      return true
+    }
+    return false
+  }
+
+  var canUseIntendedViewportSize: Bool {
+    if case .existingSession_startingNewPlayback = self {
       return true
     }
     return false

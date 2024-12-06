@@ -86,13 +86,7 @@ class PlaybackInfo {
   // expanded again to the preferred container size.
   var intendedViewportSize: NSSize? = nil {
     didSet {
-      if log.isTraceEnabled {
-        if let newValue = intendedViewportSize {
-          log.trace{"Updated intendedViewportSize to \(newValue)"}
-        } else {
-          log.trace("Updated intendedViewportSize to nil")
-        }
-      }
+      log.trace{"Updated intendedViewportSize ≔ \(intendedViewportSize?.description ?? "nil")"}
     }
   }
 
