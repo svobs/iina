@@ -614,8 +614,6 @@ struct PlayerSaveState: CustomStringConvertible {
 
     let windowController = player.windowController!
     windowController.geo = self.geoSet
-    assert(windowController.sessionState.isUnused, "Invalid sessionState for restore: \(windowController.sessionState)")
-    windowController.sessionState = .restoring(playerState: self)
 
     log.verbose("Screens from prior launch: \(self.screens)")
 
@@ -713,14 +711,14 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Open the window!
-    player.openURLs([url], shouldAutoLoadPlaylist: false, mpvRestoreWorkItem: { restoreMpvProperties(to: player) })
+    player.openURLs([url], shouldAutoLoadPlaylist: false)
   }
 
   /// Restore mpv properties.
   /// Must wait until after mpv init, so that the lifetime of these options is limited to the current file.
   /// Otherwise the mpv core will keep the options for the lifetime of the player, which is often undesirable (for example,
   /// `MPVOption.PlaybackControl.start` will skip any files in the playlist which have durations shorter than its start time).
-  private func restoreMpvProperties(to player: PlayerCore) {
+  func restoreMpvProperties(to player: PlayerCore) {
     let mpv: MPVController = player.mpv
     let log = player.log
 

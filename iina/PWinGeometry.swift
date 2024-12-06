@@ -1144,7 +1144,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       newOrigin.y = adjustedOrigin.y
     }
 
-    let newWindowFrame = NSRect(origin: newOrigin, size: newWindowSize)
+    let newWindowFrame = NSRect(x: newOrigin.x.rounded(), y: newOrigin.y.rounded(), width: newWindowSize.width.rounded(), height: newWindowSize.height.rounded())
     log.debug("Calculated windowFrame from mpv geometry: \(newWindowFrame)")
     return self.clone(windowFrame: newWindowFrame)
   }

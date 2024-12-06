@@ -307,8 +307,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   func applyGeoForVideoView(setVisible visible: Bool) {
     // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
     player.mpv.queue.async { [self] in
-      windowController.sessionState = .existingSession_videoTrackChangedForSamePlayback
-      windowController.applyVideoGeoForTrackChange({ [self] ctx in
+      windowController.applyVideoGeoForStateChange(stateChange: { ctx in
+        if case .existingSession_continuing = ctx.sessionState {
+          return .existingSession_videoTrackChangedForSamePlayback
+        }
+        return ctx.sessionState
+      }, { [self] ctx in
         let oldGeo = ctx.oldGeo.musicMode
         let newGeo = oldGeo.withVideoViewVisible(visible)
         log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → \(visible.yesno), H=\(newGeo.videoHeight)"}

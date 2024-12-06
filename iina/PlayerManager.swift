@@ -85,6 +85,9 @@ class PlayerManager {
     }
 
     let player = createNewPlayerCore(withLabel: id)
+    let wc = player.windowController!
+    assert(wc.sessionState.isNone, "Invalid sessionState for restore: \(wc.sessionState)")
+    wc.sessionState = .restoring(playerState: savedState)
     savedState.restoreTo(player)
     return player
   }

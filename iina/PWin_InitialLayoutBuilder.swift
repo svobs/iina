@@ -23,10 +23,10 @@ extension PlayerWindowController {
                                      newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    let sessionState = cxt.sessionState
+    let newSessionState = cxt.sessionState
     let currentMediaAudioStatus = cxt.currentMediaAudioStatus
 
-    guard sessionState.isStartingSession, let window = window else {
+    guard newSessionState.isStartingSession, let window = window else {
       return (currentLayout, [])
     }
 
@@ -34,7 +34,7 @@ extension PlayerWindowController {
     var tasks: [IINAAnimation.Task]
     let initialLayout: LayoutState
 
-    switch sessionState {
+    switch newSessionState {
     case .restoring(let priorState):
       if let priorLayoutSpec = priorState.layoutSpec {
         log.verbose("[applyVideoGeo \(cxt.name)] Transitioning to initial layout from prior window state")
@@ -105,17 +105,11 @@ extension PlayerWindowController {
       tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
-      Logger.fatal("Invalid PWinSessionState for initial layout: \(sessionState)")
+      Logger.fatal("Invalid PWinSessionState for initial layout: \(newSessionState)")
     }
 
     tasks.append(.instantTask{ [self] in
       defer {
-        // If is network resource, may not be loaded yet. If file, it will be.
-        if let currentPlayback = player.info.currentPlayback,
-           currentPlayback.state.isAtLeast(.loaded) {
-          player.postNotification(.iinaFileLoaded)
-          player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
-        }
         /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
         log.verbose("Posting windowIsReadyToShow")
         window.postWindowIsReadyToShow()

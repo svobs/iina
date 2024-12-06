@@ -12,6 +12,9 @@ import Foundation
 /// Each `PlayerWindow` has a session associated with it. The session's state can be saved using `PlayerSaveState`.
 /// This class helps keep track of the lifecycle state of the session.
 enum PWinSessionState: CustomStringConvertible {
+
+  case noSession
+
   /// Restoring the session from prior launch.
   /// `playerState`: contains state data needed to restore the UI state from a previous launch, loaded from prefs.
   case restoring(playerState: PlayerSaveState)
@@ -31,8 +34,6 @@ enum PWinSessionState: CustomStringConvertible {
 
   /// Existing window, session, file.
   case existingSession_continuing
-
-  case noSession
 
   /// Need to specify this so that `playerState` is not included...
   var description: String {
@@ -66,6 +67,17 @@ enum PWinSessionState: CustomStringConvertible {
     }
   }
 
+//  func trackChanged() -> PWinSessionState {
+//    if currentPlayback.state.isNotYet(.loadedAndSized) {
+//      sessionState = .existingSession_startingNewPlayback
+//    } else if currentPlayback.vidTrackLastSized != vidTrackID {
+//      sessionState = .existingSession_videoTrackChangedForSamePlayback
+//    } else {
+//      log.verbose{"[applyVideoGeo \(context.name)] Aborting: no session change, & video track (\(String(vidTrackID))) is nil or hasn't changed"}
+//      return nil
+//    }
+//  }
+
   /// Is `true` only while restore from previous launch is still in progress; `false` otherwise.
   var isRestoring: Bool {
     if case .restoring = self {
@@ -75,6 +87,8 @@ enum PWinSessionState: CustomStringConvertible {
   }
 
   /// Returns true if starting or resuming a session.
+  ///
+  /// Currently this is equivalent to `isOpeningFileManually`.
   var isStartingSession: Bool {
     return isOpeningFileManually  // just this for now
   }
@@ -115,7 +129,7 @@ enum PWinSessionState: CustomStringConvertible {
     }
   }
 
-  var isUnused: Bool {
+  var isNone: Bool {
     if case .noSession = self {
       return true
     }

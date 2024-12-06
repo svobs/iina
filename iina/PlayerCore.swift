@@ -368,7 +368,7 @@ class PlayerCore: NSObject {
      `0` if no playable files were found & the player window was not opened.
    */
   @discardableResult
-  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true, mpvRestoreWorkItem: (() -> Void)? = nil) -> Int? {
+  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true) -> Int? {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
@@ -389,7 +389,7 @@ class PlayerCore: NSObject {
           || Utility.playlistFileExt.contains(loneURL.absoluteString.lowercasedPathExtension) {
 
         info.shouldAutoLoadFiles = false
-        openPlayerWindow(urls, mpvRestoreWorkItem: mpvRestoreWorkItem)
+        openPlayerWindow(urls)
         return nil
       }
     }
@@ -410,7 +410,7 @@ class PlayerCore: NSObject {
     }
 
     // open the first file
-    openPlayerWindow(playableFiles, mpvRestoreWorkItem: mpvRestoreWorkItem)
+    openPlayerWindow(playableFiles)
     return count
   }
 
@@ -458,7 +458,7 @@ class PlayerCore: NSObject {
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
   /// The caller must ensure that `urls` is *never* empty!
-  private func openPlayerWindow(_ urls: [URL], mpvRestoreWorkItem: (() -> Void)? = nil) {
+  private func openPlayerWindow(_ urls: [URL]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard urls.count > 0 else {
@@ -478,9 +478,6 @@ class PlayerCore: NSObject {
     mpv.queue.sync { [self] in
       let path = playback.path
       info.currentPlayback = playback
-      if !windowController.sessionState.isRestoring {
-        windowController.sessionState = windowController.sessionState.newSession()
-      }
       log.debug{"Opening PlayerWindow for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
 
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
@@ -496,6 +493,7 @@ class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         if !windowController.sessionState.isRestoring {
           windowController.osd.clearQueuedOSDs()
+          windowController.sessionState = windowController.sessionState.newSession()
         }
 
         /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
@@ -507,11 +505,15 @@ class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path])
 
-          if let mpvRestoreWorkItem {
-            mpvRestoreWorkItem()
+          if case .restoring(let priorState) = windowController.sessionState {
+            priorState.restoreMpvProperties(to: self)
             return
-          } else if pauseUntilWindowOpen {
+          }
+
+          if pauseUntilWindowOpen {
+            // Pause until window opens, to avoid blips or other loading unpleasantness
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
+            // ...or stay paused if configured
             pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
           }
 
@@ -2429,8 +2431,14 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    log.debug("Calling applyVideoGeoForTrackChange from fileLoaded")
-    windowController.applyVideoGeoForTrackChange()
+    let stateChange: ((GeometryTransformContext) -> PWinSessionState?) = { [self] context in
+      log.debug("Calling applyVideoGeoForStateChange from fileLoaded; sessionState=\(context.sessionState)")
+      if case .existingSession_continuing = context.sessionState {
+        return .existingSession_startingNewPlayback
+      }
+      return context.sessionState
+    }
+    windowController.applyVideoGeoForStateChange(stateChange: stateChange)
 
     // Launch auto-load tasks on background thread
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -2808,6 +2816,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+    guard let currentPlayback = info.currentPlayback else { return }
     let didChange = vid != info.vid
     guard didChange || forceIfNoChange else { return }
     guard info.isFileLoaded else {
@@ -2825,10 +2834,23 @@ class PlayerCore: NSObject {
       info.vid = vid
     }
 
+    let stateChangeFunc: (GeometryTransformContext) -> PWinSessionState? = { [self] cxt in
+      if case .existingSession_continuing = windowController.sessionState {
+        if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
+          return .existingSession_videoTrackChangedForSamePlayback
+        } else {
+          log.verbose{"[applyVideoGeo \(cxt.name)] Aborting: no session change, & video track (\(String(cxt.vidTrackID))) is nil or hasn't changed"}
+          return nil
+        }
+      }
+      return windowController.sessionState
+    }
+
     if didChange {
       if !isShowVideoPendingInMiniPlayer {
-        log.verbose{"Calling applyVideoGeoForTrackChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn))"}
-        windowController.applyVideoGeoForTrackChange()
+        // Vid changed, but not from toggling music ode
+        log.verbose{"Calling applyVideoGeoForStateChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn))"}
+        windowController.applyVideoGeoForStateChange(stateChange: stateChangeFunc)
       }
 
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
@@ -2846,7 +2868,7 @@ class PlayerCore: NSObject {
       windowController.animationPipeline.submitInstantTask { [self] in
         guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
         log.verbose{"Showing videoView in music mode in response to vid change, forced=\(forceIfNoChange.yn)"}
-        /// `showDefaultArt` should already have been handled by `applyVideoGeoForTrackChange` so do not change here
+        /// `showDefaultArt` should already have been handled by `applyVideoGeoForStateChange` so do not change here
         windowController.miniPlayer.applyGeoForVideoView(setVisible: true)
       }
     }

@@ -126,33 +126,36 @@ extension PlayerWindowController {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
 
-    IINAAnimation.disableAnimation { [self] in
-      let layout = currentLayout
-      let isTransientResize = newGeometry != nil
-      let isFullScreen = layout.isFullScreen
-      log.verbose{"ResizeWindowImmediately: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
+    CATransaction.begin()
+    defer {
+      CATransaction.commit()
+    }
+    
+    let layout = currentLayout
+    let isTransientResize = newGeometry != nil
+    let isFullScreen = layout.isFullScreen
+    log.verbose{"ResizeWindowImmediately: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
 
-      // These may no longer be aligned correctly. Just hide them
-      hideSeekPreview()
+    // These may no longer be aligned correctly. Just hide them
+    hideSeekPreview()
 
-      if !layout.isNativeFullScreen {
-        let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
+    if !layout.isNativeFullScreen {
+      let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
 
-        if isFullScreen {
-          // custom FS
-          resizeWindowSubviews(using: geo)
-        } else {
-          /// This will also update `videoView`
-          player.window.setFrameImmediately(geo, notify: false)
-        }
+      if isFullScreen {
+        // custom FS
+        resizeWindowSubviews(using: geo)
+      } else {
+        /// This will also update `videoView`
+        player.window.setFrameImmediately(geo, notify: false)
       }
+    }
 
-      if !isFullScreen && !isTransientResize {
-        player.saveState()
-        if layout.mode == .windowedNormal {
-          log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
-          player.updateMPVWindowScale(using: windowedModeGeo)
-        }
+    if !isFullScreen && !isTransientResize {
+      player.saveState()
+      if layout.mode == .windowedNormal {
+        log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
+        player.updateMPVWindowScale(using: windowedModeGeo)
       }
     }
 
@@ -194,23 +197,22 @@ extension PlayerWindowController {
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
   /// If current media's vid track changed, may need to apply new geometry
-  func applyVideoGeoForTrackChange( _ musicModeTransform: MusicModeGeometry.Transform? = nil) {
+  func applyVideoGeoForStateChange(stateChange: ((GeometryTransformContext) -> PWinSessionState?)? = nil,
+                                   _ musicModeTransform: MusicModeGeometry.Transform? = nil) {
     let videoTransform: VideoGeometry.Transform = { [self] context in
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
       let vidTrackID = context.vidTrackID
       let currentPlayback = context.currentPlayback
       log.verbose{"[applyVideoGeo \(context.name)] Starting transform, vid=\(String(vidTrackID))|\(context.currentMediaAudioStatus), sessionState=\(context.sessionState)"}
-
-      if case .existingSession_continuing = context.sessionState {
-        if currentPlayback.state.isNotYet(.loadedAndSized) {
-          sessionState = .existingSession_startingNewPlayback
-        } else if currentPlayback.vidTrackLastSized != vidTrackID {
-          sessionState = .existingSession_videoTrackChangedForSamePlayback
-        } else {
-          log.verbose{"[applyVideoGeo \(context.name)] Aborting: no session change, & video track (\(String(vidTrackID))) is nil or hasn't changed"}
-          return nil
-        }
+      let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
+      guard vidTrackID == vid else {
+        log.debug{"[applyVideoGeo \(context.name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
+        return nil
+      }
+      guard vidTrackID != context.currentPlayback.vidTrackLastSized else {
+        log.debug{"[applyVideoGeo \(context.name)] Aborting transform, vid=\(String(vidTrackID)) != vidTrackLastSized \(String(context.currentPlayback.vidTrackLastSized))"}
+        return nil
       }
 
       // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
@@ -287,42 +289,43 @@ extension PlayerWindowController {
       }
     }  // end of transform block
 
-    applyVideoGeoTransform("TrackChanged", videoTransform, musicModeTransform)
+    applyVideoGeoTransform("TrackChanged", stateChange: stateChange, videoTransform, musicModeTransform)
+  }
+
+  struct PWinSessionTransition {
+    let transformName: String
+    /// If func returns `nil`, transition should be aborted
+    let stateChangeFunc: (GeometryTransformContext) -> PWinSessionState?
+    let videoTransform: VideoGeometry.Transform
+    let musicModeTransform: MusicModeGeometry.Transform?
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
+  ///
+  /// # Arguments:
+  /// - `stateChange`: if non-nil, this function takes the current window's `sessionState` and outputs the state
+  /// which should be applied at the end of the transform if it succeeds. If it returns `nil`, then transform will be cancelled.
+  /// If `stateChange` is `nil`, the transform will proceed with the existing `sessionState`.
+  /// - `videoTransform`: if non-nil, this function takes the current window's `VideoGeometry` (and other context) and outputs a
+  /// new, possibly transformed ` VideoGeometry`. If it returns `nil`, then transform will be cancelled and no state will be changed.
+  /// If `videoTransform` is `nil`, the transform will proceed with the existing `VideoGeometry`.
+  /// - `musicModeTransform`:  if non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
+  /// is expected to output a ` MusicModeGeometry` containing further transforms which should be applied.
+  /// If `musicModeTransform` is `nil` or returns `nil`, the transform will ignore it and will proceed with its calculated values.
   func applyVideoGeoTransform(_ transformName: String,
+                              stateChange: ((GeometryTransformContext) -> PWinSessionState?)? = nil,
                               _ videoTransform: @escaping VideoGeometry.Transform,
                               _ musicModeTransform: MusicModeGeometry.Transform? = nil,
-                              then doAfter: (() -> Void)? = nil) {
+                              onSuccess: (() -> Void)? = nil) {
 
     animationPipeline.submitInstantTask { [self] in
       let oldGeo = geo
 
       player.mpv.queue.async { [self] in
-        let doAfterTask = IINAAnimation.Task.instantTask{ [self] in
-          if self.sessionState.isChangingVideoTrack {
-            // Return to normal status:
-            self.sessionState = .existingSession_continuing
-
-            // Need to call here to ensure file title OSD is displayed when navigating playlist...
-            player.refreshSyncUITimer()
-            updateUI()
-            // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
-            updateWindowBorderAndOpacity()
-          }
-          // Always do this in case the video geometry changed:
-          player.reloadQuickSettingsView()
-
-          if let doAfter {
-            doAfter()
-          }
-        }
 
         /// Make sure `doAfter` is always executed
         func abort(_ reasonDebugMsg: String) {
           log.verbose{"[applyVideoGeo \(transformName)] Aborting: \(reasonDebugMsg)"}
-          animationPipeline.submit(doAfterTask)
         }
 
         guard let currentPlayback = player.info.currentPlayback else {
@@ -342,47 +345,84 @@ extension PlayerWindowController {
           return abort("player stopping (status=\(player.state))")
         }
 
+        let vidTrackID = player.info.vid ?? 0
+
         var cxt = GeometryTransformContext(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
-                                           currentPlayback: currentPlayback, vidTrackID: player.info.vid ?? 0,
+                                           currentPlayback: currentPlayback, vidTrackID: vidTrackID,
                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus)
+
+        if let stateChange {
+          if let newSessionState = stateChange(cxt) {
+            cxt = cxt.clone(sessionState: newSessionState)
+          } else {
+            return abort("state change func returned nil from sessionState=\(sessionState)")
+          }
+        } else {
+          log.verbose{"[applyVideoGeo \(transformName) Using unaltered current sessionState: \(cxt.sessionState)"}
+        }
 
         guard let newVidGeo = videoTransform(cxt) else {
           return abort("transform \(transformName) returned nil")
         }
 
-        if sessionState.isChangingVideoTrack {
-          // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
-          // The OSD can have weird stretching glitches if displayed while zooming open...
-          if currentPlayback.state.isAtLeast(.loaded) {
-            // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
-            log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID)"}
-            currentPlayback.state = .loadedAndSized
-            // Set immediately to prevent future duplicate calls from continuing
-            currentPlayback.vidTrackLastSized = cxt.vidTrackID
-          }
-        }
-
-        if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
-          player.reloadThumbnails()
-        }
-
         animationPipeline.submitInstantTask { [self] in
-          cxt = cxt.clone(sessionState: self.sessionState)
+          var imminentTasks: [IINAAnimation.Task] = []
           log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(cxt.sessionState)"}
+
+          let doAfterTask = IINAAnimation.Task.instantTask{ [self] in
+            if sessionState.isChangingVideoTrack {
+              // Return to normal status:
+              self.sessionState = .existingSession_continuing
+
+              // Need to call here to ensure file title OSD is displayed when navigating playlist...
+              player.refreshSyncUITimer()
+              updateUI()
+              // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
+              updateWindowBorderAndOpacity()
+            }
+            // Always do this in case the video geometry changed:
+            player.reloadQuickSettingsView()
+
+            if sessionState.isChangingVideoTrack {
+              // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
+              // The OSD can have weird stretching glitches if displayed while zooming open...
+              if currentPlayback.state == .loaded {
+                // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
+                log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID)"}
+                currentPlayback.state = .loadedAndSized
+                // If is network resource, may not be loaded yet. If file, it will be.
+                player.postNotification(.iinaFileLoaded)
+                player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+              }
+              // Set immediately to prevent future duplicate calls from continuing
+              currentPlayback.vidTrackLastSized = cxt.vidTrackID
+            }
+
+            if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
+              player.reloadThumbnails()
+            }
+
+
+            if let onSuccess {
+              onSuccess()
+            }
+          }
           if cxt.sessionState.isStartingSession {
             let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(cxt, newVidGeo: newVidGeo)
-            animationPipeline.submit(windowOpenLayoutTasks)
+            imminentTasks.append(contentsOf: windowOpenLayoutTasks)
 
             /// These tasks should not execute until *after* `super.showWindow` is called.
             var videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: initialLayout, cxt, musicModeTransform)
             videoGeoUpdateTasks.append(doAfterTask)
             pendingVideoGeoUpdateTasks = videoGeoUpdateTasks
           } else {
-            var videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: currentLayout, cxt, musicModeTransform)
-            videoGeoUpdateTasks.append(doAfterTask)
-            animationPipeline.submit(videoGeoUpdateTasks)
+            let videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: currentLayout, cxt, musicModeTransform)
+            imminentTasks.append(contentsOf: videoGeoUpdateTasks)
+            imminentTasks.append(doAfterTask)
           }
+          animationPipeline.submit(imminentTasks)
         }
+
       }
     }
   }
@@ -440,7 +480,7 @@ extension PlayerWindowController {
 //      let windowedGeoUpdated = windowedGeoForCurrentFrame(newVidGeo: newVidGeo)
 //      let newGeoSet = cxt.oldGeo.clone(windowed: windowedGeoUpdated)
 
-      log.debug("[applyVideoGeo \(cxt.name)] Will apply windowed result (sessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
+      log.debug("[applyVideoGeo \(cxt.name)] Will apply windowed result (newSessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreenNormal:

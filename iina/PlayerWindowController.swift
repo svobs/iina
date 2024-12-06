@@ -86,10 +86,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var sessionState: PWinSessionState = .noSession {
-    didSet {
-      log.verbose("Updated sessionState ≔ \(sessionState)")
+    willSet {
+      log.verbose("Changing sessionState: \(sessionState) → \(newValue)")
+      assert(sessionState.isRestoring || DispatchQueue.isExecutingIn(DispatchQueue.main))
     }
   }
+  
   var priorStateIfRestoring: PlayerSaveState? {
     if case .restoring(let priorState) = sessionState {
       return priorState
@@ -774,14 +776,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     co.addAllObservers()
 
-    if !sessionState.isRestoring {
-      AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
-    }
-
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in
       if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)
+      } else {
+        AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
       }
 
       /// Do this *after* `restoreFromMiscWindowBools` call
@@ -796,8 +796,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Don't wait for load for network stream; open immediately & show loading msg
     player.mpv.queue.async { [self] in
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-        log.verbose("Current playback is network resource: calling applyVideoGeoForTrackChange now")
-        applyVideoGeoForTrackChange()
+        log.verbose("Current playback is network resource: calling applyVideoGeoForStateChange now")
+        applyVideoGeoForStateChange()
       }
     }
   }
@@ -883,6 +883,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Reset state flags
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
+    sessionState = .noSession  // reset for reopen
 
     /// Use `player.info.isFileLoadedAndSized` to prevent from saving when there was an error loading video
     if player.info.isFileLoadedAndSized {
@@ -923,7 +924,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
 
       player.info.currentPlayback = nil
-      sessionState = .noSession  // reset for reopen
       osd.clearQueuedOSDs()
     }
   }

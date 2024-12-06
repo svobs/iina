@@ -434,10 +434,8 @@ class MPVController: NSObject {
                   level: .verbose)
     setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback", level: .verbose)
 
-    if !player.isRestoring {  // if restoring, will use stored windowFrame instead
-      setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
-                    level: .verbose)
-    }
+    setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
+                  level: .verbose)
 
     // - Codec
 

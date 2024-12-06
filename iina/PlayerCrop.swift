@@ -61,7 +61,7 @@ extension PlayerCore {
 
         return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
 
-      }, then: { [self] in
+      }, onSuccess: { [self] in
         mpv.queue.async { [self] in
           /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
           let addSucceeded = addVideoFilter(vf)
