@@ -367,7 +367,14 @@ class StartupHandler {
     /// Make sure to do this *after* `state = .doneOpening`:
     dismissTimeoutAlertPanel()
 
-    AppDelegate.shared.addObserversAndActivateApp()
+    // Init MediaPlayer integration
+    MediaPlayerIntegration.shared.update()
+
+    Logger.log("Activating app")
+    NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+    NSApplication.shared.servicesProvider = self
+
+    Logger.log.verbose("Done with startup")
   }
 
 

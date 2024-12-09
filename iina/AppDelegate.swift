@@ -205,9 +205,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // show alpha in color panels
     NSColorPanel.shared.showsAlpha = true
 
-    // see https://sparkle-project.org/documentation/api-reference/Classes/SPUUpdater.html#/c:objc(cs)SPUUpdater(im)clearFeedURLFromUserDefaults
-    updaterController.updater.clearFeedURLFromUserDefaults()
-
     // other initializations at App level
     NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
     NSWindow.allowsAutomaticWindowTabbing = false
@@ -222,16 +219,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     UserDefaults.standard.addObserver(self, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
 
     startupHandler.doStartup()
-  }
-
-  /// Called by `startupHandler.showWindowsIfReady` when all restored windows are ready, or not restoring.
-  func addObserversAndActivateApp() {
-    Logger.log("Adding window observers")
-
-    MediaPlayerIntegration.shared.update()
-
-    NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
-    NSApplication.shared.servicesProvider = self
   }
 
   // MARK: - Window Notifications
