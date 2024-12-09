@@ -600,6 +600,7 @@ extension PlayerWindowController {
       playSlider.customCell.updateColorsFromPrefs()
 
       if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
+        let hasClearBG = transition.outputLayout.spec.oscBackgroundIsClear
         let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
         playButton.contentTintColor = contentTintColor
         leftArrowButton.contentTintColor = contentTintColor
@@ -610,7 +611,23 @@ extension PlayerWindowController {
         let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
         leftTimeLabel.alphaValue = textAlpha
         rightTimeLabel.alphaValue = textAlpha
-        RenderCache.shared.mainKnobColor = transition.outputLayout.spec.oscBackgroundIsClear ? NSColor.controlForClearBG : NSColor.mainSliderKnob
+        if hasClearBG {
+          addShadow(to: playButton)
+          addShadow(to: leftArrowButton)
+          addShadow(to: rightArrowButton)
+          addShadow(to: muteButton)
+          addShadow(to: leftTimeLabel)
+          addShadow(to: rightTimeLabel)
+          RenderCache.shared.mainKnobColor = NSColor.controlForClearBG
+        } else {
+          playButton.shadow = nil
+          leftArrowButton.shadow = nil
+          rightArrowButton.shadow = nil
+          muteButton.shadow = nil
+          leftTimeLabel.shadow = nil
+          rightTimeLabel.shadow = nil
+          RenderCache.shared.mainKnobColor = NSColor.mainSliderKnob
+        }
         // invalidate all cached knob images
         RenderCache.shared.invalidateCachedKnobs()
       }
@@ -775,6 +792,17 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
+  }
+
+  func addShadow(to control: NSControl, blurRadiusScalar: CGFloat = 0.2, shadowOffsetScalar: CGFloat = 0.0) {
+    let controlHeight = control.fittingSize.height
+    let shadow = NSShadow()
+    // Amount of blur (in pixels) applied to the shadow.
+    shadow.shadowBlurRadius = controlHeight * blurRadiusScalar
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.667)
+    // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
+    shadow.shadowOffset = shadowOffsetScalar > 0.0 ? NSSize(width: controlHeight * shadowOffsetScalar, height: controlHeight * shadowOffsetScalar) : NSZeroSize
+    control.shadow = shadow
   }
 
   /// -------------------------------------------------
@@ -1454,6 +1482,11 @@ extension PlayerWindowController {
       button.setStyle(buttonType: buttonType, iconSize: oscGeo.toolIconSize, iconSpacing: oscGeo.toolIconSpacing)
       button.contentTintColor = contentTintColor
       button.action = #selector(self.toolBarButtonAction(_:))
+      if transition.outputLayout.spec.oscBackgroundIsClear {
+        addShadow(to: button)
+      } else {
+        button.shadow = nil
+      }
       toolButtons.append(button)
     }
 

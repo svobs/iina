@@ -355,7 +355,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint!
 
-  @IBOutlet weak var viewportTrailingToTrailingSidebarCropLeadingConstraint: NSLayoutConstraint!
+  var viewportTrailingToTrailingSidebarCropLeadingConstraint: NSLayoutConstraint!
 
   /**
    OSD: shown here in "upper-left" configuration.
