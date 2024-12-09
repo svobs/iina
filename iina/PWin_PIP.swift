@@ -181,6 +181,9 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     NSApp.activate(ignoringOtherApps: true)
     if isWindowMiniturized {
       window.deminiaturize(pipController)
+    } else {
+      // Bring to front so it is more obvious which window is relevant:
+      window.makeKeyAndOrderFront(pipController)
     }
   }
 
