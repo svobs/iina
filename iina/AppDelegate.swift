@@ -503,17 +503,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    startupHandler.openFileCalled = true
+    let openingMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow) && urls.count > 1
+    if !openingMultipleWindows {
+      // Use only if opening single window.
+      // If multiple windows, don't wait; open each as soon as it loads
+      startupHandler.openFileCalled = true
+    }
 
     DispatchQueue.main.async { [self] in
       Logger.log.debug("Opening URLs (count: \(urls.count))")
-      // open pending files
-      let player = PlayerManager.shared.getActiveOrCreateNew()
-      startupHandler.wcForOpenFile = player.windowController
-      if player.openURLs(urls) == 0 {
+      var openedCount = 0
+
+      if openingMultipleWindows {
+        if urls.count > 10 {
+          // TODO: put up a warning dialog
+          Logger.log.debug("Opening a lot of windows (count: \(urls.count))")
+        }
+        for url in urls {
+          // open one window per file
+          let newPlayer = PlayerManager.shared.getIdleOrCreateNew()
+          if let filesOpened = newPlayer.openURLs([url]) {
+            openedCount += filesOpened
+          }
+        }
+      } else {
+        // open pending files in single window
+        let player = PlayerManager.shared.getActiveOrCreateNew()
+        startupHandler.wcForOpenFile = player.windowController
+        if let filesOpened = player.openURLs(urls) {
+          openedCount += filesOpened
+        }
+      }
+
+      if openedCount == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
 
-        Logger.log("Notifying user nothing was opened", level: .verbose)
+        Logger.log.verbose("Notifying user nothing was opened")
         Utility.showAlert("nothing_to_open")
       }
     }
