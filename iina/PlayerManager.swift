@@ -17,6 +17,17 @@ class PlayerManager {
   private var _playerCores: [PlayerCore] = []
   private var _demoPlayer: PlayerCore? = nil
 
+  var pipPlayer: PlayerCore? = nil {
+    willSet {
+      if let pipPlayer, let wc = pipPlayer.windowController, wc.pip.status == .inPIP {
+        wc.animationPipeline.submit(.instantTask {
+          pipPlayer.log.debug("PlayerManager: another player wants PiP; exiting PiP")
+          wc.exitPIP()
+        })
+      }
+    }
+  }
+
   /// Audio-only player. Needed for listing audio devices when no player windows are open.
   /// Should not be used for playing anything.
   var demoPlayer: PlayerCore? {

@@ -55,6 +55,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     exitInteractiveMode(then: { [self] in
       log.verbose("About to enter PIP")
+      PlayerManager.shared.pipPlayer = player
 
       guard player.info.isVideoTrackSelected else {
         log.debug("Aborting request for PIP entry: no video track selected!")
