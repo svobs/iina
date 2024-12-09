@@ -90,7 +90,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -98,6 +98,37 @@
                 <subviews>
                     <customView identifier="Viewport-View" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3nL-Ky-Hfa" userLabel="Viewport View" customClass="ViewportView" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
+                        <subviews>
+                            <visualEffectView identifier="PiP-Overlay-View" hidden="YES" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Nrz-jZ-Luf" userLabel="PIP-Overlay View">
+                                <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
+                                <subviews>
+                                    <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YkI-ii-zaW" userLabel="PiP Image View">
+                                        <rect key="frame" x="277" y="166" width="87" height="68"/>
+                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="playing-in-pip" id="0QW-Vy-zmW"/>
+                                    </imageView>
+                                    <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pxV-jX-kfL">
+                                        <rect key="frame" x="194" y="142" width="253" height="16"/>
+                                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="This video is playing in Picture-in-Picture" id="gdE-b5-kod">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                    </textField>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="pxV-jX-kfL" firstAttribute="centerX" secondItem="Nrz-jZ-Luf" secondAttribute="centerX" id="1zk-hi-hE0"/>
+                                    <constraint firstItem="YkI-ii-zaW" firstAttribute="centerX" secondItem="Nrz-jZ-Luf" secondAttribute="centerX" id="JAE-TE-I2W"/>
+                                    <constraint firstItem="pxV-jX-kfL" firstAttribute="top" secondItem="YkI-ii-zaW" secondAttribute="bottom" constant="8" id="VX9-W1-IMy"/>
+                                    <constraint firstItem="YkI-ii-zaW" firstAttribute="centerY" secondItem="Nrz-jZ-Luf" secondAttribute="centerY" id="hhc-1u-xpc"/>
+                                </constraints>
+                            </visualEffectView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstAttribute="bottom" secondItem="Nrz-jZ-Luf" secondAttribute="bottom" id="8s9-Ml-Vxk"/>
+                            <constraint firstItem="Nrz-jZ-Luf" firstAttribute="leading" secondItem="3nL-Ky-Hfa" secondAttribute="leading" id="ffs-jZ-Hhy"/>
+                            <constraint firstItem="Nrz-jZ-Luf" firstAttribute="top" secondItem="3nL-Ky-Hfa" secondAttribute="top" id="sXt-DP-0t5"/>
+                            <constraint firstAttribute="trailing" secondItem="Nrz-jZ-Luf" secondAttribute="trailing" id="zBT-XH-hl3"/>
+                        </constraints>
                     </customView>
                     <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View">
                         <rect key="frame" x="471" y="297" width="161" height="67"/>
@@ -420,29 +451,6 @@
                             <constraint firstItem="pgt-r3-Vbf" firstAttribute="bottom" secondItem="iA3-pt-6Jm" secondAttribute="bottom" id="xMQ-WC-fps"/>
                         </constraints>
                     </visualEffectView>
-                    <visualEffectView identifier="PiP-Overlay-View" hidden="YES" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Nrz-jZ-Luf" userLabel="PIP-Overlay View">
-                        <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
-                        <subviews>
-                            <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YkI-ii-zaW" userLabel="PiP Image View">
-                                <rect key="frame" x="277" y="166" width="87" height="68"/>
-                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="playing-in-pip" id="0QW-Vy-zmW"/>
-                            </imageView>
-                            <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pxV-jX-kfL">
-                                <rect key="frame" x="194" y="142" width="253" height="16"/>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="This video is playing in Picture-in-Picture" id="gdE-b5-kod">
-                                    <font key="font" metaFont="system"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="pxV-jX-kfL" firstAttribute="centerX" secondItem="Nrz-jZ-Luf" secondAttribute="centerX" id="1zk-hi-hE0"/>
-                            <constraint firstItem="YkI-ii-zaW" firstAttribute="centerX" secondItem="Nrz-jZ-Luf" secondAttribute="centerX" id="JAE-TE-I2W"/>
-                            <constraint firstItem="pxV-jX-kfL" firstAttribute="top" secondItem="YkI-ii-zaW" secondAttribute="bottom" constant="8" id="VX9-W1-IMy"/>
-                            <constraint firstItem="YkI-ii-zaW" firstAttribute="centerY" secondItem="Nrz-jZ-Luf" secondAttribute="centerY" id="hhc-1u-xpc"/>
-                        </constraints>
-                    </visualEffectView>
                     <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="88M-Ln-4mc" userLabel="MiniPlayerButtons View">
                         <rect key="frame" x="4" y="362" width="19" height="34"/>
                         <subviews>
@@ -565,7 +573,7 @@
                 </subviews>
                 <constraints>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="vidContainerBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
+                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" identifier="viewportlViewBottom-ContentViewBottom-Constraint" id="4gm-o8-h98"/>
                     <constraint firstItem="IeW-QK-xIO" firstAttribute="top" secondItem="xqX-4W-gdw" secondAttribute="top" priority="900" constant="-0.5" id="9bg-Sf-jRQ"/>
@@ -580,11 +588,9 @@
                     <constraint firstItem="XBs-34-TIm" firstAttribute="trailing" secondItem="g0O-v5-RQj" secondAttribute="leading" priority="750" constant="-8" identifier="leadingSidebarToOSDSpaceConstraint" id="LBY-By-mfi"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="trailing" constant="-360" identifier="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" id="PAj-s6-32e"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="leading" constant="360" identifier="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" id="PMP-ks-GY2"/>
-                    <constraint firstItem="Nrz-jZ-Luf" firstAttribute="leading" secondItem="3nL-Ky-Hfa" secondAttribute="leading" id="RFd-ZJ-29u"/>
                     <constraint firstItem="Qbi-jx-9pO" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="RUl-l8-s3i"/>
                     <constraint firstItem="IeW-QK-xIO" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" id="SKO-g6-ryJ"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" identifier="viewportLeadingOffsetFromLeadingSidebarTrailingConstraint" id="Uue-Qa-4ao"/>
-                    <constraint firstItem="Nrz-jZ-Luf" firstAttribute="top" secondItem="3nL-Ky-Hfa" secondAttribute="top" id="Vtd-0f-x7p"/>
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerY" secondItem="3nL-Ky-Hfa" secondAttribute="centerY" id="XlV-7n-jPb"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" identifier="viewportlViewTop-ContentViewTop-Constraint" id="Zqm-9J-g9b"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="OiF-pA-8Sd" secondAttribute="bottom" priority="750" constant="60" identifier="ControlBarFloating_Y-Constraint" id="cRP-R4-zYY"/>
@@ -593,9 +599,7 @@
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="4" id="fJp-4W-b6q"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" priority="900" constant="8" identifier="osdTopToTopBarConstraint" id="hAe-Tn-76i"/>
                     <constraint firstItem="xqX-4W-gdw" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" priority="900" id="jfz-t9-Cw5"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="Nrz-jZ-Luf" secondAttribute="bottom" id="kHE-py-RY5"/>
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerX" secondItem="3nL-Ky-Hfa" secondAttribute="centerX" id="kfR-hG-8ee"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="Nrz-jZ-Luf" secondAttribute="trailing" id="mJs-PF-Ex5"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="top" secondItem="3nL-Ky-Hfa" secondAttribute="top" id="n2d-ys-qVW"/>
                     <constraint firstAttribute="bottom" secondItem="xqX-4W-gdw" secondAttribute="bottom" priority="900" constant="-0.5" id="nax-8a-6v3"/>
                     <constraint firstItem="TRx-2V-Gr3" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" identifier="topBarLeadingSpaceConstraint" id="ofB-WP-9dW"/>
@@ -606,7 +610,7 @@
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="se5-gp-TjO" secondAttribute="trailing" identifier="viewportlViewTrailing-ContentViewTrailing-Constraint" id="v5S-lZ-agU"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" identifier="viewportlViewLeading-ContentViewLeading-Constraint" id="vZs-ut-z4j"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" identifier="viewportLeadingToLeadingSidebarCropTrailingConstraint" id="wAv-zI-fJc"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="epo-S6-QVB" secondAttribute="bottom" identifier="vidContainerBtmToTrailingSidebarBtmConstraint" id="zBx-AY-VlK"/>
+                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="epo-S6-QVB" secondAttribute="bottom" identifier="viewportBtmToTrailingSidebarBtmConstraint" id="zBx-AY-VlK"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="leading" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" identifier="trailingSidebarToOSDSpaceConstraint" id="zbm-D9-epN"/>
                 </constraints>
             </view>

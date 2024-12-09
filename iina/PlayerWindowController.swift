@@ -9,7 +9,6 @@
 import Cocoa
 
 // FIXME: Add Sparkle back in
-// FIXME: handle PiP with multiple windows
 // TODO: support parent playlist
 // TODO: stick window to individual side of screen
 // TODO: persist mpv properties in saved player state
