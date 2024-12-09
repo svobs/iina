@@ -2827,7 +2827,7 @@ class PlayerCore: NSObject {
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard let currentPlayback = info.currentPlayback else { return }
     let didChange = vid != info.vid
-    // sometimes isShowVideoPendingInMiniPlayer when no actual vid change
+    // sometimes still need to show videoView when no actual vid change occurred (if use has vid=0 or no vid tracks exist)
     guard didChange || isShowVideoPendingInMiniPlayer else { return }
     guard info.isFileLoaded else {
       log.verbose{"Video track changed to \(vid) but file is not loaded; ignoring"}

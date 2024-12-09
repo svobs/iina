@@ -167,7 +167,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   /// Hides media info, shows OSC controls (synchronous version)
-  private func hideControllerButtons() {
+  func hideControllerButtons() {
     windowController.osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
 
     windowController.closeButtonView.animator().alphaValue = 0
@@ -363,28 +363,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     // save playlist height
     log.verbose{"Saving playlist height: \(playlistHeight)"}
     Preference.set(Int(playlistHeight), for: .musicModePlaylistHeight)
-  }
-
-  func cleanUpForMusicModeExit() {
-    log.verbose("Cleaning up for music mode exit")
-    view.removeFromSuperview()
-
-    /// Remove `playlistView` from wrapper. It will be added elsewhere if/when it is needed there
-    windowController.playlistView.view.removeFromSuperview()
-
-    /// Hide this until `showControl` is called again
-    windowController.closeButtonView.isHidden = true
-
-    // Make sure to restore video
-    updateVideoViewHeightConstraint(isVideoVisible: true)
-    windowController.viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
-
-    windowController.leftTimeLabel.font = NSFont.messageFont(ofSize: 11)
-    windowController.rightTimeLabel.font = NSFont.messageFont(ofSize: 11)
-    windowController.fragPositionSliderView.removeFromSuperview()
-
-    // Make sure to reset constraints for OSD
-    hideControllerButtons()
   }
 
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {

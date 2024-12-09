@@ -462,7 +462,23 @@ extension PlayerWindowController {
       showOrHidePipOverlayView()
 
       if transition.isExitingMusicMode {
-        miniPlayer.cleanUpForMusicModeExit()
+        log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
+        miniPlayer.view.removeFromSuperview()
+
+        /// Remove `playlistView` from wrapper. It will be added elsewhere if/when it is needed there
+        playlistView.view.removeFromSuperview()
+
+        // Make sure to restore video
+        miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
+        viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+
+        leftTimeLabel.font = NSFont.messageFont(ofSize: 11)
+        rightTimeLabel.font = NSFont.messageFont(ofSize: 11)
+        fragPositionSliderView.removeFromSuperview()
+
+        // Make sure to reset constraints for OSD
+        miniPlayer.hideControllerButtons()
+        closeButtonView.isHidden = true
         if !transition.inputGeometry.isVideoVisible {
           addVideoViewToWindow()
         }
