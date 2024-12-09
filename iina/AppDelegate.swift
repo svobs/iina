@@ -512,30 +512,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     DispatchQueue.main.async { [self] in
       Logger.log.debug("Opening URLs (count: \(urls.count))")
-      var openedCount = 0
+      var totalFilesOpened = 0
 
       if openingMultipleWindows {
         if urls.count > 10 {
           // TODO: put up a warning dialog
           Logger.log.debug("Opening a lot of windows (count: \(urls.count))")
         }
+        var windowCount = 0
         for url in urls {
           // open one window per file
           let newPlayer = PlayerManager.shared.getIdleOrCreateNew()
-          if let filesOpened = newPlayer.openURLs([url]) {
-            openedCount += filesOpened
+          if let playerFilesOpened = newPlayer.openURLs([url]) {
+            newPlayer.openedWindowsSetIndex = windowCount
+            windowCount += 1
+            totalFilesOpened += playerFilesOpened
           }
         }
       } else {
         // open pending files in single window
         let player = PlayerManager.shared.getActiveOrCreateNew()
         startupHandler.wcForOpenFile = player.windowController
-        if let filesOpened = player.openURLs(urls) {
-          openedCount += filesOpened
+        if let playerFilesOpened = player.openURLs(urls) {
+          totalFilesOpened += playerFilesOpened
         }
       }
 
-      if openedCount == 0 {
+      if totalFilesOpened == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
 
         Logger.log.verbose("Notifying user nothing was opened")

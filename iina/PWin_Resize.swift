@@ -469,7 +469,8 @@ extension PlayerWindowController {
       }
       log.verbose("[applyVideoGeo C-1] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
       return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                       video: newVidGeo, keepFullScreenDimensions: true)
+                                                       video: newVidGeo, keepFullScreenDimensions: true,
+                                                       applyOffsetIndex: player.openedWindowsSetIndex)
     }
 
     let windowGeo = windowedGeoForCurrentFrame(newVidGeo: newVidGeo)
@@ -483,7 +484,8 @@ extension PlayerWindowController {
         if cxt.sessionState.isOpeningFileManually {
           log.debug{"[applyVideoGeo C-5] No mpv geometry found. Will fall back to windowedModeGeoLastClosed"}
           return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                           video: newVidGeo, keepFullScreenDimensions: true)
+                                                           video: newVidGeo, keepFullScreenDimensions: true,
+                                                           applyOffsetIndex: player.openedWindowsSetIndex)
         } else {
           log.debug{"[applyVideoGeo C-8] No mpv geometry found. Will fall back to minimal resize"}
           return nil

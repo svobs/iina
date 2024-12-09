@@ -76,6 +76,8 @@ class PlayerCore: NSObject {
 
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
+  /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
+  var openedWindowsSetIndex: Int = 0
 
   var isBufferUnderrun = false
   var cachedRanges: [(Double, Double)] = []
@@ -375,6 +377,7 @@ class PlayerCore: NSObject {
     log.debug{"OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(from: $0).pii})"}
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
+    openedWindowsSetIndex = 0
 
     PlayerCore.mouseLocationAtLastOpen = NSEvent.mouseLocation
 

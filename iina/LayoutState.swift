@@ -623,7 +623,8 @@ class LayoutState {
 
   // Converts & updates existing geometry to this layout
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil,
-                                   keepFullScreenDimensions: Bool) -> PWinGeometry {
+                                   keepFullScreenDimensions: Bool,
+                                   applyOffsetIndex offsetIndex: Int = 0) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
     let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
                                                           outsideTrailing: outsideTrailingBarWidth,
@@ -635,7 +636,24 @@ class LayoutState {
                                                           insideLeading: insideLeadingBarWidth,
                                                           video: video,
                                                           keepFullScreenDimensions: keepFullScreenDimensions)
-    return resizedBarsGeo.refitted()
+
+    var geo = resizedBarsGeo.refitted()
+    if offsetIndex > 0 {
+      let screenVisibleFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: geo.screenID, fitOption: .stayInside)!
+      let offsetIncrement = Constants.Distance.multiWindowOpenOffsetIncrement
+      for _ in 1...offsetIndex {
+        var newWindowFrame = NSRect(origin: NSPoint(x: geo.windowFrame.origin.x + offsetIncrement,
+                                                    y: geo.windowFrame.origin.y - offsetIncrement),
+                                    size: geo.windowFrame.size)
+        if newWindowFrame.maxX > screenVisibleFrame.maxX || newWindowFrame.minY < screenVisibleFrame.minY {
+          let y = screenVisibleFrame.maxY - newWindowFrame.height
+          newWindowFrame = NSRect(origin: NSPoint(x: 0, y: y), size: geo.windowFrame.size)
+        }
+        // TODO: be more sophisticated
+        geo = geo.clone(windowFrame: newWindowFrame).refitted(using: .stayInside)
+      }
+    }
+    return geo
   }
 
   func buildFullScreenGeometry(inScreenID screenID: String, video: VideoGeometry) -> PWinGeometry {

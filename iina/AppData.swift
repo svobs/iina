@@ -289,6 +289,9 @@ struct Constants {
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 200
 
+    // When opening multiple windows simultaneously & no other layout is applied, how much to offset one window from the one before
+    static let multiWindowOpenOffsetIncrement = 20.0
+
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
 
