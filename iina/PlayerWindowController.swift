@@ -1825,7 +1825,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateAdditionalInfo()
 
     if isInMiniPlayer {
-      miniPlayer.updateScrollingLabels()
+      miniPlayer.stepScrollingLabels()
     }
     if player.info.isNetworkResource {
       updateNetworkState()

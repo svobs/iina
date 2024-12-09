@@ -56,25 +56,15 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   var isPlaylistVisible: Bool {
-    get {
-      windowController.musicModeGeo.isPlaylistVisible
-    }
+    windowController.musicModeGeo.isPlaylistVisible
   }
 
   var isVideoVisible: Bool {
-    get {
-      return windowController.musicModeGeo.isVideoVisible
-    }
+    return windowController.musicModeGeo.isVideoVisible
   }
 
   static var maxWindowWidth: CGFloat {
     return CGFloat(Preference.float(for: .musicModeMaxWidth))
-  }
-
-  /// Executed when `hideVolumePopoverTimer` fires.
-  @objc private func hideVolumePopover() {
-    volumePopover.animates = true
-    volumePopover.performClose(self)
   }
 
   var currentDisplayedPlaylistHeight: CGFloat {
@@ -177,7 +167,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - UI: Media Info
 
-  func updateScrollingLabels() {
+  func stepScrollingLabels() {
     windowController.animationPipeline.submitInstantTask { [self] in
       loadIfNeeded()
       titleLabel.stepNext()
@@ -210,6 +200,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   // MARK: - Volume UI
+
+  /// Executed when `hideVolumePopoverTimer` fires.
+  @objc private func hideVolumePopover() {
+    volumePopover.animates = true
+    volumePopover.performClose(self)
+  }
 
   /// From `NSPopoverDelegate`: close volume popover
   func popoverWillClose(_ notification: Notification) {
@@ -244,47 +240,49 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     }
   }
 
+  /// Action: Show/Hide playlist
   @IBAction func togglePlaylist(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
-      _togglePlaylist()
+      let showPlaylist = !isPlaylistVisible
+      log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
+      let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
+
+      let currentMusicModeGeo = windowController.musicModeGeoForCurrentFrame()
+      var newWindowFrame = currentMusicModeGeo.windowFrame
+
+      if showPlaylist {
+        // Try to show playlist using stored height
+        let desiredPlaylistHeight = CGFloat(Preference.integer(for: .musicModePlaylistHeight))
+        // The window may be in the middle of a previous toggle, so we can't just assume window's current frame
+        // represents a state where the playlist is fully shown or fully hidden. Instead, start by computing the height
+        // we want to set, and then figure out the changes needed to the window's existing frame.
+        let targetHeightToAdd = desiredPlaylistHeight - currentDisplayedPlaylistHeight
+        // Fill up screen if needed
+        newWindowFrame.size.height += targetHeightToAdd
+      } else {
+        // Hiding playlist
+        let playlistHeightRounded = Int(round(currentDisplayedPlaylistHeight))
+        if playlistHeightRounded >= Int(Constants.Distance.MusicMode.minPlaylistHeight) {
+          log.verbose{"Saving playlist height: \(playlistHeightRounded)"}
+          Preference.set(playlistHeightRounded, for: .musicModePlaylistHeight)
+        }
+
+        // If video is also hidden, do not try to shrink smaller than the control view, which would cause
+        // a constraint violation. This is possible due to small imprecisions in various layout calculations.
+        newWindowFrame.size.height = max(Constants.Distance.MusicMode.oscHeight, newWindowFrame.size.height - currentDisplayedPlaylistHeight)
+      }
+
+      let heightDifference = newWindowFrame.height - currentMusicModeGeo.windowFrame.height
+      // adjust window origin to expand downwards
+      newWindowFrame.origin.y = newWindowFrame.origin.y - heightDifference
+
+      // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
+      let newMusicModeGeometry = currentMusicModeGeo.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
+      windowController.buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeometry, thenRun: true)
     })
   }
 
-  private func _togglePlaylist() {
-    let showPlaylist = !isPlaylistVisible
-    log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
-    let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
-
-    let currentMusicModeGeo = windowController.musicModeGeoForCurrentFrame()
-    var newWindowFrame = currentMusicModeGeo.windowFrame
-
-    if showPlaylist {
-      // Try to show playlist using stored height
-      let desiredPlaylistHeight = CGFloat(Preference.integer(for: .musicModePlaylistHeight))
-      // The window may be in the middle of a previous toggle, so we can't just assume window's current frame
-      // represents a state where the playlist is fully shown or fully hidden. Instead, start by computing the height
-      // we want to set, and then figure out the changes needed to the window's existing frame.
-      let targetHeightToAdd = desiredPlaylistHeight - currentDisplayedPlaylistHeight
-      // Fill up screen if needed
-      newWindowFrame.size.height += targetHeightToAdd
-    } else { // hide playlist
-      // Save playlist height first
-      saveCurrentPlaylistHeightToPrefs()
-
-      // If video is also hidden, do not try to shrink smaller than the control view, which would cause
-      // a constraint violation. This is possible due to small imprecisions in various layout calculations.
-      newWindowFrame.size.height = max(Constants.Distance.MusicMode.oscHeight, newWindowFrame.size.height - currentDisplayedPlaylistHeight)
-    }
-
-    let heightDifference = newWindowFrame.height - currentMusicModeGeo.windowFrame.height
-    // adjust window origin to expand downwards
-    newWindowFrame.origin.y = newWindowFrame.origin.y - heightDifference
-
-    // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
-    let newMusicModeGeometry = currentMusicModeGeo.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
-    windowController.buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeometry, thenRun: true)
-  }
-
+  /// Action: Show/Hide `videoView`
   @IBAction func toggleVideoViewVisibleState(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !isVideoVisible
@@ -352,17 +350,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     /// This call is needed to update any necessary constraints & resize internal views
     newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, updateCache: false)
     return newGeo.windowFrame.size
-  }
-
-  func saveCurrentPlaylistHeightToPrefs() {
-    guard isPlaylistVisible else { return }
-
-    let playlistHeight = round(currentDisplayedPlaylistHeight)
-    guard playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight else { return }
-
-    // save playlist height
-    log.verbose{"Saving playlist height: \(playlistHeight)"}
-    Preference.set(Int(playlistHeight), for: .musicModePlaylistHeight)
   }
 
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
