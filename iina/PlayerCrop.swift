@@ -67,7 +67,7 @@ extension PlayerCore {
           let addSucceeded = addVideoFilter(vf)
           if !addSucceeded {
             log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
-            _removeCrop()
+            removeCrop()
           }
         }
       })
@@ -76,19 +76,13 @@ extension PlayerCore {
   }
 
   func removeCrop() {
-    mpv.queue.async { [self] in
-      _removeCrop()
-    }
-  }
-
-  func _removeCrop() {
-    // special kludge when removing crop while entering interactive mode
-    guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
-      log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
-      return
-    }
-
     windowController.applyVideoGeoTransform("removeCrop", { [self] cxt in
+      // special kludge when removing crop while entering interactive mode
+      guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
+        log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
+        return nil
+      }
+
       let oldVideoGeo = cxt.oldGeo.video
       guard let cropFilter = oldVideoGeo.cropFilter else { return nil }
       guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
@@ -101,9 +95,9 @@ extension PlayerCore {
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
     windowController.applyVideoGeoTransform("updateCrop", { [self] cxt in
+      assert(DispatchQueue.isExecutingIn(mpv.queue))
+
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
 

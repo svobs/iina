@@ -298,19 +298,27 @@ extension PlayerWindowController {
   struct PWinSessionTransition {
     let transformName: String
     /// If func returns `nil`, transition should be aborted
-    let stateChangeFunc: (GeometryTransformContext) -> PWinSessionState?
-    let videoTransform: VideoGeometry.Transform
-    let musicModeTransform: MusicModeGeometry.Transform?
+    func changeState(_ context: GeometryTransformContext) -> PWinSessionState? {
+      return context.sessionState
+    }
+
+    func videoTransform(_ context: GeometryTransformContext) -> VideoGeometry? {
+      return context.oldGeo.video
+    }
+    
+    func musicModeTransform(_ context: GeometryTransformContext) -> MusicModeGeometry {
+      return context.oldGeo.musicMode
+    }
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   ///
   /// # Arguments:
-  /// - `stateChange`: if non-nil, this function takes the current window's `sessionState` and outputs the state
-  /// which should be applied at the end of the transform if it succeeds. If it returns `nil`, then transform will be cancelled.
-  /// If `stateChange` is `nil`, the transform will proceed with the existing `sessionState`.
-  /// - `videoTransform`: if non-nil, this function takes the current window's `VideoGeometry` (and other context) and outputs a
-  /// new, possibly transformed ` VideoGeometry`. If it returns `nil`, then transform will be cancelled and no state will be changed.
+  /// - `stateChange`: if non-nil, this function takes the current window's `sessionState` and outputs the state which should be applied
+  /// at the end of the transform if it succeeds. If it returns `nil`, the transform will be cancelled. If `stateChange` is `nil`, the transform
+  /// will proceed with the existing `sessionState`.
+  /// - `videoTransform`: if non-`nil`, this function is run in the mpv queue. It is given the current window's `VideoGeometry` (and other context),
+  /// and is expected to output a new, possibly transformed ` VideoGeometry`. If it returns `nil`, then transform will be cancelled and no state will be changed.
   /// If `videoTransform` is `nil`, the transform will proceed with the existing `VideoGeometry`.
   /// - `musicModeTransform`:  if non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
   /// is expected to output a ` MusicModeGeometry` containing further transforms which should be applied.

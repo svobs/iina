@@ -2821,13 +2821,14 @@ class PlayerCore: NSObject {
     reloadQuickSettingsView()
   }
 
-  func vidChanged(silent: Bool = false, forceIfNoChange: Bool = false) {
+  func vidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard let currentPlayback = info.currentPlayback else { return }
     let didChange = vid != info.vid
-    guard didChange || forceIfNoChange else { return }
+    // sometimes isShowVideoPendingInMiniPlayer when no actual vid change
+    guard didChange || isShowVideoPendingInMiniPlayer else { return }
     guard info.isFileLoaded else {
       log.verbose{"Video track changed to \(vid) but file is not loaded; ignoring"}
       return
@@ -2839,46 +2840,40 @@ class PlayerCore: NSObject {
     }
 #endif
 
-    if didChange {
-      info.vid = vid
+    info.vid = vid
+    // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
+    if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
+      sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
+    postNotification(.iinaVIDChanged)
 
-    if didChange {
-      if !isShowVideoPendingInMiniPlayer {
-        // Vid changed, but not from toggling music ode
-
-        windowController.applyVideoGeoForStateChange(stateChange: { [self] cxt in
-          log.verbose{"Calling applyVideoGeoForStateChange from vidChanged (to: \(vid), forced=\(forceIfNoChange.yn), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
-          if case .existingSession_continuing = cxt.sessionState {
-            if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
-              return .existingSession_videoTrackChangedForSamePlayback
-            } else {
-              return cxt.sessionState
-            }
-          }
-          return nil  // abort
-        })
+    windowController.applyVideoGeoForStateChange(stateChange: { [self] cxt in
+      log.verbose{"Calling applyVideoGeoForStateChange from vidChanged (to: \(vid)), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
+      if case .existingSession_continuing = cxt.sessionState {
+        if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
+          return .existingSession_videoTrackChangedForSamePlayback
+        } else {
+          return cxt.sessionState
+        }
       }
-
-      // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-      if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
-        sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+      if isShowVideoPendingInMiniPlayer {
+        return cxt.sessionState
       }
-      postNotification(.iinaVIDChanged)
-    }
-
-    DispatchQueue.main.async { [self] in
-      /// Must check `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
-      guard isShowVideoPendingInMiniPlayer else { return }
+      return nil  // abort
+    }, { [self] ctx in
+      let oldMusicModeGeo = ctx.oldGeo.musicMode
+      // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
+      guard isShowVideoPendingInMiniPlayer else { return oldMusicModeGeo }
+      /// Must change `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
       isShowVideoPendingInMiniPlayer = false
       miniPlayerShowVideoTimer?.invalidate()
-      windowController.animationPipeline.submitInstantTask { [self] in
-        guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
-        log.verbose{"Showing videoView in music mode in response to vid change, forced=\(forceIfNoChange.yn)"}
-        /// `showDefaultArt` should already have been handled by `applyVideoGeoForStateChange` so do not change here
-        windowController.miniPlayer.applyGeoForVideoView(setVisible: true)
-      }
-    }
+      guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return oldMusicModeGeo }
+      /// `showDefaultArt` should already have been handled by `applyVideoGeoForStateChange` so do not change here
+      let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
+      log.verbose{"MusicMode: changing videoView visibility: \(oldMusicModeGeo.isVideoVisible.yesno) → YES, H=\(newGeo.videoHeight)"}
+      return newGeo
+    })
+
   }
 
   /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
@@ -2888,7 +2883,7 @@ class PlayerCore: NSObject {
     guard isShowVideoPendingInMiniPlayer else { return }
     mpv.queue.async { [self] in
       log.verbose("Forcing vidChanged() to show videoView")
-      vidChanged(silent: true, forceIfNoChange: true)
+      vidChanged(silent: true)
     }
   }
 
@@ -2941,7 +2936,7 @@ class PlayerCore: NSObject {
           // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
           miniPlayerShowVideoTimer?.invalidate()
           log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
-          vidChanged(silent: true, forceIfNoChange: true)
+          vidChanged(silent: true)
         }
         return
       }

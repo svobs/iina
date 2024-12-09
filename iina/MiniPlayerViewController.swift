@@ -294,31 +294,16 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
         player.setVideoTrackEnabled(thenShowMiniPlayerVideo: true)
       } else {
-        /// If hiding video, do animations first, then call `setVideoTrackDisabled()`.
-        applyGeoForVideoView(setVisible: false)
+        /// If hiding video, do animations first, then call `setVideoTrackDisabled()` (via `applyMusicModeGeo`).
+        // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
+        windowController.applyVideoGeoForStateChange({ [self] ctx in
+          let oldGeo = ctx.oldGeo.musicMode
+          let newGeo = oldGeo.withVideoViewVisible(false)
+          log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → NO, H=\(newGeo.videoHeight)"}
+          return newGeo
+        })
       }
     })
-  }
-
-  /// Changes the window geometry to show/hide the video, with animation.
-  ///
-  /// Does nothing if not in music mode, or already in the visible state (idempotent).
-  /// Does not change the video track! If calling with `setVisible: true`, this should be called *after* video is enabled.
-  func applyGeoForVideoView(setVisible visible: Bool) {
-    // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
-    player.mpv.queue.async { [self] in
-      windowController.applyVideoGeoForStateChange(stateChange: { ctx in
-        if case .existingSession_continuing = ctx.sessionState {
-          return .existingSession_videoTrackChangedForSamePlayback
-        }
-        return ctx.sessionState
-      }, { [self] ctx in
-        let oldGeo = ctx.oldGeo.musicMode
-        let newGeo = oldGeo.withVideoViewVisible(visible)
-        log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → \(visible.yesno), H=\(newGeo.videoHeight)"}
-        return newGeo
-      })
-    }
   }
 
   // MARK: - Window size & layout
