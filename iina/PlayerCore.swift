@@ -1312,7 +1312,7 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.applyVideoGeoTransform("userRotation", { [self] cxt in
+    windowController.applyVideoGeoTransform("UserRotation", video: { [self] cxt in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
       log.verbose{"[applyVideoGeo \(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
@@ -1347,7 +1347,7 @@ class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.applyVideoGeoTransform("AspectOverride", { [self] cxt in
+    windowController.applyVideoGeoTransform("AspectOverride", video: { [self] cxt in
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
@@ -2433,8 +2433,9 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    let stateChange: ((GeometryTransformContext) -> PWinSessionState?) = { [self] context in
-      log.verbose("Calling applyVideoGeoForStateChange from fileLoaded; sessionState=\(context.sessionState)")
+    windowController.applyVideoGeoTransform("FileLoaded",
+                                            stateChange: { [self] context in
+      log.verbose("Calling applyVideoGeoTransform from fileLoaded; sessionState=\(context.sessionState)")
       switch context.sessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
@@ -2446,8 +2447,7 @@ class PlayerCore: NSObject {
           return nil
         }
       }
-    }
-    windowController.applyVideoGeoForStateChange(stateChange: stateChange)
+    }, video: GeometryTransform.trackChanged)
 
     // Launch auto-load tasks on background thread
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -2847,8 +2847,8 @@ class PlayerCore: NSObject {
     }
     postNotification(.iinaVIDChanged)
 
-    windowController.applyVideoGeoForStateChange(stateChange: { [self] cxt in
-      log.verbose{"Calling applyVideoGeoForStateChange from vidChanged (to: \(vid)), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
+    let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt in
+      log.verbose{"Calling applyVideoGeoTransform for vid change (to: \(vid)), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
       if case .existingSession_continuing = cxt.sessionState {
         if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
           return .existingSession_videoTrackChangedForSamePlayback
@@ -2860,7 +2860,9 @@ class PlayerCore: NSObject {
         return cxt.sessionState
       }
       return nil  // abort
-    }, { [self] ctx in
+    }
+
+    let musicModeTransform: MusicModeGeometry.Transform = { [self] ctx in
       let oldMusicModeGeo = ctx.oldGeo.musicMode
       // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
       guard isShowVideoPendingInMiniPlayer else { return oldMusicModeGeo }
@@ -2868,11 +2870,15 @@ class PlayerCore: NSObject {
       isShowVideoPendingInMiniPlayer = false
       miniPlayerShowVideoTimer?.invalidate()
       guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return oldMusicModeGeo }
-      /// `showDefaultArt` should already have been handled by `applyVideoGeoForStateChange` so do not change here
+      /// `showDefaultArt` should already have been handled by `applyVideoGeoTransform` so do not change here
       let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
       log.verbose{"MusicMode: changing videoView visibility: \(oldMusicModeGeo.isVideoVisible.yesno) → YES, H=\(newGeo.videoHeight)"}
       return newGeo
-    })
+    }
+    windowController.applyVideoGeoTransform("VidTrackChanged",
+                                            stateChange: stateChangeFunc,
+                                            video: GeometryTransform.trackChanged,
+                                            musicMode: musicModeTransform)
 
   }
 

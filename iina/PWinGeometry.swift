@@ -101,6 +101,8 @@ enum ScreenFitOption: Int {
  └────────────────────────────────────────────────────────────────────────────────────────┘
  */
 struct PWinGeometry: Equatable, CustomStringConvertible {
+  typealias Transform = (GeometryTransform.Context) -> PWinGeometry?
+
   // MARK: Stored properties
 
   // - Screen:

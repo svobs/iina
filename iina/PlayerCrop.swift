@@ -50,7 +50,7 @@ extension PlayerCore {
     }
 
     mpv.queue.async { [self] in
-      windowController.applyVideoGeoTransform("setCrop", { [self] cxt in
+      windowController.applyVideoGeoTransform("SetCrop", video: { [self] cxt in
         let oldVideoGeo = cxt.oldGeo.video
         guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
 
@@ -76,7 +76,7 @@ extension PlayerCore {
   }
 
   func removeCrop() {
-    windowController.applyVideoGeoTransform("removeCrop", { [self] cxt in
+    windowController.applyVideoGeoTransform("RemoveCrop", video: { [self] cxt in
       // special kludge when removing crop while entering interactive mode
       guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
         log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
@@ -95,7 +95,7 @@ extension PlayerCore {
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
-    windowController.applyVideoGeoTransform("updateCrop", { [self] cxt in
+    windowController.applyVideoGeoTransform("UpdateCrop", video: { [self] cxt in
       assert(DispatchQueue.isExecutingIn(mpv.queue))
 
       let oldVideoGeo = cxt.oldGeo.video

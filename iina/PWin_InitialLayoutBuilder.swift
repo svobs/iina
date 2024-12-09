@@ -19,7 +19,7 @@ extension PlayerWindowController {
   /// 3. Restoring from prior launch.
   ///
   /// See `PWinSessionState`.
-  func buildWindowInitialLayoutTasks(_ cxt: GeometryTransformContext,
+  func buildWindowInitialLayoutTasks(_ cxt: GeometryTransform.Context,
                                      newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 

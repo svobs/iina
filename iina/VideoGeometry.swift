@@ -22,7 +22,7 @@ import Foundation
 ///           ➤ apply `totalRotation` (== `userRotation` + `codecRotation`)
 ///             ➤ `videoSizeCAR`
 struct VideoGeometry: Equatable, CustomStringConvertible {
-  typealias Transform = (GeometryTransformContext) -> VideoGeometry?
+  typealias Transform = (GeometryTransform.Context) -> VideoGeometry?
 
   static func defaultGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
     let log = log ?? Logger.log

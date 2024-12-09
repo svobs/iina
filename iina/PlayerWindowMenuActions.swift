@@ -479,7 +479,9 @@ extension PlayerWindowController {
     case 2:  //  2: double
       changeVideoScale(to: 2)
     case 3:  // fit screen
-      resizeViewport(to: bestScreen.visibleFrame.size, centerOnScreen: true)
+      animationPipeline.submitInstantTask{ [self] in
+        resizeViewport(to: bestScreen.visibleFrame.size, centerOnScreen: true)
+      }
 
     case 10:  // smaller size
       scaleVideoByIncrement(-AppData.scaleStep)

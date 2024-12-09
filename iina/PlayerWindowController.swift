@@ -796,8 +796,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Don't wait for load for network stream; open immediately & show loading msg
     player.mpv.queue.async { [self] in
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-        log.verbose("Current playback is network resource: calling applyVideoGeoForStateChange now")
-        applyVideoGeoForStateChange()
+        log.verbose("Current playback is network resource: calling applyVideoGeoTransform now")
+        applyVideoGeoTransform("OpenNetStreamWindow", video: GeometryTransform.trackChanged)
       }
     }
   }
