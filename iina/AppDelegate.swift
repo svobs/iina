@@ -24,17 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: Properties
 
-  let observedPrefKeys: [Preference.Key] = [
-    .logLevel,
-    .enableLogging,
-    .enableAdvancedSettings,
-    .enableCmdN,
-    .resumeLastPosition,
-    .useMediaKeys,
-//    .hideWindowsWhenInactive, // TODO: #1, see below
-  ]
-  private var observers: [NSObjectProtocol] = []
-
   @IBOutlet var menuController: MenuController!
 
   @IBOutlet weak var dockMenu: NSMenu!
@@ -64,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   var startupHandler = StartupHandler()
   private var shutdownHandler = ShutdownHandler()
+  private var co: CocoaObserver!
 
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
@@ -72,54 +62,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return shutdownHandler.isTerminating
   }
 
-  deinit {
-    ObjcUtils.silenced {
-      for key in self.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
-  }
-
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-    guard let keyPath = keyPath, let change = change else { return }
-
-    if keyPath == UIState.shared.currentLaunchName {
-      if let newLaunchLifecycleState = change[.newKey] as? Int {
-        guard !isTerminating else { return }
-        guard newLaunchLifecycleState != 0 else { return }
-        Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
-        Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
-        UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
-        DispatchQueue.main.async { [self] in
-          NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
-        }
-      }
-      return
-    }
-
-    switch keyPath {
-    case PK.enableAdvancedSettings.rawValue, PK.enableLogging.rawValue, PK.logLevel.rawValue:
+  /// Called each time a pref `key`'s value is set
+  func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
       Logger.updateEnablement()
       // depends on advanced being enabled:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
 
-    case PK.enableCmdN.rawValue:
+    case PK.enableCmdN:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
 
-    case PK.resumeLastPosition.rawValue:
+    case PK.resumeLastPosition:
       HistoryController.shared.async {
         HistoryController.shared.log.verbose("Reloading playback history in response to change for 'resumeLastPosition'.")
         HistoryController.shared.reloadAll()
       }
 
-    case PK.useMediaKeys.rawValue:
+    case PK.useMediaKeys:
       MediaPlayerIntegration.shared.update()
 
-      // TODO: #1, see above
-//    case PK.hideWindowsWhenInactive.rawValue:
-//      if let newValue = change[.newKey] as? Bool {
+    // TODO: #1, see above
+//    case PK.hideWindowsWhenInactive:
+//      if let newValue = newValue as? Bool {
 //        for window in NSApp.windows {
 //          guard window as? PlayerWindow == nil else { continue }
 //          window.hidesOnDeactivate = newValue
@@ -128,6 +95,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     default:
       break
+    }
+  }
+
+  /// Only implemented for special case of `UIState.shared.currentLaunchName`. All other prefs should be checked in `prefDidChange`.
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    guard let keyPath, let change, keyPath == UIState.shared.currentLaunchName, let newLaunchLifecycleState = change[.newKey] as? Int else { return }
+    guard !isTerminating else { return }
+    guard newLaunchLifecycleState != 0 else { return }
+    Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
+    Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
+    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
+    DispatchQueue.main.async { [self] in
+      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
     }
   }
 
@@ -154,17 +134,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // capabilities of this Mac.
     HardwareDecodeCapabilities.shared.checkCapabilities()
 
-    for key in self.observedPrefKeys {
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
+
+    var ncDefaultObservers: [CocoaObserver.NCObserver] = [ .init(.windowIsReadyToShow, self.startupHandler.windowIsReadyToShow),
+                                                           .init(.windowMustCancelShow, self.startupHandler.windowMustCancelShow)]
+    // The "action on last window closed" action will vary slightly depending on which type of window was closed.
+    // Here we add a listener which fires when *any* window is closed, in order to handle that logic all in one place.
+    ncDefaultObservers.append(.init(NSWindow.willCloseNotification, self.windowWillClose))
+
+    if UIState.shared.isSaveEnabled {
+      // Save ordered list of open windows each time the order of windows changed.
+      ncDefaultObservers.append(.init(NSWindow.didBecomeMainNotification, self.windowDidBecomeMain))
+      ncDefaultObservers.append(.init(NSWindow.willBeginSheetNotification, self.windowWillBeginSheet))
+      ncDefaultObservers.append(.init(NSWindow.didEndSheetNotification, self.windowDidEndSheet))
+      ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, self.windowDidMiniaturize))
+      ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, self.windowDidDeminiaturize))
+    } else {
+      // TODO: remove existing state...somewhere
+      Logger.log("Note: UI state saving is disabled")
     }
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
-    observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main,
-                                                            using: self.startupHandler.windowIsReadyToShow))
+    co = CocoaObserver(Logger.log,
+                       prefDidChange: prefDidChange,
+                       legacyPrefKeyObserver: self, [
+      .logLevel,
+      .enableLogging,
+      .enableAdvancedSettings,
+      .enableCmdN,
+      .resumeLastPosition,
+      .useMediaKeys,
+      //    .hideWindowsWhenInactive, // TODO: #1, see below
+    ],[
+      .default: ncDefaultObservers
+    ])
 
-    observers.append(NotificationCenter.default.addObserver(forName: .windowMustCancelShow, object: nil, queue: .main,
-                                                            using: self.startupHandler.windowMustCancelShow))
+    co.addAllObservers()
 
     // Check for legacy pref entries and migrate them to their modern equivalents.
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives
@@ -222,33 +227,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// Called by `startupHandler.showWindowsIfReady` when all restored windows are ready, or not restoring.
   func addObserversAndActivateApp() {
     Logger.log("Adding window observers")
-
-    // The "action on last window closed" action will vary slightly depending on which type of window was closed.
-    // Here we add a listener which fires when *any* window is closed, in order to handle that logic all in one place.
-    observers.append(NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil,
-                                                            queue: .main, using: self.windowWillClose))
-
-    if UIState.shared.isSaveEnabled {
-      // Save ordered list of open windows each time the order of windows changed.
-      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeMainNotification, object: nil,
-                                                              queue: .main, using: self.windowDidBecomeMain))
-
-      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.willBeginSheetNotification, object: nil,
-                                                              queue: .main, using: self.windowWillBeginSheet))
-
-      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didEndSheetNotification, object: nil,
-                                                              queue: .main, using: self.windowDidEndSheet))
-
-      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didMiniaturizeNotification, object: nil,
-                                                              queue: .main, using: self.windowDidMiniaturize))
-
-      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didDeminiaturizeNotification, object: nil,
-                                                              queue: .main, using: self.windowDidDeminiaturize))
-
-    } else {
-      // TODO: remove existing state...somewhere
-      Logger.log("Note: UI state saving is disabled")
-    }
 
     MediaPlayerIntegration.shared.update()
 
@@ -517,17 +495,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationWillTerminate(_ notification: Notification) {
     Logger.log("App will terminate")
     Logger.closeLogFiles()
-
-    ObjcUtils.silenced { [self] in
-      observers.forEach {
-        NotificationCenter.default.removeObserver($0)
-      }
-
-      // Remove observers for IINA preferences.
-      for key in observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
   }
 
   // MARK: - Open file(s)
