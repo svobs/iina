@@ -830,7 +830,7 @@ extension PlayerWindowController {
                               setTrailingTo: transition.isShowingTrailingSidebar ? trailingSidebar.visibility : nil,
                               ΔWindowWidth: ΔWindowWidth)
 
-    // Update sidebar vertical alignments
+    // Update sidebar downshift & tab heights
     updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
 
     if outputLayout.hasFloatingOSC {
