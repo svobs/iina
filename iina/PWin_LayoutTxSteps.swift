@@ -611,7 +611,7 @@ extension PlayerWindowController {
         muteButton.contentTintColor = contentTintColor
 
         // Default alpha for these is 0.5. They don't change their text color.
-        let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
+        let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 0.8
         leftTimeLabel.alphaValue = textAlpha
         rightTimeLabel.alphaValue = textAlpha
         if hasClearBG {
@@ -633,6 +633,15 @@ extension PlayerWindowController {
         }
         // invalidate all cached knob images
         RenderCache.shared.invalidateCachedKnobs()
+      }
+
+      if transition.outputLayout.isMusicMode {
+        // Decrease font size of time labels
+        leftTimeLabel.font = NSFont.labelFont(ofSize: 9)
+        rightTimeLabel.font = NSFont.labelFont(ofSize: 9)
+      } else {
+        leftTimeLabel.font = NSFont.labelFont(ofSize: 13)
+        rightTimeLabel.font = NSFont.labelFont(ofSize: 13)
       }
 
       if transition.isEnteringMusicMode {
@@ -666,10 +675,6 @@ extension PlayerWindowController {
         }
 
         seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
-
-        // Decrease font size of time labels
-        leftTimeLabel.font = NSFont.labelFont(ofSize: 9)
-        rightTimeLabel.font = NSFont.labelFont(ofSize: 9)
 
         // Update music mode UI
         updateTitle()

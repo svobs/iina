@@ -1179,7 +1179,7 @@ struct Preference {
     .oscBarPlayIconSize: 24,
     .oscBarPlayIconSpacing: 16,
     .oscPosition: OSCPosition.floating.rawValue,
-    .oscOverlayStyle: OSCOverlayStyle.visualEffectView.rawValue,
+    .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .hideFadeableViewsWhenOutsideWindow: true,
     .playSliderBarLeftColor: SliderBarLeftColor.defaultValue.rawValue,
     .playlistWidth: 270,
