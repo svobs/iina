@@ -202,7 +202,6 @@ class RenderCache {
   let barCornerRadius: CGFloat = 1.5
   var barCornerRadius_Scaled: CGFloat
   var barColorLeft = NSColor.controlAccentColor
-  var barColorLeftGlow = NSColor.controlAccentColor
   var barColorRight = NSColor.mainSliderBarRight
   let barMarginRadius: CGFloat = 1.0
   var barMarginRadius_Scaled: CGFloat
@@ -215,7 +214,6 @@ class RenderCache {
     default:
       barColorLeft = NSColor.controlAccentColor
     }
-    barColorLeftGlow = barColorLeft.withAlphaComponent(0.5)
   }
 
   func drawBar(in barRect: NSRect, darkMode: Bool, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
@@ -327,7 +325,7 @@ class RenderCache {
         // Apply clip (pixel whitelist)
         cgc.clip(to: [leftClip, rightClip])
 
-        let leftCachedColor = exaggerateColor(leftColor)
+        let leftCachedColor = leftColor
         let rightCachedColor = exaggerateColor(rightColor)
 
         var isRightOfKnob = false

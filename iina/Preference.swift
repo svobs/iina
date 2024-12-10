@@ -249,6 +249,9 @@ struct Preference {
     static let thumbnailDisplayedSizePercentage = Key("thumbnailDisplayedSizePercentage")
     static let maxThumbnailPreviewCacheSize = Key("maxThumbnailPreviewCacheSize")
 
+    static let showDeltaInSliderSeekHover = Key("showDeltaInSeekTimeHover")
+    static let showChapterInSliderSeekHover = Key("showChapterInSliderSeekHover")
+
     /// Music mode
     static let autoSwitchToMusicMode = Key("autoSwitchToMusicMode")
     static let musicModeShowPlaylist = Key("musicModeShowPlaylist")
@@ -1254,6 +1257,9 @@ struct Preference {
     .thumbnailRawSizePercentage: 100,
     .thumbnailDisplayedSizePercentage: 25,
     .maxThumbnailPreviewCacheSize: 500,
+
+      .showDeltaInSliderSeekHover: true,
+    .showChapterInSliderSeekHover: true,
 
     .autoSwitchToMusicMode: true,
     .musicModeShowPlaylist: false,

@@ -510,7 +510,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var isDraggingPlaySlider = false
 
   var isScrollingOrDraggingPlaySlider: Bool {
-    return isDraggingPlaySlider || windowScrollWheel.isScrolling() || playSlider.scrollWheelDelegate!.isScrolling() || volumeSlider.scrollWheelDelegate!.isScrolling()
+    if isDraggingPlaySlider {
+      return true
+    }
+    if (playSlider.scrollWheelDelegate?.isScrolling() ?? false) {
+      // Scrolling play slider directly
+      return true
+    }
+    if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? PlaySliderScrollWheel != nil) {
+      // Scrolling play slider via in-window scroll
+      return true
+    }
+    return false
   }
 
   // Other state
