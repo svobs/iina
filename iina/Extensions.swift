@@ -1937,6 +1937,24 @@ extension NSLayoutConstraint.Priority {
   static let minimum: NSLayoutConstraint.Priority = NSLayoutConstraint.Priority(rawValue: 1)
 }
 
+extension NSControl {
+
+  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = 1.0,
+                 shadowOffsetMultiplier: CGFloat = 0.0) {
+    let controlHeight = fittingSize.height
+    let shadow = NSShadow()
+    // Amount of blur (in pixels) applied to the shadow.
+    shadow.shadowBlurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.667)
+    if shadowOffsetMultiplier > 0.0 {
+      // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
+      shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier, height: controlHeight * shadowOffsetMultiplier)
+    }
+    self.shadow = shadow
+  }
+
+}
+
 extension NSView {
   var associatedPlayer: PlayerCore? {
     return (window?.windowController as? PlayerWindowController)?.player

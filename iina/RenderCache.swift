@@ -56,25 +56,29 @@ class RenderCache {
     }
   }
 
-  func getKnob(_ knobType: KnobType, darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
+  func getKnob(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
+               knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
     if let cachedKnob = cachedKnobs[knobType.rawValue], cachedKnob.isDarkMode == darkMode,
        cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight {
       return cachedKnob
     }
     // There may some minor loss due to races, but it will settle quickly. Don't need lousy locksss
-    let knob = Knob(knobType, isDarkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+    let knob = Knob(knobType, isDarkMode: darkMode, isClearBG: clearBG,
+                    knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
     cachedKnobs[knobType.rawValue] = knob
     return knob
   }
 
-  func getKnobImage(_ knobType: KnobType, darkMode: Bool,
+  func getKnobImage(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
                     knobWidth: CGFloat, mainKnobHeight: CGFloat) -> CGImage {
-    return getKnob(knobType, darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight).image
+    return getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
+                   knobWidth: knobWidth, mainKnobHeight: mainKnobHeight).image
   }
 
-  func drawKnob(_ knobType: KnobType, in knobRect: NSRect, darkMode: Bool,
+  func drawKnob(_ knobType: KnobType, in knobRect: NSRect, darkMode: Bool, clearBG: Bool,
                 knobWidth: CGFloat, mainKnobHeight: CGFloat) {
-    let knob = getKnob(knobType, darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+    let knob = getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
+                       knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
 
     let image = knob.image
 
@@ -94,31 +98,34 @@ class RenderCache {
     static let loopKnobHeightAdjustment: CGFloat = 0.75
 
     let isDarkMode: Bool
+    let isClearBG: Bool
     let knobWidth: CGFloat
     let mainKnobHeight: CGFloat
     let image: CGImage
 
-    init(_ knobType: KnobType, isDarkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
+    init(_ knobType: KnobType, isDarkMode: Bool, isClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
       let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-      let shadowColor = isDarkMode ? RenderCache.shared.glowColor : RenderCache.shared.shadowColor
+      let shadowOrGlowColor = isDarkMode ? RenderCache.shared.glowColor : RenderCache.shared.shadowColor
       switch knobType {
       case .mainKnobSelected, .volumeKnobSelected:
-        image = Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowColor,
+        image = Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
                                 knobWidth: knobWidth, knobHeight: mainKnobHeight)
       case .mainKnob, .volumeKnob:
-        image = Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: isDarkMode ? nil : shadowColor,
+        let shadowColor = isClearBG ? RenderCache.shared.shadowColor : (isDarkMode ? nil : RenderCache.shared.shadowColor)
+        image = Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: shadowColor,
                                    knobWidth: knobWidth, knobHeight: mainKnobHeight)
       case .loopKnob:
         image = Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
                                          knobWidth: knobWidth, knobHeight: loopKnobHeight)
       case .loopKnobSelected:
         image = isDarkMode ?
-        Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowColor,
+        Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
                        knobWidth: knobWidth, knobHeight: loopKnobHeight) :
         Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
                        knobWidth: knobWidth, knobHeight: loopKnobHeight)
       }
       self.isDarkMode = isDarkMode
+      self.isClearBG = isClearBG
       self.knobWidth = knobWidth
       self.mainKnobHeight = mainKnobHeight
     }

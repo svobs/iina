@@ -171,7 +171,7 @@ extension PlayerWindowController {
     }
 
     var isBottomBarPlacementOrStyleChanging: Bool {
-      return isBottomBarPlacementChanging || inputLayout.oscStyle != outputLayout.oscStyle
+      return isBottomBarPlacementChanging || inputLayout.oscOverlayStyle != outputLayout.oscOverlayStyle
     }
 
     var isLeadingSidebarPlacementChanging: Bool {

@@ -402,7 +402,7 @@ extension PlayerWindowController {
     }
 
     if transition.isBottomBarPlacementOrStyleChanging {
-      initBottomBarView(in: window.contentView!, style: transition.outputLayout.oscStyle)
+      initBottomBarView(in: window.contentView!, style: transition.outputLayout.oscOverlayStyle)
       updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
     }
 
@@ -569,7 +569,10 @@ extension PlayerWindowController {
         }
       }
       playSlider.customCell.knobHeight = knobHeight
-      (volumeSlider.cell as? VolumeSliderCell)?.knobHeight = knobHeight
+      if let volumeSliderCell = volumeSlider.cell as? VolumeSliderCell {
+        volumeSliderCell.knobHeight = knobHeight
+        volumeSliderCell.oscBackgroundIsClear = outputLayout.spec.oscBackgroundIsClear
+      }
       seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
@@ -612,12 +615,12 @@ extension PlayerWindowController {
         leftTimeLabel.alphaValue = textAlpha
         rightTimeLabel.alphaValue = textAlpha
         if hasClearBG {
-          addShadow(to: playButton)
-          addShadow(to: leftArrowButton)
-          addShadow(to: rightArrowButton)
-          addShadow(to: muteButton)
-          addShadow(to: leftTimeLabel)
-          addShadow(to: rightTimeLabel)
+          playButton.addShadow()
+          leftArrowButton.addShadow()
+          rightArrowButton.addShadow()
+          muteButton.addShadow()
+          leftTimeLabel.addShadow()
+          rightTimeLabel.addShadow()
           RenderCache.shared.mainKnobColor = NSColor.controlForClearBG
         } else {
           playButton.shadow = nil
@@ -792,17 +795,6 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
-  }
-
-  func addShadow(to control: NSControl, blurRadiusScalar: CGFloat = 0.2, shadowOffsetScalar: CGFloat = 0.0) {
-    let controlHeight = control.fittingSize.height
-    let shadow = NSShadow()
-    // Amount of blur (in pixels) applied to the shadow.
-    shadow.shadowBlurRadius = controlHeight * blurRadiusScalar
-    shadow.shadowColor = NSColor.black.withAlphaComponent(0.667)
-    // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
-    shadow.shadowOffset = shadowOffsetScalar > 0.0 ? NSSize(width: controlHeight * shadowOffsetScalar, height: controlHeight * shadowOffsetScalar) : NSZeroSize
-    control.shadow = shadow
   }
 
   /// -------------------------------------------------
@@ -1483,7 +1475,7 @@ extension PlayerWindowController {
       button.contentTintColor = contentTintColor
       button.action = #selector(self.toolBarButtonAction(_:))
       if transition.outputLayout.spec.oscBackgroundIsClear {
-        addShadow(to: button)
+        button.addShadow()
       } else {
         button.shadow = nil
       }

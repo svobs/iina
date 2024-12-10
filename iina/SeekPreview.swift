@@ -48,25 +48,14 @@ extension PlayerWindowController {
       thumbnailPeekView.isHidden = true
 
       timeLabel.isHidden = true
-      addShadow(to: timeLabel)
+      timeLabel.addShadow()
     }
 
     /// This is expected to be called at first layout
     func updateTimeLabelFontSize(to newSize: CGFloat) {
       guard timeLabel.font?.pointSize != newSize else { return }
       timeLabel.font = NSFont.boldSystemFont(ofSize: newSize)
-      addShadow(to: timeLabel)
-    }
-
-    func addShadow(to label: NSTextField, blurRadiusScalar: CGFloat = 0.2, shadowOffsetScalar: CGFloat = 0.0) {
-      let labelHeight = label.fittingSize.height
-      let shadow = NSShadow()
-      // Amount of blur (in pixels) applied to the shadow.
-      shadow.shadowBlurRadius = labelHeight * blurRadiusScalar
-      shadow.shadowColor = NSColor.black.withAlphaComponent(0.667)
-      // the distance from the text the shadow is dropped (+X = to the right; +Y = below the text):
-      shadow.shadowOffset = shadowOffsetScalar > 0.0 ? NSSize(width: labelHeight * shadowOffsetScalar, height: labelHeight * shadowOffsetScalar) : NSZeroSize
-      label.shadow = shadow
+      timeLabel.addShadow()
     }
 
     /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be

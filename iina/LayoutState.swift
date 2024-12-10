@@ -30,7 +30,7 @@ struct LayoutSpec {
   /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
-  let oscStyle: Preference.OSCStyle
+  let oscOverlayStyle: Preference.OSCOverlayStyle
 
   let controlBarGeo: ControlBarGeometry
 
@@ -42,6 +42,7 @@ struct LayoutSpec {
   init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
+       oscOverlayStyle: Preference.OSCOverlayStyle,
        controlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState) {
@@ -62,7 +63,9 @@ struct LayoutSpec {
       self.bottomBarPlacement = bottomBarPlacement
       self.enableOSC = enableOSC
       self.interactiveMode = nil
-      self.oscStyle = /*TODO: (enableOSC && oscPosition == .bottom && bottomBarPlacement == .insideViewport) ? .clearGradient :*/ .visualEffectView
+      let canHaveClearOverlayStyle = enableOSC && oscPosition == .bottom && bottomBarPlacement == .insideViewport
+      self.oscOverlayStyle = canHaveClearOverlayStyle ? oscOverlayStyle : .visualEffectView
+
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       // Override most properties for music mode & interactive mode
       self.leadingSidebar = leadingSidebar.clone(visibility: .hide)
@@ -71,7 +74,7 @@ struct LayoutSpec {
       self.bottomBarPlacement = .outsideViewport
       self.enableOSC = false
       self.interactiveMode = interactiveMode
-      self.oscStyle = .visualEffectView
+      self.oscOverlayStyle = .visualEffectView
     }
 
     self.isLegacyStyle = isLegacyStyle
@@ -98,6 +101,7 @@ struct LayoutSpec {
                       bottomBarPlacement: .insideViewport,
                       enableOSC: false,
                       oscPosition: .floating,
+                      oscOverlayStyle: Preference.enum(for: .oscOverlayStyle),
                       interactiveMode: nil,
                       moreSidebarState: moreSidebarState)
   }
@@ -133,6 +137,7 @@ struct LayoutSpec {
                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                       enableOSC: Preference.bool(for: .enableOSC),
                       oscPosition: Preference.enum(for: .oscPosition),
+                      oscOverlayStyle: Preference.enum(for: .oscOverlayStyle),
                       interactiveMode: interactiveMode,
                       moreSidebarState: oldSpec.moreSidebarState)
   }
@@ -146,6 +151,7 @@ struct LayoutSpec {
              bottomBarPlacement: Preference.PanelPlacement? = nil,
              enableOSC: Bool? = nil,
              oscPosition: Preference.OSCPosition? = nil,
+             oscOverlayStyle: Preference.OSCOverlayStyle? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
              interactiveMode: InteractiveMode? = nil,
              moreSidebarState: Sidebar.SidebarMiscState? = nil) -> LayoutSpec {
@@ -161,6 +167,7 @@ struct LayoutSpec {
                       bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                       enableOSC: enableOSC ?? self.enableOSC,
                       oscPosition: self.oscPosition,
+                      oscOverlayStyle: oscOverlayStyle ?? self.oscOverlayStyle,
                       controlBarGeo: controlBarGeo,
                       interactiveMode: interactiveMode ?? self.interactiveMode,
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
@@ -276,7 +283,7 @@ struct LayoutSpec {
   }
 
   var oscBackgroundIsClear: Bool {
-    return oscStyle != .visualEffectView
+    return oscOverlayStyle == .clearGradient
   }
 }
 
@@ -325,8 +332,8 @@ class LayoutState {
 
   // MARK: Derived / computed properties
 
-  var oscStyle: Preference.OSCStyle {
-    return spec.oscStyle
+  var oscOverlayStyle: Preference.OSCOverlayStyle {
+    return spec.oscOverlayStyle
   }
 
   var topBarHeight: CGFloat {

@@ -12,11 +12,12 @@ class PlaySliderCell: NSSliderCell {
   unowned var _player: PlayerCore!
   var player: PlayerCore {
     if let player = _player { return player }
+    _player = wc?.player
+    return _player
+  }
 
-    let windowController = self.controlView!.window!.windowController
-    let player = (windowController as! PlayerWindowController).player
-    _player = player
-    return player
+  var wc: PlayerWindowController? {
+    controlView?.window?.windowController as? PlayerWindowController
   }
 
   override var knobThickness: CGFloat {
@@ -25,6 +26,9 @@ class PlaySliderCell: NSSliderCell {
 
   var knobWidth: CGFloat = 3
   var knobHeight: CGFloat = 15
+  var isClearBG: Bool {
+    wc?.currentLayout.spec.oscBackgroundIsClear ?? false
+  }
 
   var drawChapters = Preference.bool(for: .showChapterPos)
 
@@ -46,7 +50,9 @@ class PlaySliderCell: NSSliderCell {
     guard let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
     appearance.applyAppearanceFor {
       RenderCache.shared.drawKnob(isHighlighted ? .mainKnobSelected : .mainKnob, in: knobRect,
-                                  darkMode: appearance.isDark, knobWidth: knobWidth, mainKnobHeight: knobHeight)
+                                  darkMode: appearance.isDark,
+                                  clearBG: isClearBG,
+                                  knobWidth: knobWidth, mainKnobHeight: knobHeight)
     }
   }
 

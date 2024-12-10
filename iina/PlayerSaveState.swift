@@ -1388,7 +1388,11 @@ extension LayoutSpec {
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
 
-      return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode, isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement, bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition, interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
+      return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
+                        isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
+                        bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
+                        oscOverlayStyle: Preference.enum(for: .oscOverlayStyle),
+                        interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
     }
 
     do {

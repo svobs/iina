@@ -246,7 +246,7 @@ extension PlayerWindowController {
     addTitleBarAccessoryViews()
   }
 
-  func initBottomBarView(in contentView: NSView, style: Preference.OSCStyle) {
+  func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
     bottomBarView.removeFromSuperview()
     bottomBarView = style == .visualEffectView ? NSVisualEffectView() : NSView()
 

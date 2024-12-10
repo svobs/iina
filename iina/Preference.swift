@@ -158,6 +158,7 @@ struct Preference {
     static let bottomBarPlacement = Key("bottomBarPlacement")
     static let enableOSC = Key("enableOSC")
     static let oscPosition = Key("oscPosition")
+    static let oscOverlayStyle = Key("oscOverlayStyle")
     static let hideFadeableViewsWhenOutsideWindow = Key("hideFadeableViewsWhenOutsideWindow")
     static let playSliderBarLeftColor = Key("playSliderBarLeftColor")
 
@@ -654,11 +655,13 @@ struct Preference {
     }
   }
 
-  enum OSCStyle: Int, InitializingFromKey {
+  enum OSCOverlayStyle: Int, InitializingFromKey {
+    /// Use Apple's `NSVisualEffectView`
     case visualEffectView = 1
+    /// Use clear background with slight alpha gradient
     case clearGradient
 
-    static var defaultValue = OSCStyle.visualEffectView
+    static var defaultValue = OSCOverlayStyle.visualEffectView
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1176,6 +1179,7 @@ struct Preference {
     .oscBarPlayIconSize: 24,
     .oscBarPlayIconSpacing: 16,
     .oscPosition: OSCPosition.floating.rawValue,
+    .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .hideFadeableViewsWhenOutsideWindow: true,
     .playSliderBarLeftColor: SliderBarLeftColor.defaultValue.rawValue,
     .playlistWidth: 270,
