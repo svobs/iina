@@ -2593,11 +2593,7 @@
 				D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */,
 				D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
-				84FBCB361EEACDDD0076C77C /* FFmpegController.h */,
-				84FBCB371EEACDDD0076C77C /* FFmpegController.m */,
-				842904E11F0EC01600478376 /* AutoFileMatcher.swift */,
 				D17780D72CA0B680006B3B33 /* MediaMetaCache.swift */,
-				846121BC1F35FCA500ABB39C /* DraggingDetect.swift */,
 			);
 			name = Controllers;
 			sourceTree = "<group>";
@@ -2908,6 +2904,10 @@
 				D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */,
 				D18333BD2834CE620060A4E9 /* PlayerInputContext.swift */,
 				D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */,
+				842904E11F0EC01600478376 /* AutoFileMatcher.swift */,
+				846121BC1F35FCA500ABB39C /* DraggingDetect.swift */,
+				84FBCB361EEACDDD0076C77C /* FFmpegController.h */,
+				84FBCB371EEACDDD0076C77C /* FFmpegController.m */,
 			);
 			name = Player;
 			sourceTree = "<group>";
