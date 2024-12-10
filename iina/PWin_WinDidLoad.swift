@@ -241,14 +241,12 @@ extension PlayerWindowController {
     trailingTB.addArrangedSubview(onTopButton)
     trailingTB.addArrangedSubview(trailingSpacerTrailing)
 
-    // - Controllers
-
     addTitleBarAccessoryViews()
   }
 
   func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
     bottomBarView.removeFromSuperview()
-    bottomBarView = style == .visualEffectView ? NSVisualEffectView() : NSView()
+    bottomBarView = style == .visualEffectView ? NSVisualEffectView() : ClearGradientView()
 
     contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     bottomBarView.clipsToBounds = true
