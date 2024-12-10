@@ -1939,7 +1939,7 @@ extension NSLayoutConstraint.Priority {
 
 extension NSControl {
 
-  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = 1.0,
+  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = 2.0,
                  shadowOffsetMultiplier: CGFloat = 0.0) {
     let controlHeight = fittingSize.height
     let shadow = NSShadow()
