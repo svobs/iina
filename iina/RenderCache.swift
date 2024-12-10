@@ -378,7 +378,7 @@ class RenderCache {
       var leftCacheComps: [CGFloat] = []
       let numComponents = min(baseColor.numberOfComponents, 3)
       for i in 0..<numComponents {
-        leftCacheComps.append(min(1.0, baseColor.components![i] * 1.5))
+        leftCacheComps.append(min(1.0, baseColor.components![i] * 1.8))
       }
       leftCacheComps.append(1.0)
       let colorSpace = baseColor.colorSpace ?? CGColorSpaceCreateDeviceRGB()

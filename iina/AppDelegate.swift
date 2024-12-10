@@ -523,19 +523,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         for url in urls {
           // open one window per file
           let newPlayer = PlayerManager.shared.getIdleOrCreateNew()
-          if let playerFilesOpened = newPlayer.openURLs([url]) {
-            newPlayer.openedWindowsSetIndex = windowCount
-            windowCount += 1
-            totalFilesOpened += playerFilesOpened
-          }
+          let playerFilesOpened = newPlayer.openURLs([url]) ?? 1
+          newPlayer.openedWindowsSetIndex = windowCount
+          windowCount += 1
+          totalFilesOpened += playerFilesOpened
         }
       } else {
         // open pending files in single window
         let player = PlayerManager.shared.getActiveOrCreateNew()
         startupHandler.wcForOpenFile = player.windowController
-        if let playerFilesOpened = player.openURLs(urls) {
-          totalFilesOpened += playerFilesOpened
-        }
+        // openURLs will return nil for playlist files, etc. Count them as successes.
+        let playerFilesOpened = player.openURLs(urls) ?? 1
+        totalFilesOpened += playerFilesOpened
       }
 
       if totalFilesOpened == 0 {
