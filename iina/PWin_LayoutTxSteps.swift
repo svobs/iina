@@ -571,7 +571,7 @@ extension PlayerWindowController {
       playSlider.customCell.knobHeight = knobHeight
       if let volumeSliderCell = volumeSlider.cell as? VolumeSliderCell {
         volumeSliderCell.knobHeight = knobHeight
-        volumeSliderCell.oscBackgroundIsClear = outputLayout.spec.oscBackgroundIsClear
+        volumeSliderCell.isClearBG = outputLayout.spec.oscBackgroundIsClear
       }
       seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
 

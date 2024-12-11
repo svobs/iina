@@ -224,6 +224,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Also used to preserve layout if a new file is dragged & dropped into this window
   var lastWindowedLayoutSpec: LayoutSpec = LayoutSpec.defaultLayout()
 
+  @Atomic var titleBarAndOSCUpdateTicketCounter: Int = 0
+
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
 
@@ -667,12 +669,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
+  /// Asynchronous with throttling!
   func updateTitleBarAndOSC() {
-    animationPipeline.submitInstantTask { [self] in
-      let oldLayout = currentLayout
-      let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-      buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec,
-                            thenRun: true)
+    let currentTicket = $titleBarAndOSCUpdateTicketCounter.withLock {
+      $0 += 1
+      return $0
+    }
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(10)) { [self] in
+      guard currentTicket == titleBarAndOSCUpdateTicketCounter else { return }
+      animationPipeline.submitInstantTask { [self] in
+        let oldLayout = currentLayout
+        let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
+        buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec,
+                              thenRun: true)
+      }
     }
   }
 

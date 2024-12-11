@@ -232,7 +232,7 @@ For smoothest results, also enable custom full screen.</string>
                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="150" id="0Ss-3d-jQk"/>
                                         <constraint firstAttribute="width" relation="lessThanOrEqual" priority="900" constant="240" id="ddJ-ex-oMD"/>
                                     </constraints>
-                                    <sliderCell key="cell" controlSize="mini" state="on" alignment="left" minValue="0.01" maxValue="1" doubleValue="1" tickMarkPosition="below" numberOfTickMarks="20" sliderType="linear" id="N3H-Ki-LQU"/>
+                                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="0.01" maxValue="1" doubleValue="1" tickMarkPosition="below" numberOfTickMarks="20" sliderType="linear" id="N3H-Ki-LQU"/>
                                     <connections>
                                         <binding destination="lH7-Vv-0M1" name="value" keyPath="values.playerWindowOpacity" id="HHs-zO-i4f"/>
                                     </connections>
@@ -377,7 +377,7 @@ For smoothest results, also enable custom full screen.</string>
                                                                 <constraints>
                                                                     <constraint firstAttribute="width" constant="195" id="8g7-LI-2hr"/>
                                                                 </constraints>
-                                                                <sliderCell key="cell" controlSize="mini" state="on" userInterfaceLayoutDirection="rightToLeft" alignment="left" maxValue="0.75" doubleValue="0.25" tickMarkPosition="below" numberOfTickMarks="13" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fc5-xy-pnP"/>
+                                                                <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" userInterfaceLayoutDirection="rightToLeft" alignment="left" maxValue="0.75" doubleValue="0.25" tickMarkPosition="below" numberOfTickMarks="13" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fc5-xy-pnP"/>
                                                                 <connections>
                                                                     <binding destination="lH7-Vv-0M1" name="value" keyPath="values.animationDurationFullScreen" id="uPJ-wT-miW"/>
                                                                 </connections>
@@ -532,7 +532,7 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="19" y="-874"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="none">
+        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="550" height="421"/>
             <subviews>
                 <textField identifier="SectionTitleWindow" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" verticalCompressionResistancePriority="751" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RFk-nU-SGL">
@@ -1256,9 +1256,9 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="3GV-dH-tZQ" secondAttribute="trailing" id="xI9-7V-Oef"/>
                 <constraint firstItem="RFk-nU-SGL" firstAttribute="leading" secondItem="D77-Iw-nrY" secondAttribute="leading" id="ypV-gE-Ld4"/>
             </constraints>
-            <point key="canvasLocation" x="4" y="-1001"/>
+            <point key="canvasLocation" x="5" y="-1380"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
+        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="578" height="1030"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -1451,18 +1451,34 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d0z-Kd-exY" userLabel="OSC-Height HStack View">
-                            <rect key="frame" x="20" y="432" width="430" height="21"/>
+                            <rect key="frame" x="20" y="432" width="380" height="21"/>
                             <subviews>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xbl-vr-NaJ">
-                                    <rect key="frame" x="-2" y="3" width="133" height="16"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Controller bar height:" id="5BF-Xi-M9u">
+                                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xbl-vr-NaJ">
+                                    <rect key="frame" x="-2" y="3" width="90" height="16"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Bar height:" id="5BF-Xi-M9u">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="WPN-TF-OlT" userLabel="OSC-Height Text Field">
-                                    <rect key="frame" x="137" y="0.0" width="50" height="21"/>
+                                <slider translatesAutoresizingMaskIntoConstraints="NO" id="dsQ-QF-qYK" userLabel="OSC-Height Horizontal Slider">
+                                    <rect key="frame" x="92" y="-2" width="232" height="25"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="228" id="EyV-vj-7Y7"/>
+                                    </constraints>
+                                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="24" maxValue="200" doubleValue="44" tickMarkPosition="below" numberOfTickMarks="45" allowsTickMarkValuesOnly="YES" sliderType="linear" id="8b9-rY-Ke5"/>
+                                    <connections>
+                                        <action selector="oscBarHeightAction:" target="-2" id="iWm-b9-yfN"/>
+                                        <binding destination="lH7-Vv-0M1" name="value" keyPath="values.oscBarHeight" id="Bwl-jr-dnr">
+                                            <dictionary key="options">
+                                                <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
+                                                <bool key="NSValidatesImmediately" value="YES"/>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </slider>
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="WPN-TF-OlT" userLabel="OSC-Height Text Field">
+                                    <rect key="frame" x="330" y="0.0" width="50" height="21"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="50" id="ohn-Jd-w6h"/>
                                     </constraints>
@@ -1480,12 +1496,6 @@ For smoothest results, also enable custom full screen.</string>
                                         <binding destination="lH7-Vv-0M1" name="value" keyPath="values.oscBarHeight" id="FSO-aW-yyi"/>
                                     </connections>
                                 </textField>
-                                <customView horizontalHuggingPriority="249" horizontalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="7cu-WK-jfn" userLabel="Spacer">
-                                    <rect key="frame" x="195" y="5" width="235" height="1"/>
-                                    <constraints>
-                                        <constraint firstAttribute="height" constant="1" id="D6W-7k-nhu"/>
-                                    </constraints>
-                                </customView>
                             </subviews>
                             <visibilityPriorities>
                                 <integer value="1000"/>
@@ -1533,7 +1543,7 @@ For smoothest results, also enable custom full screen.</string>
                                                                 <constraints>
                                                                     <constraint firstAttribute="width" constant="100" id="aPi-SR-rfh"/>
                                                                 </constraints>
-                                                                <sliderCell key="cell" controlSize="small" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="axa-xu-L1c"/>
+                                                                <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="axa-xu-L1c"/>
                                                                 <connections>
                                                                     <action selector="toolIconSizeAction:" target="-2" id="7FI-iD-RLb"/>
                                                                 </connections>
@@ -1551,7 +1561,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             </textField>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="B1C-hb-rqp" userLabel="ToolIconSpacing Horizontal Slider">
                                                                 <rect key="frame" x="274" y="-2" width="104" height="24"/>
-                                                                <sliderCell key="cell" controlSize="small" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="5wb-gi-zNn"/>
+                                                                <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="5wb-gi-zNn"/>
                                                                 <connections>
                                                                     <action selector="toolIconSpacingAction:" target="-2" id="d9l-PX-9nb"/>
                                                                 </connections>
@@ -1729,7 +1739,7 @@ For smoothest results, also enable custom full screen.</string>
                                                                 <constraints>
                                                                     <constraint firstAttribute="width" constant="100" id="AwX-M9-5pJ"/>
                                                                 </constraints>
-                                                                <sliderCell key="cell" controlSize="small" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="7P8-Bk-iEt"/>
+                                                                <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="7P8-Bk-iEt"/>
                                                                 <connections>
                                                                     <action selector="playIconSizeAction:" target="-2" id="CUR-tT-0dk"/>
                                                                 </connections>
@@ -1747,7 +1757,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             </textField>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Cpf-8F-Wfh" userLabel="PlayButtonsSpacing Horizontal Slider">
                                                                 <rect key="frame" x="277" y="-2" width="104" height="24"/>
-                                                                <sliderCell key="cell" controlSize="small" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="9NB-ib-vrc"/>
+                                                                <sliderCell key="cell" controlSize="small" continuous="YES" alignment="left" maxValue="3" doubleValue="2" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="9NB-ib-vrc"/>
                                                                 <connections>
                                                                     <action selector="playIconSpacingAction:" target="-2" id="cFm-Km-MRm"/>
                                                                 </connections>
@@ -2167,6 +2177,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="6ml-Xj-nVX" secondAttribute="trailing" id="Oe5-qn-5Oo"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="top" secondItem="4SE-r9-OnD" secondAttribute="bottom" constant="16" id="PtK-w3-mHG"/>
                 <constraint firstItem="4SE-r9-OnD" firstAttribute="leading" secondItem="gjB-It-iFS" secondAttribute="leading" constant="120" id="QhJ-5H-HwU"/>
+                <constraint firstItem="WPN-TF-OlT" firstAttribute="trailing" secondItem="GbG-nw-ict" secondAttribute="trailing" id="R5s-gT-x1t"/>
                 <constraint firstItem="4XH-GU-VhV" firstAttribute="top" secondItem="gjB-It-iFS" secondAttribute="top" constant="8" id="SUP-it-bME"/>
                 <constraint firstAttribute="trailing" secondItem="0eU-xI-byi" secondAttribute="trailing" constant="8" id="Wuz-7P-1qO"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="4SE-r9-OnD" secondAttribute="trailing" constant="8" id="YVV-Zk-8Iw"/>

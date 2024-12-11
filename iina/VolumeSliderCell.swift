@@ -13,7 +13,7 @@ class VolumeSliderCell: NSSliderCell {
 
   var knobWidth: CGFloat = 3
   var knobHeight: CGFloat = 15
-  var oscBackgroundIsClear: Bool = false
+  var isClearBG: Bool = false
 
   override var acceptsFirstResponder: Bool {
     return false
@@ -40,11 +40,12 @@ class VolumeSliderCell: NSSliderCell {
   }
 
   override func drawKnob(_ knobRect: NSRect) {
+    if isClearBG { return }
     guard let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
     appearance.applyAppearanceFor {
       RenderCache.shared.drawKnob(isHighlighted ? .volumeKnobSelected : .volumeKnob, in: knobRect,
                                   darkMode: appearance.isDark,
-                                  clearBG: oscBackgroundIsClear,
+                                  clearBG: isClearBG,
                                   knobWidth: knobWidth, mainKnobHeight: knobHeight)
     }
   }
