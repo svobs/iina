@@ -246,7 +246,23 @@ extension PlayerWindowController {
 
   func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
     bottomBarView.removeFromSuperview()
-    bottomBarView = style == .visualEffectView ? NSVisualEffectView() : ClearGradientView()
+    switch style {
+    case .visualEffectView:
+      bottomBarView = NSVisualEffectView()
+    case .clearGradient:
+      bottomBarView = NSView()
+      let gradient = CAGradientLayer()
+      gradient.frame = bottomBarView.bounds
+      // Top → Bottom
+      gradient.startPoint = CGPoint(x: 0.5, y: 1.0)
+      gradient.endPoint = CGPoint(x: 0.5, y: 0.0)
+      // Ideally the gradient would use a quadratic function, but seems we are limited to linear, so just fudge it a bit.
+      gradient.colors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
+                         CGColor(red: 0, green: 0, blue: 0, alpha: 0.3),
+                         CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)]
+      bottomBarView.layer = gradient
+      bottomBarView.wantsLayer = true
+    }
 
     contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     bottomBarView.clipsToBounds = true
