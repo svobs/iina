@@ -216,8 +216,8 @@ class RenderCache {
     }
   }
 
-  func drawBar(in barRect: NSRect, darkMode: Bool, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
-               durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
+  func drawBar(in barRect: NSRect, darkMode: Bool, clearBG: Bool, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
+               progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
     var drawRect = Bar.imageRect(in: barRect)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
@@ -225,7 +225,8 @@ class RenderCache {
                         width: drawRect.width,
                         height: drawRect.height - 2)
     }
-    let bar = Bar(darkMode: darkMode, barWidth: barRect.width, screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
+    let bar = Bar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, screen: screen,
+                  knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
                   durationSec: durationSec, chapters: chapters, cachedRanges: cachedRanges)
     NSGraphicsContext.current!.cgContext.draw(bar.image, in: drawRect)
   }
@@ -235,13 +236,15 @@ class RenderCache {
     let image: CGImage
 
     /// `barWidth` does not include added leading or trailing margin
-    init(darkMode: Bool, barWidth: CGFloat, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
-         durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
-      image = Bar.makeImage(barWidth, screen: screen, darkMode: darkMode, knobMinX: knobMinX, knobWidth: knobWidth,
+    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
+         progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
+      image = Bar.makeImage(barWidth, screen: screen, darkMode: darkMode, clearBG: clearBG,
+                            knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
                             durationSec: durationSec, chapters, cachedRanges: cachedRanges)
     }
 
-    static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
+    static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, clearBG: Bool,
+                          knobMinX: CGFloat, knobWidth: CGFloat, progressRatio: CGFloat,
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
       // - Set up calculations
       let scaleFactor = RenderCache.shared.scaleFactor
@@ -258,6 +261,7 @@ class RenderCache {
       let leftClipMaxX = (knobMinX - 1) * scaleFactor
       let rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
       assert(cornerRadius_Scaled * 2 <= knobWidth * scaleFactor, "Play bar corner radius is too wide: cannot clip using knob")
+
       let leftClip = CGRect(x: 0, y: 0,
                             width: leftClipMaxX,
                             height: imgSizeScaled.height)
@@ -267,7 +271,38 @@ class RenderCache {
 
       let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
         // Apply clip (pixel whitelist)
-        cgc.clip(to: [leftClip, rightClip])
+        let minClippingWidth = cornerRadius_Scaled + RenderCache.shared.barMarginRadius_Scaled
+        if !clearBG || (leftClip.width > minClippingWidth && rightClip.width > minClippingWidth) {
+          if clearBG {
+            // Knob is not drawn. Need to fill in the gap which was clipped out.
+            cgc.resetClip()
+            // Draw square bar(s). For some reason the CGPath below does not include the first & last pixels in CGRect,
+            // so start on the clip boundary.
+            let startX = leftClipMaxX
+            let dividingPointX = RenderCache.shared.barMarginRadius_Scaled + (progressRatio * barWidth_Scaled)
+            let endX = rightClipMinX
+            let leftWidth = dividingPointX - startX
+            if leftWidth > 0.0 {
+              cgc.beginPath()
+              let segment = CGRect(x: startX, y: RenderCache.shared.barMarginRadius_Scaled,
+                                   width: leftWidth, height: barHeight_Scaled)
+              cgc.addPath(CGPath(rect: segment, transform: nil))
+              cgc.setFillColor(RenderCache.shared.barColorLeft.cgColor)
+              cgc.fillPath()
+            }
+            let rightWidth = endX - dividingPointX
+            if rightWidth > 0.0 {
+              cgc.beginPath()
+              let segment = CGRect(x: dividingPointX, y: RenderCache.shared.barMarginRadius_Scaled,
+                                   width: rightWidth, height: barHeight_Scaled)
+              cgc.addPath(CGPath(rect: segment, transform: nil))
+              cgc.setFillColor(RenderCache.shared.barColorRight.cgColor)
+              cgc.fillPath()
+            }
+          }
+
+          cgc.clip(to: [leftClip, rightClip])
+        }
 
         // Draw bar segments, with gaps to exclude knob & chapter markers
         func drawSeg(_ barColor: CGColor, minX: CGFloat, maxX: CGFloat) {
@@ -289,8 +324,11 @@ class RenderCache {
         } else {
           segsMaxX = []
         }
-        segsMaxX.append(imgSizeScaled.width)  // add right end of bar
+        // Add right end of bar (don't forget to subtract left & right padding from img)
+        let lastSegMaxX = imgSizeScaled.width - (RenderCache.shared.barMarginRadius_Scaled * 2)
+        segsMaxX.append(lastSegMaxX)
 
+        // Draw all rounded bar segments
         var isRightOfKnob = false
         var segMinX = RenderCache.shared.barMarginRadius_Scaled
         for segMaxX in segsMaxX {
@@ -298,9 +336,18 @@ class RenderCache {
             drawSeg(rightColor, minX: segMinX, maxX: segMaxX)
             segMinX = segMaxX  // for next loop
           } else if segMaxX > knobMinX {
-            // Knob at least partially overlaps segment. Chop off segment at start of knob
+            // (Check corner case: don't draw if no segment at all)
+            if leftClipMaxX - segMinX > cornerRadius_Scaled {
+              // Knob at least partially overlaps segment. Chop off segment at start of knob
+              let finalCutoff = lastSegMaxX - (cornerRadius_Scaled * 3)
+              if leftClipMaxX > finalCutoff {
+                // Corner case: too close to right side. Drawing a rounded segment won't fit. Just fill to end.
+                drawSeg(leftColor, minX: segMinX, maxX: lastSegMaxX)
+                break
+              }
+              drawSeg(leftColor, minX: segMinX, maxX: leftClipMaxX + scaleFactor + scaleFactor)
+            }
             isRightOfKnob = true
-            drawSeg(leftColor, minX: segMinX, maxX: leftClipMaxX + scaleFactor + scaleFactor)
             segMinX = leftClipMaxX // for below
 
             // Any segment left over after the knob?
@@ -314,7 +361,7 @@ class RenderCache {
             segMinX = segMaxX  // for next loop
           }
         }
-      }
+      }  // end first img
 
       guard !cachedRanges.isEmpty else { return barImg }
 

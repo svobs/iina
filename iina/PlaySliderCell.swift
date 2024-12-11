@@ -47,6 +47,7 @@ class PlaySliderCell: NSSliderCell {
   // MARK:- Displaying the Cell
 
   override func drawKnob(_ knobRect: NSRect) {
+    if isClearBG { return }
     guard let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
     appearance.applyAppearanceFor {
       RenderCache.shared.drawKnob(isHighlighted ? .mainKnobSelected : .mainKnob, in: knobRect,
@@ -62,15 +63,15 @@ class PlaySliderCell: NSSliderCell {
     // The usable width of the bar is reduced by the width of the knob.
     let effectiveBarWidth = barRect.width - knobWidth
     let pos = barRect.origin.x + slider.progressRatio * effectiveBarWidth
-    let rect = super.knobRect(flipped: flipped)
+    let superKnobRect = super.knobRect(flipped: flipped)
 
     let height: CGFloat
     if #available(macOS 11, *) {
-      height = (barRect.origin.y - rect.origin.y) * 2 + barRect.height
+      height = (barRect.origin.y - superKnobRect.origin.y) * 2 + barRect.height
     } else {
-      height = rect.height
+      height = superKnobRect.height
     }
-    return NSMakeRect(pos, rect.origin.y, knobWidth, height)
+    return NSMakeRect(pos, superKnobRect.origin.y, knobWidth, height)
   }
 
   override func drawBar(inside rect: NSRect, flipped: Bool) {
@@ -83,8 +84,11 @@ class PlaySliderCell: NSSliderCell {
     guard let appearance = controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
+    let slider = self.controlView as! NSSlider
+    let progressRatio = slider.progressRatio
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
+      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, clearBG: isClearBG,
+                                 screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
                                  durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
     }
   }
