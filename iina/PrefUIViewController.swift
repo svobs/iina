@@ -90,6 +90,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var toolbarSectionVStackView: NSStackView!
   @IBOutlet weak var toolbarIconDimensionsHStackView: NSStackView!
   @IBOutlet weak var oscToolbarStackView: NSStackView!
+  @IBOutlet weak var oscToolbarPreviewBox: NSBox!
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
@@ -135,6 +136,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var pipHideWindow: NSButton!
   @IBOutlet weak var pipMinimizeWindow: NSButton!
 
+  private let animationPipeline = IINAAnimation.Pipeline()
+
   // MARK: Init
 
   override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
@@ -152,6 +155,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     let previewBarHeight = min(maxToolbarPreviewBarHeight, lastAppliedGeo.barHeight)
     let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: previewBarHeight)
+    hConstraint.priority = .defaultHigh  // avoid conflicting constraints
     hConstraint.isActive = true
     oscToolbarStackViewHeightConstraint = hConstraint
 
@@ -440,8 +444,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     let previewBarHeight = min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
-                                 toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
-                                 playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
+                                        toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
+                                        playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth
 
     IINAAnimation.runAsync(duration: IINAAnimation.DefaultDuration, .linear) { [self] in
@@ -491,8 +495,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       oscToolbarStackViewHeightConstraint?.priority = .required
       // Do not set oscToolbarStackViewWidthConstraint to "required" - avoid constraint errors
 
-//      oscToolbarStackView.needsLayout = true
-      oscToolbarStackView.layoutSubtreeIfNeeded()
+      oscToolbarStackView.needsLayout = true
+      oscToolbarStackView.updateConstraints()
+//      oscToolbarStackView.layoutSubtreeIfNeeded()
     }
   }
 
