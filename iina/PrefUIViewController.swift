@@ -394,12 +394,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
     viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
-    // Disable this instead of hiding. Too tired to keep dealing with animating this garbage
-    for subview in toolbarIconDimensionsHStackView.subviews {
-      if let control = subview as? NSControl {
-        control.isEnabled = hasBarOSC
-      }
-    }
 
     let hasTopBar = ib.hasTopBar
     if topBarPositionContainerView.isHidden != !hasTopBar {
@@ -411,25 +405,34 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
     }
 
+    // Disable this instead of hiding. Too tired to keep dealing with animating this garbage
+    for subview in toolbarIconDimensionsHStackView.subviews {
+      if let control = subview as? NSControl {
+        control.isEnabled = hasBarOSC
+      }
+    }
+
+    // Two-phase animation
     for (view, shouldHide) in viewHidePairs {
       for subview in view.subviews {
         subview.animator().isHidden = shouldHide
       }
     }
+    animationPipeline.submitTask { [self] in
+      updateOSCToolbarPreview(from: newGeo)
 
+      // Need this to get proper slide effect
+      oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
+      for (view, shouldHide) in viewHidePairs {
+        view.animator().isHidden = shouldHide
+      }
+    }
     windowPreviewImageView.image = ib.buildPWinPreviewImage()
 
-    // Need this to get proper slide effect
-    oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
-    for (view, shouldHide) in viewHidePairs {
-      view.animator().isHidden = shouldHide
-    }
     oscAutoHideTimeoutTextField.isEnabled = hasOverlay
     hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
     // Update if invalid value was entered in text field:
     oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
-
-    updateOSCToolbarPreview(from: newGeo)
   }
 
   private func updateOSCSliders(from newGeo: ControlBarGeometry) {
@@ -498,8 +501,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     oscToolbarStackViewHeightConstraint?.priority = .required
     // Do not set oscToolbarStackViewWidthConstraint to "required" - avoid constraint errors
 
-    oscToolbarStackView.needsLayout = true
-    oscToolbarStackView.updateConstraints()
+    oscToolbarPreviewBox.updateConstraints()
+    oscToolbarPreviewBox.layout()
   }
 
   @IBAction func oscPositionAction(_ sender: NSPopUpButton) {
