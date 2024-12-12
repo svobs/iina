@@ -86,6 +86,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscBottomPlacementContainerView: NSView!
   @IBOutlet weak var oscSnapToCenterCheckbox: NSButton!
   @IBOutlet weak var oscHeightStackView: NSStackView!
+  @IBOutlet weak var oscBarHeightTextField: NSTextField!
   @IBOutlet weak var playbackButtonsStackView: NSStackView!
   @IBOutlet weak var toolbarSectionVStackView: NSStackView!
   @IBOutlet weak var toolbarIconDimensionsHStackView: NSStackView!
@@ -420,6 +421,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
     oscAutoHideTimeoutTextField.isEnabled = hasOverlay
     hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
+    // Update if invalid value was entered in text field:
+    oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
 
     updateOSCToolbarPreview(from: newGeo)
   }
