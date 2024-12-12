@@ -27,6 +27,7 @@
                 <outlet property="oscBarHeightTextField" destination="WPN-TF-OlT" id="qQj-1x-hjY"/>
                 <outlet property="oscBottomPlacementContainerView" destination="PrI-KL-aZn" id="2q0-hp-otk"/>
                 <outlet property="oscHeightStackView" destination="d0z-Kd-exY" id="nMX-hb-ykw"/>
+                <outlet property="oscOverlayStyleStackView" destination="KxK-zk-W7E" id="Q7g-TQ-owA"/>
                 <outlet property="oscSnapToCenterCheckbox" destination="nDu-Yq-tPI" id="Sxr-zN-n6T"/>
                 <outlet property="oscToolbarPreviewBox" destination="omS-tS-OVJ" id="GdQ-hH-LD9"/>
                 <outlet property="oscToolbarStackView" destination="8jY-9m-q4O" id="J9u-Ui-dUT"/>
@@ -1260,7 +1261,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-1380"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="578" height="1182"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -1411,7 +1412,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="20" y="609" width="380" height="22"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="Xua-UF-KwL">
-                                    <rect key="frame" x="-2" y="4" width="266" height="16"/>
+                                    <rect key="frame" x="-2" y="4" width="256" height="16"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Bottom bar placement vs. video:" id="FAb-aX-CEz">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1419,7 +1420,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalHuggingPriority="500" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oZp-7o-wcg" userLabel="Bottom-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="268" y="-1" width="114" height="24"/>
+                                    <rect key="frame" x="258" y="-1" width="124" height="24"/>
                                     <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="TEO-g1-ffc">
                                         <font key="font" metaFont="system"/>
                                         <segments>
@@ -1441,8 +1442,52 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KxK-zk-W7E" userLabel="OSC-Overlay-Style HStack View">
+                            <rect key="frame" x="20" y="581" width="380" height="20"/>
+                            <subviews>
+                                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="hwA-ec-V4c">
+                                    <rect key="frame" x="-2" y="3" width="256" height="16"/>
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Overlay Style:" id="Gxo-GK-ECm">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Overlay-Style Popup">
+                                    <rect key="frame" x="257" y="-4" width="127" height="25"/>
+                                    <popUpButtonCell key="cell" type="push" title="Gray Panel" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="Controller-Position Popup Button Cell">
+                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="message"/>
+                                        <menu key="menu" id="4Vv-IT-ZIE">
+                                            <items>
+                                                <menuItem title="Gray Panel" state="on" tag="1" id="IBM-NK-uiO" userLabel="Top"/>
+                                                <menuItem title="Clear Gradient" tag="2" id="C1F-Y0-yvA" userLabel="Floating"/>
+                                            </items>
+                                        </menu>
+                                    </popUpButtonCell>
+                                    <connections>
+                                        <action selector="oscOverlayStyleAction:" target="-2" id="azx-pS-sFL"/>
+                                        <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSC" id="2Uz-ET-ap6"/>
+                                        <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSC" previousBinding="2Uz-ET-ap6" id="YWJ-vN-E2X">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                            </dictionary>
+                                        </binding>
+                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.oscOverlayStyle" id="RiY-FE-DEv"/>
+                                    </connections>
+                                </popUpButton>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                        </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d0z-Kd-exY" userLabel="OSC-Height HStack View">
-                            <rect key="frame" x="20" y="580" width="380" height="21"/>
+                            <rect key="frame" x="20" y="552" width="380" height="21"/>
                             <subviews>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xbl-vr-NaJ">
                                     <rect key="frame" x="-2" y="3" width="70" height="16"/>
@@ -1505,10 +1550,10 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6w3-c5-7MT" userLabel="Toolbar-Section VStack View">
-                            <rect key="frame" x="20" y="224" width="380" height="348"/>
+                            <rect key="frame" x="20" y="224" width="380" height="320"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="q8D-b2-H0y" userLabel="Toolbar items:">
-                                    <rect key="frame" x="-2" y="332" width="90" height="16"/>
+                                    <rect key="frame" x="-2" y="304" width="90" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Toolbar items:" id="xP1-Vh-27X">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1516,12 +1561,12 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <box horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="Ksh-EI-9m9" userLabel="Toolbar-Buttons Box">
-                                    <rect key="frame" x="-3" y="-4" width="386" height="334"/>
+                                    <rect key="frame" x="-3" y="-4" width="386" height="306"/>
                                     <view key="contentView" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="vTB-x3-VB8" userLabel="Toolbar-Buttons Box View">
-                                        <rect key="frame" x="20" y="16" width="346" height="304"/>
+                                        <rect key="frame" x="20" y="16" width="346" height="276"/>
                                         <subviews>
                                             <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gbK-k6-5hp" userLabel="Toolbar-Icon-Dimensions HStack View">
-                                                <rect key="frame" x="0.0" y="284" width="346" height="20"/>
+                                                <rect key="frame" x="0.0" y="256" width="346" height="20"/>
                                                 <subviews>
                                                     <textField focusRingType="none" translatesAutoresizingMaskIntoConstraints="NO" id="EIO-sC-yUf">
                                                         <rect key="frame" x="-2" y="0.0" width="34" height="20"/>
@@ -1580,13 +1625,13 @@ For smoothest results, also enable custom full screen.</string>
                                                 </customSpacing>
                                             </stackView>
                                             <box horizontalCompressionResistancePriority="250" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="omS-tS-OVJ" userLabel="Toolbar-Preview Box">
-                                                <rect key="frame" x="343" y="24" width="6" height="254"/>
+                                                <rect key="frame" x="343" y="24" width="6" height="226"/>
                                                 <view key="contentView" id="pBh-nz-cS5" userLabel="Toolbar-Preview-Box View">
-                                                    <rect key="frame" x="3" y="5" width="0.0" height="246"/>
+                                                    <rect key="frame" x="3" y="5" width="0.0" height="218"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <stackView wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" horizontalCompressionResistancePriority="250" id="8jY-9m-q4O" userLabel="Toolbar-Preview HStack View">
-                                                            <rect key="frame" x="0.0" y="0.0" width="0.0" height="246"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="0.0" height="218"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         </stackView>
                                                     </subviews>
@@ -1944,9 +1989,11 @@ For smoothest results, also enable custom full screen.</string>
                     </subviews>
                     <constraints>
                         <constraint firstItem="PrI-KL-aZn" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="5tT-06-ukJ"/>
+                        <constraint firstItem="EOh-sr-h6b" firstAttribute="width" secondItem="oZp-7o-wcg" secondAttribute="width" id="AiY-vy-3aa"/>
                         <constraint firstItem="0Ih-pL-Y4o" firstAttribute="width" relation="greaterThanOrEqual" secondItem="yaR-pw-wfD" secondAttribute="width" id="CLe-2r-BZz"/>
                         <constraint firstItem="BTX-tO-uhL" firstAttribute="leading" secondItem="HbB-K7-G5g" secondAttribute="leading" constant="20" id="MoA-n7-O4e"/>
                         <constraint firstItem="6w3-c5-7MT" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="QyE-K8-Bzl"/>
+                        <constraint firstItem="hwA-ec-V4c" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="RQv-Ry-YvW"/>
                         <constraint firstItem="d0z-Kd-exY" firstAttribute="leading" secondItem="4SE-r9-OnD" secondAttribute="leading" constant="20" id="UsX-hB-Xd8"/>
                         <constraint firstItem="bVg-yv-fOx" firstAttribute="leading" secondItem="HbB-K7-G5g" secondAttribute="leading" id="bHH-mu-TP3"/>
                         <constraint firstItem="nDu-Yq-tPI" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="bcz-8N-2eZ"/>
@@ -1970,8 +2017,10 @@ For smoothest results, also enable custom full screen.</string>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
+                        <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
@@ -2129,6 +2178,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="jbc-22-59W" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="mJq-OS-xid" secondAttribute="trailing" constant="8" id="cID-q1-WnC"/>
                 <constraint firstAttribute="bottom" secondItem="0eU-xI-byi" secondAttribute="bottom" constant="8" id="dsz-0o-3UL"/>
                 <constraint firstItem="4XH-GU-VhV" firstAttribute="leading" secondItem="gjB-It-iFS" secondAttribute="leading" id="iTX-Ic-VCy"/>
+                <constraint firstItem="EOh-sr-h6b" firstAttribute="trailing" secondItem="GbG-nw-ict" secondAttribute="trailing" id="ljL-24-EB3"/>
                 <constraint firstItem="GbG-nw-ict" firstAttribute="firstBaseline" secondItem="bVg-yv-fOx" secondAttribute="firstBaseline" id="mvd-Nz-drR"/>
                 <constraint firstItem="0eU-xI-byi" firstAttribute="top" secondItem="6ml-Xj-nVX" secondAttribute="bottom" constant="4" id="wjF-MV-3US"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="leading" secondItem="0eU-xI-byi" secondAttribute="leading" id="zS7-aO-rrc"/>

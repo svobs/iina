@@ -37,6 +37,7 @@ extension PlayerWindowController {
       .osdPosition,
       .enableOSC,
       .oscPosition,
+      .oscOverlayStyle,
       .topBarPlacement,
       .bottomBarPlacement,
       .oscBarHeight,
@@ -168,6 +169,7 @@ extension PlayerWindowController {
 
     case .enableOSC,
         .oscPosition,
+        .oscOverlayStyle,
         .topBarPlacement,
         .bottomBarPlacement,
         .oscBarHeight,

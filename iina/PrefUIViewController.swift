@@ -95,6 +95,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
+  @IBOutlet weak var oscOverlayStyleStackView: NSStackView!
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
@@ -400,6 +401,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
     }
 
+    let showOverlayStyle = oscIsOverlay && oscIsBottom
+    if oscOverlayStyleStackView.isHidden != !showOverlayStyle {
+      viewHidePairs.append((oscOverlayStyleStackView, !showOverlayStyle))
+    }
+
     let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && Preference.isAdvancedEnabled
     if showTopBarTriggerContainerView.isHidden != !showTopBarTrigger {
       viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
@@ -509,6 +515,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     guard let oscPosition = Preference.OSCPosition(rawValue: sender.selectedTag()) else { return }
     // need to update this immediately because it is referenced by player windows for icon sizes, spacing
     Preference.set(oscPosition.rawValue, for: .oscPosition)
+  }
+
+  @IBAction func oscOverlayStyleAction(_ sender: NSPopUpButton) {
+    guard let oscOverlayStyle = Preference.OSCOverlayStyle(rawValue: sender.selectedTag()) else { return }
+    Preference.set(oscOverlayStyle.rawValue, for: .oscOverlayStyle)
   }
 
   @IBAction func customizeOSCToolbarAction(_ sender: Any) {
