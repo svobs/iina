@@ -23,6 +23,11 @@ extension Int {
   var isOdd: Bool {
     return self % 2 != 0
   }
+
+  func isBetweenInclusive(_ lowerBound: Int, and upperBound: Int) -> Bool {
+    return self >= lowerBound && self <= upperBound
+  }
+
 }
 import CryptoKit
 

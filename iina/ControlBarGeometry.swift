@@ -44,7 +44,12 @@ struct ControlBarGeometry {
 
   /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
   let barHeight: CGFloat
-  
+
+  let playIconSizeTicks: Int
+  let playIconSpacingTicks: Int
+  let toolIconSizeTicks: Int
+  let toolIconSpacingTicks: Int
+
   let toolIconSize: CGFloat
   let toolIconSpacing: CGFloat
 
@@ -77,6 +82,16 @@ struct ControlBarGeometry {
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
+
+    // Actual cardinal sizes should be downstream from tick values
+    let playIconSizeTicks = playIconSizeTicks ?? Preference.integer(for: .oscBarPlayIconSizeTicks)
+    self.playIconSizeTicks = playIconSizeTicks
+    let playIconSpacingTicks = playIconSpacingTicks ?? Preference.integer(for: .oscBarPlayIconSpacingTicks)
+    self.playIconSpacingTicks = playIconSpacingTicks
+    let toolIconSizeTicks = toolIconSizeTicks ?? Preference.integer(for: .oscBarToolIconSizeTicks)
+    self.toolIconSizeTicks = toolIconSizeTicks
+    let toolIconSpacingTicks = toolIconSpacingTicks ?? Preference.integer(for: .oscBarToolIconSpacingTicks)
+    self.toolIconSpacingTicks = toolIconSpacingTicks
 
     let oscPosition = oscPosition ?? Preference.enum(for: .oscPosition)
 
@@ -149,6 +164,19 @@ struct ControlBarGeometry {
                               playIconSizeTicks: self.playIconSizeTicks, playIconSpacingTicks: self.playIconSpacingTicks)
   }
 
+  var isValid: Bool {
+    let maxTicks = Int(maxTicks)
+    let playIconSizeTicks = playIconSizeTicks
+    guard playIconSizeTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    let playIconSpacingTicks = playIconSpacingTicks
+    guard playIconSpacingTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    let toolIconSizeTicks = toolIconSizeTicks
+    guard toolIconSizeTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    let toolIconSpacingTicks = toolIconSpacingTicks
+    guard toolIconSpacingTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    return true
+  }
+
   var volumeIconHeight: CGFloat {
     if position == .floating {
       return floatingVolumeIconSize
@@ -189,32 +217,7 @@ struct ControlBarGeometry {
   var rightArrowOffsetX: CGFloat {
     (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing
   }
-
-  var playIconSpacingTicks: Int {
-    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks * playIconSpacingScaleMultiplier
-    return Int(round(ticksDouble))
-  }
-
-  var playIconSizeTicks: Int {
-    let baseHeight = barHeight * iconSizeBaseMultiplier
-    let adjustableHeight = barHeight - baseHeight
-    let ticks = (playIconSize - baseHeight) / adjustableHeight * maxTicks
-    return Int(round(ticks))
-  }
-
-  // MARK: Computed props: Toolbar
-
-  var toolIconSizeTicks: Int {
-    let baseHeight = barHeight * iconSizeBaseMultiplier
-    let adjustableHeight = barHeight - baseHeight
-    let ticks = (toolIconSize - baseHeight) / adjustableHeight * maxTicks
-    return Int(round(ticks))
-  }
-
-  var toolIconSpacingTicks: Int {
-    return Int(round(toolIconSpacing * toolSpacingScaleMultiplier / barHeight * maxTicks))
-  }
-
+  
   var totalToolbarWidth: CGFloat {
     let totalIconSpacing: CGFloat = 2 * toolIconSpacing * CGFloat(toolbarItems.count + 1)
     let totalIconWidth = toolIconSize * CGFloat(toolbarItems.count)

@@ -171,6 +171,11 @@ struct Preference {
     /// The space added around all the sides of each button
     static let oscBarToolIconSpacing = Key("oscBarToolIconSpacing")
 
+    static let oscBarPlayIconSizeTicks = Key("oscBarPlayIconSizeTicks")
+    static let oscBarPlayIconSpacingTicks = Key("oscBarPlayIconSpacingTicks")
+    static let oscBarToolIconSizeTicks = Key("oscBarToolIconSizeTicks")
+    static let oscBarToolIconSpacingTicks = Key("oscBarToolIconSpacingTicks")
+
     /// OSC toolbar
     /// How close the floating OSC is allowed to get to the edges of its available space, in pixels
     static let floatingControlBarMargin = Key("floatingControlBarMargin")
@@ -1181,6 +1186,10 @@ struct Preference {
     .oscBarHeight: 44,
     .oscBarPlayIconSize: 24,
     .oscBarPlayIconSpacing: 16,
+    .oscBarPlayIconSizeTicks: 1,
+    .oscBarPlayIconSpacingTicks: 1,
+    .oscBarToolIconSizeTicks: 1,
+    .oscBarToolIconSpacingTicks: 1,
     .oscPosition: OSCPosition.floating.rawValue,
     .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .hideFadeableViewsWhenOutsideWindow: true,

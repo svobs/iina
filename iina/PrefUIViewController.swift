@@ -180,15 +180,20 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Set up key-value observing for changes to this view's properties:
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
-    updateSidebarSection()
-    refreshTitleBarAndOSCSection(animate: false)
-    updateOSCToolbarPreview()
-    updateWindowGeometrySection()
-    updatePictureInPictureSection()
+    animationPipeline.submitInstantTask{ [self] in
+      // Update sliders from prefs:
+      let geo = ControlBarGeometry(mode: .windowedNormal)
+      updateOSCSliders(from: geo)
 
-    updateThumbnailCacheStat()
-    updateAspectControlsFromPrefs()
-    updateCropControlsFromPrefs()
+      updateSidebarSection()
+      refreshTitleBarAndOSCSection()
+      updateWindowGeometrySection()
+      updatePictureInPictureSection()
+
+      updateThumbnailCacheStat()
+      updateAspectControlsFromPrefs()
+      updateCropControlsFromPrefs()
+    }
   }
 
   override func viewWillDisappear() {
@@ -213,10 +218,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .playlistTabGroupLocation,
       .controlBarToolbarButtons,
       .oscBarHeight,
-      .oscBarPlayIconSize,
-      .oscBarPlayIconSpacing,
-      .oscBarToolIconSize,
-      .oscBarToolIconSpacing,
+      .oscBarPlayIconSizeTicks,
+      .oscBarPlayIconSpacingTicks,
+      .oscBarToolIconSizeTicks,
+      .oscBarToolIconSpacingTicks,
       .arrowButtonAction,
       .useLegacyWindowedMode,
       .aspectRatioPanelPresets,
@@ -241,18 +246,23 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.themeMaterial,
       PK.enableAdvancedSettings:
 
-      refreshTitleBarAndOSCSection()
+      // Use animation where possible to make the transition less jarring
+      animationPipeline.submitTask{ [self] in
+        refreshTitleBarAndOSCSection()
+      }
       updateWindowGeometrySection()
     case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation:
       updateSidebarSection()
     case PK.oscBarHeight,
       PK.controlBarToolbarButtons,
-      PK.oscBarPlayIconSize,
-      PK.oscBarPlayIconSpacing,
-      PK.oscBarToolIconSize,
-      PK.oscBarToolIconSpacing:
+      PK.oscBarPlayIconSizeTicks,
+      PK.oscBarPlayIconSpacingTicks,
+      PK.oscBarToolIconSizeTicks,
+      PK.oscBarToolIconSpacingTicks:
 
-      updateOSCToolbarPreview()
+      animationPipeline.submitTask{ [self] in
+        refreshTitleBarAndOSCSection()
+      }
     default:
       break
     }
@@ -347,8 +357,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   // MARK: - Title Bar & OSC
 
-  private func refreshTitleBarAndOSCSection(animate: Bool = true) {
+  private func refreshTitleBarAndOSCSection(from geo: ControlBarGeometry? = nil) {
+    let newGeo = geo ?? ControlBarGeometry(mode: .windowedNormal)
+    lastAppliedGeo = newGeo
     let ib = PWinPreviewImageBuilder(self.view)
+    var viewHidePairs: [(NSView, Bool)] = []
 
     let titleBarIsOverlay = ib.hasTitleBar && ib.topBarPlacement == .insideViewport
     let oscIsOverlay = ib.oscEnabled && (ib.oscPosition == .floating ||
@@ -356,156 +369,134 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
                                          (ib.oscPosition == .bottom && ib.bottomBarPlacement == .insideViewport))
     let hasOverlay = titleBarIsOverlay || oscIsOverlay
 
-    var viewHidePairs: [(NSView, Bool)] = []
-    // Use animation where possible to make the transition less jarring
-    NSAnimationContext.runAnimationGroup({context in
-      context.duration = 0
-      context.allowsImplicitAnimation = animate ? !AccessibilityPreferences.motionReductionEnabled : false
-      context.timingFunction = CAMediaTimingFunction(name: .linear)
+    let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+    arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
+    autoHideAfterCheckBox.isEnabled = hasOverlay
+    oscAutoHideTimeoutTextField.isEnabled = hasOverlay
+    hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
+    windowPreviewImageView.image = ib.buildPWinPreviewImage()
 
-      let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-      arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
-      autoHideAfterCheckBox.isEnabled = hasOverlay
-      oscAutoHideTimeoutTextField.isEnabled = hasOverlay
-      hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-      windowPreviewImageView.image = ib.buildPWinPreviewImage()
+    let oscIsFloating = ib.oscEnabled && ib.oscPosition == .floating
 
-      let oscIsFloating = ib.oscEnabled && ib.oscPosition == .floating
+    if oscSnapToCenterCheckbox.isHidden != !oscIsFloating {
+      viewHidePairs.append((oscSnapToCenterCheckbox, !oscIsFloating))
+    }
 
-      if oscSnapToCenterCheckbox.isHidden != !oscIsFloating {
-        viewHidePairs.append((oscSnapToCenterCheckbox, !oscIsFloating))
+    let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
+    if oscBottomPlacementContainerView.isHidden != !oscIsBottom {
+      viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
+    }
+
+    let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
+
+    let hasBarOSC = oscIsBottom || oscIsTop
+    viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
+    viewHidePairs.append((oscHeightStackView, !hasBarOSC))
+    viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
+    viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
+
+    let hasTopBar = ib.hasTopBar
+    if topBarPositionContainerView.isHidden != !hasTopBar {
+      viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
+    }
+
+    let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && Preference.isAdvancedEnabled
+    if showTopBarTriggerContainerView.isHidden != !showTopBarTrigger {
+      viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
+    }
+
+    for (view, shouldHide) in viewHidePairs {
+      for subview in view.subviews {
+        subview.animator().isHidden = shouldHide
       }
+    }
 
-      let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
-      if oscBottomPlacementContainerView.isHidden != !oscIsBottom {
-        viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
-      }
+    windowPreviewImageView.image = ib.buildPWinPreviewImage()
 
-      let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
+    // Need this to get proper slide effect
+    oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
+    for (view, shouldHide) in viewHidePairs {
+      view.animator().isHidden = shouldHide
+    }
+    oscAutoHideTimeoutTextField.isEnabled = hasOverlay
+    hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
 
-      let hasBarOSC = oscIsBottom || oscIsTop
-      viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
-      viewHidePairs.append((oscHeightStackView, !hasBarOSC))
-      viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
-      viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
-
-      let hasTopBar = ib.hasTopBar
-      if topBarPositionContainerView.isHidden != !hasTopBar {
-        viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-      }
-
-      let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && Preference.isAdvancedEnabled
-      if showTopBarTriggerContainerView.isHidden != !showTopBarTrigger {
-        viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
-      }
-
-      for (view, shouldHide) in viewHidePairs {
-        for subview in view.subviews {
-          subview.animator().isHidden = shouldHide
-        }
-      }
-
-      // Need this to get proper slide effect
-      oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
-    }, completionHandler: { [self] in
-      NSAnimationContext.runAnimationGroup({context in
-        context.duration = animate ? AccessibilityPreferences.adjustedDuration(IINAAnimation.DefaultDuration) : 0
-        context.allowsImplicitAnimation = animate ? !AccessibilityPreferences.motionReductionEnabled : false
-        context.timingFunction = CAMediaTimingFunction(name: .linear)
-        for (view, shouldHide) in viewHidePairs {
-          view.animator().isHidden = shouldHide
-        }
-        oscAutoHideTimeoutTextField.isEnabled = hasOverlay
-        hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-        windowPreviewImageView.image = ib.buildPWinPreviewImage()
-
-        updateOSCToolbarPreview()
-      })
-    })
+    updateOSCToolbarPreview(from: newGeo)
   }
 
-  private func updateOSCToolbarPreview() {
-    let newGeo = ControlBarGeometry(mode: .windowedNormal)
+  private func updateOSCSliders(from newGeo: ControlBarGeometry) {
+    toolIconSizeSlider.intValue = Int32(newGeo.toolIconSizeTicks)
+    toolIconSpacingSlider.intValue = Int32(newGeo.toolIconSpacingTicks)
+    playIconSizeSlider.intValue = Int32(newGeo.playIconSizeTicks)
+    playIconSpacingSlider.intValue = Int32(newGeo.playIconSpacingTicks)
+  }
 
-    guard (newGeo.barHeight != lastAppliedGeo.barHeight)
-            || (newGeo.toolIconSize != lastAppliedGeo.toolIconSize)
-            || (newGeo.toolIconSpacing != lastAppliedGeo.toolIconSpacing)
-            || (newGeo.playIconSize != lastAppliedGeo.playIconSize)
-            || (newGeo.playIconSpacing != lastAppliedGeo.playIconSpacing) else {
-      Logger.log.verbose("No change to OSC geometry; aborting updateOSCToolbarPreview")
-      return
-    }
-    Logger.log.verbose{"Starting update of OSC toolbar preview. New geometry: barHeight=\(newGeo.barHeight): toolIconSize=\(newGeo.toolIconSize), toolIconSpacing=\(newGeo.toolIconSpacing) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing) toolIconSizeTicks=\(newGeo.toolIconSizeTicks) toolIconSpacingTicks=\(newGeo.toolIconSpacingTicks) playIconSizeTicks=\(newGeo.playIconSizeTicks) playIconSpacingTicks=\(newGeo.playIconSpacingTicks)"}
-    lastAppliedGeo = newGeo
+  private func updateOSCToolbarPreview(from newGeo: ControlBarGeometry) {
     let toolIconSizeTicks = newGeo.toolIconSizeTicks
     let toolIconSpacingTicks = newGeo.toolIconSpacingTicks
     let playIconSizeTicks = newGeo.playIconSizeTicks
     let playIconSpacingTicks = newGeo.playIconSpacingTicks
 
+    // Constrain for preview
     let previewBarHeight = min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth
 
-    IINAAnimation.runAsync(duration: IINAAnimation.DefaultDuration, .linear) { [self] in
-      Logger.log.verbose{"Updating OSC toolbar preview geometry: barHeight=\(previewBarHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
+    Logger.log.verbose{"Updating OSC toolbar preview geometry: barHeight=\(previewBarHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
 
-      // Prevent constraint violations by lowering these briefly...
-      oscToolbarStackViewHeightConstraint?.priority = .defaultHigh
-      oscToolbarStackViewWidthConstraint?.priority = .defaultHigh
-      let toolbarButtonTypes = previewGeo.toolbarItems
+    // Prevent constraint violations by lowering these briefly...
+    oscToolbarStackViewHeightConstraint?.priority = .defaultHigh
+    oscToolbarStackViewWidthConstraint?.priority = .defaultHigh
+    let toolbarButtonTypes = previewGeo.toolbarItems
 
-      oscToolbarStackViewHeightConstraint?.animateToConstant(previewBarHeight)
-      oscToolbarStackViewWidthConstraint?.animateToConstant(previewTotalToolbarWidth)
+    oscToolbarStackViewHeightConstraint?.animateToConstant(previewBarHeight)
+    oscToolbarStackViewWidthConstraint?.animateToConstant(previewTotalToolbarWidth)
 
-      // If button count hasn't changed, we'll reuse existing buttons. Otherwise delete all & replace
-      var btns = oscToolbarStackView.views.compactMap{ $0 as? OSCToolbarButton }
-      if btns.count != toolbarButtonTypes.count {
-        for btn in oscToolbarStackView.views {
-          oscToolbarStackView.removeView(btn)
-        }
-        var newBtns = [OSCToolbarButton]()
-        for _ in 0..<toolbarButtonTypes.count {
-          let button = OSCToolbarButton()
-          oscToolbarStackView.addView(button, in: .center)
-          button.isEnabled = false
-          // But don't gray it out
-          (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
-          newBtns.append(button)
-        }
-        btns = newBtns
+    // If button count hasn't changed, we'll reuse existing buttons. Otherwise delete all & replace
+    var btns = oscToolbarStackView.views.compactMap{ $0 as? OSCToolbarButton }
+    if btns.count != toolbarButtonTypes.count {
+      for btn in oscToolbarStackView.views {
+        oscToolbarStackView.removeView(btn)
       }
-      for(buttonType, button) in zip(toolbarButtonTypes, btns) {
-        button.setStyle(buttonType: buttonType, iconSize: previewGeo.toolIconSize, iconSpacing: previewGeo.toolIconSpacing)
-        button.widthConstraint?.priority = .required
-        button.heightConstraint?.priority = .required
+      var newBtns = [OSCToolbarButton]()
+      for _ in 0..<toolbarButtonTypes.count {
+        let button = OSCToolbarButton()
+        oscToolbarStackView.addView(button, in: .center)
+        button.isEnabled = false
+        // But don't gray it out
+        (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
+        newBtns.append(button)
       }
-
-      oscToolbarStackView.spacing = 2 * previewGeo.toolIconSpacing
-      if previewGeo.toolIconSpacing == 0 {
-        oscToolbarStackView.edgeInsets = .init(top: 0, left: 4, bottom: 0, right: 4)
-      } else {
-        oscToolbarStackView.edgeInsets = .init(top: 0, left: 0, bottom: 0, right: 0)
-      }
-
-      // Update sheet preview also (both available items & current items)
-      toolbarSettingsSheetController.updateToolbarButtonHeight()
-
-      oscToolbarStackViewHeightConstraint?.priority = .required
-      // Do not set oscToolbarStackViewWidthConstraint to "required" - avoid constraint errors
-
-      oscToolbarStackView.needsLayout = true
-      oscToolbarStackView.updateConstraints()
-//      oscToolbarStackView.layoutSubtreeIfNeeded()
+      btns = newBtns
     }
+    for(buttonType, button) in zip(toolbarButtonTypes, btns) {
+      button.setStyle(buttonType: buttonType, iconSize: previewGeo.toolIconSize, iconSpacing: previewGeo.toolIconSpacing)
+      button.widthConstraint?.priority = .required
+      button.heightConstraint?.priority = .required
+    }
+
+    oscToolbarStackView.spacing = 2 * previewGeo.toolIconSpacing
+    if previewGeo.toolIconSpacing == 0 {
+      oscToolbarStackView.edgeInsets = .init(top: 0, left: 4, bottom: 0, right: 4)
+    } else {
+      oscToolbarStackView.edgeInsets = .init(top: 0, left: 0, bottom: 0, right: 0)
+    }
+
+    // Update sheet preview also (both available items & current items)
+    toolbarSettingsSheetController.updateToolbarButtonHeight()
+
+    oscToolbarStackViewHeightConstraint?.priority = .required
+    // Do not set oscToolbarStackViewWidthConstraint to "required" - avoid constraint errors
+
+    oscToolbarStackView.needsLayout = true
+    oscToolbarStackView.updateConstraints()
   }
 
   @IBAction func oscPositionAction(_ sender: NSPopUpButton) {
     guard let oscPosition = Preference.OSCPosition(rawValue: sender.selectedTag()) else { return }
-    let newGeo = ControlBarGeometry(mode: .windowedNormal, oscPosition: oscPosition)
     // need to update this immediately because it is referenced by player windows for icon sizes, spacing
-    lastAppliedGeo = newGeo
     Preference.set(oscPosition.rawValue, for: .oscPosition)
   }
 
@@ -521,40 +512,40 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
+  // TODO: this can get very slow/laggy if user drags the slider too long. Add throttling or other fix
   @IBAction func oscBarHeightAction(_ sender: NSControl) {
-    let oldGeo = lastAppliedGeo
+    animationPipeline.submitTask { [self] in
+      let newBarHeight = sender.doubleValue
+      guard newBarHeight != Preference.double(for: .oscBarHeight) else {
+        Logger.log.verbose{"No change to oscBarHeight (\(newBarHeight)); aborting oscBarHeightAction"}
+        return
+      }
+      let geo = ControlBarGeometry(mode: .windowedNormal, barHeight: sender.doubleValue)
+      Logger.log.verbose("New OSC geometry from barHeight=\(geo.barHeight): toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing) playIconSize=\(geo.playIconSize) playIconSpacing=\(geo.playIconSpacing)")
+      Preference.set(geo.barHeight, for: .oscBarHeight)
+      // Try not to trigger pref changed listeners if no change:
+      if geo.toolIconSize != Preference.double(for: .oscBarToolIconSize) {
+        Preference.set(geo.toolIconSize, for: .oscBarToolIconSize)
+      }
+      if geo.toolIconSpacing != Preference.double(for: .oscBarToolIconSpacing) {
+        Preference.set(geo.toolIconSpacing, for: .oscBarToolIconSpacing)
+      }
+      if geo.playIconSize != Preference.double(for: .oscBarPlayIconSize) {
+        Preference.set(geo.playIconSize, for: .oscBarPlayIconSize)
+      }
+      if geo.playIconSpacing != Preference.double(for: .oscBarPlayIconSpacing) {
+        Preference.set(geo.playIconSpacing, for: .oscBarPlayIconSpacing)
+      }
 
-    let newBarHeight = sender.doubleValue
-    guard newBarHeight != Preference.double(for: .oscBarHeight) else {
-      Logger.log.verbose{"No change to oscBarHeight (\(newBarHeight)); aborting oscBarHeightAction"}
-      return
+      refreshTitleBarAndOSCSection(from: geo)
     }
-    let geo = ControlBarGeometry(mode: .windowedNormal, barHeight: sender.doubleValue,
-                                 toolIconSizeTicks: oldGeo.toolIconSizeTicks, toolIconSpacingTicks: oldGeo.toolIconSpacingTicks,
-                                 playIconSizeTicks: oldGeo.playIconSizeTicks, playIconSpacingTicks: oldGeo.playIconSpacingTicks)
-    Logger.log.verbose("Old OSC geometry from barHeight=\(oldGeo.barHeight): toolIconSize=\(oldGeo.toolIconSize), toolIconSpacing=\(oldGeo.toolIconSpacing) playIconSize=\(oldGeo.playIconSize) playIconSpacing=\(oldGeo.playIconSpacing)")
-    Logger.log.verbose("New OSC geometry from barHeight=\(geo.barHeight): toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing) playIconSize=\(geo.playIconSize) playIconSpacing=\(geo.playIconSpacing)")
-    Preference.set(geo.barHeight, for: .oscBarHeight)
-    // Try not to trigger pref changed listeners if no change:
-    if geo.toolIconSize != Preference.double(for: .oscBarToolIconSize) {
-      Preference.set(geo.toolIconSize, for: .oscBarToolIconSize)
-    }
-    if geo.toolIconSpacing != Preference.double(for: .oscBarToolIconSpacing) {
-      Preference.set(geo.toolIconSpacing, for: .oscBarToolIconSpacing)
-    }
-    if geo.playIconSize != Preference.double(for: .oscBarPlayIconSize) {
-      Preference.set(geo.playIconSize, for: .oscBarPlayIconSize)
-    }
-    if geo.playIconSpacing != Preference.double(for: .oscBarPlayIconSpacing) {
-      Preference.set(geo.playIconSpacing, for: .oscBarPlayIconSpacing)
-    }
-    updateOSCToolbarPreview()
   }
 
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowedNormal, toolIconSizeTicks: ticks)
     Logger.log.verbose("Updating oscBarToolIconSize: \(ticks) ticks, \(Preference.float(for: .oscBarToolIconSize)) -> \(geo.toolIconSize)")
+    Preference.set(ticks, for: .oscBarToolIconSizeTicks)
     Preference.set(geo.toolIconSize, for: .oscBarToolIconSize)
   }
 
@@ -562,6 +553,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowedNormal, toolIconSpacingTicks: ticks)
     Logger.log.verbose("Updating oscBarToolIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
+    Preference.set(ticks, for: .oscBarToolIconSpacingTicks)
     Preference.set(geo.toolIconSpacing, for: .oscBarToolIconSpacing)
   }
 
@@ -569,6 +561,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowedNormal, playIconSizeTicks: ticks)
     Logger.log.verbose("Updating oscBarPlayIconSize: \(ticks) ticks, \(geo.playIconSize)")
+    Preference.set(ticks, for: .oscBarPlayIconSizeTicks)
     Preference.set(geo.playIconSize, for: .oscBarPlayIconSize)
   }
 
@@ -576,6 +569,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowedNormal, playIconSpacingTicks: ticks)
     Logger.log.verbose("Updating oscBarPlayIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
+    Preference.set(ticks, for: .oscBarPlayIconSpacingTicks)
     Preference.set(geo.playIconSpacing, for: .oscBarPlayIconSpacing)
   }
 
@@ -677,6 +671,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   // Updates UI from prefs
   private func updateWindowGeometrySection() {
+    animationPipeline.submitTask { [self] in
+      _updateWindowGeometrySection()
+    }
+  }
+
+  private func _updateWindowGeometrySection() {
     let resizeOption = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     let scheme: Preference.ResizeWindowScheme = Preference.enum(for: .resizeWindowScheme)
 
@@ -754,13 +754,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     windowPosCheckBox.state = isUsingMpvPos ? .on : .off
     mpvWindowSizeCollapseView.setCollapsed(!isUsingMpvSize, animated: true)
     mpvWindowPositionCollapseView.setCollapsed(!isUsingMpvPos, animated: true)
-
-    // TODO: this doesn't belong here
-    let geo = lastAppliedGeo
-    toolIconSizeSlider.intValue = Int32(geo.toolIconSizeTicks)
-    toolIconSpacingSlider.intValue = Int32(geo.toolIconSpacingTicks)
-    playIconSizeSlider.intValue = Int32(geo.playIconSizeTicks)
-    playIconSpacingSlider.intValue = Int32(geo.playIconSpacingTicks)
   }
 
   // MARK: - Other
