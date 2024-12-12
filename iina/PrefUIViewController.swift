@@ -248,7 +248,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.enableAdvancedSettings:
 
       // Use animation where possible to make the transition less jarring
-      animationPipeline.submitTask{ [self] in
+      animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
       }
       updateWindowGeometrySection()
@@ -261,7 +261,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.oscBarToolIconSizeTicks,
       PK.oscBarToolIconSpacingTicks:
 
-      animationPipeline.submitTask{ [self] in
+      animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
       }
     default:
@@ -522,7 +522,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   // TODO: this can get very slow/laggy if user drags the slider too long. Add throttling or other fix
   @IBAction func oscBarHeightAction(_ sender: NSControl) {
-    animationPipeline.submitTask { [self] in
+    animationPipeline.submitInstantTask { [self] in
       let newBarHeight = sender.doubleValue
       guard newBarHeight != Preference.double(for: .oscBarHeight) else {
         Logger.log.verbose{"No change to oscBarHeight (\(newBarHeight)); aborting oscBarHeightAction"}
@@ -679,7 +679,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   // Updates UI from prefs
   private func updateWindowGeometrySection() {
-    animationPipeline.submitTask { [self] in
+    animationPipeline.submitInstantTask { [self] in
       _updateWindowGeometrySection()
     }
   }
