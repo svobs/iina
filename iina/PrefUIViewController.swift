@@ -394,7 +394,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
     viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
-    viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
+    // Disable this instead of hiding. Too tired to keep dealing with animating this garbage
+    for subview in toolbarIconDimensionsHStackView.subviews {
+      if let control = subview as? NSControl {
+        control.isEnabled = hasBarOSC
+      }
+    }
 
     let hasTopBar = ib.hasTopBar
     if topBarPositionContainerView.isHidden != !hasTopBar {
@@ -440,14 +445,14 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let playIconSizeTicks = newGeo.playIconSizeTicks
     let playIconSpacingTicks = newGeo.playIconSpacingTicks
 
-    // Constrain for preview
-    let previewBarHeight = min(maxToolbarPreviewBarHeight, newGeo.barHeight)
+    // Constrain sizes for prefs preview
+    let previewBarHeight = newGeo.position == .floating ? 24 : min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth
 
-    Logger.log.verbose{"Updating OSC toolbar preview geometry: barHeight=\(previewBarHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
+    Logger.log.verbose{"Updating OSC toolbar preview geometry: barHeight=\(newGeo.barHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
 
     // Prevent constraint violations by lowering these briefly...
     oscToolbarStackViewHeightConstraint?.priority = .defaultHigh
