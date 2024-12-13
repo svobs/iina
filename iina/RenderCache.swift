@@ -369,8 +369,10 @@ class RenderCache {
       // Not sure how efficient this is...
 
       let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        // Apply clip (pixel whitelist)
-        cgc.clip(to: [leftClip, rightClip])
+        if !clearBG {
+          // Apply clip (pixel whitelist) to avoid drawing over the knob
+          cgc.clip(to: [leftClip, rightClip])
+        }
 
         let leftCachedColor = leftColor
         let rightCachedColor = exaggerateColor(rightColor)

@@ -81,7 +81,7 @@ class PlaySliderCell: NSSliderCell {
     let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
     let cachedRanges = player.cachedRanges
 
-    guard let appearance = controlView?.window?.contentView?.iinaAppearance,
+    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
     let slider = self.controlView as! NSSlider

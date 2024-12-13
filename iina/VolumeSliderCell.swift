@@ -29,6 +29,7 @@ class VolumeSliderCell: NSSliderCell {
   }
 
   override func drawBar(inside rect: NSRect, flipped: Bool) {
+    // TODO: copy bar from play slider
     if maxValue > 100 {
       // round this value to obtain a pixel perfect clip line
       let x = round(rect.minX + rect.width * CGFloat(100 / maxValue))
