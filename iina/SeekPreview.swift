@@ -40,6 +40,7 @@ extension PlayerWindowController {
       timeLabel.isEnabled = true
       timeLabel.refusesFirstResponder = true
       timeLabel.alignment = .center
+      timeLabel.textColor = .white  // always
 
       timeLabel.setContentHuggingPriority(.required, for: .horizontal)
       timeLabel.setContentHuggingPriority(.required, for: .vertical)

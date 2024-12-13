@@ -619,6 +619,8 @@ extension PlayerWindowController {
           leftArrowButton.addShadow()
           rightArrowButton.addShadow()
           muteButton.addShadow()
+          leftTimeLabel.textColor = .white
+          rightTimeLabel.textColor = .white
           leftTimeLabel.addShadow()
           rightTimeLabel.addShadow()
           RenderCache.shared.mainKnobColor = NSColor.controlForClearBG
@@ -629,6 +631,8 @@ extension PlayerWindowController {
           muteButton.shadow = nil
           leftTimeLabel.shadow = nil
           rightTimeLabel.shadow = nil
+          leftTimeLabel.textColor = nil
+          rightTimeLabel.textColor = nil
           RenderCache.shared.mainKnobColor = NSColor.mainSliderKnob
         }
         // invalidate all cached knob images

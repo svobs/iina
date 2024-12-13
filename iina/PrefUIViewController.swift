@@ -375,7 +375,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let hasBarOSC = oscIsBottom || oscIsTop
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
 
-    // Update enablement
+    // Update enablement, various state (except isHidden state)
     arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
     autoHideAfterCheckBox.isEnabled = hasOverlay
     oscAutoHideTimeoutTextField.isEnabled = hasOverlay
