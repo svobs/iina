@@ -90,10 +90,10 @@
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="M9c-Ak-HmK" userLabel="Prefs &gt; UI &gt; Appearance" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="570" height="131"/>
+            <rect key="frame" x="0.0" y="0.0" width="570" height="133"/>
             <subviews>
                 <textField identifier="SectionTitleAppearance" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
-                    <rect key="frame" x="-2" y="107" width="87" height="16"/>
+                    <rect key="frame" x="-2" y="109" width="87" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Appearance:" id="mM7-1Q-FyL">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -101,13 +101,13 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="450" height="115"/>
+                    <rect key="frame" x="120" y="8" width="450" height="119"/>
                     <subviews>
-                        <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vO4-Dh-YVv" userLabel="Theme HStack View">
-                            <rect key="frame" x="0.0" y="93" width="249" height="22"/>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="vO4-Dh-YVv" userLabel="Theme Container View">
+                            <rect key="frame" x="0.0" y="93" width="250" height="26"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BMi-Ax-7wP">
-                                    <rect key="frame" x="-2" y="6" width="50" height="16"/>
+                                    <rect key="frame" x="-2" y="8" width="50" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Theme:" id="yLF-vu-1Gl">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -115,7 +115,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="FNR-0h-DtW">
-                                    <rect key="frame" x="51" y="-3" width="202" height="25"/>
+                                    <rect key="frame" x="51" y="-3" width="202" height="29"/>
                                     <popUpButtonCell key="cell" type="push" title="Dark" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="VvZ-mQ-wQB" id="Qe2-v8-Xh7">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -138,18 +138,14 @@
                                 </popUpButton>
                             </subviews>
                             <constraints>
-                                <constraint firstItem="FNR-0h-DtW" firstAttribute="top" secondItem="vO4-Dh-YVv" secondAttribute="top" constant="1" id="QLe-g5-ki7"/>
-                                <constraint firstAttribute="bottom" secondItem="FNR-0h-DtW" secondAttribute="bottom" constant="1" id="bhJ-4T-ISk"/>
+                                <constraint firstItem="BMi-Ax-7wP" firstAttribute="leading" secondItem="vO4-Dh-YVv" secondAttribute="leading" id="3DB-RP-egN"/>
+                                <constraint firstAttribute="trailing" secondItem="FNR-0h-DtW" secondAttribute="trailing" constant="1" id="4SS-oj-7Kk"/>
+                                <constraint firstItem="FNR-0h-DtW" firstAttribute="firstBaseline" secondItem="BMi-Ax-7wP" secondAttribute="firstBaseline" id="MHV-qv-f52"/>
+                                <constraint firstItem="FNR-0h-DtW" firstAttribute="leading" secondItem="BMi-Ax-7wP" secondAttribute="trailing" constant="8" id="OsU-eb-RGc"/>
+                                <constraint firstItem="FNR-0h-DtW" firstAttribute="top" secondItem="vO4-Dh-YVv" secondAttribute="top" constant="1" id="ZyJ-7Z-Amq"/>
+                                <constraint firstAttribute="bottom" secondItem="FNR-0h-DtW" secondAttribute="bottom" constant="1" id="qld-yg-jmP"/>
                             </constraints>
-                            <visibilityPriorities>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                            </visibilityPriorities>
-                            <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                            </customSpacing>
-                        </stackView>
+                        </customView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="3SK-mj-ecb" userLabel="4pt Spacer">
                             <rect key="frame" x="0.0" y="85" width="1" height="4"/>
                             <constraints>
@@ -309,14 +305,13 @@ For smoothest results, also enable custom full screen.</string>
             <constraints>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="5zd-Vc-WIq"/>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="9dZ-2B-yS8"/>
-                <constraint firstItem="BMi-Ax-7wP" firstAttribute="firstBaseline" secondItem="APB-Nm-aTA" secondAttribute="firstBaseline" id="AaB-9r-V8y"/>
                 <constraint firstItem="VWZ-zT-vZx" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="IKL-bX-2GS"/>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" id="Q4K-PC-JeY"/>
-                <constraint firstItem="VWZ-zT-vZx" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="et5-qR-7xc"/>
+                <constraint firstItem="BMi-Ax-7wP" firstAttribute="firstBaseline" secondItem="APB-Nm-aTA" secondAttribute="firstBaseline" id="ZXG-Jg-AMO"/>
                 <constraint firstAttribute="trailing" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="ffA-BM-6pC"/>
                 <constraint firstAttribute="bottom" secondItem="VWZ-zT-vZx" secondAttribute="bottom" constant="8" id="sFy-x0-8Yn"/>
             </constraints>
-            <point key="canvasLocation" x="16" y="-1051"/>
+            <point key="canvasLocation" x="16" y="-1051.5"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="2Pv-Ut-0kz" userLabel="Prefs &gt; UI &gt; Full Screen" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="573" height="138"/>
@@ -535,8 +530,8 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="19" y="-874"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="576" height="428"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="576" height="425"/>
             <subviews>
                 <textField identifier="SectionTitleWindow" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" verticalCompressionResistancePriority="751" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RFk-nU-SGL">
                     <rect key="frame" x="-2" y="385" width="124" height="32"/>
@@ -832,7 +827,6 @@ For smoothest results, also enable custom full screen.</string>
                                                             <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="l8O-vd-QJ1">
                                                                 <rect key="frame" x="84" y="1" width="56" height="21"/>
                                                                 <constraints>
-                                                                    <constraint firstAttribute="width" priority="749" constant="56" id="0dG-yY-0eb"/>
                                                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="56" id="qtm-9j-baW"/>
                                                                 </constraints>
                                                                 <textFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1280" drawsBackground="YES" id="pNX-QN-Rpm">
@@ -977,7 +971,7 @@ For smoothest results, also enable custom full screen.</string>
                                                         <gridCells>
                                                             <gridCell row="4Q9-XY-6Mb" column="b6X-ZU-ujJ" id="vKB-d5-mP3">
                                                                 <textField key="contentView" identifier="AccessoryLabelXOffset" focusRingType="none" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="tWO-yv-92d">
-                                                                    <rect key="frame" x="-2" y="76" width="56" height="19"/>
+                                                                    <rect key="frame" x="-2" y="76" width="56" height="18"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="X offset:" id="Ymw-tr-6rw">
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1062,7 +1056,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             </gridCell>
                                                             <gridCell row="7Lw-7t-b1s" column="b6X-ZU-ujJ" id="mIo-fM-1p2">
                                                                 <textField key="contentView" identifier="AccessoryLabelYOffset" focusRingType="none" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="T3Y-WV-w5X">
-                                                                    <rect key="frame" x="-2" y="25" width="56" height="19"/>
+                                                                    <rect key="frame" x="-2" y="25" width="56" height="18"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Y offset:" id="KCL-Ki-A0p">
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
