@@ -84,7 +84,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var windowPreviewImageView: NSImageView!
   @IBOutlet weak var arrowButtonActionPopUpButton: NSPopUpButton!
   @IBOutlet weak var oscBottomPlacementContainerView: NSView!
-  @IBOutlet weak var oscSnapToCenterCheckbox: NSButton!
+  @IBOutlet weak var oscSnapToCenterContainerView: NSView!
   @IBOutlet weak var oscHeightStackView: NSStackView!
   @IBOutlet weak var oscBarHeightTextField: NSTextField!
   @IBOutlet weak var playbackButtonsStackView: NSStackView!
@@ -363,35 +363,46 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let newGeo = geo ?? ControlBarGeometry(mode: .windowedNormal)
     lastAppliedGeo = newGeo
     let ib = PWinPreviewImageBuilder(self.view)
-    var viewHidePairs: [(NSView, Bool)] = []
 
     let titleBarIsOverlay = ib.hasTitleBar && ib.topBarPlacement == .insideViewport
     let oscIsOverlay = ib.oscEnabled && (ib.oscPosition == .floating ||
                                          (ib.oscPosition == .top && ib.topBarPlacement == .insideViewport) ||
                                          (ib.oscPosition == .bottom && ib.bottomBarPlacement == .insideViewport))
     let hasOverlay = titleBarIsOverlay || oscIsOverlay
-
+    let oscIsFloating = ib.oscEnabled && ib.oscPosition == .floating
+    let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
+    let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
+    let hasBarOSC = oscIsBottom || oscIsTop
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+
+    // Update enablement
     arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
     autoHideAfterCheckBox.isEnabled = hasOverlay
     oscAutoHideTimeoutTextField.isEnabled = hasOverlay
     hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
     windowPreviewImageView.image = ib.buildPWinPreviewImage()
+    // Update if invalid value was entered in text field:
+    oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
 
-    let oscIsFloating = ib.oscEnabled && ib.oscPosition == .floating
-
-    if oscSnapToCenterCheckbox.isHidden != !oscIsFloating {
-      viewHidePairs.append((oscSnapToCenterCheckbox, !oscIsFloating))
+    // Disable this instead of hiding. Too tired to keep dealing with animating this garbage
+    for subview in toolbarIconDimensionsHStackView.subviews {
+      if let control = subview as? NSControl {
+        control.isEnabled = hasBarOSC
+      }
     }
 
-    let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
+    // Build list of views which need a change to their visible state.
+    /// Each entry contains a ref to a view & intended `isHidden` state:
+    var viewHidePairs: [(NSView, Bool)] = []
+
+    if oscSnapToCenterContainerView.isHidden != !oscIsFloating {
+      viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
+    }
+
     if oscBottomPlacementContainerView.isHidden != !oscIsBottom {
       viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
     }
 
-    let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
-
-    let hasBarOSC = oscIsBottom || oscIsTop
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
     viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
@@ -411,34 +422,25 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
     }
 
-    // Disable this instead of hiding. Too tired to keep dealing with animating this garbage
-    for subview in toolbarIconDimensionsHStackView.subviews {
-      if let control = subview as? NSControl {
-        control.isEnabled = hasBarOSC
-      }
-    }
-
-    // Two-phase animation
+    // Two-phase animation. First show/hide the subviews of each container view with no animation.
     for (view, shouldHide) in viewHidePairs {
       for subview in view.subviews {
         subview.animator().isHidden = shouldHide
       }
     }
+
     animationPipeline.submitTask { [self] in
+      // Need to call this here to get proper fade effect instead of jump:
+      oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
+
       updateOSCToolbarPreview(from: newGeo)
 
-      // Need this to get proper slide effect
-      oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
+      // Second phase: hide or show each container view.
+      // AppKit will use a fade-in effect.
       for (view, shouldHide) in viewHidePairs {
         view.animator().isHidden = shouldHide
       }
     }
-    windowPreviewImageView.image = ib.buildPWinPreviewImage()
-
-    oscAutoHideTimeoutTextField.isEnabled = hasOverlay
-    hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-    // Update if invalid value was entered in text field:
-    oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
   }
 
   private func updateOSCSliders(from newGeo: ControlBarGeometry) {

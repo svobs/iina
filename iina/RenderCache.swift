@@ -198,7 +198,7 @@ class RenderCache {
   // MARK: - Bar
 
   // Bar
-  let barHeight: CGFloat = 3.0
+  let barHeight: CGFloat = 4.0
   let barCornerRadius: CGFloat = 1.5
   var barCornerRadius_Scaled: CGFloat
   var barColorLeft = NSColor.controlAccentColor
