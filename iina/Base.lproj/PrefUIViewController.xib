@@ -530,7 +530,7 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="19" y="-874"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="576" height="425"/>
             <subviews>
                 <textField identifier="SectionTitleWindow" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" verticalCompressionResistancePriority="751" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RFk-nU-SGL">
@@ -607,7 +607,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="0.0" y="329" width="387" height="22"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MY4-AB-Orx" userLabel="ResizeWindowWhenOpeningFile Checkbox">
-                                    <rect key="frame" x="-2" y="4" width="192" height="18"/>
+                                    <rect key="frame" x="-2" y="3" width="192" height="18"/>
                                     <buttonCell key="cell" type="check" title="Resize/move window when:" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="j0R-Tj-kBc">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -643,6 +643,7 @@ For smoothest results, also enable custom full screen.</string>
                             </subviews>
                             <constraints>
                                 <constraint firstItem="HBJ-ip-LD2" firstAttribute="top" secondItem="zQs-0g-sHV" secondAttribute="top" constant="1" id="0hL-ia-zgz"/>
+                                <constraint firstItem="HBJ-ip-LD2" firstAttribute="firstBaseline" secondItem="MY4-AB-Orx" secondAttribute="firstBaseline" id="9id-ay-SIq"/>
                                 <constraint firstAttribute="bottom" secondItem="HBJ-ip-LD2" secondAttribute="bottom" constant="1" id="YeW-2K-1Yq"/>
                             </constraints>
                             <visibilityPriorities>
@@ -672,7 +673,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="20" y="299" width="317" height="22"/>
                             <subviews>
                                 <button tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VP5-cz-tSV" userLabel="CenterAndResizeWindow Radio Button">
-                                    <rect key="frame" x="-2" y="4" width="189" height="18"/>
+                                    <rect key="frame" x="-2" y="3" width="189" height="18"/>
                                     <buttonCell key="cell" type="radio" title="Center &amp; resize window to:" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="OU4-bO-rys">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -707,6 +708,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </popUpButton>
                             </subviews>
                             <constraints>
+                                <constraint firstItem="PxB-We-0Hu" firstAttribute="firstBaseline" secondItem="VP5-cz-tSV" secondAttribute="firstBaseline" id="Ffe-sQ-fxH"/>
                                 <constraint firstItem="PxB-We-0Hu" firstAttribute="top" secondItem="rrv-sf-1sf" secondAttribute="top" constant="1" id="cl7-P7-XGr"/>
                                 <constraint firstAttribute="bottom" secondItem="PxB-We-0Hu" secondAttribute="bottom" constant="1" id="mwH-Ia-s93"/>
                             </constraints>
@@ -829,11 +831,11 @@ For smoothest results, also enable custom full screen.</string>
                                                                 <constraints>
                                                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="56" id="qtm-9j-baW"/>
                                                                 </constraints>
-                                                                <textFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1280" drawsBackground="YES" id="pNX-QN-Rpm">
+                                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1280" drawsBackground="YES" id="pNX-QN-Rpm">
                                                                     <numberFormatter key="formatter" formatterBehavior="default10_4" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="42" id="66W-HF-KVd">
                                                                         <real key="minimum" value="0.0"/>
                                                                     </numberFormatter>
-                                                                    <font key="font" usesAppearanceFont="YES"/>
+                                                                    <font key="font" metaFont="system"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 </textFieldCell>
