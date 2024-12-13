@@ -173,6 +173,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
     removeThemeMenuItemWithTag(Preference.Theme.mediumLight.rawValue)
     removeThemeMenuItemWithTag(Preference.Theme.ultraDark.rawValue)
+
+    IINAAnimation.disableAnimation {
+      // Initial update: do now to prevent unexpected animations during restore
+      updateAllSections()
+    }
   }
 
   override func viewWillAppear() {
@@ -183,19 +188,23 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
     animationPipeline.submitInstantTask{ [self] in
-      // Update sliders from prefs:
-      let geo = ControlBarGeometry(mode: .windowedNormal)
-      updateOSCSliders(from: geo)
-
-      updateSidebarSection()
-      refreshTitleBarAndOSCSection()
-      updateWindowGeometrySection()
-      updatePictureInPictureSection()
-
-      updateThumbnailCacheStat()
-      updateAspectControlsFromPrefs()
-      updateCropControlsFromPrefs()
+      updateAllSections()
     }
+  }
+
+  private func updateAllSections() {
+    // Update sliders from prefs:
+    let geo = ControlBarGeometry(mode: .windowedNormal)
+    updateOSCSliders(from: geo)
+
+    updateSidebarSection()
+    refreshTitleBarAndOSCSection()
+    _updateWindowGeometrySection()
+    updatePictureInPictureSection()
+
+    updateThumbnailCacheStat()
+    updateAspectControlsFromPrefs()
+    updateCropControlsFromPrefs()
   }
 
   override func viewWillDisappear() {
@@ -251,8 +260,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       // Use animation where possible to make the transition less jarring
       animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
+        updateWindowGeometrySection()
       }
-      updateWindowGeometrySection()
     case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation:
       updateSidebarSection()
     case PK.oscBarHeight,
@@ -693,9 +702,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     return "\(sizeInt)%"
   }
 
-  // Updates UI from prefs
+  // Updates UI from prefs. Uses a nice fade or sliding animation depending on the panel.
   private func updateWindowGeometrySection() {
-    animationPipeline.submitInstantTask { [self] in
+    animationPipeline.submitTask { [self] in
       _updateWindowGeometrySection()
     }
   }
