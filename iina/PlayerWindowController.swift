@@ -1114,7 +1114,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
 
-    log.verbose{"Updating presentation options for legacyFS: \(isEnteringLegacyFS ? "entering" : "exiting")"}
+    log.verbose{"Updating presentation options for legacyFS=\(isEnteringLegacyFS ? "entering" : "exiting")"}
     if isEnteringLegacyFS {
       // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
       // Fall back to checking this one
@@ -1375,7 +1375,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         }
 
         if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
-          log.verbose("Window is key: resuming legacy FS window")
+          log.verbose("Window is key: resuming legacy FS window level")
           window.level = .iinaFloating
         }
 

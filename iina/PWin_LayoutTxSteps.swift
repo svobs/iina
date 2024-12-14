@@ -549,10 +549,8 @@ extension PlayerWindowController {
       }
 
       let timeLabelFontSize: CGFloat
-      let knobHeight: CGFloat
       if outputLayout.oscPosition == .floating {
         timeLabelFontSize = NSFont.smallSystemFontSize
-        knobHeight = Constants.Distance.floatingOSCPlaySliderKnobHeight
       } else {
         let barHeight = oscGeo.barHeight
 
@@ -561,16 +559,14 @@ extension PlayerWindowController {
         playSliderHeightConstraint.isActive = true
 
         // Knob height > 24 is not supported
-        knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
+//        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
         if barHeight >= 36, #available(macOS 11.0, *) {
           timeLabelFontSize = NSFont.systemFontSize(for: .large)
         } else {
           timeLabelFontSize = NSFont.systemFontSize(for: .regular)
         }
       }
-      playSlider.customCell.knobHeight = knobHeight
       if let volumeSliderCell = volumeSlider.cell as? VolumeSliderCell {
-        volumeSliderCell.knobHeight = knobHeight
         volumeSliderCell.isClearBG = outputLayout.spec.oscBackgroundIsClear
       }
       seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
