@@ -330,7 +330,7 @@ struct PlayerSaveState: CustomStringConvertible {
   static func save(_ player: PlayerCore) {
     guard UIState.shared.isSaveEnabled else { return }
 
-    var ticket: Int = player.$saveTicketCounter.withLock {
+    let ticket: Int = player.$saveTicketCounter.withLock {
       $0 += 1
       return $0
     }
