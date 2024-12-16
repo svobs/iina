@@ -2590,8 +2590,7 @@ class PlayerCore: NSObject {
     info.chapter = chapter
     log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
     syncUI(.chapterList)
-    MediaPlayerIntegration.shared.updateNowPlayingInfo()
-    postNotification(.iinaMediaTitleChanged)
+    mediaTitleChanged()
   }
 
   func fullscreenChanged() {
@@ -2631,6 +2630,7 @@ class PlayerCore: NSObject {
     guard isActive else { return }
     DispatchQueue.main.async { [self] in
       guard windowController.isOpen else { return }
+      MediaPlayerIntegration.shared.updateNowPlayingInfo()
       postNotification(.iinaMediaTitleChanged)
     }
   }

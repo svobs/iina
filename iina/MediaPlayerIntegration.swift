@@ -154,6 +154,8 @@ class MediaPlayerIntegration {
   ///
   /// - Important: This method **must** be run on the main thread because it references `PlayerCore.lastActive`.
   func updateNowPlayingInfo() {
+    assert(DispatchQueue.isExecutingIn(.main))  /// needed for `PlayerCore.lastActive`
+
     let center = MPNowPlayingInfoCenter.default()
     var info = center.nowPlayingInfo ?? [String: Any]()
 
