@@ -29,15 +29,12 @@ class VolumeSliderCell: NSSliderCell {
   }
 
   override func drawBar(inside rect: NSRect, flipped: Bool) {
-    // TODO: copy bar from play slider
-    if maxValue > 100 {
-      // round this value to obtain a pixel perfect clip line
-      let x = round(rect.minX + rect.width * CGFloat(100 / maxValue))
-      let clipPath = NSBezierPath(rect: NSRect(x: rect.minX, y: rect.minY, width: x - 1, height: rect.height))
-      clipPath.append(NSBezierPath(rect: NSRect(x: x + 1, y: rect.minY, width: rect.maxX - x - 1, height: rect.height)))
-      clipPath.setClip()
+    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance else { return }
+    let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
+    appearance.applyAppearanceFor {
+      RenderCache.shared.drawVolumeBar(in: rect, darkMode: appearance.isDark, clearBG: isClearBG,
+                                       knobMinX: knobMinX, knobWidth: knobWidth, currentValue: doubleValue, maxValue: maxValue)
     }
-    super.drawBar(inside: rect, flipped: flipped)
   }
 
   override func drawKnob(_ knobRect: NSRect) {
