@@ -49,13 +49,13 @@ class AutoFileMatcher {
 
   private func getAllMediaFiles() throws {
     // get all files in current directory
-    guard let files = try? fm.contentsOfDirectory(at: currentFolder, includingPropertiesForKeys: nil, options: searchOptions) else { return }
+    guard let urls = try? fm.contentsOfDirectory(at: currentFolder, includingPropertiesForKeys: nil, options: searchOptions) else { return }
 
     log.debug("Getting all media files...")
     // group by extension
-    for file in files {
+    for url in urls {
       try checkTicket()
-      let fileInfo = FileInfo(file)
+      let fileInfo = FileInfo(url)
       if let mediaType = Utility.mediaType(forExtension: fileInfo.ext) {
         switch mediaType {
         case .video:
@@ -101,18 +101,24 @@ class AutoFileMatcher {
       // handle wildcards
       if hasWildcard {
         // append all sub dirs
-        if let contents = try? fm.contentsOfDirectory(at: pathURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
-          subDirs.append(contentsOf: contents.filter { $0.isExistingDirectory })
+        if let contents = try? fm.contentsOfDirectory(at: pathURL, includingPropertiesForKeys: [.isDirectoryKey], options: searchOptions) {
+          subDirs.append(contentsOf: contents.filter { url in
+            // Filter out bundles (here called "file packages") from the results.
+            // They can otherwise look like directories, but some like iMovie libraries will cause a permission prompt
+            // to be shown to the user when trying to access them.
+            return url.isExistingDirectory && !NSWorkspace.shared.isFilePackage(atPath: url.path) && !isRestrictedByTCC(url.path)
+          })
         }
       } else {
         subDirs.append(pathURL)
       }
     }
 
-    subsystem.debug("Searching subtitles from \(subDirs.count) directories...")
-    subsystem.verbose("\(subDirs)")
+    log.debug("Searching subtitles from \(subDirs.count) directories...")
+    log.verbose("\(subDirs)")
     // get all possible sub files
     var subtitles = subFiles
+
     for subDir in subDirs {
       try checkTicket()
       if let contents = try? fm.contentsOfDirectory(at: subDir, includingPropertiesForKeys: nil, options: searchOptions) {
@@ -122,6 +128,21 @@ class AutoFileMatcher {
 
     log.debug("Got \(subtitles.count) subtitles")
     return subtitles
+  }
+
+  /// Will the given file path possibly trigger Apple's TCC to prompt the user for permissions to access it?
+  ///
+  /// We have to guess in some cases.
+  /// Currently only checks whether the given filePath is in the Movies folder's subtree.
+  private func isRestrictedByTCC(_ filePath: String) -> Bool {
+    let moviesDirPaths = FileManager.default.urls(for: .moviesDirectory, in: .allDomainsMask).compactMap{$0.path}
+    for moviesDirPath in moviesDirPaths {
+      if filePath.hasPrefix(moviesDirPath) {
+        log.verbose{"Skipping \(filePath.pii.quoted) because it is inside \(moviesDirPath.pii.quoted)"}
+        return true
+      }
+    }
+    return false
   }
 
   private func addFilesToPlaylist() throws {

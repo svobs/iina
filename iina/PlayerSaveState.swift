@@ -710,7 +710,7 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Open the window!
-    player.openURLs([url], shouldAutoLoadPlaylist: false)
+    player.openURLs([url])
   }
 
   /// Restore mpv properties.

@@ -370,13 +370,12 @@ class PlayerCore: NSObject {
      `0` if no playable files were found & the player window was not opened.
    */
   @discardableResult
-  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true) -> Int? {
+  func openURLs(_ urls: [URL]) -> Int? {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
-    log.debug{"OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(from: $0).pii})"}
+    log.debug{"OpenURLs: \(urls.map{Playback.path(from: $0).pii})"}
     // Reset:
-    info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
     openedWindowsSetIndex = 0
 
     PlayerCore.mouseLocationAtLastOpen = NSEvent.mouseLocation
@@ -385,36 +384,30 @@ class PlayerCore: NSObject {
 
     // Handle folder URL (to support mpv shuffle, etc), BD folders and m3u / m3u8 files first.
     // For these cases, mpv will load/build the playlist and notify IINA when it can be retrieved.
-    if urls.count == 1 {
+    if urls.count == 1,
+       isBDFolder(urls[0])
+        || Utility.playlistFileExt.contains(urls[0].absoluteString.lowercasedPathExtension) {
 
-      let loneURL = urls[0]
-      if isBDFolder(loneURL)
-          || Utility.playlistFileExt.contains(loneURL.absoluteString.lowercasedPathExtension) {
-
-        info.shouldAutoLoadFiles = false
-        openPlayerWindow(urls)
-        return nil
-      }
+      info.shouldAutoLoadFiles = false
+      openPlayerWindow(urls)
+      return nil
     }
     // Else open multiple URL args...
 
     // Filter URL args for playable files (video/audio), because mpv will "play" image files, text files (anything?)
     let playableFiles = getPlayableFiles(in: urls)
-    let count = playableFiles.count
 
-    log.verbose{"Found \(count) playable files for \(urls.count) requested URLs"}
+    log.verbose{"Found \(playableFiles.count) playable files for \(urls.count) requested URLs"}
     // check playable files count
-    guard count > 0 else {
+    guard playableFiles.count > 0 else {
       return 0
     }
 
-    if shouldAutoLoadPlaylist {
-      info.shouldAutoLoadFiles = (count == 1)
-    }
+    info.shouldAutoLoadFiles = !windowController.sessionState.isRestoring && playableFiles.count == 1
 
     // open the first file
     openPlayerWindow(playableFiles)
-    return count
+    return playableFiles.count
   }
 
   @discardableResult
@@ -2504,7 +2497,8 @@ class PlayerCore: NSObject {
 
     // add files in same folder
     if shouldAutoLoadFiles {
-      log.debug("Started auto load of files in current folder, isRestoring=\(isRestoring.yn)")
+      assert(!isRestoring, "shouldAutoLoadFiles should not be true when restoring!")
+      log.debug("Started auto load of files in current folder")
       self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
     }
     // auto load matched subtitles
@@ -3646,7 +3640,7 @@ class PlayerCore: NSObject {
   // MARK: - Notifications
 
   func postNotification(_ name: Notification.Name) {
-    log.debug{"Posting notification: \(name.rawValue)"}
+    log.verbose{"Posting notification: \(name.rawValue)"}
     NotificationCenter.default.post(Notification(name: name, object: self))
   }
 

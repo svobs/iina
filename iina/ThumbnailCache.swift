@@ -50,12 +50,12 @@ class ThumbnailCache {
 
     // Check metadate in the cache
     guard self.fileExists(forName: name, forWidth: width) else {
-      Logger.log("Cache file does not exist", level: .error, subsystem: subsystem)
+      log.debug("Cache file does not exist for name=\(name.pii.quoted), width=\(width)")
       return false
     }
 
     guard let file = try? FileHandle(forReadingFrom: urlFor(name, width: width)) else {
-      Logger.log("Cache file exists but cannot be opened", level: .error, subsystem: subsystem)
+      log.error("Thumbnail cache file exists but cannot be opened (for name=\(name.pii.quoted))")
       return false
     }
 
