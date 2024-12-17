@@ -166,13 +166,11 @@ extension PlayerWindowController {
 
   private func initTitleBarAccessories() {
     let builder = CustomTitleBar.shared
+    let iconSpacingH = Constants.Distance.titleBarIconHSpacing
     // - LEADING
 
     let leadingTB = leadingTitleBarAccessoryView
     leadingTB.idString = "leadingTitleBarAccessoryView"
-    leadingTB.translatesAutoresizingMaskIntoConstraints = false
-
-    leadingTB.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
 
     let leadingSpacerLeading = NSView()
     leadingSpacerLeading.identifier = .init("leadingTitleBarLeadingSpacer")
@@ -183,7 +181,6 @@ extension PlayerWindowController {
                                                             identifier: "leadingSidebarToggleButton",
                                                             target: self,
                                                             action: #selector(toggleLeadingSidebarVisibility(_:)))
-    leadingSidebarToggleButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
 
     let leadingSpacerTrailing = NSView()
     leadingSpacerTrailing.identifier = .init("leadingTitleBarTrailingSpacer")
@@ -195,6 +192,7 @@ extension PlayerWindowController {
     leadingTB.distribution = .fill
     leadingTB.spacing = 0
     leadingTB.detachesHiddenViews = true
+    leadingTB.setHuggingPriority(.init(500), for: .horizontal)
 
     leadingTB.addArrangedSubview(leadingSpacerLeading)
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
@@ -215,26 +213,23 @@ extension PlayerWindowController {
                                              identifier: "onTopButton",
                                              target: self, action: #selector(toggleOnTop(_:)))
     onTopButton.alternateImage = Images.onTopOn
-    onTopButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
 
     trailingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarTrailing,
                                                              identifier: "trailingSidebarToggleButton",
                                                              target: self,
                                                              action: #selector(toggleTrailingSidebarVisibility(_:)))
-    trailingSidebarToggleButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
 
     let trailingSpacerTrailing = NSView()
     trailingSpacerTrailing.identifier = .init("trailingTitleBarTrailingSpacer")
     trailingTitleBarTrailingSpaceConstraint = trailingSpacerTrailing.widthAnchor.constraint(equalToConstant: 0)
     trailingTitleBarTrailingSpaceConstraint?.isActive = true
 
-    trailingTitleBarAccessoryView.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
-
     trailingTB.orientation = .horizontal
     trailingTB.alignment = .centerY
     trailingTB.distribution = .fill
-    trailingTB.spacing = 0
+    trailingTB.spacing = iconSpacingH
     trailingTB.detachesHiddenViews = true
+    trailingTB.setHuggingPriority(.init(500), for: .horizontal)
 
     trailingTB.addArrangedSubview(trailingSpacerLeading)
     trailingTB.addArrangedSubview(trailingSidebarToggleButton)

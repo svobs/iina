@@ -69,10 +69,6 @@ class CustomTitleBarViewController: NSViewController {
       btn.setContentCompressionResistancePriority(.required, for: .vertical)
     }
 
-//    let leadingTitleSpacer = makeSpacerView()
-//    leadingTitleSpacer.identifier = .init("leadingTitleBarView-TrailingSpacer")
-//    leadingStackView.addArrangedSubview(leadingTitleSpacer)
-
     leadingTitleBarView = leadingStackView
 
     if leadingStackView.trackingAreas.count <= 1 && trafficLightButtons.count == 3 {
@@ -115,10 +111,6 @@ class CustomTitleBarViewController: NSViewController {
     trailingStackView.distribution = .fill
     trailingStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
     trailingStackView.setHuggingPriority(.init(500), for: .horizontal)
-
-//    let trailingTitleSpacer = makeSpacerView()
-//    trailingTitleSpacer.identifier = .init("trailingTitleBarView-LeadingSpacer")
-//    trailingStackView.addArrangedSubview(trailingTitleSpacer)
 
     trailingTitleBarView = trailingStackView
 

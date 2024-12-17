@@ -295,7 +295,9 @@ struct Constants {
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
 
-    static let titleBarIconHSpacing: CGFloat = 8
+    /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
+    /// their images)
+    static let titleBarIconHSpacing: CGFloat = 6
 
     /**
      `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for

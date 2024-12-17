@@ -165,6 +165,10 @@ extension PlayerWindowController {
     if log.isVerboseEnabled { log.verbose("PlayerWindow mouseDown @ \(event.locationInWindow)") }
     
     guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]) else {
+      if isMouseEvent(event, inAnyOf: [documentIconButton]) {
+        documentIconButton?.mouseDown(with: event)
+        return
+      }
       super.mouseDown(with: event)
       return
     }
@@ -277,6 +281,10 @@ extension PlayerWindowController {
       }
 
       guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
+        if isMouseEvent(event, inAnyOf: [documentIconButton]) {
+          documentIconButton?.mouseUp(with: event)
+          return
+        }
         player.log.verbose("MouseUp: click occurred in a disabled view; ignoring")
         super.mouseUp(with: event)
         return
