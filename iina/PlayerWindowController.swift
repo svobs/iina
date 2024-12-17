@@ -1446,6 +1446,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
+  func window(_ window: NSWindow, shouldPopUpDocumentPathMenu menu: NSMenu) -> Bool {
+    guard let currentPlayback = player.info.currentPlayback else { return false }
+    return !currentPlayback.isNetworkResource
+  }
+
   // MARK: - UI: Title
 
   @objc
