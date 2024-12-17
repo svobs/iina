@@ -335,9 +335,14 @@ class StartupHandler {
     log.verbose("All \(wcsToRestore.count) restored \(wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
     restoreTimer?.invalidate()
 
+    var prevWindowNumber: Int? = nil
     for wc in wcsToRestore {
+      if let prevWindowNumber {
+        wc.window?.order(.above, relativeTo: prevWindowNumber)
+      }
       if !(wc.window?.isMiniaturized ?? false) {
-        wc.showWindow(self)  // orders the window to the front
+        prevWindowNumber = wc.window?.windowNumber
+        wc.showWindow(self)
       }
     }
     if let wcForOpenFile = wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
