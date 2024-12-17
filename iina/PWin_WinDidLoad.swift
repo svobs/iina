@@ -74,6 +74,7 @@ extension PlayerWindowController {
 
       // Top bar: other init
       topBarView.clipsToBounds = true
+      topBarBottomBorder.identifier = .init(rawValue: "TopBar-BottomBorder")
       topBarBottomBorder.fillColor = NSColor.titleBarBorder
 
       viewportView.clipsToBounds = true
@@ -306,7 +307,7 @@ extension PlayerWindowController {
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+    bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 1).isActive = true
     bottomBarTopBorder.borderColor = NSColor.clear
   }
 
