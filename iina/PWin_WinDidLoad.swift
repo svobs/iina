@@ -303,12 +303,12 @@ extension PlayerWindowController {
     bottomBarTopBorder.boxType = .custom
     bottomBarTopBorder.titlePosition = .noTitle
     bottomBarTopBorder.borderWidth = 0
+    bottomBarTopBorder.borderColor = NSColor.clear
     bottomBarTopBorder.fillColor = NSColor.titleBarBorder
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
     bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 1).isActive = true
-    bottomBarTopBorder.borderColor = NSColor.clear
   }
 
   private func initSpeedLabel() {
