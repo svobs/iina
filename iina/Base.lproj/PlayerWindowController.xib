@@ -90,7 +90,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3840" height="2135"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1312" height="818"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -302,14 +302,14 @@
                         <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
                         <subviews>
                             <box identifier="LeadingSidebaTrailingBorder" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="b0r-Lt-vGM" userLabel="Leading-Sidebar-Trailing-Border Box">
-                                <rect key="frame" x="359" y="0.0" width="1" height="400"/>
+                                <rect key="frame" x="360" y="0.0" width="0.0" height="400"/>
                                 <color key="borderColor" red="0.48627450979999998" green="0.48627450979999998" blue="0.48627450979999998" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="fillColor" name="quaternaryLabelColor" catalog="System" colorSpace="catalog"/>
                             </box>
                         </subviews>
                         <constraints>
                             <constraint firstItem="b0r-Lt-vGM" firstAttribute="top" secondItem="XBs-34-TIm" secondAttribute="top" id="0t5-Ws-sUl"/>
-                            <constraint firstItem="b0r-Lt-vGM" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="-1" id="kK2-09-Tdi"/>
+                            <constraint firstItem="b0r-Lt-vGM" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="-0.5" id="kK2-09-Tdi"/>
                             <constraint firstItem="b0r-Lt-vGM" firstAttribute="bottom" secondItem="XBs-34-TIm" secondAttribute="bottom" id="vgH-Cz-bFf"/>
                             <constraint firstItem="b0r-Lt-vGM" firstAttribute="trailing" secondItem="XBs-34-TIm" secondAttribute="trailing" id="wW0-Ry-p6J"/>
                         </constraints>
@@ -329,7 +329,7 @@
                         <constraints>
                             <constraint firstItem="exJ-CB-MoS" firstAttribute="top" secondItem="epo-S6-QVB" secondAttribute="top" id="Wmi-nN-kAu"/>
                             <constraint firstItem="exJ-CB-MoS" firstAttribute="leading" secondItem="epo-S6-QVB" secondAttribute="leading" id="jCv-Ul-U1b"/>
-                            <constraint firstItem="exJ-CB-MoS" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" constant="1" id="q7k-kg-0md"/>
+                            <constraint firstItem="exJ-CB-MoS" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" constant="0.5" id="q7k-kg-0md"/>
                             <constraint firstAttribute="bottom" secondItem="exJ-CB-MoS" secondAttribute="bottom" id="szs-cQ-8Cu"/>
                         </constraints>
                         <shadow key="shadow" blurRadius="12">
