@@ -42,6 +42,8 @@ class VideoView: NSView {
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
 
+  var debugTimer: Timer?
+
   // MARK: - Attributes
 
   override var mouseDownCanMoveWindow: Bool {
@@ -71,6 +73,14 @@ class VideoView: NSView {
 
     // dragging init
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
+
+      debugTimer = Timer.scheduledTimer(
+        timeInterval: 1.0,
+        target: self,
+        selector: #selector(fireDebugTimer),
+        userInfo: nil,
+        repeats: true
+      )
   }
 
   required init?(coder: NSCoder) {
@@ -96,6 +106,14 @@ class VideoView: NSView {
 
   deinit {
     uninit()
+  }
+
+  @objc func fireDebugTimer() {
+    guard let window else {
+      Logger.log("🌀 VideoView: no parent window!")
+      return
+    }
+    Logger.log("🌀 VideoView window:\(window.windowNumber) screen:\(window.screen!.localizedName.quoted) frame:\(window.frame)")
   }
 
   override func draw(_ dirtyRect: NSRect) {

@@ -542,6 +542,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func windowDidChangeScreen(_ notification: Notification) {
+    Logger.log("PWin windowDidChangeScreen window:\(window!.windowNumber) screen:\(window!.screen!.localizedName.quoted) frame:\(window!.frame)")
     videoView.updateDisplayLink()
   }
 

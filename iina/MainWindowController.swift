@@ -1666,6 +1666,7 @@ class MainWindowController: PlayerWindowController {
   // MARK: - Window delegate: Activeness status
   func windowDidMove(_ notification: Notification) {
     guard let window = window else { return }
+    Logger.log("PWin windowDidMove window:\(window.windowNumber) screen:\(window.screen!.localizedName.quoted) frame:\(window.frame)")
     player.events.emit(.windowMoved, data: window.frame)
   }
 

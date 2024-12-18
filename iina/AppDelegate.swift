@@ -373,7 +373,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     NSApplication.shared.servicesProvider = self
 
+    NotificationCenter.default.addObserver(forName: NSWindow.didChangeScreenNotification, object: nil, queue: .main, using: self.windowDidChangeScreen(_:))
+
+    NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: nil, queue: .main, using: self.windowDidMove(_:))
+
     AppDelegate.shared.menuController?.updatePluginMenu()
+  }
+
+  func windowDidChangeScreen(_ notification: Notification) {
+     let window = notification.object as! NSWindow
+    let screen = window.screen!
+    Logger.log("App windowDidChangeScreen window:\(window.windowNumber) screen:\(screen.localizedName.quoted) frame:\(window.frame)")
+  }
+
+  func windowDidMove(_ notification: Notification) {
+    let window = notification.object as! NSWindow
+    let screen = window.screen!
+    Logger.log("App windowDidMove window:\(window.windowNumber) screen:\(screen.localizedName.quoted) frame:\(window.frame)")
   }
 
   /** Show welcome window if `application(_:openFile:)` wasn't called, i.e. launched normally. */
