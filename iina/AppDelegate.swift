@@ -148,6 +148,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didEndSheetNotification, self.windowDidEndSheet))
       ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, self.windowDidMiniaturize))
       ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, self.windowDidDeminiaturize))
+#if DEBUG
+      ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
+        let window = noti.object as! NSWindow
+        Logger.log("WindowDidChangeScreen \(window.windowNumber): \(window.screen!.screenID.quoted)")
+      }))
+#endif
     } else {
       // TODO: remove existing state...somewhere
       Logger.log("Note: UI state saving is disabled")
