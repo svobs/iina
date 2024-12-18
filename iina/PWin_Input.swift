@@ -18,8 +18,9 @@ extension PlayerWindowController {
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
     if let menuItem = keyBinding.menuItem, let action = menuItem.action {
-      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Call it manually")
-      NSApp.sendAction(action, to: self, from: menuItem)
+      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually")
+      // Send to nil to allow for greatest search scope
+      NSApp.sendAction(action, to: nil, from: menuItem)
       return true
     }
 
@@ -344,6 +345,12 @@ extension PlayerWindowController {
     guard event.eventNumber != lastRightMouseDownEventID else { return }
     lastRightMouseDownEventID = event.eventNumber
     log.verbose("PlayerWindow rightMouseDown!")
+
+    defer {
+      /// Apple note (https://developer.apple.com/documentation/appkit/nsview):
+      /// NSView changes the default behavior of rightMouseDown(with:) so that it calls menu(for:) and, if non nil, presents the contextual menu. In macOS 10.7 and later, if the event is not handled, NSView passes the event up the responder chain. Because of these behaviorial changes, call super when implementing rightMouseDown(with:) in your custom NSView subclasses.
+      super.rightMouseDown(with: event)
+    }
 
     if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       controlBarFloating.rightMouseDown(with: event)

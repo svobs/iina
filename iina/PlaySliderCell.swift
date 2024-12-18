@@ -87,9 +87,9 @@ class PlaySliderCell: NSSliderCell {
     let slider = self.controlView as! NSSlider
     let progressRatio = slider.progressRatio
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, clearBG: isClearBG,
-                                 screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
-                                 durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
+      RenderCache.shared.drawPlayBar(in: rect, darkMode: appearance.isDark, clearBG: isClearBG,
+                                     screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
+                                     durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
     }
   }
 

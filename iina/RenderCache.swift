@@ -216,8 +216,8 @@ class RenderCache {
     }
   }
 
-  func drawBar(in barRect: NSRect, darkMode: Bool, clearBG: Bool, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
-               progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
+  func drawPlayBar(in barRect: NSRect, darkMode: Bool, clearBG: Bool, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
+                   progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
     var drawRect = Bar.imageRect(in: barRect)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
@@ -572,6 +572,7 @@ class RenderCache {
       return CGColor(colorSpace: colorSpace, components: leftCacheComps)!
     }
 
+    /// Measured in points, not pixels!
     static func imageRect(in drawRect: CGRect) -> CGRect {
       let margin = RenderCache.shared.barMarginRadius
       let imgHeight = (2 * margin) + RenderCache.shared.barHeight

@@ -291,6 +291,10 @@ class TitleTextView: NSTextView {
 
   override func rightMouseDown(with event: NSEvent) {
     window?.rightMouseDown(with: event)
+
+    /// Apple note (https://developer.apple.com/documentation/appkit/nsview):
+    /// NSView changes the default behavior of rightMouseDown(with:) so that it calls menu(for:) and, if non nil, presents the contextual menu. In macOS 10.7 and later, if the event is not handled, NSView passes the event up the responder chain. Because of these behaviorial changes, call super when implementing rightMouseDown(with:) in your custom NSView subclasses.
+    super.rightMouseDown(with: event)
   }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {

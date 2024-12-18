@@ -80,6 +80,10 @@ extension PlayerWindowController {
         .init(NSScreen.colorSpaceDidChangeNotification) { note in self.colorSpaceDidChange(note) },
         .init(NSWindow.didChangeScreenNotification) { note in self.windowDidChangeScreen(note) },
         .init(.iinaMediaTitleChanged, object: player) { _ in self.updateTitle() },
+        /* Not currently used. Leave for testing purposes only.
+        .init(NSWindow.didChangeScreenProfileNotification) { note in self.windowDidChangeScreenProfile(note) },
+        .init(NSWindow.didChangeBackingPropertiesNotification) { note in self.windowDidChangeBackingProperties(note) },
+         */
         .init(NSApplication.didChangeScreenParametersNotification) { _ in self.windowDidChangeScreenParameters() },
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [self] _ in
           let seconds = percentToSeconds(playSlider.abLoopA.posInSliderPercent)

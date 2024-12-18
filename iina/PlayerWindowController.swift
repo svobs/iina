@@ -1165,6 +1165,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     denyNextWindowResize = true
   }
 
+  func windowDidChangeScreenProfile(_ notification: Notification) {
+    log.verbose("WindowDidChangeScreenProfile received")
+    videoView.refreshContentsScale()
+    // Do not allow MacOS to change the window size when changing screen
+    denyNextWindowResize = true
+  }
+
   func windowDidChangeOcclusionState(_ notification: Notification) {
     log.trace("WindowDidChangeOcclusionState received")
     assert(DispatchQueue.isExecutingIn(.main))
@@ -1178,6 +1185,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
+    log.verbose("WindowDidChangeScreen: \(window!.windowNumber): \(window!.screen!.localizedName)")
     let ticket: Int = $screenChangedTicketCounter.withLock {
       $0 += 1
       return $0
