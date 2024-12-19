@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21507" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21507"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -19,7 +19,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES"/>
             <rect key="contentRect" x="200" y="240" width="600" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1312" height="818"/>
             <value key="minSize" type="size" width="400" height="200"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PlaybackHistoryWindow Content View">
                 <rect key="frame" x="0.0" y="0.0" width="600" height="300"/>
@@ -27,7 +27,7 @@
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="OQZ-Pk-zUa" userLabel="Top Panel">
                         <rect key="frame" x="0.0" y="268" width="600" height="32"/>
                         <subviews>
-                            <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ob0-Up-S1q" userLabel="GroupBy Label">
+                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ob0-Up-S1q" userLabel="GroupBy Label">
                                 <rect key="frame" x="6" y="7" width="64" height="18"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="18" id="ZCV-1y-g3N"/>
@@ -40,12 +40,9 @@
                             </textField>
                             <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dcE-VR-Vxk" userLabel="GroupBy Popup">
                                 <rect key="frame" x="73" y="0.0" width="78" height="29"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="24" id="Xmm-F8-gsu"/>
-                                </constraints>
                                 <popUpButtonCell key="cell" type="push" title="Date" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="QBO-JS-dNV" id="geF-qk-cXT">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="menu"/>
+                                    <font key="font" metaFont="message"/>
                                     <menu key="menu" id="IlO-8S-UTZ">
                                         <items>
                                             <menuItem title="Date" state="on" id="QBO-JS-dNV"/>
@@ -53,17 +50,20 @@
                                         </items>
                                     </menu>
                                 </popUpButtonCell>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="24" id="Xmm-F8-gsu"/>
+                                </constraints>
                                 <connections>
                                     <binding destination="Pxd-7n-Ym5" name="selectedTag" keyPath="values.uiHistoryTableGroupBy" id="qVE-Da-4Hb"/>
                                 </connections>
                             </popUpButton>
-                            <searchField wantsLayer="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nfA-G1-DVj">
+                            <searchField wantsLayer="YES" focusRingType="none" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nfA-G1-DVj">
                                 <rect key="frame" x="392" y="4" width="200" height="24"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="200" id="8T5-1l-PW8"/>
                                     <constraint firstAttribute="height" constant="24" id="i1e-zn-ahj"/>
                                 </constraints>
-                                <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" usesSingleLineMode="YES" bezelStyle="round" recentsAutosaveName="IINAHistorySearchField" id="k5B-TS-AUl">
+                                <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" recentsAutosaveName="IINAHistorySearchField" id="k5B-TS-AUl">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -93,7 +93,7 @@
                             <rect key="frame" x="1" y="1" width="598" height="266"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="22" headerView="MiB-ow-W6T" viewBased="YES" indentationPerLevel="12" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="OutlineView" customModule="IINA" customModuleProvider="target">
+                                <outlineView verticalHuggingPriority="750" misplaced="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="22" headerView="MiB-ow-W6T" viewBased="YES" indentationPerLevel="12" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="OutlineView" customModule="IINA" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="606" height="243"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="8" height="2"/>
@@ -124,7 +124,7 @@
                                                             </constraints>
                                                             <imageCell key="cell" controlSize="large" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="VSC-Pt-fuS"/>
                                                         </imageView>
-                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Fqk-Qo-Mj5" userLabel="History Filename Table View Cell">
+                                                        <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Fqk-Qo-Mj5" userLabel="History Filename Table View Cell">
                                                             <rect key="frame" x="20" y="1" width="392" height="16"/>
                                                             <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="Table View Cell" id="hAx-fJ-3rD">
                                                                 <font key="font" metaFont="system"/>
@@ -149,7 +149,7 @@
                                                     <rect key="frame" x="4" y="20" width="410" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
-                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Nf6-hw-AKB" userLabel="Group Table View Cell">
+                                                        <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Nf6-hw-AKB" userLabel="Group Table View Cell">
                                                             <rect key="frame" x="2" y="1" width="410" height="16"/>
                                                             <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="Group Table View Cell" id="vDR-ax-UJb">
                                                                 <font key="font" metaFont="system"/>
@@ -194,7 +194,7 @@
                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="30" id="f9e-xF-cPT"/>
                                                             </constraints>
                                                         </progressIndicator>
-                                                        <textField identifier="Progress" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="UIs-Aj-nFe">
+                                                        <textField identifier="Progress" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="UIs-Aj-nFe">
                                                             <rect key="frame" x="59" y="1" width="53" height="16"/>
                                                             <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="0:00:00" id="cu8-Oe-yca">
                                                                 <font key="font" metaFont="system"/>
@@ -233,7 +233,7 @@
                                                     <rect key="frame" x="540" y="1" width="62" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
-                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Esj-ym-AE9">
+                                                        <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Esj-ym-AE9">
                                                             <rect key="frame" x="2" y="1" width="62" height="15"/>
                                                             <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="right" title="00:00 AM" id="z9u-td-fQW">
                                                                 <font key="font" size="13" name="Menlo-Regular"/>

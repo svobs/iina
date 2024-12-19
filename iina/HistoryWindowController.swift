@@ -66,7 +66,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   var searchType: Preference.HistorySearchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
   var searchString: String = HistoryWindowController.getSearchStringFromPrefs() ?? ""
 
-  private var historyData: [String: [PlaybackHistory]] = [loadingKey: [LoadingPlaceholder()]]
+  private static let loadingData = [loadingKey: [LoadingPlaceholder()]]
+  private var historyData: [String: [PlaybackHistory]] = HistoryWindowController.loadingData
   private var historyDataKeys: [String] = [loadingKey]
   private var fileExistsMap: [URL: Bool] = [:]
 
@@ -89,7 +90,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
           log.verbose("History window received iinaHistoryUpdated; will reload data")
           // Force full status reload:
           lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-          reloadData()
+          reloadData(silent: true)
         },
 
         .init(.iinaFileHistoryDidUpdate) { [self] note in
@@ -102,7 +103,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
           backgroundQueue.async { [self] in
             guard fileExistsMap.removeValue(forKey: url) != nil else { return }
-            reloadData()
+            reloadData(silent: true)
           }
         }
       ]
@@ -183,7 +184,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   }
 
   /// Can be called from any DispatchQueue
-  private func reloadData() {
+  private func reloadData(silent: Bool = false) {
     // Reloads are expensive and many things can trigger them.
     // Use a counter + a delay to reduce duplicated work (except for initial load)
     let ticket: Int = $reloadTicketCounter.withLock {
@@ -191,16 +192,33 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       return $0
     }
 
+
     if isInitialLoadDone {
-      backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-        guard isTicketStillValid(ticket) else { return }
-        _reloadData(ticket: ticket)
+      DispatchQueue.main.async { [self] in
+        if !silent {
+          showLoadingUI()
+        }
+
+        // Expand to show loading placeholder
+        outlineView.expandItem(nil, expandChildren: true)
+
+        backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+          guard isTicketStillValid(ticket) else { return }
+          _reloadData(ticket: ticket)
+        }
       }
     } else {
       backgroundQueue.async { [self] in
         _reloadData(ticket: ticket)
       }
     }
+  }
+
+  /// Resets table to loading msg
+  private func showLoadingUI() {
+    historyData = HistoryWindowController.loadingData
+    historyDataKeys = [loadingKey]
+    outlineView.reloadData()
   }
 
   private func _reloadData(ticket: Int) {
@@ -233,17 +251,18 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       historyDataUpdated[key]!.append(entry)
     }
 
-    // Update data and reload UI
-    historyData = historyDataUpdated
-    historyDataKeys = historyDataKeysUpdated
-
     DispatchQueue.main.async { [self] in
       guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
+
+      // Update data and reload UI
+      historyData = historyDataUpdated
+      historyDataKeys = historyDataKeysUpdated
+
       adjustTimeColumnMinWidth()
       outlineView.reloadData()
       outlineView.expandItem(nil, expandChildren: true)
 
-      log.verbose("Reloaded history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn) in \(sw.secElapsedString) (tkt \(reloadTicketCounter))")
+      log.verbose("Reloaded history table: \(historyList.count) entries, filter=\(searchString.quoted) in \(sw.secElapsedString) (tkt \(reloadTicketCounter))")
 
       if isInitialLoad {
         isInitialLoadDone = true
@@ -511,9 +530,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     guard searchType != newValue else { return }
     searchType = newValue
     UIState.shared.set(newValue.rawValue, for: .uiHistoryTableSearchType)
-    backgroundQueue.async { [self] in
-      reloadData()
-    }
+    reloadData()
   }
 
   @IBAction func searchFieldAction(_ sender: NSSearchField) {
@@ -521,9 +538,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     guard searchString != sender.stringValue else { return }
     self.searchString = sender.stringValue
     UIState.shared.set(sender.stringValue, for: .uiHistoryTableSearchString)
-    backgroundQueue.async { [self] in
-      reloadData()
-    }
+    reloadData()
   }
 
   // MARK: Misc support functions

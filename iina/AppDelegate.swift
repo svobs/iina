@@ -151,7 +151,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 #if DEBUG
       ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
         let window = noti.object as! NSWindow
-        Logger.log("WindowDidChangeScreen \(window.windowNumber): \(window.screen!.screenID.quoted)")
+        let screenID = window.screen?.screenID.quoted ?? "nil"
+        Logger.log("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
       }))
 #endif
     } else {
