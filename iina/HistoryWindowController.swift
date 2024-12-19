@@ -259,7 +259,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
 
       loadingMsgDelayTimer?.invalidate()
-      
+
       // Update data and reload UI
       historyData = historyDataUpdated
       historyDataKeys = historyDataKeysUpdated

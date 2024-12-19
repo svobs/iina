@@ -1298,7 +1298,7 @@ extension CGImage {
   }
 
   /// Creates RGB image with alpha channel
-  private static func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
+  static func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
     return NSBitmapImageRep(
       bitmapDataPlanes: nil,
       pixelsWide: width,

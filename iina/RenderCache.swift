@@ -258,14 +258,15 @@ class RenderCache {
     static func makeImage(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, knobMinX: CGFloat, knobWidth: CGFloat,
                           currentValue: Double, maxValue: Double) -> CGImage {
       // - Set up calculations
-      let scaleFactor = RenderCache.shared.scaleFactor
+      let rc = RenderCache.shared
+      let scaleFactor = rc.scaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
-      let barHeight_Scaled = RenderCache.shared.barHeight * scaleFactor
-      let outerPaddingScaled = RenderCache.shared.barMarginRadius_Scaled
-      let cornerRadius_Scaled = RenderCache.shared.barCornerRadius_Scaled
-      let leftColor = RenderCache.shared.barColorLeft.cgColor
-      let rightColor = RenderCache.shared.barColorRight.cgColor
+      let barHeight_Scaled = rc.barHeight * scaleFactor
+      let outerPaddingScaled = rc.barMarginRadius_Scaled
+      let cornerRadius_Scaled = rc.barCornerRadius_Scaled
+      let leftColor = rc.barColorLeft.cgColor
+      let rightColor = rc.barColorRight.cgColor
 
       let currentValueRatio = currentValue / maxValue
       let dividingPointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
@@ -280,57 +281,12 @@ class RenderCache {
         // - Will clip out the knob
         leftClipMaxX = (knobMinX - 1) * scaleFactor
         rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
-        assert(cornerRadius_Scaled * 2 <= knobWidth * scaleFactor, "Volume bar corner radius is too wide: cannot clip using knob")
       }
 
       let hasLeft = leftClipMaxX - outerPaddingScaled > 0.0
       let hasRight = rightClipMinX + outerPaddingScaled < imgSizeScaled.width
 
       let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-
-        enum PillEdgeType {
-          case squareClip
-          /// Rounded edge. Needs gap
-          case bordersAnotherPill
-          /// Rounded edge. No gap
-          case noBorderingPill
-        }
-
-        /// Draws a single bar segment as rounded rect (pill), using specified gap between pills. Each gap is divided into 2 halves,
-        /// with the leading half stealing its width from the pill before it, and the trailing half subtracting width from the pill after it.
-        /// Doing it this way makes calculations easier, but ideally `halfInterPillGapWidth` will be an integer value to avoid splitting pixels.
-        func drawPill(_ barColor: CGColor, minX: CGFloat, maxX: CGFloat, halfInterPillGapWidth: CGFloat, leftEdge: PillEdgeType, rightEdge: PillEdgeType) {
-          cgc.beginPath()
-          var adjMinX: CGFloat = minX
-          switch leftEdge {
-          case .squareClip:
-            // Extend the path left outside of the clip rect by `cornerRadius_Scaled` so that the rounded part gets clipped out,
-            // leaving a square edge instead of rounded
-            adjMinX -= cornerRadius_Scaled
-          case .bordersAnotherPill:
-            // There was a prev pill. Start the path a little further right for the second half of the gap
-            adjMinX += halfInterPillGapWidth
-          case .noBorderingPill:
-            // No preceding pill. No need to adjust edge bound
-            break
-          }
-
-          var adjMaxX: CGFloat = maxX
-          switch rightEdge {
-          case .squareClip:
-            adjMaxX += cornerRadius_Scaled
-          case .bordersAnotherPill:
-            adjMaxX -= halfInterPillGapWidth
-          case .noBorderingPill:
-            break
-          }
-          let segment = CGRect(x: adjMinX, y: outerPaddingScaled,
-                               width: adjMaxX - adjMinX, height: barHeight_Scaled)
-          cgc.addPath(CGPath(roundedRect: segment, cornerWidth:  cornerRadius_Scaled, cornerHeight:  cornerRadius_Scaled, transform: nil))
-          cgc.setFillColor(barColor)
-          cgc.fillPath()
-        }
-
         if hasLeft {
           let leftClipRect = CGRect(x: 0, y: 0,
                                     width: leftClipMaxX,
@@ -339,12 +295,13 @@ class RenderCache {
           cgc.resetClip()
           cgc.clip(to: leftClipRect)
 
-          drawPill(leftColor,
-                   minX: outerPaddingScaled,
-                   maxX: leftClipMaxX,
-                   halfInterPillGapWidth: 0,
-                   leftEdge: .noBorderingPill,
-                   rightEdge: hasRight ? .squareClip : .noBorderingPill)
+          rc.drawPill(cgc, leftColor,
+                      minX: outerPaddingScaled,
+                      maxX: leftClipMaxX,
+                      interPillGapWidth: 0,
+                      height: barHeight_Scaled,
+                      leftEdge: .noBorderingPill,
+                      rightEdge: hasRight ? .squareClip : .noBorderingPill)
         }
 
         if hasRight {
@@ -357,12 +314,13 @@ class RenderCache {
           let lastSegMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
 
 
-          drawPill(rightColor,
-                   minX: rightClipMinX,
-                   maxX: lastSegMaxX,
-                   halfInterPillGapWidth: 0,
-                   leftEdge: hasLeft ? .squareClip : .noBorderingPill,
-                   rightEdge: .noBorderingPill)
+          rc.drawPill(cgc, rightColor,
+                      minX: rightClipMinX,
+                      maxX: lastSegMaxX,
+                      interPillGapWidth: 0,
+                      height: barHeight_Scaled,
+                      leftEdge: hasLeft ? .squareClip : .noBorderingPill,
+                      rightEdge: .noBorderingPill)
         }
       }
 
@@ -378,83 +336,50 @@ class RenderCache {
     init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
          progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
       image = Bar.makeImage(barWidth, screen: screen, darkMode: darkMode, clearBG: clearBG,
-                            knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
+                            knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
                             durationSec: durationSec, chapters, cachedRanges: cachedRanges)
     }
 
     static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, clearBG: Bool,
-                          knobMinX: CGFloat, knobWidth: CGFloat, progressRatio: CGFloat,
+                          knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
       // - Set up calculations
-      let scaleFactor = RenderCache.shared.scaleFactor
+      let rc = RenderCache.shared
+      let scaleFactor = rc.scaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
-      let barHeight_Scaled = RenderCache.shared.barHeight * scaleFactor
-      let outerPaddingScaled = RenderCache.shared.barMarginRadius_Scaled
-      let cornerRadius_Scaled = RenderCache.shared.barCornerRadius_Scaled
-      let leftColor = RenderCache.shared.barColorLeft.cgColor
-      let rightColor = RenderCache.shared.barColorRight.cgColor
+      let barHeight_Scaled = rc.barHeight * scaleFactor
+      let outerPaddingScaled = rc.barMarginRadius_Scaled
+      let leftColor = rc.barColorLeft.cgColor
+      let rightColor = rc.barColorRight.cgColor
       let chapterGapWidth = Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)
-      let halfChapterGapWidth: CGFloat = chapterGapWidth * 0.5
+//      let currentValueRatio = currentValue / maxValue
+      let dividingPointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
-      // - Will clip out the knob
-      let leftClipMaxX = (knobMinX - 1) * scaleFactor
-      let rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
-      assert(cornerRadius_Scaled * 2 <= knobWidth * scaleFactor, "Play bar corner radius is too wide: cannot clip using knob")
+      // Determine clipping rects (pixel whitelists)
+      let leftClipMaxX: CGFloat
+      let rightClipMinX: CGFloat
+      if clearBG {
+        leftClipMaxX = dividingPointX
+        rightClipMinX = dividingPointX
+      } else {
+        // - Will clip out the knob
+        leftClipMaxX = (knobMinX - 1) * scaleFactor
+        rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+      }
 
-      let leftClip = CGRect(x: 0, y: 0,
-                            width: leftClipMaxX,
-                            height: imgSizeScaled.height)
-      let rightClip = CGRect(x: rightClipMinX, y: 0,
-                             width: imgSizeScaled.width - rightClipMinX,
-                             height: imgSizeScaled.height)
+      let hasLeft = leftClipMaxX - outerPaddingScaled > 0.0
+      let hasRight = rightClipMinX + outerPaddingScaled < imgSizeScaled.width
+
+      let leftClipRect = CGRect(x: 0, y: 0,
+                                width: leftClipMaxX,
+                                height: imgSizeScaled.height)
+
+      let rightClipRect = CGRect(x: rightClipMinX, y: 0,
+                                 width: imgSizeScaled.width - rightClipMinX,
+                                 height: imgSizeScaled.height)
 
       let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        // Apply clip (pixel whitelist)
-        let minClippingWidth = cornerRadius_Scaled + outerPaddingScaled
-        if !clearBG || (leftClip.width > minClippingWidth && rightClip.width > minClippingWidth) {
-          if clearBG {
-            // Knob is not drawn. Need to fill in the gap which was clipped out.
-            cgc.resetClip()
-            // Draw square bar(s). For some reason the CGPath below does not include the first & last pixels in CGRect,
-            // so start on the clip boundary.
-            let startX = leftClipMaxX
-            let dividingPointX = outerPaddingScaled + (progressRatio * barWidth_Scaled)
-            let endX = rightClipMinX
-            let leftWidth = dividingPointX - startX
-            if leftWidth > 0.0 {
-              cgc.beginPath()
-              let segment = CGRect(x: startX, y: outerPaddingScaled,
-                                   width: leftWidth, height: barHeight_Scaled)
-              cgc.addPath(CGPath(rect: segment, transform: nil))
-              cgc.setFillColor(RenderCache.shared.barColorLeft.cgColor)
-              cgc.fillPath()
-            }
-            let rightWidth = endX - dividingPointX
-            if rightWidth > 0.0 {
-              cgc.beginPath()
-              let segment = CGRect(x: dividingPointX, y: outerPaddingScaled,
-                                   width: rightWidth, height: barHeight_Scaled)
-              cgc.addPath(CGPath(rect: segment, transform: nil))
-              cgc.setFillColor(RenderCache.shared.barColorRight.cgColor)
-              cgc.fillPath()
-            }
-          }
-
-          cgc.clip(to: [leftClip, rightClip])
-        }
-
-        // Draw bar segments, with gaps to exclude knob & chapter markers
-        func drawPill(_ barColor: CGColor, minX: CGFloat, maxX: CGFloat) {
-          cgc.beginPath()
-          let adjMinX: CGFloat = minX + halfChapterGapWidth
-          let adjMaxX: CGFloat = maxX - halfChapterGapWidth
-          let segment = CGRect(x: adjMinX, y: outerPaddingScaled,
-                               width: adjMaxX - adjMinX, height: barHeight_Scaled)
-          cgc.addPath(CGPath(roundedRect: segment, cornerWidth:  cornerRadius_Scaled, cornerHeight:  cornerRadius_Scaled, transform: nil))
-          cgc.setFillColor(barColor)
-          cgc.fillPath()
-        }
 
         // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
         // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
@@ -468,39 +393,72 @@ class RenderCache {
         let lastSegMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
         segsMaxX.append(lastSegMaxX)
 
-        // Draw all rounded bar segments
-        var isRightOfKnob = false
+        var segIndex = 0
         var segMinX = outerPaddingScaled
-        for segMaxX in segsMaxX {
-          if isRightOfKnob {
-            drawPill(rightColor, minX: segMinX, maxX: segMaxX)
-            segMinX = segMaxX  // for next loop
-          } else if segMaxX > knobMinX {
-            // (Check corner case: don't draw if no segment at all)
-            if leftClipMaxX - segMinX > cornerRadius_Scaled {
-              // Knob at least partially overlaps segment. Chop off segment at start of knob
-              let finalCutoff = lastSegMaxX - (cornerRadius_Scaled * 3)
-              if leftClipMaxX > finalCutoff {
-                // Corner case: too close to right side. Drawing a rounded segment won't fit. Just fill to end.
-                drawPill(leftColor, minX: segMinX, maxX: lastSegMaxX)
-                break
-              }
-              drawPill(leftColor, minX: segMinX, maxX: leftClipMaxX + scaleFactor + scaleFactor)
-            }
-            isRightOfKnob = true
-            segMinX = leftClipMaxX // for below
 
-            // Any segment left over after the knob?
-            if segMaxX > rightClipMinX {
-              drawPill(rightColor, minX: segMinX, maxX: segMaxX)
-              segMinX = segMaxX  // for next loop
+        var leftEdge: PillEdgeType = .noBorderingPill
+        var rightEdge: PillEdgeType = .bordersAnotherPill
+
+        if hasLeft {
+          // Left of knob
+          cgc.resetClip()
+          cgc.clip(to: leftClipRect)
+
+          while segIndex < segsMaxX.count {
+            let segMaxX = segsMaxX[segIndex]
+
+            if segIndex == segsMaxX.count - 1 {
+              // Is last pill
+              rightEdge = .noBorderingPill
+            } else if segMaxX >= knobMinX {
+              rightEdge = .squareClip
             }
-          } else {
-            // Left of knob
-            drawPill(leftColor, minX: segMinX, maxX: segMaxX)
-            segMinX = segMaxX  // for next loop
+            rc.drawPill(cgc, leftColor,
+                        minX: segMinX, maxX: segMaxX,
+                        interPillGapWidth: chapterGapWidth,
+                        height: barHeight_Scaled,
+                        leftEdge: leftEdge,
+                        rightEdge: rightEdge)
+
+            if rightEdge == .bordersAnotherPill {
+              // Set for next loop
+              segMinX = segMaxX
+              leftEdge = .bordersAnotherPill
+              segIndex += 1
+            } else {
+              leftEdge = .squareClip
+              rightEdge = .bordersAnotherPill
+              break
+            }
           }
         }
+
+        if hasRight {
+          // Right of knob (or just unfinished progress, if no knob)
+          cgc.resetClip()
+          cgc.clip(to: rightClipRect)
+
+          while segIndex < segsMaxX.count {
+            let segMaxX = segsMaxX[segIndex]
+
+            if segIndex == segsMaxX.count - 1 {
+              rightEdge = .noBorderingPill
+            }
+
+            rc.drawPill(cgc, rightColor,
+                        minX: segMinX, maxX: segMaxX,
+                        interPillGapWidth: chapterGapWidth,
+                        height: barHeight_Scaled,
+                        leftEdge: leftEdge,
+                        rightEdge: rightEdge)
+
+            segIndex += 1
+            // For next loop
+            segMinX = segMaxX
+            leftEdge = .bordersAnotherPill
+          }
+        }
+
       }  // end first img
 
       guard !cachedRanges.isEmpty else { return barImg }
@@ -511,24 +469,21 @@ class RenderCache {
       let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
         if !clearBG {
           // Apply clip (pixel whitelist) to avoid drawing over the knob
-          cgc.clip(to: [leftClip, rightClip])
+          cgc.clip(to: [leftClipRect, rightClipRect])
         }
 
-        let leftCachedColor = leftColor
+        let leftCachedColor = exaggerateColor(leftColor)
         let rightCachedColor = exaggerateColor(rightColor)
 
-        var isRightOfKnob = false
         var rectsLeft: [NSRect] = []
         var rectsRight: [NSRect] = []
         for cachedRange in cachedRanges.sorted(by: { $0.0 < $1.0 }) {
           let startX: CGFloat = cachedRange.0 / durationSec * barWidth_Scaled
           let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
-          if isRightOfKnob || startX > leftClipMaxX {
-            isRightOfKnob = true
+          if startX > leftClipMaxX {
             rectsRight.append(CGRect(x: startX, y: outerPaddingScaled,
                                      width: endX - startX, height: barHeight_Scaled))
           } else if endX > leftClipMaxX {
-            isRightOfKnob = true
             rectsLeft.append(CGRect(x: startX, y: outerPaddingScaled,
                                     width: leftClipMaxX - startX, height: barHeight_Scaled))
 
