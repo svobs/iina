@@ -59,6 +59,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   @Atomic private var reloadTicketCounter: Int = 0
   private var isInitialLoadDone = false
 
+  private var loadingMsgDelayTimer: Timer? = nil
+
   private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
   private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
 
@@ -89,8 +91,10 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
         .init(.iinaHistoryUpdated) { [self] _ in
           log.verbose("History window received iinaHistoryUpdated; will reload data")
           // Force full status reload:
-          lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-          reloadData(silent: true)
+          backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+            lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+            reloadData(silent: true)
+          }
         },
 
         .init(.iinaFileHistoryDidUpdate) { [self] note in
@@ -101,7 +105,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
           }
           log.verbose("History window got iinaFileHistoryDidUpdate; will reload watch-later for URL & possibly reload table")
 
-          backgroundQueue.async { [self] in
+          backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
             guard fileExistsMap.removeValue(forKey: url) != nil else { return }
             reloadData(silent: true)
           }
@@ -151,8 +155,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     assert(isWindowLoaded, "Expected History window to be loaded!")
 
     if !isInitialLoadDone {
-      // Expand to show loading placeholder
-      outlineView.expandItem(nil, expandChildren: true)
+      showLoadingUI()
 
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with initial history load.
       HistoryController.shared.async { [self] in
@@ -192,17 +195,16 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       return $0
     }
 
-
     if isInitialLoadDone {
       DispatchQueue.main.async { [self] in
         if !silent {
-          showLoadingUI()
+          // Schedule timer to show loading msg if loading takes too long
+          loadingMsgDelayTimer?.invalidate()
+          loadingMsgDelayTimer = Timer.scheduledTimer(timeInterval: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay,
+                                                         target: self, selector: #selector(showLoadingUI), userInfo: nil, repeats: false)
         }
 
-        // Expand to show loading placeholder
-        outlineView.expandItem(nil, expandChildren: true)
-
-        backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+        backgroundQueue.async { [self] in
           guard isTicketStillValid(ticket) else { return }
           _reloadData(ticket: ticket)
         }
@@ -215,10 +217,12 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   }
 
   /// Resets table to loading msg
-  private func showLoadingUI() {
+  @objc private func showLoadingUI() {
     historyData = HistoryWindowController.loadingData
     historyDataKeys = [loadingKey]
     outlineView.reloadData()
+    // Expand to show loading placeholder
+    outlineView.expandItem(nil, expandChildren: true)
   }
 
   private func _reloadData(ticket: Int) {
@@ -254,6 +258,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     DispatchQueue.main.async { [self] in
       guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
 
+      loadingMsgDelayTimer?.invalidate()
+      
       // Update data and reload UI
       historyData = historyDataUpdated
       historyDataKeys = historyDataKeysUpdated
@@ -306,8 +312,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     if count > 0 {
       DispatchQueue.main.async { [self] in
         // Reload table again to refresh statuses
-        outlineView.reloadData()
-        outlineView.expandItem(nil, expandChildren: true)
+        outlineView.reloadExistingRows(reselectRowsAfter: true)
         log.verbose("Reloaded History table with updated fileExists data")
       }
     }

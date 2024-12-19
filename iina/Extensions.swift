@@ -1786,6 +1786,34 @@ class IINAWindowController: NSWindowController {
   }
 }
 
+extension NSOutlineView {
+  // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
+  // This will preserve the selection indexes (whereas reloadData() will not)
+  func reloadExistingRows(reselectRowsAfter: Bool, usingNewSelection newRowIndexes: IndexSet? = nil) {
+    let selectedRows = newRowIndexes ?? self.selectedRowIndexes
+    Logger.log.verbose("Reloading existing rows\(reselectRowsAfter ? " (will re-select \(selectedRows) after)" : "")")
+    reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
+    if reselectRowsAfter {
+      // Fires change listener...
+      selectApprovedRowIndexes(selectedRows, byExtendingSelection: false)
+    }
+  }
+
+  func selectApprovedRowIndexes(_ newSelectedRowIndexes: IndexSet, byExtendingSelection: Bool = false) {
+    // It seems that `selectionIndexesForProposedSelection` needs to be called explicitly
+    // in order to keep enforcing selection rules.
+    if let approvedRows = self.delegate?.outlineView?(self, selectionIndexesForProposedSelection: newSelectedRowIndexes) {
+      Logger.log.verbose("Updating table selection to approved indexes: \(approvedRows.map{$0})")
+      self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
+    } else {
+      Logger.log.verbose("Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})")
+      self.selectRowIndexes(newSelectedRowIndexes, byExtendingSelection: byExtendingSelection)
+    }
+  }
+
+
+}
+
 extension NSTableCellView {
   func setTitle(_ title: String, textColor: NSColor) {
     textField?.setText(title, textColor: textColor)

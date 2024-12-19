@@ -159,6 +159,8 @@ struct Constants {
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0
 
+    static let historyTableDelayBeforeLoadingMsgDisplay = 0.25
+
     /// For Force Touch.
     static let minimumPressDuration: TimeInt = 0.5
 
