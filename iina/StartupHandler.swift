@@ -175,14 +175,13 @@ class StartupHandler {
         continue
       }
 
-      // Rebuild window maps as we go:
+      // Add to list of windows to wait for, so we can show them all nicely
+      wcsToRestore.append(wc)
+      // Rebuild UIState window sets as we go:
       if savedWindow.isMinimized {
-        // No need worry about partial draws while minimized, so no need to add to wcsToRestore
         wc.window?.miniaturize(self)
         UIState.shared.windowsMinimized.insert(savedWindow.saveName.string)
       } else {
-        // Add to list of windows to wait for, so we can show them all nicely
-        wcsToRestore.append(wc)
         UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
       }
     }
@@ -337,13 +336,14 @@ class StartupHandler {
 
     var prevWindowNumber: Int? = nil
     for wc in wcsToRestore {
+      let windowIsMinimized = (wc.window?.isMiniaturized ?? false)
+      guard !windowIsMinimized else { continue }
+      
       if let prevWindowNumber {
         wc.window?.order(.above, relativeTo: prevWindowNumber)
       }
-      if !(wc.window?.isMiniaturized ?? false) {
-        prevWindowNumber = wc.window?.windowNumber
-        wc.showWindow(self)
-      }
+      prevWindowNumber = wc.window?.windowNumber
+      wc.showWindow(self)
     }
     if let wcForOpenFile = wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
       wcForOpenFile.showWindow(self)  // open last, thus making frontmost
@@ -357,7 +357,7 @@ class StartupHandler {
     let didRestoreSomething = !wcsToRestore.isEmpty
 
     if Preference.bool(for: .isRestoreInProgress) {
-      log.verbose("Done restoring windows")
+      log.verbose("Done restoring windows (\(wcsToRestore.count))")
       Preference.set(false, for: .isRestoreInProgress)
     }
 
@@ -404,14 +404,27 @@ class StartupHandler {
 
       // Show all windows if ready
       showWindowsIfReady()
+    } else if removeWindowFromRestoreQueue(wc) {
+      log.verbose("OpenWindow: removed window from restore queue: \(window.savedStateName.quoted)")
     } else if window.isMiniaturized {
-      log.verbose("OpenWindow: demiseiniaturizing window \(window.savedStateName.quoted)")
+      log.verbose("OpenWindow: deminiaturizing window \(window.savedStateName.quoted)")
       // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)
       window.deminiaturize(self)
     } else {
       log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
       wc.showWindow(window)
     }
+  }
+
+  func removeWindowFromRestoreQueue(_ wc: NSWindowController) -> Bool {
+    assert(DispatchQueue.isExecutingIn(.main))
+    let oldList = wcsToRestore
+    let newList = oldList.filter{ $0 != wc }
+    if newList.count < oldList.count {
+      wcsToRestore = newList
+      return true
+    }
+    return false
   }
 
   /// Window failed to load. Stop waiting for it
