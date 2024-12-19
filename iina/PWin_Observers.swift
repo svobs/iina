@@ -26,6 +26,7 @@ extension PlayerWindowController {
       .playerWindowOpacity,
       .showRemainingTime,
       .maxVolume,
+      .showCachedRangesInSlider,
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -153,6 +154,10 @@ extension PlayerWindowController {
     case .showRemainingTime:
       if let newValue = newValue as? Bool {
         rightTimeLabel.mode = newValue ? .remaining : .duration
+      }
+    case .showCachedRangesInSlider:
+      if let newValue = newValue as? Bool, !newValue {
+        player.cachedRanges = []
       }
     case .maxVolume:
       if let newValue = newValue as? Int {
