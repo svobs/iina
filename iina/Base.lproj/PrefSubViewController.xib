@@ -102,7 +102,7 @@
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="C4b-sm-2kc">
                                     <rect key="frame" x="-2" y="122" width="298" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Subtitles have priority when filename containing:" id="7pf-Kb-TNr">
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Subtitles have priority when filename contains:" id="7pf-Kb-TNr">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -133,7 +133,7 @@
                                 </textField>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Qkw-vv-CeA">
                                     <rect key="frame" x="-2" y="56" width="274" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Also search subtitles in following directories:" id="QsS-wD-2hY">
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Also search for subtitles in the following directories:" id="QsS-wD-2hY">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -415,7 +415,7 @@
                 </stackView>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pN7-Bv-pLw">
                     <rect key="frame" x="118" y="41" width="248" height="18"/>
-                    <buttonCell key="cell" type="check" title="Search online subtitles automatically" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="C3p-uP-8u8">
+                    <buttonCell key="cell" type="check" title="Search for online subtitles automatically" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="C3p-uP-8u8">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>

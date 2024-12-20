@@ -17,7 +17,7 @@
 "6i0-Sx-V7F.title" = "Bottom";
 
 /* Class = "NSTextFieldCell"; title = "Subtitles have priority when filename containing:"; ObjectID = "7pf-Kb-TNr"; */
-"7pf-Kb-TNr.title" = "Subtitles have priority when filename containing:";
+"7pf-Kb-TNr.title" = "Subtitles have priority when filename contains:";
 
 /* Class = "NSButtonCell"; title = "Scale subtitles with window size"; ObjectID = "8hj-ki-R0h"; */
 "8hj-ki-R0h.title" = "Scale subtitles with window size";
@@ -38,7 +38,7 @@
 "BgE-Kk-MXC.title" = "Shadow";
 
 /* Class = "NSButtonCell"; title = "Search online subtitles automatically"; ObjectID = "C3p-uP-8u8"; */
-"C3p-uP-8u8.title" = "Search online subtitles automatically";
+"C3p-uP-8u8.title" = "Search for online subtitles automatically";
 
 /* Class = "NSTextFieldCell"; title = "Font:"; ObjectID = "C4C-XP-i2S"; */
 "C4C-XP-i2S.title" = "Font:";
@@ -67,8 +67,8 @@
 /* Class = "NSTextFieldCell"; title = "Text subtitles:"; ObjectID = "Qda-dp-nhg"; */
 "Qda-dp-nhg.title" = "Text Subtitles:";
 
-/* Class = "NSTextFieldCell"; title = "Also search subtitles in following directories:"; ObjectID = "QsS-wD-2hY"; */
-"QsS-wD-2hY.title" = "Also search subtitles in following directories:";
+/* Class = "NSTextFieldCell"; title = "Also search for subtitles in the following directories:"; ObjectID = "QsS-wD-2hY"; */
+"QsS-wD-2hY.title" = "Also search for subtitles in the following directories:";
 
 /* Class = "NSTextFieldCell"; title = "Color:"; ObjectID = "SIh-Sv-6XI"; */
 "SIh-Sv-6XI.title" = "Color:";
