@@ -20,6 +20,13 @@ extension RenderCache {
   /// with the leading half stealing its width from the pill before it, and the trailing half subtracting width from the pill after it.
   func drawPill(_ cgc: CGContext, _ fillColor: CGColor, minX: CGFloat, maxX: CGFloat, interPillGapWidth: CGFloat, height: CGFloat,
                 leftEdge: PillEdgeType, rightEdge: PillEdgeType) {
+    addPillPath(cgc, minX: minX, maxX: maxX, interPillGapWidth: interPillGapWidth, height: height, leftEdge: leftEdge, rightEdge: rightEdge)
+    cgc.setFillColor(fillColor)
+    cgc.fillPath()
+  }
+
+  func addPillPath(_ cgc: CGContext, minX: CGFloat, maxX: CGFloat, interPillGapWidth: CGFloat, height: CGFloat,
+                leftEdge: PillEdgeType, rightEdge: PillEdgeType) {
     let outerPaddingScaled = RenderCache.shared.barMarginRadius_Scaled
     let cornerRadius_Scaled = RenderCache.shared.barCornerRadius_Scaled
 
@@ -50,8 +57,5 @@ extension RenderCache {
     let segment = CGRect(x: adjMinX, y: outerPaddingScaled,
                          width: adjMaxX - adjMinX, height: height)
     cgc.addPath(CGPath(roundedRect: segment, cornerWidth:  cornerRadius_Scaled, cornerHeight:  cornerRadius_Scaled, transform: nil))
-    cgc.setFillColor(fillColor)
-    cgc.fillPath()
   }
-
 }

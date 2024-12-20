@@ -264,9 +264,10 @@ class RenderCache {
       let barWidth_Scaled = barWidth * scaleFactor
       let barHeight_Scaled = rc.barHeight * scaleFactor
       let outerPaddingScaled = rc.barMarginRadius_Scaled
-      let cornerRadius_Scaled = rc.barCornerRadius_Scaled
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
+      let barMinX = outerPaddingScaled
+      let barMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
 
       let currentValueRatio = currentValue / maxValue
       let dividingPointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
@@ -294,14 +295,21 @@ class RenderCache {
           // Left of knob
           cgc.resetClip()
           cgc.clip(to: leftClipRect)
+          rc.addPillPath(cgc, minX: barMinX,
+                         maxX: barMaxX,
+                         interPillGapWidth: 0,
+                         height: barHeight_Scaled,
+                         leftEdge: .noBorderingPill,
+                         rightEdge: .noBorderingPill)
+          cgc.clip()
 
           rc.drawPill(cgc, leftColor,
-                      minX: outerPaddingScaled,
-                      maxX: leftClipMaxX,
+                      minX: barMinX,
+                      maxX: barMaxX,
                       interPillGapWidth: 0,
                       height: barHeight_Scaled,
                       leftEdge: .noBorderingPill,
-                      rightEdge: hasRight ? .squareClip : .noBorderingPill)
+                      rightEdge: .noBorderingPill)
         }
 
         if hasRight {
@@ -310,16 +318,20 @@ class RenderCache {
                                      height: imgSizeScaled.height)
           cgc.resetClip()
           cgc.clip(to: rightClipRect)
-          // Add right end of bar (don't forget to subtract left & right padding from img)
-          let lastSegMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
-
-
+          rc.addPillPath(cgc, minX: barMinX,
+                         maxX: barMaxX,
+                         interPillGapWidth: 0,
+                         height: barHeight_Scaled,
+                         leftEdge: .noBorderingPill,
+                         rightEdge: .noBorderingPill)
+          cgc.clip()
+          
           rc.drawPill(cgc, rightColor,
-                      minX: rightClipMinX,
-                      maxX: lastSegMaxX,
+                      minX: barMinX,
+                      maxX: barMaxX,
                       interPillGapWidth: 0,
                       height: barHeight_Scaled,
-                      leftEdge: hasLeft ? .squareClip : .noBorderingPill,
+                      leftEdge: .noBorderingPill,
                       rightEdge: .noBorderingPill)
         }
       }
@@ -352,8 +364,7 @@ class RenderCache {
       let outerPaddingScaled = rc.barMarginRadius_Scaled
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
-      let chapterGapWidth = Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)
-//      let currentValueRatio = currentValue / maxValue
+      let chapterGapWidth = (Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)).rounded()
       let dividingPointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
       // Determine clipping rects (pixel whitelists)
@@ -404,14 +415,24 @@ class RenderCache {
           cgc.resetClip()
           cgc.clip(to: leftClipRect)
 
-          while segIndex < segsMaxX.count {
+          var done = false
+          while !done && segIndex < segsMaxX.count {
             let segMaxX = segsMaxX[segIndex]
 
             if segIndex == segsMaxX.count - 1 {
               // Is last pill
               rightEdge = .noBorderingPill
-            } else if segMaxX >= knobMinX {
-              rightEdge = .squareClip
+              done = true
+            } else if segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
+              // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
+              rc.addPillPath(cgc, minX: segMinX,
+                             maxX: segMaxX,
+                             interPillGapWidth: chapterGapWidth,
+                             height: barHeight_Scaled,
+                             leftEdge: leftEdge,
+                             rightEdge: rightEdge)
+              cgc.clip()
+              done = true
             }
             rc.drawPill(cgc, leftColor,
                         minX: segMinX, maxX: segMaxX,
@@ -420,15 +441,13 @@ class RenderCache {
                         leftEdge: leftEdge,
                         rightEdge: rightEdge)
 
-            if rightEdge == .bordersAnotherPill {
-              // Set for next loop
+            // Set for all but first pill
+            leftEdge = .bordersAnotherPill
+
+            if !done {
+              // Advance for next loop
               segMinX = segMaxX
-              leftEdge = .bordersAnotherPill
               segIndex += 1
-            } else {
-              leftEdge = .squareClip
-              rightEdge = .bordersAnotherPill
-              break
             }
           }
         }
