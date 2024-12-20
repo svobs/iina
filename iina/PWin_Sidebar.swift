@@ -420,8 +420,8 @@ extension PlayerWindowController {
           sidebarWidth = 0
         }
       }
-      updateLeadingSidebarWidth(to: sidebarWidth, visible: shouldShow, placement: leadingSidebar.placement,
-                                ΔWindowWidth: ΔWindowWidth)
+      updateLeadingSidebarWidthConstraints(to: sidebarWidth, visible: shouldShow, placement: leadingSidebar.placement,
+                                           ΔWindowWidth: ΔWindowWidth)
       if leadingSidebar.placement == .outsideViewport {
         leadingSidebarTrailingBorder.isHidden = !shouldShow
       }
@@ -443,8 +443,8 @@ extension PlayerWindowController {
           sidebarWidth = 0
         }
       }
-      updateTrailingSidebarWidth(to: sidebarWidth, visible: shouldShow, placement: trailingSidebar.placement,
-                                 ΔWindowWidth: ΔWindowWidth)
+      updateTrailingSidebarWidthConstraints(to: sidebarWidth, visible: shouldShow, placement: trailingSidebar.placement,
+                                            ΔWindowWidth: ΔWindowWidth)
       if trailingSidebar.placement == .outsideViewport {
         trailingSidebarLeadingBorder.isHidden = !shouldShow
       }
@@ -623,7 +623,7 @@ extension PlayerWindowController {
     }
   }
 
-  private func updateLeadingSidebarWidth(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
+  private func updateLeadingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
                                          ΔWindowWidth: CGFloat) {
     log.verbose("\(visible ? "Showing" : "Hiding") leadingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
 
@@ -662,8 +662,9 @@ extension PlayerWindowController {
     }
   }
 
-  private func updateTrailingSidebarWidth(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
-                                          ΔWindowWidth: CGFloat) {
+  private func updateTrailingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool,
+                                                     placement: Preference.PanelPlacement,
+                                                     ΔWindowWidth: CGFloat) {
     log.verbose("\(visible ? "Showing" : "Hiding") trailingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
     let coefficients = getTrailingSidebarWidthCoefficients(visible: visible, placement: placement, ΔWindowWidth: ΔWindowWidth)
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
@@ -899,6 +900,13 @@ extension PlayerWindowController {
         case .musicMode, .windowedInteractive, .fullScreenInteractive:
           Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
         }
+
+        // Update currentLayout with new playlist width
+        let oldSidebarState = currentLayout.spec.moreSidebarState
+        let newSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
+                                                       selectedSubSegment: oldSidebarState.selectedSubSegment)
+        let newSpec = currentLayout.spec.clone(moreSidebarState: newSidebarState)
+        currentLayout = LayoutState.buildFrom(newSpec)
       }
       return true
     }
@@ -950,8 +958,9 @@ extension PlayerWindowController {
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
 
-    updateLeadingSidebarWidth(to: newPlaylistWidth, visible: true, placement: currentLayout.leadingSidebarPlacement,
-                              ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
+    updateLeadingSidebarWidthConstraints(to: newPlaylistWidth, visible: true,
+                                         placement: currentLayout.leadingSidebarPlacement,
+                                         ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
     return newGeo
   }
 
@@ -999,8 +1008,9 @@ extension PlayerWindowController {
       self.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
 
-    updateTrailingSidebarWidth(to: newPlaylistWidth, visible: true, placement: currentLayout.trailingSidebarPlacement,
-                               ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
+    updateTrailingSidebarWidthConstraints(to: newPlaylistWidth, visible: true,
+                                          placement: currentLayout.trailingSidebarPlacement,
+                                          ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
 
     return newGeo
   }

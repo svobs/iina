@@ -209,7 +209,7 @@ extension PlayerWindowController {
       return
     }
     let didResizeSidebar = resizeSidebar(with: event)
-    guard !didResizeSidebar else {
+    if didResizeSidebar {
       return
     }
 
