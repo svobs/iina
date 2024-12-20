@@ -20,6 +20,8 @@ final class PlaySlider: ScrollableSlider {
   // Redrawing the slider bar is a very expensive operation, so do not redraw it if there is no noticeable change.
   static let minPixelChangeThreshold: CGFloat = 1.0
 
+  var isMouseHovering = false
+
   /// Knob representing the A loop point for the mpv A-B loop feature.
   var abLoopA: PlaySliderLoopKnob { abLoopAKnob }
 

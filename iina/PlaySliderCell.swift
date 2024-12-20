@@ -84,10 +84,11 @@ class PlaySliderCell: NSSliderCell {
     guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
-    let slider = self.controlView as! NSSlider
+    let slider = self.controlView as! PlaySlider
     let progressRatio = slider.progressRatio
+    let barHeight = /*slider.isMouseHovering ? RenderCache.shared.barHeight * 2 :*/ RenderCache.shared.barHeight
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawPlayBar(in: rect, darkMode: appearance.isDark, clearBG: isClearBG,
+      RenderCache.shared.drawPlayBar(in: rect, barHeight: barHeight, darkMode: appearance.isDark, clearBG: isClearBG,
                                      screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
                                      durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
     }

@@ -216,8 +216,11 @@ class RenderCache {
     }
   }
 
-  func drawPlayBar(in barRect: NSRect, darkMode: Bool, clearBG: Bool, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
+  func drawPlayBar(in barRect: NSRect, barHeight: CGFloat,
+                   darkMode: Bool, clearBG: Bool, screen: NSScreen,
+                   knobMinX: CGFloat, knobWidth: CGFloat,
                    progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
+//    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
     var drawRect = Bar.imageRect(in: barRect)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
@@ -225,14 +228,16 @@ class RenderCache {
                         width: drawRect.width,
                         height: drawRect.height - 2)
     }
-    let bar = Bar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, screen: screen,
+    let bar = Bar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, barHeight: barHeight, screen: screen,
                   knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
                   durationSec: durationSec, chapters: chapters, cachedRanges: cachedRanges)
     NSGraphicsContext.current!.cgContext.draw(bar.image, in: drawRect)
   }
 
-  func drawVolumeBar(in barRect: NSRect, darkMode: Bool, clearBG: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
+  func drawVolumeBar(in barRect: NSRect, barHeight: CGFloat,
+                     darkMode: Bool, clearBG: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
                      currentValue: CGFloat, maxValue: CGFloat) {
+//    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
     var drawRect = Bar.imageRect(in: barRect)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
@@ -240,7 +245,8 @@ class RenderCache {
                         width: drawRect.width,
                         height: drawRect.height - 2)
     }
-    let volBar = VolumeBar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, knobMinX: knobMinX, knobWidth: knobWidth,
+    let volBar = VolumeBar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, barHeight: barHeight,
+                           knobMinX: knobMinX, knobWidth: knobWidth,
                            currentValue: currentValue, maxValue: maxValue)
     NSGraphicsContext.current!.cgContext.draw(volBar.image, in: drawRect)
   }
@@ -249,20 +255,24 @@ class RenderCache {
     let image: CGImage
 
     /// `barWidth` does not include added leading or trailing margin
-    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, knobMinX: CGFloat, knobWidth: CGFloat,
+    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, barHeight: CGFloat,
+         knobMinX: CGFloat, knobWidth: CGFloat,
          currentValue: Double, maxValue: Double) {
-      image = VolumeBar.makeImage(darkMode: darkMode, clearBG: clearBG, barWidth: barWidth, knobMinX: knobMinX, knobWidth: knobWidth,
+      image = VolumeBar.makeImage(darkMode: darkMode, clearBG: clearBG, barWidth: barWidth, barHeight: barHeight,
+                                  knobMinX: knobMinX, knobWidth: knobWidth,
                                   currentValue: currentValue, maxValue: maxValue)
     }
 
-    static func makeImage(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, knobMinX: CGFloat, knobWidth: CGFloat,
+    static func makeImage(darkMode: Bool, clearBG: Bool,
+                          barWidth: CGFloat, barHeight: CGFloat,
+                          knobMinX: CGFloat, knobWidth: CGFloat,
                           currentValue: Double, maxValue: Double) -> CGImage {
       // - Set up calculations
       let rc = RenderCache.shared
       let scaleFactor = rc.scaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
-      let barHeight_Scaled = rc.barHeight * scaleFactor
+      let barHeight_Scaled = barHeight * scaleFactor
       let outerPaddingScaled = rc.barMarginRadius_Scaled
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
@@ -325,7 +335,7 @@ class RenderCache {
                          leftEdge: .noBorderingPill,
                          rightEdge: .noBorderingPill)
           cgc.clip()
-          
+
           rc.drawPill(cgc, rightColor,
                       minX: barMinX,
                       maxX: barMaxX,
@@ -345,14 +355,17 @@ class RenderCache {
     let image: CGImage
 
     /// `barWidth` does not include added leading or trailing margin
-    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
+    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, barHeight: CGFloat,
+         screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
          progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
-      image = Bar.makeImage(barWidth, screen: screen, darkMode: darkMode, clearBG: clearBG,
+      image = Bar.makeImage(barWidth: barWidth, barHeight: barHeight,
+                            screen: screen, darkMode: darkMode, clearBG: clearBG,
                             knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
                             durationSec: durationSec, chapters, cachedRanges: cachedRanges)
     }
 
-    static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, clearBG: Bool,
+    static func makeImage(barWidth: CGFloat, barHeight: CGFloat,
+                          screen: NSScreen, darkMode: Bool, clearBG: Bool,
                           knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
       // - Set up calculations
@@ -360,7 +373,7 @@ class RenderCache {
       let scaleFactor = rc.scaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
-      let barHeight_Scaled = rc.barHeight * scaleFactor
+      let barHeight_Scaled = barHeight * scaleFactor
       let outerPaddingScaled = rc.barMarginRadius_Scaled
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor

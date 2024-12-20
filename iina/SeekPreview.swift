@@ -266,9 +266,6 @@ extension PlayerWindowController {
           currentLayout.hasControlBar else {
       return false
     }
-    // Although isScrollingOrDraggingPlaySlider can be true when scrolling volume,
-    // there shouldn't be enough overlap to create a problem. Too lazy to get this
-    // perfect at this stage.
     return isScrollingOrDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
   }
 
@@ -398,9 +395,9 @@ extension PlayerWindowController {
     }
 
     let didShow = seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
-                                               currentControlBar: currentControlBar, geo.video,
-                                               viewportSize: viewportView.frame.size,
-                                               isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+                                          currentControlBar: currentControlBar, geo.video,
+                                          viewportSize: viewportView.frame.size,
+                                          isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
     guard didShow else { return }
     seekPreview.animationState = .shown
     // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire

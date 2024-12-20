@@ -32,7 +32,8 @@ class VolumeSliderCell: NSSliderCell {
     guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance else { return }
     let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawVolumeBar(in: rect, darkMode: appearance.isDark, clearBG: isClearBG,
+      RenderCache.shared.drawVolumeBar(in: rect, barHeight: RenderCache.shared.barHeight,
+                                       darkMode: appearance.isDark, clearBG: isClearBG,
                                        knobMinX: knobMinX, knobWidth: knobWidth, currentValue: doubleValue, maxValue: maxValue)
     }
   }

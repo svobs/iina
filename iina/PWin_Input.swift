@@ -460,8 +460,12 @@ extension PlayerWindowController {
     }
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
+//      playSlider.isMouseHovering = true
+//      playSlider.needsDisplay = true
       refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     } else {
+//      playSlider.isMouseHovering = false
+//      playSlider.needsDisplay = true
       hideSeekPreview(animated: false)
     }
 
