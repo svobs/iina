@@ -80,9 +80,6 @@ struct AppData {
   static let disableAnimationsHelpLink = "https://developer.apple.com/design/human-interface-guidelines/accessibility#Motion"
   static let gainAdjustmentHelpLink = "https://mpv.io/manual/stable/#options-replaygain"
   static let audioDriverHellpLink = "https://mpv.io/manual/stable/#audio-output-drivers-coreaudio"
-
-  /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
-  static let minVideoSize = NSMakeSize(8, 8)
 }
 
 typealias Str = String
@@ -255,6 +252,9 @@ struct Constants {
 
     // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
     static let maxConfFileLinesAccepted = 10000
+
+    /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
+    static let minVideoSize = NSMakeSize(8, 8)
   }
   /// Based on mpv default
   struct DefaultVideoSize {
@@ -262,6 +262,7 @@ struct Constants {
     static let rawHeight: Int = 480
     static let aspectLabel = "4:3"
   }
+
   struct WindowedMode {
     static let minViewportSize = CGSize(width: 285, height: 120)
   }

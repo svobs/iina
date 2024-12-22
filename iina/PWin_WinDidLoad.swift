@@ -35,7 +35,7 @@ extension PlayerWindowController {
     window.initialFirstResponder = nil
 
     // size
-    window.minSize = AppData.minVideoSize
+    window.minSize = Constants.SizeLimit.minVideoSize
 
     // need to deal with control bar, so we handle it manually
     window.isMovableByWindowBackground  = false

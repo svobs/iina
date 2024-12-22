@@ -280,14 +280,14 @@ class RenderCache {
       let barMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
 
       let currentValueRatio = currentValue / maxValue
-      let dividingPointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
+      let currentValuePointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
       // Determine clipping rects (pixel whitelists)
       let leftClipMaxX: CGFloat
       let rightClipMinX: CGFloat
       if clearBG {
-        leftClipMaxX = dividingPointX
-        rightClipMinX = dividingPointX
+        leftClipMaxX = currentValuePointX
+        rightClipMinX = currentValuePointX
       } else {
         // - Will clip out the knob
         leftClipMaxX = (knobMinX - 1) * scaleFactor
@@ -298,13 +298,7 @@ class RenderCache {
       let hasRight = rightClipMinX + outerPaddingScaled < imgSizeScaled.width
 
       let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        if hasLeft {
-          let leftClipRect = CGRect(x: 0, y: 0,
-                                    width: leftClipMaxX,
-                                    height: imgSizeScaled.height)
-          // Left of knob
-          cgc.resetClip()
-          cgc.clip(to: leftClipRect)
+        func drawEntireBar(color: CGColor) {
           rc.addPillPath(cgc, minX: barMinX,
                          maxX: barMaxX,
                          interPillGapWidth: 0,
@@ -322,27 +316,23 @@ class RenderCache {
                       rightEdge: .noBorderingPill)
         }
 
+        if hasLeft {
+          let leftClipRect = CGRect(x: 0, y: 0,
+                                    width: leftClipMaxX,
+                                    height: imgSizeScaled.height)
+          // Left of knob
+          cgc.resetClip()
+          cgc.clip(to: leftClipRect)
+          drawEntireBar(color: leftColor)
+        }
+
         if hasRight {
           let rightClipRect = CGRect(x: rightClipMinX, y: 0,
                                      width: imgSizeScaled.width - rightClipMinX,
                                      height: imgSizeScaled.height)
           cgc.resetClip()
           cgc.clip(to: rightClipRect)
-          rc.addPillPath(cgc, minX: barMinX,
-                         maxX: barMaxX,
-                         interPillGapWidth: 0,
-                         height: barHeight_Scaled,
-                         leftEdge: .noBorderingPill,
-                         rightEdge: .noBorderingPill)
-          cgc.clip()
-
-          rc.drawPill(cgc, rightColor,
-                      minX: barMinX,
-                      maxX: barMaxX,
-                      interPillGapWidth: 0,
-                      height: barHeight_Scaled,
-                      leftEdge: .noBorderingPill,
-                      rightEdge: .noBorderingPill)
+          drawEntireBar(color: rightColor)
         }
       }
 
@@ -378,14 +368,14 @@ class RenderCache {
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
       let chapterGapWidth = (Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)).rounded()
-      let dividingPointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
+      let currentValuePointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
       // Determine clipping rects (pixel whitelists)
       let leftClipMaxX: CGFloat
       let rightClipMinX: CGFloat
       if clearBG {
-        leftClipMaxX = dividingPointX
-        rightClipMinX = dividingPointX
+        leftClipMaxX = currentValuePointX
+        rightClipMinX = currentValuePointX
       } else {
         // - Will clip out the knob
         leftClipMaxX = (knobMinX - 1) * scaleFactor
