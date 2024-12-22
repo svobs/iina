@@ -25,7 +25,7 @@ class PrefGeneralViewController: PreferenceViewController, PreferenceWindowEmbed
   }
 
   override var sectionViews: [NSView] {
-    return [behaviorView, playlistView, screenshotsView]
+    return [behaviorView, playlistView, screenshotsView, updatesView]
   }
 
   @IBOutlet var behaviorView: NSView!

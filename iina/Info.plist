@@ -1341,8 +1341,6 @@
 	<string>IINA_BUILD_COMMIT</string>
 	<key>com.iina-advance.build.configuration</key>
 	<string>$(CONFIGURATION)</string>
-	<key>SUEnableAutomaticChecks</key>
-	<false/>
 	<key>com.iina-advance.build.date</key>
 	<string>IINA_BUILD_DATE</string>
 	<key>com.iina-advance.build.sdk</key>
