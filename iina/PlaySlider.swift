@@ -71,11 +71,12 @@ final class PlaySlider: ScrollableSlider {
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
+    let scaleFactor = customCell.controlView?.window?.backingScaleFactor ?? 2.0
     let isDark = customCell.controlView?.window?.contentView?.iinaAppearance.isDark ?? false
     if isDark != isDarkMode {
       isDarkMode = isDark
-      abLoopA.updateKnobImage(to: .loopKnob)
-      abLoopB.updateKnobImage(to: .loopKnob)
+      abLoopA.updateKnobImage(to: .loopKnob, scaleFactor: scaleFactor)
+      abLoopB.updateKnobImage(to: .loopKnob, scaleFactor: scaleFactor)
     }
     abLoopA.updateHorizontalPosition()
     abLoopB.updateHorizontalPosition()

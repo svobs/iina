@@ -20,6 +20,8 @@ class PlaySliderCell: NSSliderCell {
     controlView?.window?.windowController as? PlayerWindowController
   }
 
+  var slider: PlaySlider { controlView as! PlaySlider }
+
   override var knobThickness: CGFloat {
     return knobWidth
   }
@@ -46,14 +48,28 @@ class PlaySliderCell: NSSliderCell {
 
   // MARK:- Displaying the Cell
 
+  override func barRect(flipped: Bool) -> NSRect {
+    let superRect = super.barRect(flipped: flipped)
+    let extraHeightNeeded = (RenderCache.shared.maxPlayBarHeightNeeded + 2 * RenderCache.shared.barMarginRadius) - superRect.height
+    if extraHeightNeeded <= 0.0 {
+      return superRect
+    }
+
+    let extraHeightAvailable = max(0.0, slider.bounds.height - superRect.height)
+    let extraHeight = min(extraHeightAvailable, extraHeightNeeded)
+    let rect = superRect.insetBy(dx: 0, dy: -(extraHeight * 0.5))
+    return rect
+  }
+
   override func drawKnob(_ knobRect: NSRect) {
     if isClearBG { return }
-    guard let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
+    guard let screen = controlView?.window?.screen, let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
     appearance.applyAppearanceFor {
       RenderCache.shared.drawKnob(isHighlighted ? .mainKnobSelected : .mainKnob, in: knobRect,
                                   darkMode: appearance.isDark,
                                   clearBG: isClearBG,
-                                  knobWidth: knobWidth, mainKnobHeight: knobHeight)
+                                  knobWidth: knobWidth, mainKnobHeight: knobHeight,
+                                  scaleFactor: screen.backingScaleFactor)
     }
   }
 
@@ -84,7 +100,6 @@ class PlaySliderCell: NSSliderCell {
     guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
-    let slider = self.controlView as! PlaySlider
     let progressRatio = slider.progressRatio
     let barHeight = /*slider.isMouseHovering ? RenderCache.shared.barHeight * 2 :*/ RenderCache.shared.barHeight
     appearance.applyAppearanceFor {

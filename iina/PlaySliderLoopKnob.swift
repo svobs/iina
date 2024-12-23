@@ -90,7 +90,8 @@ final class PlaySliderLoopKnob: NSImageView {
                                                  constant: slider.customCell.knobWidth * 0.5)
     centerXConstraint.isActive = true
 
-    updateKnobImage(to: .loopKnob, initConstraints: true)
+    let scaleFactor = slider.window?.screen?.backingScaleFactor ?? 2.0
+    updateKnobImage(to: .loopKnob, initConstraints: true, scaleFactor: scaleFactor)
     imageAlignment = .alignCenter
     imageScaling = .scaleNone
   }
@@ -113,10 +114,11 @@ final class PlaySliderLoopKnob: NSImageView {
 
   // MARK:- Drawing
 
-  func updateKnobImage(to knobType: RenderCache.KnobType, initConstraints: Bool = false) {
+  func updateKnobImage(to knobType: RenderCache.KnobType, initConstraints: Bool = false, scaleFactor: CGFloat) {
     let knob = RenderCache.shared.getKnob(knobType, darkMode: slider.iinaAppearance.isDark,
                                           clearBG: slider.customCell.isClearBG,
-                                          knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
+                                          knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight,
+                                          scaleFactor: scaleFactor)
     let knobImage = knob.image
     let imgSize = knob.imageSize(knobType)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
@@ -142,10 +144,11 @@ final class PlaySliderLoopKnob: NSImageView {
   /// Begin dragging the knob.
   /// - Parameter event: An object encapsulating information about the mouse-down event initiating the drag.
   func beginDragging(with event: NSEvent) {
+    guard let screen = window?.screen else { return }
     slider.customCell.player.windowController.currentDragObject = self
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     lastDragLocation = constrainX(clickLocation.x)
-    updateKnobImage(to: .loopKnobSelected)
+    updateKnobImage(to: .loopKnobSelected, scaleFactor: screen.backingScaleFactor)
   }
 
   /// The user has pressed the left mouse button within the frame of this knob.
@@ -187,6 +190,7 @@ final class PlaySliderLoopKnob: NSImageView {
   }
 
   override func mouseUp(with event: NSEvent) {
-    updateKnobImage(to: .loopKnob)
+    guard let screen = window?.screen else { return }
+    updateKnobImage(to: .loopKnob, scaleFactor: screen.backingScaleFactor)
   }
 }

@@ -12,10 +12,7 @@
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class RenderCache {
   static let shared = RenderCache()
-
-  /// This should match `backingScaleFactor` from the current screen. At present
-  /// (MacOS 15.1), this will always be `2.0`.
-  let scaleFactor: CGFloat = 2.0
+  let knobScaleFactor = 2.0  // always draw knob with this resolution (just looks a bit better)
 
   // MARK: - Knob
 
@@ -29,16 +26,12 @@ class RenderCache {
   }
 
   init() {
-    knobMarginRadius_Scaled = knobMarginRadius * scaleFactor
-    barCornerRadius_Scaled = barCornerRadius * scaleFactor
-    barMarginRadius_Scaled = barMarginRadius * scaleFactor
   }
 
   // - Knob Constants
 
-  let knobMarginRadius: CGFloat = 1.0
   /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
-  var knobMarginRadius_Scaled: CGFloat
+  let knobMarginRadius: CGFloat = 1.0
   let knobCornerRadius: CGFloat = 1
 
   var mainKnobColor = NSColor.mainSliderKnob
@@ -46,6 +39,21 @@ class RenderCache {
   var loopKnobColor = NSColor.mainSliderLoopKnob
   let shadowColor = NSShadow().shadowColor!.cgColor
   let glowColor = NSColor.white.withAlphaComponent(1.0/3.0).cgColor
+
+  // - Bar Constants
+
+  // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
+  let barHeight: CGFloat = 4.0
+  let volBarGreaterThanMaxHeight: CGFloat = 4.0
+  /// This must be <= the numbers above
+  var maxVolBarHeightNeeded: CGFloat = 4.0
+  let maxPlayBarHeightNeeded: CGFloat = 4.0
+
+  let barCornerRadius: CGFloat = 2.0
+  var barColorLeft = NSColor.controlAccentColor
+  var barColorRight = NSColor.mainSliderBarRight
+  let barMarginRadius: CGFloat = 1.0
+
 
   // count should equal number of KnobTypes
   var cachedKnobs = [Knob?](repeating: nil, count: 6)
@@ -57,28 +65,29 @@ class RenderCache {
   }
 
   func getKnob(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
-               knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
+               knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) -> Knob {
     if let cachedKnob = cachedKnobs[knobType.rawValue], cachedKnob.isDarkMode == darkMode,
-       cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight {
+       cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight,
+       cachedKnob.scaleFactor == knobScaleFactor {
       return cachedKnob
     }
     // There may some minor loss due to races, but it will settle quickly. Don't need lousy locksss
     let knob = Knob(knobType, isDarkMode: darkMode, isClearBG: clearBG,
-                    knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+                    knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: knobScaleFactor)
     cachedKnobs[knobType.rawValue] = knob
     return knob
   }
 
   func getKnobImage(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
-                    knobWidth: CGFloat, mainKnobHeight: CGFloat) -> CGImage {
+                    knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) -> CGImage {
     return getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
-                   knobWidth: knobWidth, mainKnobHeight: mainKnobHeight).image
+                   knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: scaleFactor).image
   }
 
   func drawKnob(_ knobType: KnobType, in knobRect: NSRect, darkMode: Bool, clearBG: Bool,
-                knobWidth: CGFloat, mainKnobHeight: CGFloat) {
+                knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
     let knob = getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
-                       knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+                       knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: knobScaleFactor)
 
     let image = knob.image
 
@@ -102,47 +111,51 @@ class RenderCache {
     let knobWidth: CGFloat
     let mainKnobHeight: CGFloat
     let image: CGImage
+    let scaleFactor: CGFloat
 
-    init(_ knobType: KnobType, isDarkMode: Bool, isClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
+    init(_ knobType: KnobType, isDarkMode: Bool, isClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
       let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
       let shadowOrGlowColor = isDarkMode ? RenderCache.shared.glowColor : RenderCache.shared.shadowColor
       switch knobType {
       case .mainKnobSelected, .volumeKnobSelected:
         image = Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
-                                knobWidth: knobWidth, knobHeight: mainKnobHeight)
+                               knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .mainKnob, .volumeKnob:
         let shadowColor = isClearBG ? RenderCache.shared.shadowColor : (isDarkMode ? nil : RenderCache.shared.shadowColor)
         image = Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: shadowColor,
-                                   knobWidth: knobWidth, knobHeight: mainKnobHeight)
+                               knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .loopKnob:
         image = Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
-                                         knobWidth: knobWidth, knobHeight: loopKnobHeight)
+                               knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       case .loopKnobSelected:
         image = isDarkMode ?
         Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
-                       knobWidth: knobWidth, knobHeight: loopKnobHeight) :
+                       knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor) :
         Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
-                       knobWidth: knobWidth, knobHeight: loopKnobHeight)
+                       knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       }
       self.isDarkMode = isDarkMode
       self.isClearBG = isClearBG
       self.knobWidth = knobWidth
       self.mainKnobHeight = mainKnobHeight
+      self.scaleFactor = scaleFactor
     }
 
-    static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat) -> CGImage {
-      let scaleFactor = RenderCache.shared.scaleFactor
+    static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat,
+                          scaleFactor: CGFloat) -> CGImage {
       let knobImageSizeScaled = Knob.imgSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
+      let knobMarginRadius_Scaled = RenderCache.shared.knobMarginRadius * scaleFactor
+      let knobCornerRadius_Scaled = RenderCache.shared.knobCornerRadius * scaleFactor
       let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
                                                height: knobImageSizeScaled.heightInt) { cgContext in
 
         // Round the X position for cleaner drawing
-        let pathRect = NSMakeRect(RenderCache.shared.knobMarginRadius_Scaled,
-                                  RenderCache.shared.knobMarginRadius_Scaled,
+        let pathRect = NSMakeRect(knobMarginRadius_Scaled,
+                                  knobMarginRadius_Scaled,
                                   knobWidth * scaleFactor,
                                   knobHeight * scaleFactor)
-        let path = CGPath(roundedRect: pathRect, cornerWidth: RenderCache.shared.knobCornerRadius * scaleFactor,
-                          cornerHeight: RenderCache.shared.knobCornerRadius * scaleFactor, transform: nil)
+        let path = CGPath(roundedRect: pathRect, cornerWidth: knobCornerRadius_Scaled,
+                          cornerHeight: knobCornerRadius_Scaled, transform: nil)
 
         if let shadow {
           cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadow)
@@ -197,15 +210,6 @@ class RenderCache {
 
   // MARK: - Bar
 
-  // Bar
-  let barHeight: CGFloat = 3.0
-  let barCornerRadius: CGFloat = 1.5
-  var barCornerRadius_Scaled: CGFloat
-  var barColorLeft = NSColor.controlAccentColor
-  var barColorRight = NSColor.mainSliderBarRight
-  let barMarginRadius: CGFloat = 1.0
-  var barMarginRadius_Scaled: CGFloat
-
   func updateBarColorsFromPrefs() {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
     switch userSetting {
@@ -220,8 +224,8 @@ class RenderCache {
                    darkMode: Bool, clearBG: Bool, screen: NSScreen,
                    knobMinX: CGFloat, knobWidth: CGFloat,
                    progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
-//    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
-    var drawRect = Bar.imageRect(in: barRect)
+    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
+    var drawRect = Bar.imageRect(in: barRect, tallestBarHeight: maxPlayBarHeightNeeded)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
                         y: drawRect.origin.y + 1,
@@ -234,11 +238,11 @@ class RenderCache {
     NSGraphicsContext.current!.cgContext.draw(bar.image, in: drawRect)
   }
 
-  func drawVolumeBar(in barRect: NSRect, barHeight: CGFloat,
+  func drawVolumeBar(in barRect: NSRect, barHeight: CGFloat, screen: NSScreen,
                      darkMode: Bool, clearBG: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
                      currentValue: CGFloat, maxValue: CGFloat) {
-//    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
-    var drawRect = Bar.imageRect(in: barRect)
+    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
+    var drawRect = Bar.imageRect(in: barRect, tallestBarHeight: maxVolBarHeightNeeded)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
                         y: drawRect.origin.y + 1,
@@ -246,6 +250,7 @@ class RenderCache {
                         height: drawRect.height - 2)
     }
     let volBar = VolumeBar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, barHeight: barHeight,
+                           screen: screen,
                            knobMinX: knobMinX, knobWidth: knobWidth,
                            currentValue: currentValue, maxValue: maxValue)
     NSGraphicsContext.current!.cgContext.draw(volBar.image, in: drawRect)
@@ -255,32 +260,35 @@ class RenderCache {
     let image: CGImage
 
     /// `barWidth` does not include added leading or trailing margin
-    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, barHeight: CGFloat,
+    init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, barHeight: CGFloat, screen: NSScreen,
          knobMinX: CGFloat, knobWidth: CGFloat,
          currentValue: Double, maxValue: Double) {
       image = VolumeBar.makeImage(darkMode: darkMode, clearBG: clearBG, barWidth: barWidth, barHeight: barHeight,
+                                  screen: screen,
                                   knobMinX: knobMinX, knobWidth: knobWidth,
                                   currentValue: currentValue, maxValue: maxValue)
     }
 
     static func makeImage(darkMode: Bool, clearBG: Bool,
                           barWidth: CGFloat, barHeight: CGFloat,
+                          screen: NSScreen,
                           knobMinX: CGFloat, knobWidth: CGFloat,
                           currentValue: Double, maxValue: Double) -> CGImage {
       // - Set up calculations
       let rc = RenderCache.shared
-      let scaleFactor = rc.scaleFactor
-      let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
+      let scaleFactor = screen.backingScaleFactor
+      let imgSizeScaled = Bar.imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxVolBarHeightNeeded, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
       let barHeight_Scaled = barHeight * scaleFactor
-      let outerPaddingScaled = rc.barMarginRadius_Scaled
+      let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
+      let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
-      let barMinX = outerPaddingScaled
-      let barMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
+      let barMinX = outerPadding_Scaled
+      let barMaxX = imgSizeScaled.width - (outerPadding_Scaled * 2)
 
       let currentValueRatio = currentValue / maxValue
-      let currentValuePointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
+      let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
       // Determine clipping rects (pixel whitelists)
       let leftClipMaxX: CGFloat
@@ -294,8 +302,8 @@ class RenderCache {
         rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
       }
 
-      let hasLeft = leftClipMaxX - outerPaddingScaled > 0.0
-      let hasRight = rightClipMinX + outerPaddingScaled < imgSizeScaled.width
+      let hasLeft = leftClipMaxX - outerPadding_Scaled > 0.0
+      let hasRight = rightClipMinX + outerPadding_Scaled < imgSizeScaled.width
 
       let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
         func drawEntireBar(color: CGColor) {
@@ -303,15 +311,19 @@ class RenderCache {
                          maxX: barMaxX,
                          interPillGapWidth: 0,
                          height: barHeight_Scaled,
+                         outerPadding_Scaled: outerPadding_Scaled,
+                         cornerRadius_Scaled: cornerRadius_Scaled,
                          leftEdge: .noBorderingPill,
                          rightEdge: .noBorderingPill)
           cgc.clip()
 
-          rc.drawPill(cgc, leftColor,
+          rc.drawPill(cgc, color,
                       minX: barMinX,
                       maxX: barMaxX,
                       interPillGapWidth: 0,
                       height: barHeight_Scaled,
+                      outerPadding_Scaled: outerPadding_Scaled,
+                      cornerRadius_Scaled: cornerRadius_Scaled,
                       leftEdge: .noBorderingPill,
                       rightEdge: .noBorderingPill)
         }
@@ -336,7 +348,48 @@ class RenderCache {
         }
       }
 
-      return barImg
+      guard maxValue > 100.0 else { return barImg }
+
+      // If volume can exceed 100%, draw that section in special color
+      let highlightOverlayImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
+        let leftMaxColor = exaggerateColor(leftColor)
+        let rightMaxColor = exaggerateColor(rightColor)
+        Logger.log.debug("leftMaxColor: \(leftColor) -> \(leftMaxColor), rightMaxColor: \(rightColor) -> \(rightMaxColor)")
+
+        let regularMaxRatio = 100.0 / maxValue
+        let oneHundredPointX = (outerPadding_Scaled + (regularMaxRatio * barWidth_Scaled)).rounded()
+
+        let volBarGreaterThanMaxHeight_Scaled = rc.volBarGreaterThanMaxHeight * scaleFactor
+
+        let y = (CGFloat(cgc.height) - volBarGreaterThanMaxHeight_Scaled) * 0.5  // y should include outerPadding_Scaled here
+
+        let leftMaxBar: CGRect?
+        let rightMaxBar: CGRect
+        if leftClipMaxX < oneHundredPointX {
+          // Volume is lower than 100%: only need to draw the part of bar which is > 100%
+          leftMaxBar = nil
+          rightMaxBar = CGRect(x: oneHundredPointX, y: y,
+                               width: barMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
+        } else {
+          leftMaxBar = CGRect(x: oneHundredPointX, y: y,
+                              width: leftClipMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
+
+          rightMaxBar = CGRect(x: leftClipMaxX, y: y,
+                               width: barMaxX - leftClipMaxX, height: volBarGreaterThanMaxHeight_Scaled)
+        }
+
+        if let leftMaxBar {
+          cgc.setFillColor(leftMaxColor)
+          cgc.fill(leftMaxBar)
+        }
+        cgc.setFillColor(rightMaxColor)
+        cgc.fill(rightMaxBar)
+
+        cgc.setBlendMode(.destinationIn)
+        cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
+      }
+
+      return rc.makeCompositeBarImg(barImg: barImg, highlightOverlayImg: highlightOverlayImg)
     }
   }  /// end `struct VolumeBar`
 
@@ -360,15 +413,16 @@ class RenderCache {
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
       // - Set up calculations
       let rc = RenderCache.shared
-      let scaleFactor = rc.scaleFactor
-      let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
+      let scaleFactor = screen.backingScaleFactor
+      let imgSizeScaled = Bar.imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxPlayBarHeightNeeded, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
       let barHeight_Scaled = barHeight * scaleFactor
-      let outerPaddingScaled = rc.barMarginRadius_Scaled
+      let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
+      let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
-      let chapterGapWidth = (Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)).rounded()
-      let currentValuePointX = (outerPaddingScaled + (currentValueRatio * barWidth_Scaled)).rounded()
+      let chapterGapWidth = (Bar.baseChapterWidth * max(1.0, scaleFactor * 0.5)).rounded()
+      let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
       // Determine clipping rects (pixel whitelists)
       let leftClipMaxX: CGFloat
@@ -382,8 +436,8 @@ class RenderCache {
         rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
       }
 
-      let hasLeft = leftClipMaxX - outerPaddingScaled > 0.0
-      let hasRight = rightClipMinX + outerPaddingScaled < imgSizeScaled.width
+      let hasLeft = leftClipMaxX - outerPadding_Scaled > 0.0
+      let hasRight = rightClipMinX + outerPadding_Scaled < imgSizeScaled.width
 
       let leftClipRect = CGRect(x: 0, y: 0,
                                 width: leftClipMaxX,
@@ -404,11 +458,11 @@ class RenderCache {
           segsMaxX = []
         }
         // Add right end of bar (don't forget to subtract left & right padding from img)
-        let lastSegMaxX = imgSizeScaled.width - (outerPaddingScaled * 2)
+        let lastSegMaxX = imgSizeScaled.width - (outerPadding_Scaled * 2)
         segsMaxX.append(lastSegMaxX)
 
         var segIndex = 0
-        var segMinX = outerPaddingScaled
+        var segMinX = outerPadding_Scaled
 
         var leftEdge: PillEdgeType = .noBorderingPill
         var rightEdge: PillEdgeType = .bordersAnotherPill
@@ -432,6 +486,8 @@ class RenderCache {
                              maxX: segMaxX,
                              interPillGapWidth: chapterGapWidth,
                              height: barHeight_Scaled,
+                             outerPadding_Scaled: outerPadding_Scaled,
+                             cornerRadius_Scaled: cornerRadius_Scaled,
                              leftEdge: leftEdge,
                              rightEdge: rightEdge)
               cgc.clip()
@@ -441,6 +497,8 @@ class RenderCache {
                         minX: segMinX, maxX: segMaxX,
                         interPillGapWidth: chapterGapWidth,
                         height: barHeight_Scaled,
+                        outerPadding_Scaled: outerPadding_Scaled,
+                        cornerRadius_Scaled: cornerRadius_Scaled,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge)
 
@@ -471,6 +529,8 @@ class RenderCache {
                         minX: segMinX, maxX: segMaxX,
                         interPillGapWidth: chapterGapWidth,
                         height: barHeight_Scaled,
+                        outerPadding_Scaled: outerPadding_Scaled,
+                        cornerRadius_Scaled: cornerRadius_Scaled,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge)
 
@@ -503,17 +563,17 @@ class RenderCache {
           let startX: CGFloat = cachedRange.0 / durationSec * barWidth_Scaled
           let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
           if startX > leftClipMaxX {
-            rectsRight.append(CGRect(x: startX, y: outerPaddingScaled,
+            rectsRight.append(CGRect(x: startX, y: outerPadding_Scaled,
                                      width: endX - startX, height: barHeight_Scaled))
           } else if endX > leftClipMaxX {
-            rectsLeft.append(CGRect(x: startX, y: outerPaddingScaled,
+            rectsLeft.append(CGRect(x: startX, y: outerPadding_Scaled,
                                     width: leftClipMaxX - startX, height: barHeight_Scaled))
 
             let start2ndX = leftClipMaxX
-            rectsRight.append(CGRect(x: start2ndX, y: outerPaddingScaled,
+            rectsRight.append(CGRect(x: start2ndX, y: outerPadding_Scaled,
                                      width: endX - start2ndX, height: barHeight_Scaled))
           } else {
-            rectsLeft.append(CGRect(x: startX, y: outerPaddingScaled,
+            rectsLeft.append(CGRect(x: startX, y: outerPadding_Scaled,
                                     width: endX - startX, height: barHeight_Scaled))
           }
         }
@@ -527,32 +587,13 @@ class RenderCache {
         cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
       }
 
-      let compositeImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
-                                                  height: imgSizeScaled.heightInt) { cgc in
-        cgc.setBlendMode(.normal)
-        cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
-        cgc.setBlendMode(.overlay)
-        cgc.draw(cacheImg, in: CGRect(origin: .zero, size: imgSizeScaled))
-        cgc.setBlendMode(.normal)
-      }
-      return compositeImg
-    }
-
-    private static func exaggerateColor(_ baseColor: CGColor) -> CGColor {
-      var leftCacheComps: [CGFloat] = []
-      let numComponents = min(baseColor.numberOfComponents, 3)
-      for i in 0..<numComponents {
-        leftCacheComps.append(min(1.0, baseColor.components![i] * 1.8))
-      }
-      leftCacheComps.append(1.0)
-      let colorSpace = baseColor.colorSpace ?? CGColorSpaceCreateDeviceRGB()
-      return CGColor(colorSpace: colorSpace, components: leftCacheComps)!
+      return rc.makeCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
     }
 
     /// Measured in points, not pixels!
-    static func imageRect(in drawRect: CGRect) -> CGRect {
+    static func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
       let margin = RenderCache.shared.barMarginRadius
-      let imgHeight = (2 * margin) + RenderCache.shared.barHeight
+      let imgHeight = (2 * margin) + tallestBarHeight
       // can be negative:
       let spareHeight = drawRect.height - imgHeight
       let y = drawRect.origin.y + (spareHeight * 0.5)
@@ -560,11 +601,24 @@ class RenderCache {
                     width: drawRect.width + (2 * margin), height: imgHeight)
     }
 
-    static func imgSizeScaled(_ barWidth: CGFloat, scaleFactor: CGFloat) -> CGSize {
+    /// `scaleFactor` should match `backingScaleFactor` from the current screen.
+    /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
+    static func imgSizeScaled(barWidth: CGFloat, tallestBarHeight: CGFloat, scaleFactor: CGFloat) -> CGSize {
       let marginPairSum = (2 * RenderCache.shared.barMarginRadius)
-      let size = CGSize(width: barWidth + marginPairSum, height: marginPairSum + RenderCache.shared.barHeight)
+      let size = CGSize(width: barWidth + marginPairSum, height: marginPairSum + tallestBarHeight)
       return size.multiplyThenRound(scaleFactor)
     }
   }  /// end `struct Bar`
+
+  private static func exaggerateColor(_ baseColor: CGColor) -> CGColor {
+    var leftCacheComps: [CGFloat] = []
+    let numComponents = min(baseColor.numberOfComponents, 3)
+    for i in 0..<numComponents {
+      leftCacheComps.append(min(1.0, baseColor.components![i] * 1.8))
+    }
+    leftCacheComps.append(1.0)
+    let colorSpace = baseColor.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+    return CGColor(colorSpace: colorSpace, components: leftCacheComps)!
+  }
 
 }
