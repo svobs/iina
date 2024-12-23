@@ -698,7 +698,14 @@ class PlayerCore: NSObject {
   // MARK: - MPV commands
 
   func togglePause() {
-    info.isPaused ? resume() : pause()
+    mpv.queue.async { [self] in
+      _togglePause()
+    }
+  }
+
+  func _togglePause() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    info.isPaused ? _resume() : _pause()
   }
 
   /// Pause playback.
@@ -713,17 +720,25 @@ class PlayerCore: NSObject {
   ///     [#4520](https://github.com/iina/iina/issues/4520)
   func pause() {
     assert(DispatchQueue.isExecutingIn(.main))
-    let isNormalSpeed = info.playSpeed == 1
     mpv.queue.async { [self] in
-      guard isActive else { return }
-      /// Set this so that callbacks will fire even though `info.isPaused` was already set
-      info.pauseStateWasChangedLocally = true
-      mpv.setFlag(MPVOption.PlaybackControl.pause, true)
+      _pause()
     }
+  }
+
+  private func _pause() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
+    /// Set this so that callbacks will fire even though `info.isPaused` was already set
+    info.pauseStateWasChangedLocally = true
+    mpv.setFlag(MPVOption.PlaybackControl.pause, true)
+    let isNormalSpeed = info.playSpeed == 1
     if !isNormalSpeed && Preference.bool(for: .resetSpeedWhenPaused) {
-      setSpeed(1, forceResume: false)
+      _setSpeed(1.0, forceResume: false)
     }
-    windowController.updatePlayButtonAndSpeedUI()
+
+    DispatchQueue.main.async { [self] in
+      windowController.updatePlayButtonAndSpeedUI()
+    }
   }
 
   private func _resume() {
@@ -1241,20 +1256,24 @@ class PlayerCore: NSObject {
     let speedTrunc = speed.truncatedTo6()
     info.playSpeed = speedTrunc  // set preemptively to keep UI in sync
     mpv.queue.async { [self] in
-      guard isActive else { return }
-      log.verbose("Setting speed to \(speedTrunc)")
-      mpv.setDouble(MPVOption.PlaybackControl.speed, speedTrunc)
+      _setSpeed(speedTrunc, forceResume: forceResume)
+    }
+  }
 
-      /// If `resetSpeedWhenPaused` is enabled, then speed is reset to 1x when pausing.
-      /// This will create a subconscious link in the user's mind between "pause" -> "unset speed".
-      /// Try to stay consistent by linking the contrapositive together: "set speed" -> "play".
-      /// The intuition should be most apparent when using the speed slider in Quick Settings.
-      if info.isPaused {
-        if forceResume == true {
-          _resume()
-        } else if forceResume == nil && Preference.bool(for: .resetSpeedWhenPaused) {
-          _resume()
-        }
+  func _setSpeed(_ speed: Double, forceResume: Bool? = nil) {
+    guard isActive else { return }
+    log.verbose("Setting speed to \(speed)")
+    mpv.setDouble(MPVOption.PlaybackControl.speed, speed)
+
+    /// If `resetSpeedWhenPaused` is enabled, then speed is reset to 1x when pausing.
+    /// This will create a subconscious link in the user's mind between "pause" -> "unset speed".
+    /// Try to stay consistent by linking the contrapositive together: "set speed" -> "play".
+    /// The intuition should be most apparent when using the speed slider in Quick Settings.
+    if info.isPaused {
+      if forceResume == true {
+        _resume()
+      } else if forceResume == nil && Preference.bool(for: .resetSpeedWhenPaused) {
+        _resume()
       }
     }
   }

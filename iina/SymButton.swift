@@ -48,6 +48,12 @@ class SymButton: NSImageView {
   override func mouseUp(with event: NSEvent) {
     if isInsideViewFrame(pointInWindow: event.locationInWindow) {
       self.sendAction(action, to: target)
+
+      if #available(macOS 14.0, *) {
+        addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
+      } else {
+        // Fallback on earlier versions
+      }
     }
     contentTintColor = nil
     pwc?.currentDragObject = nil
@@ -58,9 +64,20 @@ class SymButton: NSImageView {
   }
 
   private func updateHighlight(from event: NSEvent) {
-    let pointInWindow = event.locationInWindow
-    let pointInView = convert(pointInWindow, from: nil)
     let isInsideBounds = isInsideViewFrame(pointInWindow: event.locationInWindow)
     contentTintColor = isInsideBounds ? .selectedControlTextColor : nil
+  }
+
+  var symImage: NSImage? {
+    get {
+      return image
+    }
+    set {
+      if let newValue, #available(macOS 15.0, *) {
+        setSymbolImage(newValue, contentTransition: .replace)
+      } else {
+        image = newValue
+      }
+    }
   }
 }

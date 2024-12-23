@@ -1980,7 +1980,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-      playButton.image = playPauseImage
+      playButton.symImage = playPauseImage
 
       speedLabel.isHidden = !showSpeedLabel
 
@@ -2164,8 +2164,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   @objc func playButtonAction(_ sender: AnyObject) {
-    let wasPaused = player.info.isPaused
-    wasPaused ? player.resume() : player.pause()
+    player.togglePause()
   }
 
   @IBAction func muteButtonAction(_ sender: NSButton) {
