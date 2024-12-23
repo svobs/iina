@@ -36,9 +36,9 @@ class SymButton: NSImageView {
   override var acceptsFirstResponder: Bool { true }
 
   override func mouseDown(with event: NSEvent) {
-    updateHighlight(from: event)
     /// Setting this will cause PlayerWindowController to forward `mouseDragged` & `mouseUp` events to this object even when out of bounds
     pwc?.currentDragObject = self
+    updateHighlight(from: event)
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -46,17 +46,18 @@ class SymButton: NSImageView {
   }
 
   override func mouseUp(with event: NSEvent) {
+    updateHighlight(from: event)
     if isInsideViewFrame(pointInWindow: event.locationInWindow) {
       self.sendAction(action, to: target)
 
-      if #available(macOS 14.0, *) {
-        addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
-      } else {
-        // Fallback on earlier versions
-      }
+//      pwc?.animationPipeline.submitTask { [self] in
+//        if #available(macOS 14.0, *) {
+//          addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
+//        } else {
+//          // Fallback on earlier versions
+//        }
+//      }
     }
-    contentTintColor = nil
-    pwc?.currentDragObject = nil
   }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -64,8 +65,21 @@ class SymButton: NSImageView {
   }
 
   private func updateHighlight(from event: NSEvent) {
-    let isInsideBounds = isInsideViewFrame(pointInWindow: event.locationInWindow)
-    contentTintColor = isInsideBounds ? .selectedControlTextColor : nil
+    guard let pwc else { return }
+    let isInsideBounds = pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
+    if isInsideBounds {
+      if pwc.currentLayout.spec.oscBackgroundIsClear {
+        contentTintColor = .white
+      } else {
+        contentTintColor = .selectedControlTextColor
+      }
+    } else {
+      if pwc.currentLayout.spec.oscBackgroundIsClear {
+        contentTintColor = .controlForClearBG
+      } else {
+        contentTintColor = nil
+      }
+    }
   }
 
   var symImage: NSImage? {

@@ -1971,8 +1971,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let playSpeed = player.info.playSpeed
     let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= Constants.Distance.minOSCBarHeightForSpeedLabel
 
-    let hasLayoutChange = speedLabel.isHidden == showSpeedLabel
-    let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration : 0
+    let hasPlayButtonChange = playButton.image != playPauseImage
+    let hasChange = speedLabel.isHidden == !showSpeedLabel || hasPlayButtonChange
+    let duration = hasChange ? IINAAnimation.OSDAnimationDuration : 0
 
     // Update status in menu bar menu (if enabled)
     MediaPlayerIntegration.shared.update()
@@ -1980,7 +1981,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-      playButton.symImage = playPauseImage
+      if hasPlayButtonChange {
+        playButton.symImage = playPauseImage
+      }
 
       speedLabel.isHidden = !showSpeedLabel
 
