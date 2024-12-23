@@ -487,7 +487,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let fragPlaybackBtnsView = ClickThroughView()
   /// Speed indicator label, when playing at speeds other than 1x
   let speedLabel = NSTextField()
-  var playButton: NSButton!
+  var playButton: SymButton!
   var leftArrowButton: NSButton!
   var rightArrowButton: NSButton!
 

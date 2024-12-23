@@ -338,22 +338,9 @@ extension PlayerWindowController {
     let oscGeo = currentLayout.controlBarGeo
 
     // Play button
-    playButton = NSButton(image: Images.play, target: self,
+    playButton = SymButton(image: Images.play, target: self,
                           action: #selector(playButtonAction(_:)))
     playButton.identifier = .init("playButton")  // helps with debug logging
-    playButton.isBordered = false
-    playButton.bezelStyle = .regularSquare
-    playButton.imagePosition = .imageOnly
-    playButton.refusesFirstResponder = true
-    playButton.imageScaling = .scaleProportionallyUpOrDown
-    if #available(macOS 11.0, *) {
-      /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
-      /// This is ignored when using play & pause images (they are static assets).
-      /// Looks like `pointSize` here is ignored. Not sure if `scale` is relevant either?
-      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold, scale: .small)
-      playButton.symbolConfiguration = config
-    }
-    playButton.translatesAutoresizingMaskIntoConstraints = false
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     let playIconSize = oscGeo.playIconSize
@@ -364,19 +351,19 @@ extension PlayerWindowController {
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
-    let playButtonVStackView = ClickThroughStackView()
-    playButtonVStackView.identifier = .init("playButtonVStackView")
-    playButtonVStackView.orientation = .vertical
-    playButtonVStackView.alignment = .centerX
-    playButtonVStackView.detachesHiddenViews = true
-    playButtonVStackView.layer?.backgroundColor = .clear
-    playButtonVStackView.spacing = 0
-    playButtonVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    playButtonVStackView.addView(speedLabel, in: .center)
-    playButtonVStackView.addView(playButton, in: .center)
-    playButtonVStackView.setHuggingPriority(.init(250), for: .vertical)
-    playButtonVStackView.setHuggingPriority(.init(250), for: .horizontal)
-    playButtonVStackView.translatesAutoresizingMaskIntoConstraints = false
+    let playbackBtnsVStackView = ClickThroughStackView()
+    playbackBtnsVStackView.identifier = .init("playbackBtnsVStackView")
+    playbackBtnsVStackView.orientation = .vertical
+    playbackBtnsVStackView.alignment = .centerX
+    playbackBtnsVStackView.detachesHiddenViews = true
+    playbackBtnsVStackView.layer?.backgroundColor = .clear
+    playbackBtnsVStackView.spacing = 0
+    playbackBtnsVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    playbackBtnsVStackView.addView(speedLabel, in: .center)
+    playbackBtnsVStackView.addView(playButton, in: .center)
+    playbackBtnsVStackView.setHuggingPriority(.init(250), for: .vertical)
+    playbackBtnsVStackView.setHuggingPriority(.init(250), for: .horizontal)
+    playbackBtnsVStackView.translatesAutoresizingMaskIntoConstraints = false
 
     // Left Arrow button
     leftArrowButton = NSButton(image: oscGeo.leftArrowImage, target: self,
@@ -406,10 +393,10 @@ extension PlayerWindowController {
 
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
     fragPlaybackBtnsView.addSubview(leftArrowButton)
-    fragPlaybackBtnsView.addSubview(playButtonVStackView)
+    fragPlaybackBtnsView.addSubview(playbackBtnsVStackView)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
 
-    playButtonVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
+    playbackBtnsVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
     fragPlaybackBtnsView.setContentHuggingPriority(.init(rawValue: 249), for: .vertical)  // hug superview more than default
@@ -431,7 +418,7 @@ extension PlayerWindowController {
     let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     playBtnVertOffsetConstraint.isActive = true
 
-    let playBtnHorizOffsetConstraint = playButtonVStackView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
+    let playBtnHorizOffsetConstraint = playbackBtnsVStackView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
     playBtnHorizOffsetConstraint.isActive = true
 
     speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor).isActive = true
@@ -502,7 +489,7 @@ extension PlayerWindowController {
     fragVolumeView.addSubview(volumeSlider)
     volumeSlider.cell = VolumeSliderCell()
     volumeSlider.identifier = .init("volumeSlider")
-    volumeSlider.controlSize = .mini
+    volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
     let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
     volumeSliderWidthConstraint.identifier = .init("volumeSliderWidthConstraint")

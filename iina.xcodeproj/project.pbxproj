@@ -311,6 +311,7 @@
 		D114C7AE2BEDEE150002D077 /* PrefDataViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D114C7AD2BEDEE150002D077 /* PrefDataViewController.swift */; };
 		D114C7B12BEDEF3E0002D077 /* PrefDataViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D114C7AF2BEDEF3E0002D077 /* PrefDataViewController.xib */; };
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
+		D11E07B92D1812C200F9FB9F /* SymButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11E07B82D1812BE00F9FB9F /* SymButton.swift */; };
 		D11FB5402CB8E4EA0012A45A /* ShutdownHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */; };
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D13209BB2B90596000069C94 /* AspectTokenField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13209BA2B90596000069C94 /* AspectTokenField.swift */; };
@@ -1835,6 +1836,7 @@
 		D114C7AD2BEDEE150002D077 /* PrefDataViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefDataViewController.swift; sourceTree = "<group>"; };
 		D114C7B02BEDEF3E0002D077 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefDataViewController.xib; sourceTree = "<group>"; };
 		D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableViewDelegate.swift; sourceTree = "<group>"; };
+		D11E07B82D1812BE00F9FB9F /* SymButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymButton.swift; sourceTree = "<group>"; };
 		D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutdownHandler.swift; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
 		D13209BA2B90596000069C94 /* AspectTokenField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectTokenField.swift; sourceTree = "<group>"; };
@@ -2715,6 +2717,7 @@
 		84D377681D7413D8007F7396 /* Accessories */ = {
 			isa = PBXGroup;
 			children = (
+				D11E07B82D1812BE00F9FB9F /* SymButton.swift */,
 				D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */,
 				E3DBD23C218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.swift */,
 				E3DBD23D218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.xib */,
@@ -3490,6 +3493,7 @@
 				34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */,
 				845040471E0B0F500079C194 /* CropSettingsViewController.swift in Sources */,
 				E33836852026223800ABC812 /* PrefOSCToolbarSettingsSheetController.swift in Sources */,
+				D11E07B92D1812C200F9FB9F /* SymButton.swift in Sources */,
 				D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */,
 				E3958586253309C90096811F /* PluginSidebarView.swift in Sources */,
 				51C1BA3A291CA76700C1208A /* InfoDictionary.swift in Sources */,

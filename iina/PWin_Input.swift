@@ -163,9 +163,14 @@ extension PlayerWindowController {
   override func mouseDown(with event: NSEvent) {
     guard event.eventNumber != lastMouseDownEventID else { return }
     lastMouseDownEventID = event.eventNumber
-    if log.isVerboseEnabled { log.verbose("PlayerWindow mouseDown @ \(event.locationInWindow)") }
-    
-    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]) else {
+    log.verbose{"PlayerWindow mouseDown @ \(event.locationInWindow)"}
+    if let clickedView = window?.contentView?.hitTest(event.locationInWindow) {
+      if clickedView as? SymButton != nil {
+        clickedView.mouseDown(with: event)
+        return
+      }
+    }
+    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider, playButton, leftArrowButton, rightArrowButton]) else {
       if isMouseEvent(event, inAnyOf: [documentIconButton]) {
         documentIconButton?.mouseDown(with: event)
         return

@@ -2007,6 +2007,9 @@ extension NSView {
     return 10 + min(10, max(0, (frame.height - 400) * 0.01))
   }
 
+  func isInsideViewFrame(pointInWindow: CGPoint) -> Bool {
+    return isMousePoint(convert(pointInWindow, from: nil), in: bounds)
+  }
 
   /// Recursive func which configures all views in the given subtree for smoother animation.
   ///
