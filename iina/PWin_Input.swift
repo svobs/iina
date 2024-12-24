@@ -170,11 +170,11 @@ extension PlayerWindowController {
         return
       }
     }
+    if isMouseEvent(event, inAnyOf: [documentIconButton]) {
+      documentIconButton?.mouseDown(with: event)
+      return
+    }
     guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider, muteButton, playButton, leftArrowButton, rightArrowButton]) else {
-      if isMouseEvent(event, inAnyOf: [documentIconButton]) {
-        documentIconButton?.mouseDown(with: event)
-        return
-      }
       super.mouseDown(with: event)
       return
     }

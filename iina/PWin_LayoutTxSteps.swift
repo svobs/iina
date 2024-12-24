@@ -1443,8 +1443,11 @@ extension PlayerWindowController {
   }
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
-    leftArrowButton.image = oscGeo.leftArrowImage
-    rightArrowButton.image = oscGeo.rightArrowImage
+    let arrowButtonSymConfig = oscGeo.arrowButtonSymConfig
+    leftArrowButton.symbolConfiguration = arrowButtonSymConfig
+    leftArrowButton.symImage = oscGeo.leftArrowImage
+    rightArrowButton.symbolConfiguration = arrowButtonSymConfig
+    rightArrowButton.symImage = oscGeo.rightArrowImage
     arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
     fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
     leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)

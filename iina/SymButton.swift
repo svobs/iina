@@ -8,17 +8,24 @@
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView {
+  var bounceOnClick: Bool = false
+  var imageReplacementEffect: ReplacementEffect = .downUp
+
+  enum ReplacementEffect {
+    case downUp
+    case upUp
+    case offUp
+  }
+
   init() {
     super.init(frame: .zero)
     translatesAutoresizingMaskIntoConstraints = false
-    refusesFirstResponder = false
     imageScaling = .scaleProportionallyUpOrDown
     if #available(macOS 11.0, *) {
       /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
       /// This is ignored when using play & pause images (they are static assets).
       /// Looks like `pointSize` here is ignored. Not sure if `scale` is relevant either?
-//      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold, scale: .small)
-      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .thin, scale: .large)
+      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .ultraLight, scale: .large)
       symbolConfiguration = config
     }
 
@@ -51,9 +58,14 @@ class SymButton: NSImageView {
   override func mouseUp(with event: NSEvent) {
     let isInsideBounds = updateHighlight(from: event)
     guard isInsideBounds else { return }
-//      if #available(macOS 14.0, *) {
-//        addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
-//      }
+
+    if #available(macOS 14.0, *), bounceOnClick {
+      addSymbolEffect(.bounce.down.wholeSymbol, options:
+          .speed(Constants.Speed.symButtonImageTransition)
+          .nonRepeating,
+                      animated: true)
+    }
+
     pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
     self.sendAction(action, to: target)
   }
@@ -87,9 +99,20 @@ class SymButton: NSImageView {
       return image
     }
     set {
-      if let newValue, #available(macOS 15.0, *) {
-        setSymbolImage(newValue, contentTransition: .replace.downUp,
-                       options: .speed(Constants.Speed.symButtonImageTransition).nonRepeating)
+      if let newValue, newValue != image, #available(macOS 15.0, *) {
+        let effect: ReplaceSymbolEffect
+        switch imageReplacementEffect {
+        case .downUp:
+          effect = .replace.downUp
+        case .upUp:
+          effect = .replace.upUp
+        case .offUp:
+          effect = .replace.offUp
+        }
+        setSymbolImage(newValue, contentTransition: effect,
+                       options:
+            .speed(Constants.Speed.symButtonImageTransition)
+            .nonRepeating)
       } else {
         image = newValue
       }

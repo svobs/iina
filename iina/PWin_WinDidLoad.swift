@@ -338,10 +338,10 @@ extension PlayerWindowController {
     let oscGeo = currentLayout.controlBarGeo
 
     // Play button
-    playButton = SymButton()
     playButton.image = Images.play
     playButton.target = self
     playButton.action = #selector(playButtonAction(_:))
+    playButton.refusesFirstResponder = true
     playButton.identifier = .init("playButton")  // helps with debug logging
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -368,30 +368,26 @@ extension PlayerWindowController {
     playbackBtnsVStackView.translatesAutoresizingMaskIntoConstraints = false
 
     // Left Arrow button
-    leftArrowButton = NSButton(image: oscGeo.leftArrowImage, target: self,
-                               action: #selector(leftArrowButtonAction(_:)))
+    leftArrowButton.image = oscGeo.leftArrowImage
+    leftArrowButton.target = self
+    leftArrowButton.action = #selector(leftArrowButtonAction(_:))
     leftArrowButton.identifier = .init("leftArrowButton")
-    leftArrowButton.setButtonType(.multiLevelAccelerator)
-    leftArrowButton.isBordered = false
-    leftArrowButton.maxAcceleratorLevel = 5
-    leftArrowButton.bezelStyle = .regularSquare
-    leftArrowButton.imagePosition = .imageOnly
     leftArrowButton.refusesFirstResponder = true
-    leftArrowButton.imageScaling = .scaleProportionallyUpOrDown
-    leftArrowButton.translatesAutoresizingMaskIntoConstraints = false
+    leftArrowButton.bounceOnClick = true
+    leftArrowButton.imageReplacementEffect = .upUp
 
     // Right Arrow button
-    rightArrowButton = NSButton(image: oscGeo.rightArrowImage, target: self,
-                                action: #selector(rightArrowButtonAction(_:)))
+    rightArrowButton.image = oscGeo.rightArrowImage
+    rightArrowButton.target = self
+    rightArrowButton.action = #selector(rightArrowButtonAction(_:))
     rightArrowButton.identifier = .init("rightArrowButton")
-    rightArrowButton.setButtonType(.multiLevelAccelerator)
-    rightArrowButton.isBordered = false
-    rightArrowButton.maxAcceleratorLevel = 5
-    rightArrowButton.bezelStyle = .regularSquare
-    rightArrowButton.imagePosition = .imageOnly
     rightArrowButton.refusesFirstResponder = true
-    rightArrowButton.imageScaling = .scaleProportionallyUpOrDown
-    rightArrowButton.translatesAutoresizingMaskIntoConstraints = false
+    rightArrowButton.bounceOnClick = true
+    rightArrowButton.imageReplacementEffect = .upUp
+
+    let arrowButtonSymConfig = oscGeo.arrowButtonSymConfig
+    leftArrowButton.symbolConfiguration = arrowButtonSymConfig
+    rightArrowButton.symbolConfiguration = arrowButtonSymConfig
 
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
     fragPlaybackBtnsView.addSubview(leftArrowButton)

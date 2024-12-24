@@ -487,9 +487,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let fragPlaybackBtnsView = ClickThroughView()
   /// Speed indicator label, when playing at speeds other than 1x
   let speedLabel = NSTextField()
-  var playButton: SymButton!
-  var leftArrowButton: NSButton!
-  var rightArrowButton: NSButton!
+  let playButton = SymButton()
+  let leftArrowButton = SymButton()
+  let rightArrowButton = SymButton()
 
   /// Toolbar
   var fragToolbarView: NSStackView? = nil
@@ -2168,16 +2168,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     player.togglePause()
   }
 
-  @IBAction func muteButtonAction(_ sender: NSButton) {
+  @IBAction func muteButtonAction(_ sender: AnyObject) {
     player.toggleMute()
   }
 
-  @objc func leftArrowButtonAction(_ sender: NSButton) {
-    arrowButtonAction(left: true, clickPressure: Int(sender.intValue))
+  @objc func leftArrowButtonAction(_ sender: AnyObject) {
+    // FIXME: mimic accelerator button
+    maxPressure = 1
+    arrowButtonAction(left: true, clickPressure: 0)
   }
 
-  @objc func rightArrowButtonAction(_ sender: NSButton) {
-    arrowButtonAction(left: false, clickPressure: Int(sender.intValue))
+  @objc func rightArrowButtonAction(_ sender: AnyObject) {
+    maxPressure = 1
+    arrowButtonAction(left: false, clickPressure: 0)
   }
 
   /** handle action of either left or right arrow button */

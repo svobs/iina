@@ -445,6 +445,11 @@ struct Images {
   static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning")
   static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s")
   static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s")
+  static let rewind: NSImage = makeSymbol(named: "backward.fill", fallbackName: "speedl", desc: "Rewind")
+  static let fastForward: NSImage = makeSymbol(named: "forward.fill", fallbackName: "speed", desc: "Fast Forward")
+  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track")
+  static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track")
+
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
   static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
   static let settingsFill = NSImage(imageLiteralResourceName: "gearshape.fill")

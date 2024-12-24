@@ -30,7 +30,8 @@ fileprivate let musicModeToolbarIconSize: CGFloat = 14
 fileprivate let musicModeToolbarIconSpacing: CGFloat = 12
 
 
-fileprivate let stepIconReductionRatio: CGFloat = 0.85
+fileprivate let stepIconScaleFactor: CGFloat = 0.85
+fileprivate let systemArrowSymbolScaleFactor: CGFloat = 0.65
 
 // TODO: reimplement OSC title bar feature
 
@@ -141,12 +142,19 @@ struct ControlBarGeometry {
     // Compute size of arrow buttons
     let arrowButtonAction = arrowButtonAction ?? Preference.enum(for: .arrowButtonAction)
     let arrowIconHeight: CGFloat
-    if arrowButtonAction == .unused {
+    switch arrowButtonAction {
+    case .unused:
       arrowIconHeight = 0
-    } else if arrowButtonAction == .seek {
-      arrowIconHeight = playIconSize * stepIconReductionRatio
-    } else {
-      arrowIconHeight = playIconSize
+    case .seek:
+      arrowIconHeight = playIconSize * stepIconScaleFactor
+    case .speed, .playlist:
+      if #available(macOS 11.0, *) {
+        // Using built-in MacOS symbols
+        arrowIconHeight = playIconSize * systemArrowSymbolScaleFactor
+      } else {
+        // Legacy custom icons are scaled already:
+        arrowIconHeight = playIconSize
+      }
     }
     let leftArrowImage = ControlBarGeometry.leftArrowImage(given: arrowButtonAction)
     self.leftArrowImage = leftArrowImage
@@ -224,6 +232,16 @@ struct ControlBarGeometry {
     return totalIconWidth + totalIconSpacing
   }
 
+  var arrowButtonSymConfig: NSImage.SymbolConfiguration {
+    let weight: NSFont.Weight
+    if arrowButtonAction == .seek {
+      weight = .medium
+    } else {
+      weight = .ultraLight
+    }
+    return NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .small)
+  }
+
   // MARK: Static
 
   static func buttonSize(iconSize: CGFloat, iconSpacing: CGFloat) -> CGFloat {
@@ -266,9 +284,9 @@ struct ControlBarGeometry {
   static func leftArrowImage(given arrowButtonAction: Preference.ArrowButtonAction) -> NSImage {
     switch arrowButtonAction {
     case .playlist:
-      return #imageLiteral(resourceName: "nextl")
+      return Images.prevTrack
     case .speed, .unused:
-      return #imageLiteral(resourceName: "speedl")
+      return Images.rewind
     case .seek:
       return Images.stepBackward10
     }
@@ -277,9 +295,9 @@ struct ControlBarGeometry {
   static func rightArrowImage(given arrowButtonAction: Preference.ArrowButtonAction) -> NSImage {
     switch arrowButtonAction {
     case .playlist:
-      return #imageLiteral(resourceName: "nextr")
+      return Images.nextTrack
     case .speed, .unused:
-      return #imageLiteral(resourceName: "speed")
+      return Images.fastForward
     case .seek:
       return Images.stepForward10
     }
