@@ -34,6 +34,7 @@ class CustomWindowBorderBox: NSBox {
 
   override func mouseUp(with event: NSEvent) {
     if let playerWindowController {
+      guard event.eventNumber != playerWindowController.lastMouseUpEventID else { return }
       playerWindowController.mouseUp(with: event)
     }
     super.mouseUp(with: event)

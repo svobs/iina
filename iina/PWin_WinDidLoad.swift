@@ -338,8 +338,10 @@ extension PlayerWindowController {
     let oscGeo = currentLayout.controlBarGeo
 
     // Play button
-    playButton = SymButton(image: Images.play, target: self,
-                          action: #selector(playButtonAction(_:)))
+    playButton = SymButton()
+    playButton.image = Images.play
+    playButton.target = self
+    playButton.action = #selector(playButtonAction(_:))
     playButton.identifier = .init("playButton")  // helps with debug logging
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -463,25 +465,17 @@ extension PlayerWindowController {
 
     // Mute button
     muteButton.identifier = .init("muteButton")
-    let image = Images.volume3
-    muteButton.image = image
+    let volImage = Images.volume3
+    muteButton.symImage = volImage
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
-    muteButton.setButtonType(.momentaryPushIn)
-    muteButton.isBordered = false
-    muteButton.maxAcceleratorLevel = 5
-    muteButton.bezelStyle = .regularSquare
-    muteButton.imagePosition = .imageOnly
-    muteButton.refusesFirstResponder = true
-    muteButton.imageScaling = .scaleProportionallyUpOrDown
-    muteButton.translatesAutoresizingMaskIntoConstraints = false
     fragVolumeView.addSubview(muteButton)
     muteButton.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
     volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
-    volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: image.aspect)
+    volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
     volumeIconWidthConstraint.priority = .init(900)
     volumeIconWidthConstraint.isActive = true
 

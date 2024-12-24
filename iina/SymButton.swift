@@ -8,13 +8,10 @@
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView {
-  init(image: NSImage, target: NSObject, action: Selector) {
+  init() {
     super.init(frame: .zero)
     translatesAutoresizingMaskIntoConstraints = false
     refusesFirstResponder = false
-    self.image = image
-    self.target = target
-    self.action = action
     imageScaling = .scaleProportionallyUpOrDown
     if #available(macOS 11.0, *) {
       /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
@@ -52,21 +49,22 @@ class SymButton: NSImageView {
   }
 
   override func mouseUp(with event: NSEvent) {
-    updateHighlight(from: event)
-    if isInsideViewFrame(pointInWindow: event.locationInWindow) {
+    let isInsideBounds = updateHighlight(from: event)
+    guard isInsideBounds else { return }
 //      if #available(macOS 14.0, *) {
 //        addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
 //      }
-      self.sendAction(action, to: target)
-    }
+    pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
+    self.sendAction(action, to: target)
   }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
   }
 
-  private func updateHighlight(from event: NSEvent) {
-    guard let pwc else { return }
+  @discardableResult
+  private func updateHighlight(from event: NSEvent) -> Bool {
+    guard let pwc else { return false }
     let isInsideBounds = pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
     if isInsideBounds {
       if pwc.currentLayout.spec.oscBackgroundIsClear {
@@ -81,6 +79,7 @@ class SymButton: NSImageView {
         contentTintColor = nil
       }
     }
+    return isInsideBounds
   }
 
   var symImage: NSImage? {
@@ -90,7 +89,7 @@ class SymButton: NSImageView {
     set {
       if let newValue, #available(macOS 15.0, *) {
         setSymbolImage(newValue, contentTransition: .replace.downUp,
-                       options: .speed(4.0).nonRepeating)
+                       options: .speed(Constants.Speed.symButtonImageTransition).nonRepeating)
       } else {
         image = newValue
       }

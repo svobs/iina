@@ -480,7 +480,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// Container for volume slider & mute button
   var fragVolumeView = NSView()
-  let muteButton = NSButton()
+  let muteButton = SymButton()
   let volumeSlider = ScrollableSlider()
 
   /// Container for playback buttons
@@ -1906,7 +1906,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     volumeSlider.maxValue = Double(Preference.integer(for: .maxVolume))
     volumeSlider.doubleValue = volume
     muteButton.isEnabled = hasAudio
-    muteButton.state = isMuted ? .on : .off
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
       let task = IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration, { [self] in

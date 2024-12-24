@@ -170,7 +170,7 @@ extension PlayerWindowController {
         return
       }
     }
-    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider, playButton, leftArrowButton, rightArrowButton]) else {
+    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider, muteButton, playButton, leftArrowButton, rightArrowButton]) else {
       if isMouseEvent(event, inAnyOf: [documentIconButton]) {
         documentIconButton?.mouseDown(with: event)
         return
@@ -241,7 +241,9 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow mouseUp @ \(event.locationInWindow), dragging: \(isDragging.yn), clickCount: \(event.clickCount): eventNum: \(event.eventNumber)")
     }
     if let currentDragObject {
-      self.currentDragObject = nil
+      defer {
+        self.currentDragObject = nil
+      }
       currentDragObject.mouseUp(with: event)
       return
     }

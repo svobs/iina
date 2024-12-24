@@ -864,6 +864,7 @@ class PlayerCore: NSObject {
   }
 
   func toggleMute(_ set: Bool? = nil) {
+    log.debug("Toggling mute (set=\(set?.yn ?? "nil"))")
     mpv.queue.async { [self] in
       let newState = set ?? !mpv.getFlag(MPVOption.Audio.mute)
       mpv.setFlag(MPVOption.Audio.mute, newState)

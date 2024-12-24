@@ -133,6 +133,9 @@ struct Constants {
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
   }
+  struct Speed {
+    static let symButtonImageTransition = 2.0
+  }
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
 
@@ -448,8 +451,7 @@ struct Images {
   static let sidebarLeading = NSImage(imageLiteralResourceName: "sidebar.leading")
   static let sidebarTrailing = NSImage(imageLiteralResourceName: "sidebar.trailing")
 
-//  static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Mute")
-  static let mute = NSImage(named: "mute")!
+  static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Volume Muted")
   static let volume0 = makeSymbol(named: "speaker.fill", fallbackName: "volume-0", desc: "Volume None")
   static let volume1 = makeSymbol(named: "speaker.wave.1.fill", fallbackName: "volume-1", desc: "Volume 1 Wave")
   static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves")
