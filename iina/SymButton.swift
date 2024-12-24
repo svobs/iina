@@ -20,8 +20,14 @@ class SymButton: NSImageView {
       /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
       /// This is ignored when using play & pause images (they are static assets).
       /// Looks like `pointSize` here is ignored. Not sure if `scale` is relevant either?
-      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold, scale: .small)
+//      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold, scale: .small)
+      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .thin, scale: .large)
       symbolConfiguration = config
+    }
+
+    if #available(macOS 15.0, *) {
+      let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...")!
+      setSymbolImage(spinImage, contentTransition: .automatic)
     }
   }
 
@@ -48,15 +54,10 @@ class SymButton: NSImageView {
   override func mouseUp(with event: NSEvent) {
     updateHighlight(from: event)
     if isInsideViewFrame(pointInWindow: event.locationInWindow) {
-      self.sendAction(action, to: target)
-
-//      pwc?.animationPipeline.submitTask { [self] in
-//        if #available(macOS 14.0, *) {
-//          addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
-//        } else {
-//          // Fallback on earlier versions
-//        }
+//      if #available(macOS 14.0, *) {
+//        addSymbolEffect(.bounce.down.byLayer, options: .nonRepeating, animated: true)
 //      }
+      self.sendAction(action, to: target)
     }
   }
 
@@ -88,7 +89,8 @@ class SymButton: NSImageView {
     }
     set {
       if let newValue, #available(macOS 15.0, *) {
-        setSymbolImage(newValue, contentTransition: .replace)
+        setSymbolImage(newValue, contentTransition: .replace.downUp,
+                       options: .speed(4.0).nonRepeating)
       } else {
         image = newValue
       }

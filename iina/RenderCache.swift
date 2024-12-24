@@ -53,7 +53,7 @@ class RenderCache {
   var barColorLeft = NSColor.controlAccentColor
   var barColorRight = NSColor.mainSliderBarRight
   let barMarginRadius: CGFloat = 1.0
-
+  let drawRightBarGreaterThanMaxVol = false
 
   // count should equal number of KnobTypes
   var cachedKnobs = [Knob?](repeating: nil, count: 6)
@@ -352,10 +352,6 @@ class RenderCache {
 
       // If volume can exceed 100%, draw that section in special color
       let highlightOverlayImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        let leftMaxColor = exaggerateColor(leftColor)
-        let rightMaxColor = exaggerateColor(rightColor)
-        Logger.log.debug("leftMaxColor: \(leftColor) -> \(leftMaxColor), rightMaxColor: \(rightColor) -> \(rightMaxColor)")
-
         let regularMaxRatio = 100.0 / maxValue
         let oneHundredPointX = (outerPadding_Scaled + (regularMaxRatio * barWidth_Scaled)).rounded()
 
@@ -364,26 +360,37 @@ class RenderCache {
         let y = (CGFloat(cgc.height) - volBarGreaterThanMaxHeight_Scaled) * 0.5  // y should include outerPadding_Scaled here
 
         let leftMaxBar: CGRect?
-        let rightMaxBar: CGRect
+        let rightMaxBar: CGRect?
         if leftClipMaxX < oneHundredPointX {
           // Volume is lower than 100%: only need to draw the part of bar which is > 100%
           leftMaxBar = nil
-          rightMaxBar = CGRect(x: oneHundredPointX, y: y,
-                               width: barMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
+          if rc.drawRightBarGreaterThanMaxVol {
+            rightMaxBar = CGRect(x: oneHundredPointX, y: y,
+                                 width: barMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
+          } else {
+            rightMaxBar = nil
+          }
         } else {
           leftMaxBar = CGRect(x: oneHundredPointX, y: y,
                               width: leftClipMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
-
-          rightMaxBar = CGRect(x: leftClipMaxX, y: y,
-                               width: barMaxX - leftClipMaxX, height: volBarGreaterThanMaxHeight_Scaled)
+          if rc.drawRightBarGreaterThanMaxVol {
+            rightMaxBar = CGRect(x: leftClipMaxX, y: y,
+                                 width: barMaxX - leftClipMaxX, height: volBarGreaterThanMaxHeight_Scaled)
+          } else {
+            rightMaxBar = nil
+          }
         }
 
         if let leftMaxBar {
+          let leftMaxColor = exaggerateColor(leftColor)
           cgc.setFillColor(leftMaxColor)
           cgc.fill(leftMaxBar)
         }
-        cgc.setFillColor(rightMaxColor)
-        cgc.fill(rightMaxBar)
+        if let rightMaxBar {
+          let rightMaxColor = exaggerateColor(rightColor)
+          cgc.setFillColor(rightMaxColor)
+          cgc.fill(rightMaxBar)
+        }
 
         cgc.setBlendMode(.destinationIn)
         cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))

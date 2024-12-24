@@ -1957,8 +1957,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let isPaused = player.info.isPaused
     let playPauseImage: NSImage
     if isPaused {
-      if let mediaPosition = player.info.playbackPositionSec, let mediaDuration =  player.info.playbackDurationSec,
-         mediaPosition == mediaDuration, Preference.bool(for: .resumeFromEndRestartsPlayback) {
+      if player.shouldShowRestartFromEOFIcon() {
         playPauseImage = Images.replay
       } else {
         playPauseImage = Images.play

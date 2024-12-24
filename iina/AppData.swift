@@ -437,10 +437,8 @@ struct Images {
   }
 
   // Use single instance of each for efficiency
-//  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play/Resume")
-//  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause")
-  static let play = NSImage(named: "play")!
-  static let pause = NSImage(named: "pause")!
+  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play")
+  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause")
   static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning")
   static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s")
   static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s")

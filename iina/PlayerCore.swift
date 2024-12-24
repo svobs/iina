@@ -765,6 +765,24 @@ class PlayerCore: NSObject {
     return true
   }
 
+  /// Same idea as `shouldRestartFromEOF()` but uses cached values so it can be called from main queue
+  func shouldShowRestartFromEOFIcon() -> Bool {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    guard Preference.bool(for: .resumeFromEndRestartsPlayback) && info.isAtEOF else {
+      return false
+    }
+
+    if Preference.bool(for: .playlistAutoPlayNext) {
+      if let currentPlayback = info.currentPlayback, currentPlayback.playlistPos == info.playlist.count - 1 {
+        return true
+      } else {
+        return false
+      }
+    }
+    return true
+  }
+
   func resume() {
     mpv.queue.async { [self] in
       /// Set this so that callbacks will fire even though `info.isPaused` was already set

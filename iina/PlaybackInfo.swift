@@ -136,6 +136,13 @@ class PlaybackInfo {
 
   var playbackPositionSec: Double?
   var playbackDurationSec: Double?
+  var isAtEOF: Bool {
+    if let mediaPosition = playbackPositionSec, let mediaDuration = playbackDurationSec, mediaPosition == mediaDuration {
+      return true
+    } else {
+      return false
+    }
+  }
 
   var playlist: [MPVPlaylistItem] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
