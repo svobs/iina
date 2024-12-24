@@ -465,6 +465,7 @@ extension PlayerWindowController {
     muteButton.symImage = volImage
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
+    muteButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular, scale: .large)
     fragVolumeView.addSubview(muteButton)
     muteButton.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
