@@ -9,31 +9,41 @@
 import Foundation
 
 // Not elegant. Just a place to stick common code so that it won't be duplicated
-class OSCToolbarButton: NSButton {
+class OSCToolbarButton: SymButton {
   var iconSize: CGFloat = 0
   var iconSpacing: CGFloat = 0
   var widthConstraint: NSLayoutConstraint? = nil
   var heightConstraint: NSLayoutConstraint? = nil
 
+  override init() {
+    super.init()
+    bounceOnClick = true
+    refusesFirstResponder = true
+    tag = -1
+  }
+  
+  @MainActor required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    bounceOnClick = true
+  }
+  
   var buttonSize: CGFloat {
     return self.iconSize + (2 * self.iconSpacing)
   }
 
-  func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
+  func setStyle(buttonType: Preference.ToolBarButton? = nil, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
     let currentGeo = ControlBarGeometry(mode: .windowedNormal)
     let iconSize = iconSize ?? currentGeo.toolIconSize
     let iconSpacing = iconSpacing ?? currentGeo.toolIconSpacing
     self.iconSize = iconSize
     self.iconSpacing = iconSpacing
 
-    translatesAutoresizingMaskIntoConstraints = false
-    bezelStyle = .regularSquare
-    image = buttonType.image()
-    isBordered = false
-    tag = buttonType.rawValue
-    refusesFirstResponder = true
-    toolTip = buttonType.description()
-    imageScaling = .scaleProportionallyUpOrDown
+    if let buttonType, tag != buttonType.rawValue {
+      image = buttonType.image()
+      tag = buttonType.rawValue
+      toolTip = buttonType.description()
+    }
+
     if let widthConstraint, widthConstraint.isActive {
       widthConstraint.animateToConstant(iconSize)
     } else {

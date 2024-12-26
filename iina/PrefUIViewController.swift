@@ -492,9 +492,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       for _ in 0..<toolbarButtonTypes.count {
         let button = OSCToolbarButton()
         oscToolbarStackView.addView(button, in: .center)
-        button.isEnabled = false
-        // But don't gray it out
-        (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
         newBtns.append(button)
       }
       btns = newBtns

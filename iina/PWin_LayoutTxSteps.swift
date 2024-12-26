@@ -437,14 +437,13 @@ extension PlayerWindowController {
       apply(visibility: outputLayout.topBarView, to: topBarView)
     }
 
-    // TODO: be smarter about this, so animations can be improved
     if !transition.inputLayout.hasFloatingOSC {
-      // Always remove subviews from OSC - is inexpensive + easier than figuring out if anything has changed
-      // (except for floating OSC, which doesn't change much and has animation glitches if removed & re-added)
-      for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
-        view?.removeFromSuperview()
+      if transition.isControlBarChanging {
+        for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
+          view?.removeFromSuperview()
+        }
+        removeToolBar()
       }
-      removeToolBar()
     }
 
     if !outputLayout.hasControlBar {
@@ -542,7 +541,7 @@ extension PlayerWindowController {
 
       case .floating:
 
-        if let toolbarView = rebuildToolbar(transition) {
+        if let toolbarView = rebuildToolbar(transition), transition.isControlBarChanging {
           oscFloatingUpperView.addView(toolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
         }
@@ -1428,15 +1427,18 @@ extension PlayerWindowController {
   /// For `bottom` and `top` OSC only - not `floating`
   private func addControlBarViews(to containerView: NSStackView,
                                   _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
-    containerView.addView(fragPlaybackBtnsView, in: .leading)
-    containerView.addView(fragPositionSliderView, in: .leading)
-    containerView.addView(fragVolumeView, in: .leading)
+    let isControlBarChanging = transition.isControlBarChanging
+    if isControlBarChanging {
+      containerView.addView(fragPlaybackBtnsView, in: .leading)
+      containerView.addView(fragPositionSliderView, in: .leading)
+      containerView.addView(fragVolumeView, in: .leading)
 
-    containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-    containerView.setVisibilityPriority(.mustHold, for: fragPositionSliderView)
-    containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+      containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
+      containerView.setVisibilityPriority(.mustHold, for: fragPositionSliderView)
+      containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+    }
 
-    if let toolbarView = rebuildToolbar(transition) {
+    if let toolbarView = rebuildToolbar(transition), isControlBarChanging {
       containerView.addView(toolbarView, in: .leading)
       containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
     }
@@ -1444,8 +1446,8 @@ extension PlayerWindowController {
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
     let arrowButtonSymConfig = oscGeo.arrowButtonSymConfig
-    leftArrowButton.symImage = oscGeo.leftArrowImage.withSymbolConfiguration(oscGeo.arrowButtonSymConfig)
-    rightArrowButton.symImage = oscGeo.rightArrowImage.withSymbolConfiguration(oscGeo.arrowButtonSymConfig)
+    leftArrowButton.symImage = oscGeo.leftArrowImage.withSymbolConfiguration(arrowButtonSymConfig)
+    rightArrowButton.symImage = oscGeo.rightArrowImage.withSymbolConfiguration(arrowButtonSymConfig)
     arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
     fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
     leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
@@ -1453,7 +1455,7 @@ extension PlayerWindowController {
   }
 
   func addSpeedLabelToControlBar(_ transition: LayoutTransition) {
-    guard transition.outputLayout.isMusicMode || transition.outputLayout.enableOSC else { return }
+    guard transition.outputLayout.hasControlBar else { return }
 
     let oscGeo = transition.outputLayout.controlBarGeo
     let speedLabelFontSize = oscGeo.speedLabelFontSize
@@ -1463,51 +1465,57 @@ extension PlayerWindowController {
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
   private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView? {
-    let oscGeo = transition.outputLayout.controlBarGeo
-    let buttonTypes = oscGeo.toolbarItems
+    let oldGeo = transition.inputLayout.controlBarGeo
+    let newGeo = transition.outputLayout.controlBarGeo
 
-    removeToolBar()
+    let newButtonTypes = newGeo.toolbarItems
 
-    guard !buttonTypes.isEmpty else {
-      log.verbose("[\(transition.name)] Omitting OSC toolbar; no toolbarItems configured")
-      return nil
-    }
+    let isControlBarChanging = transition.isControlBarChanging
+    if isControlBarChanging || oldGeo.toolbarItems.compactMap({ $0.rawValue }) != newButtonTypes.compactMap({ $0.rawValue }) {
+      removeToolBar()
+      guard newButtonTypes.count > 0 else { return nil }
+      let toolbarView = ClickThroughStackView()
 
-    let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
-    log.verbose("[\(transition.name)] Setting OSC toolbarItems to: [\(buttonTypes.map({$0.keyString}).joined(separator: ", "))]")
+      let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
+      log.verbose("[\(transition.name)] Updating OSC toolbarItems to: [\(newButtonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
-    var toolButtons: [OSCToolbarButton] = []
-    for buttonType in buttonTypes {
-      let button = OSCToolbarButton()
-      button.setStyle(buttonType: buttonType, iconSize: oscGeo.toolIconSize, iconSpacing: oscGeo.toolIconSpacing)
-      button.contentTintColor = contentTintColor
-      button.action = #selector(self.toolBarButtonAction(_:))
-      if transition.outputLayout.spec.oscBackgroundIsClear {
-        button.addShadow()
-      } else {
-        button.shadow = nil
+      var toolbarButtons: [OSCToolbarButton] = []
+      for buttonType in newButtonTypes {
+        let button = OSCToolbarButton()
+        button.setStyle(buttonType: buttonType, iconSize: newGeo.toolIconSize, iconSpacing: newGeo.toolIconSpacing)
+        button.contentTintColor = contentTintColor
+        button.action = #selector(self.toolBarButtonAction(_:))
+        if transition.outputLayout.spec.oscBackgroundIsClear {
+          button.addShadow()
+        } else {
+          button.shadow = nil
+        }
+        toolbarButtons.append(button)
       }
-      toolButtons.append(button)
+
+      toolbarView.identifier = .init("OSC-ToolBarView")
+      toolbarView.orientation = .horizontal
+      toolbarView.distribution = .gravityAreas
+      for button in toolbarButtons {
+        toolbarView.addView(button, in: .trailing)
+        toolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+      }
+      fragToolbarView = toolbarView
     }
 
-    let toolbarView = ClickThroughStackView()
-    toolbarView.identifier = .init("OSC-ToolBarView")
-    toolbarView.orientation = .horizontal
-    toolbarView.distribution = .gravityAreas
-    for button in toolButtons {
-      toolbarView.addView(button, in: .trailing)
-      toolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+    if let fragToolbarView, oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing {
+      let iconSpacing = newGeo.toolIconSpacing
+      for btn in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
+        btn.setStyle(iconSize: newGeo.toolIconSize, iconSpacing: iconSpacing)
+      }
+      // It's not possible to control the icon padding from inside the buttons in all cases.
+      // Instead we can get the same effect with a little more work, by controlling the stack view:
+      fragToolbarView.spacing = 2 * iconSpacing
+      fragToolbarView.edgeInsets = .init(top: iconSpacing, left: max(0, iconSpacing - 4),
+                                     bottom: iconSpacing, right: 0)
+      log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
     }
-    fragToolbarView = toolbarView
-
-    // It's not possible to control the icon padding from inside the buttons in all cases.
-    // Instead we can get the same effect with a little more work, by controlling the stack view:
-    let button = toolButtons[0]
-    toolbarView.spacing = 2 * button.iconSpacing
-    toolbarView.edgeInsets = .init(top: button.iconSpacing, left: max(0, button.iconSpacing - 4),
-                                   bottom: button.iconSpacing, right: 0)
-    log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
-    return toolbarView
+    return fragToolbarView
   }
 
   // Looks like in some cases, the toolbar doesn't disappear unless all its buttons are also removed

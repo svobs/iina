@@ -19,6 +19,15 @@ class SymButton: NSImageView {
 
   init() {
     super.init(frame: .zero)
+    configureSelf()
+  }
+
+  required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    configureSelf()
+  }
+
+  private func configureSelf() {
     translatesAutoresizingMaskIntoConstraints = false
     imageScaling = .scaleProportionallyUpOrDown
     if #available(macOS 11.0, *) {
@@ -28,34 +37,28 @@ class SymButton: NSImageView {
       let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .ultraLight, scale: .large)
       symbolConfiguration = config
     }
-
-    if #available(macOS 15.0, *) {
-      let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...")!
-      setSymbolImage(spinImage, contentTransition: .automatic)
-    }
   }
 
   var pwc: PlayerWindowController? {
     window?.windowController as? PlayerWindowController
   }
 
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
   override var acceptsFirstResponder: Bool { true }
 
   override func mouseDown(with event: NSEvent) {
+    guard action != nil else { return }
     /// Setting this will cause PlayerWindowController to forward `mouseDragged` & `mouseUp` events to this object even when out of bounds
     pwc?.currentDragObject = self
     updateHighlight(from: event)
   }
 
   override func mouseDragged(with event: NSEvent) {
+    guard action != nil else { return }
     updateHighlight(from: event)
   }
 
   override func mouseUp(with event: NSEvent) {
+    guard action != nil else { return }
     let isInsideBounds = updateHighlight(from: event)
     guard isInsideBounds else { return }
 
@@ -94,6 +97,7 @@ class SymButton: NSImageView {
     return isInsideBounds
   }
 
+  // FIXME: refactor to func which takes effect param
   var symImage: NSImage? {
     get {
       return image

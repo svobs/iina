@@ -253,6 +253,10 @@ extension PlayerWindowController {
     var ΔWindowWidth: CGFloat {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }
+
+    var isControlBarChanging: Bool {
+      return inputLayout.enableOSC != outputLayout.enableOSC || inputLayout.oscPosition != outputLayout.oscPosition || inputLayout.isMusicMode != outputLayout.isMusicMode
+    }
   }
   
 }

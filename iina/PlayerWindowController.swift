@@ -492,7 +492,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let rightArrowButton = SymButton()
 
   /// Toolbar
-  var fragToolbarView: NSStackView? = nil
+  var fragToolbarView: ClickThroughStackView? = nil
 
   /// Container for play slider & time indicator labels
   @IBOutlet var fragPositionSliderView: NSView!

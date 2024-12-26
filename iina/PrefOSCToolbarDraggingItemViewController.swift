@@ -47,8 +47,6 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
     buttonTopToBoxTopConstraint.constant = toolbarButton.iconSpacing + 1
     buttonBottomToBoxBottomConstraint.constant = toolbarButton.iconSpacing + 1
     buttonTrailingConstraint.constant = toolbarButton.iconSpacing
-    // Button is actually disabled so that its mouseDown goes to its superview instead. But don't gray it out.
-    (toolbarButton.cell! as! NSButtonCell).imageDimsWhenDisabled = false
     toolbarButton.superview?.layoutSubtreeIfNeeded()
 
     descriptionLabel.stringValue = buttonType.description()

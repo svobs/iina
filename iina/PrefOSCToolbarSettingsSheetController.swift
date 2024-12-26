@@ -125,7 +125,7 @@ class PrefOSCToolbarCurrentItem: OSCToolbarButton, NSPasteboardWriting {
        superView: PrefOSCToolbarCurrentItemsView) {
     self.buttonType = buttonType
     self.currentItemsView = superView
-    super.init(frame: .zero)
+    super.init()
 
     setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
   }
