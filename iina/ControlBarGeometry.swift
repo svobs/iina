@@ -242,6 +242,22 @@ struct ControlBarGeometry {
     return NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .small)
   }
 
+  // MARK: Other functions
+
+  func toolbarItemsAreSame(as otherGeo: ControlBarGeometry) -> Bool {
+    let ours = toolbarItems.compactMap({ $0.rawValue })
+    let theirs = otherGeo.toolbarItems.compactMap({ $0.rawValue })
+    if ours.count != theirs.count {
+      return false
+    }
+    for (o, t) in zip(ours, theirs) {
+      if o != t {
+        return false
+      }
+    }
+    return true
+  }
+
   // MARK: Static
 
   static func buttonSize(iconSize: CGFloat, iconSpacing: CGFloat) -> CGFloat {

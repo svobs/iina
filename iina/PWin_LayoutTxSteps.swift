@@ -541,7 +541,7 @@ extension PlayerWindowController {
 
       case .floating:
 
-        if let toolbarView = rebuildToolbar(transition), transition.isControlBarChanging {
+        if let toolbarView = rebuildToolbar(transition), !oscFloatingUpperView.views.contains(toolbarView) {
           oscFloatingUpperView.addView(toolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
         }
@@ -1438,7 +1438,7 @@ extension PlayerWindowController {
       containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     }
 
-    if let toolbarView = rebuildToolbar(transition), isControlBarChanging {
+    if let toolbarView = rebuildToolbar(transition), !containerView.views.contains(toolbarView) {
       containerView.addView(toolbarView, in: .leading)
       containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
     }
@@ -1471,7 +1471,7 @@ extension PlayerWindowController {
     let newButtonTypes = newGeo.toolbarItems
 
     let isControlBarChanging = transition.isControlBarChanging
-    if isControlBarChanging || oldGeo.toolbarItems.compactMap({ $0.rawValue }) != newButtonTypes.compactMap({ $0.rawValue }) {
+    if isControlBarChanging || !oldGeo.toolbarItemsAreSame(as: newGeo) {
       removeToolBar()
       guard newButtonTypes.count > 0 else { return nil }
       let toolbarView = ClickThroughStackView()

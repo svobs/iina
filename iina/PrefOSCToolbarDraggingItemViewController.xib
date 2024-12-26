@@ -27,16 +27,13 @@
                     <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0YW-az-h4Z" userLabel="Toolbar-Item-Box Content View">
                         <rect key="frame" x="4" y="5" width="330" height="16"/>
                         <subviews>
-                            <button focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="K6f-VH-I1k" userLabel="ToolbarButton" customClass="OSCToolbarButton" customModule="IINA" customModuleProvider="target">
+                            <imageView horizontalCompressionResistancePriority="251" verticalCompressionResistancePriority="251" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="K6f-VH-I1k" userLabel="ToolbarButton" customClass="OSCToolbarButton" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="16" height="16"/>
-                                <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" imagePosition="only" alignment="center" enabled="NO" refusesFirstResponder="YES" state="on" focusRingType="none" imageScaling="proportionallyUpOrDown" inset="2" id="fsj-YE-OB7">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
+                                <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" id="fsj-YE-OB7"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="K6f-VH-I1k" secondAttribute="height" multiplier="1:1" id="tXR-d6-mce"/>
                                 </constraints>
-                            </button>
+                            </imageView>
                             <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="STZ-wb-l3E">
                                 <rect key="frame" x="14" y="-7" width="309" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="ebp-YW-3qF">
