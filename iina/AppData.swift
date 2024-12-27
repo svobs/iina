@@ -428,9 +428,10 @@ extension Notification.Name {
 }
 
 struct Images {
-  static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String) -> NSImage {
+  static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String, weight: NSFont.Weight = .ultraLight) -> NSImage {
     if #available(macOS 11.0, *) {
-      if let sysImg = NSImage(systemSymbolName: name, accessibilityDescription: desc) {
+      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .small)
+      if let sysImg = NSImage(systemSymbolName: name, accessibilityDescription: desc)?.withSymbolConfiguration(config) {
         return sysImg
       }
     }
@@ -439,15 +440,15 @@ struct Images {
     return NSImage(named: name)!
   }
 
-  // Use single instance of each for efficiency
   static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play")
   static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause")
   static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning")
-  static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s")
-  static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s")
+
+  static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s", weight: .medium)
+  static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s", weight: .medium)
   static let rewind: NSImage = makeSymbol(named: "backward.fill", fallbackName: "speedl", desc: "Rewind")
   static let fastForward: NSImage = makeSymbol(named: "forward.fill", fallbackName: "speed", desc: "Fast Forward")
-  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track")
+  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track").withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 12, weight: .medium, scale: .small))!
   static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track")
 
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")

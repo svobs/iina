@@ -9,7 +9,6 @@
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView {
   var bounceOnClick: Bool = false
-  var imageReplacementEffect: ReplacementEffect = .downUp
 
   enum ReplacementEffect {
     case downUp
@@ -97,29 +96,23 @@ class SymButton: NSImageView {
     return isInsideBounds
   }
 
-  // FIXME: refactor to func which takes effect param
-  var symImage: NSImage? {
-    get {
-      return image
-    }
-    set {
-      if let newValue, newValue != image, #available(macOS 15.0, *) {
-        let effect: ReplaceSymbolEffect
-        switch imageReplacementEffect {
-        case .downUp:
-          effect = .replace.downUp
-        case .upUp:
-          effect = .replace.upUp
-        case .offUp:
-          effect = .replace.offUp
-        }
-        setSymbolImage(newValue, contentTransition: effect,
-                       options:
-            .speed(Constants.Speed.symButtonImageTransition)
-            .nonRepeating)
-      } else {
-        image = newValue
+  func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect) {
+    if #available(macOS 15.0, *), let newImage, newImage != image {
+      let nativeEffect: ReplaceSymbolEffect
+      switch effect {
+      case .downUp:
+        nativeEffect = .replace.downUp
+      case .upUp:
+        nativeEffect = .replace.upUp
+      case .offUp:
+        nativeEffect = .replace.offUp
       }
+      setSymbolImage(newImage, contentTransition: nativeEffect,
+                     options:
+          .speed(Constants.Speed.symButtonImageTransition)
+          .nonRepeating)
+    } else {
+      image = newImage
     }
   }
 }

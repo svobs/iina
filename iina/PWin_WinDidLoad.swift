@@ -374,7 +374,6 @@ extension PlayerWindowController {
     leftArrowButton.identifier = .init("leftArrowButton")
     leftArrowButton.refusesFirstResponder = true
     leftArrowButton.bounceOnClick = true
-    leftArrowButton.imageReplacementEffect = .upUp
 
     // Right Arrow button
     rightArrowButton.image = oscGeo.rightArrowImage
@@ -383,11 +382,6 @@ extension PlayerWindowController {
     rightArrowButton.identifier = .init("rightArrowButton")
     rightArrowButton.refusesFirstResponder = true
     rightArrowButton.bounceOnClick = true
-    rightArrowButton.imageReplacementEffect = .upUp
-
-    let arrowButtonSymConfig = oscGeo.arrowButtonSymConfig
-    leftArrowButton.symbolConfiguration = arrowButtonSymConfig
-    rightArrowButton.symbolConfiguration = arrowButtonSymConfig
 
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
     fragPlaybackBtnsView.addSubview(leftArrowButton)
@@ -462,7 +456,7 @@ extension PlayerWindowController {
     // Mute button
     muteButton.identifier = .init("muteButton")
     let volImage = Images.volume3
-    muteButton.symImage = volImage
+    muteButton.image = volImage
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
     muteButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular, scale: .large)

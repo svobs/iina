@@ -1982,7 +1982,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if hasPlayButtonChange {
         let weight: NSFont.Weight = playPauseImage == Images.replay ? .black : .light
         playButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .large)
-        playButton.symImage = playPauseImage
+        playButton.replaceSymbolImage(with: playPauseImage, effect: .downUp)
       }
 
       speedLabel.isHidden = !showSpeedLabel

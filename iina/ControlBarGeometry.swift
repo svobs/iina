@@ -232,16 +232,6 @@ struct ControlBarGeometry {
     return totalIconWidth + totalIconSpacing
   }
 
-  var arrowButtonSymConfig: NSImage.SymbolConfiguration {
-    let weight: NSFont.Weight
-    if arrowButtonAction == .seek {
-      weight = .medium
-    } else {
-      weight = .ultraLight
-    }
-    return NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .small)
-  }
-
   // MARK: Other functions
 
   func toolbarItemsAreSame(as otherGeo: ControlBarGeometry) -> Bool {
