@@ -105,7 +105,8 @@ class SymButton: NSImageView, NSAccessibilityButton {
   }
 
   func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect) {
-    if #available(macOS 15.0, *), let newImage, newImage != image {
+    guard let newImage, newImage != image else { return }
+    if #available(macOS 15.0, *) {
       let nativeEffect: ReplaceSymbolEffect
       switch effect {
       case .downUp:
@@ -121,6 +122,15 @@ class SymButton: NSImageView, NSAccessibilityButton {
           .nonRepeating)
     } else {
       image = newImage
+    }
+  }
+
+  func setColors(from layoutState: LayoutState) {
+    contentTintColor = layoutState.contentTintColor
+    if layoutState.spec.oscBackgroundIsClear {
+      addShadow()
+    } else {
+      shadow = nil
     }
   }
 }

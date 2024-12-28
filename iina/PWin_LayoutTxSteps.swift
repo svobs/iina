@@ -598,7 +598,6 @@ extension PlayerWindowController {
       playSlider.customCell.updateColorsFromPrefs()
 
       if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
-        let hasClearBG = transition.outputLayout.spec.oscBackgroundIsClear
         let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
         playButton.contentTintColor = contentTintColor
         leftArrowButton.contentTintColor = contentTintColor
@@ -609,6 +608,8 @@ extension PlayerWindowController {
         let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 0.8
         leftTimeLabel.alphaValue = textAlpha
         rightTimeLabel.alphaValue = textAlpha
+
+        let hasClearBG = transition.outputLayout.spec.oscBackgroundIsClear
         if hasClearBG {
           playButton.addShadow()
           leftArrowButton.addShadow()
@@ -1445,8 +1446,8 @@ extension PlayerWindowController {
   }
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
-    leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage, effect: .upUp)
-    rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage, effect: .upUp)
+    leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage, effect: .offUp)
+    rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage, effect: .offUp)
     arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
     fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
     leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
@@ -1466,8 +1467,11 @@ extension PlayerWindowController {
   private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView? {
     let oldGeo = transition.inputLayout.controlBarGeo
     let newGeo = transition.outputLayout.controlBarGeo
-
     let newButtonTypes = newGeo.toolbarItems
+
+    let hasSizeChange = oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing
+    let hasStyleChange = transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear
+    var needsButtonsUpdate = hasSizeChange || hasStyleChange
 
     let isControlBarChanging = transition.isControlBarChanging
     if isControlBarChanging || !oldGeo.toolbarItemsAreSame(as: newGeo) {
@@ -1475,22 +1479,16 @@ extension PlayerWindowController {
       guard newButtonTypes.count > 0 else { return nil }
       let toolbarView = ClickThroughStackView()
 
-      let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
       log.verbose("[\(transition.name)] Updating OSC toolbarItems to: [\(newButtonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
       var toolbarButtons: [OSCToolbarButton] = []
       for buttonType in newButtonTypes {
         let button = OSCToolbarButton()
-        button.setStyle(buttonType: buttonType, iconSize: newGeo.toolIconSize, iconSpacing: newGeo.toolIconSpacing)
-        button.contentTintColor = contentTintColor
+        button.setStyle(buttonType: buttonType, using: transition.outputLayout)
         button.action = #selector(self.toolBarButtonAction(_:))
-        if transition.outputLayout.spec.oscBackgroundIsClear {
-          button.addShadow()
-        } else {
-          button.shadow = nil
-        }
         toolbarButtons.append(button)
       }
+      needsButtonsUpdate = false
 
       toolbarView.identifier = .init("OSC-ToolBarView")
       toolbarView.orientation = .horizontal
@@ -1502,17 +1500,22 @@ extension PlayerWindowController {
       fragToolbarView = toolbarView
     }
 
-    if let fragToolbarView, oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing {
-      let iconSpacing = newGeo.toolIconSpacing
-      for btn in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
-        btn.setStyle(iconSize: newGeo.toolIconSize, iconSpacing: iconSpacing)
+    if let fragToolbarView {
+      if needsButtonsUpdate {
+        for btn in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
+          btn.setStyle(using: transition.outputLayout)
+        }
       }
-      // It's not possible to control the icon padding from inside the buttons in all cases.
-      // Instead we can get the same effect with a little more work, by controlling the stack view:
-      fragToolbarView.spacing = 2 * iconSpacing
-      fragToolbarView.edgeInsets = .init(top: iconSpacing, left: max(0, iconSpacing - 4),
-                                     bottom: iconSpacing, right: 0)
-      log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
+
+      if hasSizeChange {
+        // It's not possible to control the icon padding from inside the buttons in all cases.
+        // Instead we can get the same effect with a little more work, by controlling the stack view:
+        let iconSpacing = newGeo.toolIconSpacing
+        fragToolbarView.spacing = 2 * iconSpacing
+        fragToolbarView.edgeInsets = .init(top: iconSpacing, left: max(0, iconSpacing - 4),
+                                           bottom: iconSpacing, right: 0)
+        log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
+      }
     }
     return fragToolbarView
   }

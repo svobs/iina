@@ -428,9 +428,26 @@ extension Notification.Name {
 }
 
 struct Images {
-  static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String, weight: NSFont.Weight = .ultraLight) -> NSImage {
+  /// `NSImage.SymbolScale` for MacOS 11-
+  public enum SymbolScalePolyfill : Int, @unchecked Sendable {
+    case small = 1
+    case medium = 2
+    case large = 3
+
+    @available(macOS 11.0, *)
+    var scaleValue: NSImage.SymbolScale {
+      switch self {
+      case .small: return .small
+      case .medium: return .medium
+      case .large: return .large
+      }
+    }
+  }
+
+  static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String,
+                         weight: NSFont.Weight = .ultraLight, scale: SymbolScalePolyfill = .large) -> NSImage {
     if #available(macOS 11.0, *) {
-      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .small)
+      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: scale.scaleValue)
       if let sysImg = NSImage(systemSymbolName: name, accessibilityDescription: desc)?.withSymbolConfiguration(config) {
         return sysImg
       }
@@ -440,16 +457,16 @@ struct Images {
     return NSImage(named: name)!
   }
 
-  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play")
-  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause")
-  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning")
+  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", weight: .light)
+  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", weight: .light)
+  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning", weight: .black)
 
-  static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s", weight: .medium)
-  static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s", weight: .medium)
-  static let rewind: NSImage = makeSymbol(named: "backward.fill", fallbackName: "speedl", desc: "Rewind")
-  static let fastForward: NSImage = makeSymbol(named: "forward.fill", fallbackName: "speed", desc: "Fast Forward")
-  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track").withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 12, weight: .medium, scale: .small))!
-  static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track")
+  static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s", weight: .medium , scale: .small)
+  static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s", weight: .medium, scale: .small)
+  static let rewind: NSImage = makeSymbol(named: "backward.fill", fallbackName: "speedl", desc: "Rewind", scale: .small)
+  static let fastForward: NSImage = makeSymbol(named: "forward.fill", fallbackName: "speed", desc: "Fast Forward", scale: .small)
+  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track", scale: .small)
+  static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track", scale: .small)
 
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
   static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
@@ -457,11 +474,11 @@ struct Images {
   static let sidebarLeading = NSImage(imageLiteralResourceName: "sidebar.leading")
   static let sidebarTrailing = NSImage(imageLiteralResourceName: "sidebar.trailing")
 
-  static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Volume Muted")
-  static let volume0 = makeSymbol(named: "speaker.fill", fallbackName: "volume-0", desc: "Volume None")
-  static let volume1 = makeSymbol(named: "speaker.wave.1.fill", fallbackName: "volume-1", desc: "Volume 1 Wave")
-  static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves")
-  static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full")
+  static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Volume Muted", weight: .medium)
+  static let volume0 = makeSymbol(named: "speaker.fill", fallbackName: "volume-0", desc: "Volume None", weight: .medium)
+  static let volume1 = makeSymbol(named: "speaker.wave.1.fill", fallbackName: "volume-1", desc: "Volume 1 Wave", weight: .medium)
+  static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves", weight: .medium)
+  static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full", weight: .medium)
 }
 
 struct DebugConfig {

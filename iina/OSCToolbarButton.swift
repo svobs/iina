@@ -31,6 +31,11 @@ class OSCToolbarButton: SymButton {
     return self.iconSize + (2 * self.iconSpacing)
   }
 
+  func setStyle(buttonType: Preference.ToolBarButton? = nil, using layout: LayoutState) {
+    setStyle(buttonType: buttonType, iconSize: layout.controlBarGeo.toolIconSize, iconSpacing:  layout.controlBarGeo.toolIconSpacing)
+    setColors(from: layout)
+  }
+
   func setStyle(buttonType: Preference.ToolBarButton? = nil, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
     let currentGeo = ControlBarGeometry(mode: .windowedNormal)
     let iconSize = iconSize ?? currentGeo.toolIconSize

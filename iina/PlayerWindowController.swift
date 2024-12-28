@@ -1979,11 +1979,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-      if hasPlayButtonChange {
-        let weight: NSFont.Weight = playPauseImage == Images.replay ? .black : .light
-        playButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: .large)
-        playButton.replaceSymbolImage(with: playPauseImage, effect: .downUp)
-      }
+      playButton.replaceSymbolImage(with: playPauseImage, effect: .downUp)
 
       speedLabel.isHidden = !showSpeedLabel
 
