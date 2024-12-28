@@ -29,6 +29,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
   private func configureSelf() {
     translatesAutoresizingMaskIntoConstraints = false
     imageScaling = .scaleProportionallyUpOrDown
+    imageAlignment = .alignCenter
     if #available(macOS 11.0, *) {
       /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
       /// This is ignored when using play & pause images (they are static assets).

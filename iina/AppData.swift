@@ -468,6 +468,8 @@ struct Images {
   static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track", scale: .small)
   static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track", scale: .small)
 
+  static let toggleAlbumArt: NSImage = makeSymbol(named: "photo", fallbackName: "toggle-album-art", desc: "Toggle Album Art", weight: .medium)
+
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
   static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
   static let settingsFill = NSImage(imageLiteralResourceName: "gearshape.fill")

@@ -461,6 +461,7 @@ extension PlayerWindowController {
     muteButton.action = #selector(muteButtonAction(_:))
     muteButton.toolTip = "Toggle mute"
     fragVolumeView.addSubview(muteButton)
+    muteButton.translatesAutoresizingMaskIntoConstraints = false
     muteButton.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
@@ -478,7 +479,6 @@ extension PlayerWindowController {
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
     let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
     volumeSliderWidthConstraint.identifier = .init("volumeSliderWidthConstraint")
-    volumeSliderWidthConstraint.priority = .init(900)
     volumeSliderWidthConstraint.isActive = true
     volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true
     volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: 4).isActive = true

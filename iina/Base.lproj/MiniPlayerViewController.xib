@@ -25,6 +25,7 @@
                 <outlet property="volumeButtonLeadingConstraint" destination="V02-kj-dfO" id="lij-CV-4pA"/>
                 <outlet property="volumeLabel" destination="MP6-sS-T7f" id="Ztm-8c-Zay"/>
                 <outlet property="volumePopover" destination="yea-QL-Hlq" id="ByH-tP-YzC"/>
+                <outlet property="volumePopoverAlignmentView" destination="ezf-Py-pMY" id="vVK-wa-ngY"/>
                 <outlet property="volumeSlider" destination="Ene-VG-UYY" id="EMJ-5b-xPT"/>
                 <outlet property="volumeSliderView" destination="JoU-Y0-cxJ" id="aKh-R6-I13"/>
             </connections>
@@ -65,66 +66,65 @@
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="Controller-Buttons-Panel View">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
-                                <button translatesAutoresizingMaskIntoConstraints="NO" id="BS3-lV-sRn" userLabel="Volume Button">
-                                    <rect key="frame" x="12" y="17" width="17" height="14"/>
-                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="volume" imagePosition="only" alignment="center" alternateImage="mute" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="qT2-lv-K6m">
-                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="system"/>
-                                    </buttonCell>
+                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="ezf-Py-pMY" userLabel="Volume-Popover-Alignment View">
+                                    <rect key="frame" x="20" y="14" width="1" height="1"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" secondItem="BS3-lV-sRn" secondAttribute="height" multiplier="17:14" id="GSG-n3-UAH"/>
-                                        <constraint firstAttribute="height" constant="14" id="cQK-eB-gma"/>
+                                        <constraint firstAttribute="width" constant="1" id="fVz-jA-AZL"/>
+                                        <constraint firstAttribute="height" constant="1" id="fXv-4f-QY6"/>
                                     </constraints>
+                                </customView>
+                                <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BS3-lV-sRn" userLabel="Volume Button" customClass="SymButton" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="12" y="15" width="16" height="18"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="18" id="cQK-eB-gma"/>
+                                    </constraints>
+                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="center" animates="YES" imageScaling="proportionallyUpOrDown" image="volume" id="qT2-lv-K6m"/>
                                     <connections>
                                         <action selector="volumeBtnAction:" target="-2" id="Hyn-iX-PXx"/>
                                     </connections>
-                                </button>
+                                </imageView>
                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="EqE-sr-ba8" userLabel="Playback-Buttons-Wrapper View">
                                     <rect key="frame" x="56" y="8" width="120" height="32"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="120" id="wPH-JJ-xCb"/>
                                     </constraints>
                                 </customView>
-                                <button translatesAutoresizingMaskIntoConstraints="NO" id="jJt-GH-mJQ" userLabel="TogglePlaylist Button">
-                                    <rect key="frame" x="188" y="17" width="14" height="14"/>
-                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="playlist" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="uZU-1n-W8V">
-                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="system"/>
-                                    </buttonCell>
+                                <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jJt-GH-mJQ" userLabel="TogglePlaylist Button" customClass="SymButton" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="180" y="15" width="18" height="18"/>
                                     <constraints>
                                         <constraint firstAttribute="width" secondItem="jJt-GH-mJQ" secondAttribute="height" multiplier="1:1" id="EOL-Yj-rmd"/>
-                                        <constraint firstAttribute="height" constant="14" id="Mpi-Dg-vRO"/>
+                                        <constraint firstAttribute="height" constant="18" id="Mpi-Dg-vRO"/>
                                     </constraints>
+                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="center" animates="YES" imageScaling="proportionallyUpOrDown" image="playlist" id="uZU-1n-W8V"/>
                                     <connections>
                                         <action selector="togglePlaylist:" target="-2" id="7sk-hB-lNu"/>
                                     </connections>
-                                </button>
-                                <button translatesAutoresizingMaskIntoConstraints="NO" id="6q3-fy-whD" userLabel="ToggleVideo Button">
-                                    <rect key="frame" x="214" y="17" width="14" height="14"/>
-                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="toggle-album-art" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="WBe-l8-whs">
-                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="system"/>
-                                    </buttonCell>
+                                </imageView>
+                                <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6q3-fy-whD" userLabel="ToggleAlbumArt Button" customClass="SymButton" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="210" y="15" width="18" height="18"/>
                                     <constraints>
                                         <constraint firstAttribute="width" secondItem="6q3-fy-whD" secondAttribute="height" multiplier="1:1" id="5TE-Mp-tbF"/>
-                                        <constraint firstAttribute="height" constant="14" id="5wi-g6-Mhb"/>
+                                        <constraint firstAttribute="height" constant="18" id="5wi-g6-Mhb"/>
                                     </constraints>
+                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="center" animates="YES" imageScaling="proportionallyUpOrDown" image="toggle-album-art" id="WBe-l8-whs"/>
                                     <connections>
                                         <action selector="toggleVideoViewVisibleState:" target="-2" id="VCP-Vw-Kfh"/>
                                     </connections>
-                                </button>
+                                </imageView>
                             </subviews>
                             <constraints>
                                 <constraint firstItem="EqE-sr-ba8" firstAttribute="top" secondItem="Wxl-Ex-FWV" secondAttribute="top" constant="8" id="2AQ-ao-Mg8"/>
                                 <constraint firstAttribute="trailing" secondItem="6q3-fy-whD" secondAttribute="trailing" constant="12" id="D1Z-ce-Osd"/>
-                                <constraint firstItem="BS3-lV-sRn" firstAttribute="centerY" secondItem="Wxl-Ex-FWV" secondAttribute="centerY" id="MvJ-Qx-xas"/>
+                                <constraint firstItem="BS3-lV-sRn" firstAttribute="centerY" secondItem="EqE-sr-ba8" secondAttribute="centerY" id="MvJ-Qx-xas"/>
                                 <constraint firstItem="6q3-fy-whD" firstAttribute="centerY" secondItem="jJt-GH-mJQ" secondAttribute="centerY" id="OVk-GE-6VW"/>
                                 <constraint firstItem="6q3-fy-whD" firstAttribute="leading" secondItem="jJt-GH-mJQ" secondAttribute="trailing" constant="12" id="SUc-7W-7ey"/>
                                 <constraint firstItem="BS3-lV-sRn" firstAttribute="leading" secondItem="Wxl-Ex-FWV" secondAttribute="leading" constant="12" id="V02-kj-dfO"/>
+                                <constraint firstItem="ezf-Py-pMY" firstAttribute="centerX" secondItem="BS3-lV-sRn" secondAttribute="centerX" id="lQw-zA-UGZ"/>
                                 <constraint firstItem="EqE-sr-ba8" firstAttribute="centerX" secondItem="Wxl-Ex-FWV" secondAttribute="centerX" constant="-4" id="lWZ-xC-47G"/>
                                 <constraint firstItem="jJt-GH-mJQ" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" id="seC-MX-YXV"/>
                                 <constraint firstAttribute="height" constant="48" id="tY4-6B-euY"/>
                                 <constraint firstAttribute="bottom" secondItem="EqE-sr-ba8" secondAttribute="bottom" constant="8" id="wNd-Rl-wlV"/>
+                                <constraint firstItem="ezf-Py-pMY" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" constant="10" id="zH1-ze-J0W"/>
                             </constraints>
                         </customView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
@@ -183,26 +183,21 @@
                 <outlet property="view" destination="JoU-Y0-cxJ" id="hS6-FI-qsI"/>
             </connections>
         </viewController>
-        <customView id="JoU-Y0-cxJ" userLabel="Volume Slider View">
-            <rect key="frame" x="0.0" y="0.0" width="188" height="32"/>
-            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="JoU-Y0-cxJ" userLabel="Volume Slider View">
+            <rect key="frame" x="0.0" y="0.0" width="180" height="36"/>
             <subviews>
-                <button translatesAutoresizingMaskIntoConstraints="NO" id="5Og-lg-qvH" userLabel="Mute Button">
-                    <rect key="frame" x="12" y="7" width="22" height="18"/>
-                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="volume" imagePosition="only" alignment="center" alternateImage="mute" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="6jy-7B-dv6">
-                        <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
-                        <font key="font" metaFont="system"/>
-                    </buttonCell>
+                <imageView verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="5Og-lg-qvH" userLabel="Mute Button" customClass="SymButton" customModule="IINA" customModuleProvider="target">
+                    <rect key="frame" x="16" y="9" width="16" height="18"/>
                     <constraints>
-                        <constraint firstAttribute="width" secondItem="5Og-lg-qvH" secondAttribute="height" multiplier="17:14" id="Sh7-eY-TU8"/>
                         <constraint firstAttribute="height" constant="18" id="cUj-wp-dxX"/>
                     </constraints>
+                    <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" image="volume" id="6jy-7B-dv6"/>
                     <connections>
                         <action selector="muteButtonAction:" target="-1" id="jKh-Qf-tOV"/>
                     </connections>
-                </button>
-                <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ene-VG-UYY" userLabel="Volume Slider" customClass="ScrollableSlider" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="40" y="6" width="104" height="20"/>
+                </imageView>
+                <slider verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Ene-VG-UYY" userLabel="Volume Slider" customClass="ScrollableSlider" customModule="IINA" customModuleProvider="target">
+                    <rect key="frame" x="38" y="10" width="104" height="16"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="100" id="22P-mK-lYF"/>
                     </constraints>
@@ -211,12 +206,9 @@
                         <action selector="volumeSliderAction:" target="-1" id="amd-td-7lV"/>
                     </connections>
                 </slider>
-                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MP6-sS-T7f" userLabel="50 Label">
-                    <rect key="frame" x="148" y="8" width="34" height="16"/>
-                    <constraints>
-                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="30" id="UDC-wZ-xua"/>
-                    </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="50" id="aot-6J-Jp7" userLabel="50 Cell">
+                <textField focusRingType="none" horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="MP6-sS-T7f" userLabel="50 Label">
+                    <rect key="frame" x="146" y="10" width="21" height="16"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="50" id="aot-6J-Jp7" userLabel="50 Cell">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -224,14 +216,16 @@
                 </textField>
             </subviews>
             <constraints>
-                <constraint firstItem="5Og-lg-qvH" firstAttribute="leading" secondItem="JoU-Y0-cxJ" secondAttribute="leading" constant="12" id="21L-XX-pZ8"/>
-                <constraint firstItem="MP6-sS-T7f" firstAttribute="centerY" secondItem="JoU-Y0-cxJ" secondAttribute="centerY" id="IEM-58-wBy"/>
-                <constraint firstItem="Ene-VG-UYY" firstAttribute="top" secondItem="JoU-Y0-cxJ" secondAttribute="top" constant="8" id="JXq-kB-fdn"/>
+                <constraint firstItem="MP6-sS-T7f" firstAttribute="centerY" secondItem="Ene-VG-UYY" secondAttribute="centerY" id="IEM-58-wBy"/>
+                <constraint firstItem="Ene-VG-UYY" firstAttribute="top" secondItem="JoU-Y0-cxJ" secondAttribute="top" constant="12" id="JXq-kB-fdn"/>
                 <constraint firstItem="MP6-sS-T7f" firstAttribute="leading" secondItem="Ene-VG-UYY" secondAttribute="trailing" constant="8" id="Jfv-7v-xAE"/>
-                <constraint firstAttribute="trailing" secondItem="MP6-sS-T7f" secondAttribute="trailing" constant="8" id="Nkd-PC-I2B"/>
-                <constraint firstItem="5Og-lg-qvH" firstAttribute="centerY" secondItem="JoU-Y0-cxJ" secondAttribute="centerY" id="U0k-sl-lgS"/>
-                <constraint firstAttribute="bottom" secondItem="Ene-VG-UYY" secondAttribute="bottom" constant="8" id="Yba-0E-lbi"/>
+                <constraint firstItem="5Og-lg-qvH" firstAttribute="centerY" secondItem="Ene-VG-UYY" secondAttribute="centerY" id="U0k-sl-lgS"/>
+                <constraint firstAttribute="bottom" secondItem="Ene-VG-UYY" secondAttribute="bottom" constant="12" id="Yba-0E-lbi"/>
                 <constraint firstItem="Ene-VG-UYY" firstAttribute="leading" secondItem="5Og-lg-qvH" secondAttribute="trailing" constant="8" id="agK-tV-GdH"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="MP6-sS-T7f" secondAttribute="trailing" constant="12" id="dnE-83-KFx"/>
+                <constraint firstItem="Ene-VG-UYY" firstAttribute="leading" secondItem="JoU-Y0-cxJ" secondAttribute="leading" constant="40" id="m0h-y1-xX9"/>
+                <constraint firstAttribute="trailing" secondItem="Ene-VG-UYY" secondAttribute="trailing" constant="40" id="w85-5y-426"/>
+                <constraint firstAttribute="height" constant="36" id="zi8-jI-v9K"/>
             </constraints>
             <point key="canvasLocation" x="176" y="24"/>
         </customView>
@@ -242,7 +236,6 @@
         </popover>
     </objects>
     <resources>
-        <image name="mute" width="16" height="14"/>
         <image name="playlist" width="14" height="14"/>
         <image name="toggle-album-art" width="14" height="14"/>
         <image name="volume" width="16" height="14"/>

@@ -25,9 +25,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var playbackBtnsWrapperView: NSView!
   @IBOutlet weak var positionSliderWrapperView: NSView!
 
-  @IBOutlet weak var volumeButton: NSButton!
+  @IBOutlet weak var volumeButton: SymButton!
   @IBOutlet var volumePopover: NSPopover!
   @IBOutlet weak var volumeSliderView: NSView!
+  @IBOutlet weak var volumePopoverAlignmentView: NSView!
   @IBOutlet weak var musicModeControlBarView: NSVisualEffectView!
   @IBOutlet weak var playlistWrapperView: NSVisualEffectView!
   @IBOutlet weak var mediaInfoView: NSView!
@@ -36,8 +37,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var titleLabelTopConstraint: NSLayoutConstraint!
   @IBOutlet weak var artistAlbumLabel: ScrollingTextField!
   @IBOutlet weak var volumeLabel: NSTextField!
-  @IBOutlet weak var togglePlaylistButton: NSButton!
-  @IBOutlet weak var toggleAlbumArtButton: NSButton!
+  @IBOutlet weak var togglePlaylistButton: SymButton!
+  @IBOutlet weak var toggleAlbumArtButton: SymButton!
   @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
 
   private var hideVolumePopoverTimer: Timer?
@@ -100,11 +101,19 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     mediaInfoView.identifier = .init("MediaInfoView")
 
     // tool tips
-    togglePlaylistButton.toolTip = Preference.ToolBarButton.playlist.description()
     togglePlaylistButton.identifier = .init("TogglePlaylistButton")
+    togglePlaylistButton.toolTip = Preference.ToolBarButton.playlist.description()
+    togglePlaylistButton.image = Preference.ToolBarButton.playlist.image()
+    togglePlaylistButton.bounceOnClick = true
+
+    toggleAlbumArtButton.identifier = .init("ToggleAlbumArtButton")
     toggleAlbumArtButton.toolTip = NSLocalizedString("mini_player.album_art", comment: "album_art")
+    toggleAlbumArtButton.image = Images.toggleAlbumArt
+    toggleAlbumArtButton.bounceOnClick = true
+
     volumeButton.toolTip = NSLocalizedString("mini_player.volume", comment: "volume")
     volumeButton.identifier = .init("VolumeButton")
+    volumeButton.bounceOnClick = true
     windowController.closeButtonVE.toolTip = NSLocalizedString("mini_player.close", comment: "close")
     windowController.backButtonVE.toolTip = NSLocalizedString("mini_player.back", comment: "back")
 
@@ -170,6 +179,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   func stepScrollingLabels() {
     windowController.animationPipeline.submitInstantTask { [self] in
       loadIfNeeded()
+      // FIXME: update based on TIME, not # of function calls!
       titleLabel.stepNext()
       artistAlbumLabel.stepNext()
     }
@@ -221,7 +231,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     // if it's a mouse, simply show popover then hide after a while when user stops scrolling
     if !volumePopover.isShown {
       volumePopover.animates = false
-      volumePopover.show(relativeTo: volumeButton.bounds, of: volumeButton, preferredEdge: .minY)
+      volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView,
+                         preferredEdge: .minY)
     }
 
     let timeout = Preference.double(for: .osdAutoHideTimeout)
@@ -236,7 +247,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       volumePopover.performClose(self)
     } else {
       windowController.updateVolumeUI()
-      volumePopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+      volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView,
+                         preferredEdge: .minY)
     }
   }
 
