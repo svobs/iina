@@ -7,7 +7,7 @@
 //
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
-class SymButton: NSImageView {
+class SymButton: NSImageView, NSAccessibilityButton {
   var bounceOnClick: Bool = false
 
   enum ReplacementEffect {
@@ -69,11 +69,19 @@ class SymButton: NSImageView {
     }
 
     pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
-    self.sendAction(action, to: target)
+    sendAction(action, to: target)
   }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
+  }
+
+  override func accessibilityLabel() -> String? {
+    return toolTip
+  }
+
+  override func accessibilityPerformPress() -> Bool {
+    sendAction(action, to: target)
   }
 
   @discardableResult
