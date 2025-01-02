@@ -167,17 +167,18 @@ class MediaPlayerIntegration {
     }
 
     if activePlayer.info.currentMediaAudioStatus.isAudio {
-      info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+      info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
       let (title, album, artist) = activePlayer.getMusicMetadata()
       info[MPMediaItemPropertyTitle] = title
       info[MPMediaItemPropertyAlbumTitle] = album
       info[MPMediaItemPropertyArtist] = artist
     } else {
-      info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
+      info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
       info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
       info[MPMediaItemPropertyAlbumTitle] = ""
       info[MPMediaItemPropertyArtist] = ""
     }
+
     let artwork: MPMediaItemArtwork?
     if activePlayer.info.isVideoTrackSelected, (activePlayer.info.currentPlayback?.thumbnails?.thumbnails.count ?? 0) > 0 {
       artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
@@ -207,6 +208,7 @@ class MediaPlayerIntegration {
     info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
     info[MPNowPlayingInfoPropertyPlaybackRate] = speed
     info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
+    info[MPNowPlayingInfoPropertyAssetURL] = activePlayer.info.currentPlayback?.url
 
     center.nowPlayingInfo = info
 
