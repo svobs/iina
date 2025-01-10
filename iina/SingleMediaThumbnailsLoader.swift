@@ -60,7 +60,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     case .scaleWithViewport:
       let rawSizePercentage = CGFloat(min(max(0, Preference.integer(for: .thumbnailRawSizePercentage)), 100))
       let thumbWidth = Int(round(videoSizeRaw.width * rawSizePercentage / 100))
-      log.verbose("Thumbnail native width will be \(Int(rawSizePercentage))% of video's native \(Int(videoSizeRaw.width))px → \(thumbWidth)px")
+      log.verbose("Thumbnail native width will be \(Int(videoSizeRaw.width))px * \(Int(rawSizePercentage))% → \(thumbWidth)px")
       return thumbWidth
     case .fixedSize:
       let requestedLength = CGFloat(Preference.integer(for: .thumbnailFixedLength))

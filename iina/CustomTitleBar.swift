@@ -134,7 +134,7 @@ class CustomTitleBarViewController: NSViewController {
     titleText.isFieldEditor = false
     titleText.backgroundColor = .clear
     let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-    pStyle.lineBreakMode = .byTruncatingMiddle
+    pStyle.lineBreakMode = .byTruncatingTail  // match native truncation
     titleText.defaultParagraphStyle = pStyle
     titleText.alignment = .center
 
@@ -146,11 +146,13 @@ class CustomTitleBarViewController: NSViewController {
     titleText.heightAnchor.constraint(equalToConstant: 16).isActive = true
     titleText.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
     titleText.widthAnchor.constraint(greaterThanOrEqualToConstant: 0).isActive = true
+    // Kludge to include doc icon in text centering calculation, to match native title bar:
+    let halfDocIconBtnWidth = (documentIconButton.image!.size.width * 0.5).rounded()
     // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
     // (>= 500 would interfere with window resize).
     // We want text's horizontal center to align with window's center, but more importantly it should use up
     // all available horizontal space.
-    let cenXCon = titleText.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+    let cenXCon = titleText.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: halfDocIconBtnWidth)
     cenXCon.priority = .init(399)
     cenXCon.isActive = true
     titleText.setContentCompressionResistancePriority(.init(492), for: .horizontal)  // allow truncation

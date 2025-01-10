@@ -3311,11 +3311,11 @@ class PlayerCore: NSObject {
     if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
       if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
         if !isBufferUnderrun {
-          log.verbose("Buffer underrun")
+          log.verbose("Dexumer now reports buffer underrun")
           isBufferUnderrun = true
         }
       } else if isBufferUnderrun {
-        log.verbose("Buffer OK")
+        log.verbose("Dexumer buffer underrun cleared")
         isBufferUnderrun = false
       }
       if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
