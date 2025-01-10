@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -53,14 +53,14 @@
                                 </stackView>
                             </subviews>
                             <constraints>
+                                <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="Xci-wI-yo3" secondAttribute="height" id="Fzu-qd-y9O"/>
+                                <constraint firstItem="63i-B1-8o0" firstAttribute="width" secondItem="Xci-wI-yo3" secondAttribute="width" id="XJj-zB-JbE"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerY" secondItem="Xci-wI-yo3" secondAttribute="centerY" id="w45-pP-TuN"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerX" secondItem="Xci-wI-yo3" secondAttribute="centerX" id="xjD-Ua-vTC"/>
                             </constraints>
                         </view>
                         <constraints>
-                            <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="Xci-wI-yo3" secondAttribute="height" id="Fzu-qd-y9O"/>
                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="8" id="N21-2K-asb"/>
-                            <constraint firstItem="63i-B1-8o0" firstAttribute="width" secondItem="Xci-wI-yo3" secondAttribute="width" id="XJj-zB-JbE"/>
                         </constraints>
                     </box>
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Neb-Rz-hK4">

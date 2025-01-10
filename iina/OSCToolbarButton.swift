@@ -43,7 +43,7 @@ class OSCToolbarButton: SymButton {
     self.iconSize = iconSize
     self.iconSpacing = iconSpacing
 
-    if let buttonType, tag != buttonType.rawValue {
+    if let buttonType {
       image = buttonType.image()
       tag = buttonType.rawValue
       toolTip = buttonType.description()

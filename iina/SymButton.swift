@@ -46,19 +46,28 @@ class SymButton: NSImageView, NSAccessibilityButton {
   override var acceptsFirstResponder: Bool { true }
 
   override func mouseDown(with event: NSEvent) {
-    guard action != nil else { return }
+    guard action != nil else {
+      super.mouseDown(with: event)
+      return
+    }
     /// Setting this will cause PlayerWindowController to forward `mouseDragged` & `mouseUp` events to this object even when out of bounds
     pwc?.currentDragObject = self
     updateHighlight(from: event)
   }
 
   override func mouseDragged(with event: NSEvent) {
-    guard action != nil else { return }
+    guard action != nil else {
+      super.mouseDragged(with: event)
+      return
+    }
     updateHighlight(from: event)
   }
 
   override func mouseUp(with event: NSEvent) {
-    guard action != nil else { return }
+    guard action != nil else {
+      super.mouseUp(with: event)
+      return
+    }
     let isInsideBounds = updateHighlight(from: event)
     guard isInsideBounds else { return }
 
