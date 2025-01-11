@@ -175,6 +175,7 @@ extension PlayerWindowController {
       return
     }
     guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider, muteButton, playButton, leftArrowButton, rightArrowButton]) else {
+      // Allow these controls to handle the event
       super.mouseDown(with: event)
       return
     }
@@ -255,70 +256,74 @@ extension PlayerWindowController {
       // if it's a mouseup after dragging window
       log.verbose("PlayerWindow mouseUp: finished drag of window")
       isDragging = false
-    } else if finishResizingSidebar(with: event) {
+      return
+    }
+
+    if finishResizingSidebar(with: event) {
       log.verbose("PlayerWindow mouseUp: finished resizing sidebar")
-    } else {
-      // if it's a mouseup after clicking
+      return
+    }
 
-      /// Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
-      /// but we will only count it as a drag if `isDragging==true`
-      if event.clickCount <= 1 && !isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView, subPopoverView,
-                                                                 topBarView, bottomBarView]) {
-        if hideSidebarsOnClick() {
-          log.verbose("PlayerWindow mouseUp: hiding sidebars")
-          return
-        }
-      }
-      let titleBarMinY = window!.frame.height - PlayerWindowController.standardTitleBarHeight
-      if event.clickCount == 2 {
-        if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
-          if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
-            log.verbose("Double-click occurred in title bar. Executing \(userDefault.quoted)")
-            if userDefault == "Minimize" {
-              window?.performMiniaturize(nil)
-            } else if userDefault == "Maximize" {
-              window?.performZoom(nil)
-            }
-            return
-          } else {
-            log.verbose("Double-click occurred in title bar, but no action for AppleActionOnDoubleClick")
-          }
-        } else {
-          log.verbose("Double-click did not occur inside title bar (minY: \(titleBarMinY)) or is full screen (\(isFullScreen))")
-        }
-      }
+    // Else: if it's a mouseup after clicking
 
-      guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
-        if isMouseEvent(event, inAnyOf: [documentIconButton]) {
-          documentIconButton?.mouseUp(with: event)
-          return
-        }
-        player.log.verbose("MouseUp: click occurred in a disabled view; ignoring")
-        super.mouseUp(with: event)
+    /// Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
+    /// but we will only count it as a drag if `isDragging==true`
+    if event.clickCount <= 1 && !isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView, subPopoverView,
+                                                               topBarView, bottomBarView]) {
+      if hideSidebarsOnClick() {
+        log.verbose("PlayerWindow mouseUp: hiding sidebars")
         return
       }
-      PluginInputManager.handle(
-        input: PluginInputManager.Input.mouse, event: .mouseUp, player: player,
-        arguments: mouseEventArgs(event), defaultHandler: { [self] in
-          let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
-          let doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
-          // default handler
-          if event.clickCount == 1 {
-            if doubleClickAction == .none {
-              performMouseAction(singleClickAction)
-            } else {
-              singleClickTimer = Timer.scheduledTimer(timeInterval: NSEvent.doubleClickInterval, target: self, selector: #selector(performMouseActionLater), userInfo: singleClickAction, repeats: false)
-              mouseExitEnterCount = 0
-            }
-          } else if event.clickCount == 2 {
-            if let timer = singleClickTimer {
-              timer.invalidate()
-              singleClickTimer = nil
-            }
-            performMouseAction(doubleClickAction)
-          }
-        })
     }
+    let titleBarMinY = window!.frame.height - PlayerWindowController.standardTitleBarHeight
+    if event.clickCount == 2 {
+      if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
+        if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
+          log.verbose("Double-click occurred in title bar. Executing \(userDefault.quoted)")
+          if userDefault == "Minimize" {
+            window?.performMiniaturize(nil)
+          } else if userDefault == "Maximize" {
+            window?.performZoom(nil)
+          }
+          return
+        } else {
+          log.verbose("Double-click occurred in title bar, but no action for AppleActionOnDoubleClick")
+        }
+      } else {
+        log.verbose("Double-click did not occur inside title bar (minY: \(titleBarMinY)) or is full screen (\(isFullScreen))")
+      }
+    }
+
+    if isMouseEvent(event, inAnyOf: [documentIconButton]) {
+      documentIconButton?.mouseUp(with: event)
+      return
+    }
+    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
+      player.log.verbose("MouseUp: click occurred in a disabled view; ignoring")
+      super.mouseUp(with: event)
+      return
+    }
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.mouse, event: .mouseUp, player: player,
+      arguments: mouseEventArgs(event), defaultHandler: { [self] in
+        let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
+        let doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
+        // default handler
+        if event.clickCount == 1 {
+          if doubleClickAction == .none {
+            performMouseAction(singleClickAction)
+          } else {
+            singleClickTimer = Timer.scheduledTimer(timeInterval: NSEvent.doubleClickInterval, target: self, selector: #selector(performMouseActionLater), userInfo: singleClickAction, repeats: false)
+            mouseExitEnterCount = 0
+          }
+        } else if event.clickCount == 2 {
+          if let timer = singleClickTimer {
+            timer.invalidate()
+            singleClickTimer = nil
+          }
+          performMouseAction(doubleClickAction)
+        }
+      })
   }
 
   override func otherMouseDown(with event: NSEvent) {
@@ -459,20 +464,26 @@ extension PlayerWindowController {
         newCursor.push()
         sidebarResizeCursor = newCursor
       }
+      // Kludge to prevent window drag if trying to drag sidebar. This must be false if not dragging the window!
+      window?.isMovableByWindowBackground = false
     } else {
       if let currentCursor = sidebarResizeCursor {
         currentCursor.pop()
         sidebarResizeCursor = nil
       }
+
+      if let controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
+        // Kludge to prevent window drag if trying to drag floating OSC.
+        window?.isMovableByWindowBackground = false
+      } else {
+        // Enable this so that user can drag from title bar with first mouse
+        window?.isMovableByWindowBackground = true
+      }
     }
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
-//      playSlider.isMouseHovering = true
-//      playSlider.needsDisplay = true
       refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     } else {
-//      playSlider.isMouseHovering = false
-//      playSlider.needsDisplay = true
       hideSeekPreview(animated: false)
     }
 

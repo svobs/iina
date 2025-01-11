@@ -428,7 +428,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Bottom border of `topBarView`.
   @IBOutlet weak var topBarBottomBorder: NSBox!
   /// Reserves space for the title bar components. Does not contain any child views.
-  @IBOutlet weak var titleBarView: NSView!
+  @IBOutlet weak var titleBarView: ClickThroughView!
   /// Control bar at top of window, if configured.
   @IBOutlet weak var controlBarTop: NSView!
 
@@ -546,7 +546,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Other state
 
   var mouseActionDisabledViews: [NSView?] {
-    [leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]
+    [leadingSidebarView, trailingSidebarView, titleBarView, oscTopMainView, oscBottomMainView, subPopoverView]
   }
 
   var isFullScreen: Bool {

@@ -37,9 +37,6 @@ extension PlayerWindowController {
     // size
     window.minSize = Constants.SizeLimit.minVideoSize
 
-    // need to deal with control bar, so we handle it manually
-    window.isMovableByWindowBackground  = false
-
     // Registers this window for didChangeScreenProfileNotification
     window.displaysWhenScreenProfileChanges = true
 

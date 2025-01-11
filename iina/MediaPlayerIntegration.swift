@@ -50,7 +50,7 @@ class MediaPlayerIntegration {
   }
 
   private func attachRemoteCommands() {
-    Logger.log("Attaching MediaPlayer remote commands")
+    Logger.log.verbose("Attaching MediaPlayer remote commands")
     remoteCommand.playCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
       player.resume()
@@ -125,7 +125,7 @@ class MediaPlayerIntegration {
   }
 
   private func detachAllCommands() {
-    Logger.log("Detaching MediaPlayer remote commands")
+    Logger.log.verbose("Detaching MediaPlayer remote commands")
     remoteCommand.playCommand.removeTarget(nil)
     remoteCommand.pauseCommand.removeTarget(nil)
     remoteCommand.togglePlayPauseCommand.removeTarget(nil)
