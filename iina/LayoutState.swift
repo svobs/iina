@@ -583,8 +583,16 @@ class LayoutState {
           outputLayout.titleBarHeight = Constants.Distance.reducedTitleBarHeight
         }
 
-        let visibility: VisibilityMode = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
-        outputLayout.topBarView = visibility
+        let topBarVisibility: VisibilityMode
+        if outputLayout.topBarPlacement == .outsideViewport {
+          topBarVisibility = .showAlways
+        } else if outputLayout.titleBar.isShowable {
+          // Match value from above
+          topBarVisibility = outputLayout.titleBar
+        } else {
+          topBarVisibility = .showFadeableTopBar
+        }
+        outputLayout.topBarView = topBarVisibility
         outputLayout.topOSCHeight = layoutSpec.controlBarGeo.barHeight
       case .bottom:
         outputLayout.bottomBarView = (outputLayout.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways

@@ -228,15 +228,24 @@ class PlayerWindow: NSWindow {
   /// here guarantees consistent behavior.
   override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
     /// Could not find a better way to test for these two. They don't appear to be exposed anywhere.
+    /// They are also present in Zoom button's context menu.
     /// `_zoomLeft:` == `Window` > `Move Window to Left Side of Screen`
     /// `_zoomRight:` == `Window` > `Move Window to Right Side of Screen`
-    /// Both are also present in Zoom button's context menu.
+    /// `_zoomFill:` added in MacOS Sequoia
+    /// `_zoomCenter:` added in MacOS Sequoia
     if let selectorString = item.action?.description {
-      switch selectorString {
-      case "_zoomLeft:", "_zoomRight:":
-        return true
-      default:
-        break
+      if selectorString.starts(with: "_zoom") {
+        // Catch-all for above actions. Disallow in full screen:
+        return !isFullScreen
+      }
+      /// Also disable `_moveToDisplay:` which is a Sidecar feature:
+      if selectorString.starts(with: "_move") {
+        return !isFullScreen
+      }
+
+      if selectorString.starts(with: "_") {
+        // Other internal Apple features such as "Window > Remove Window from Set"
+        return super.validateUserInterfaceItem(item)
       }
     }
 
@@ -252,6 +261,7 @@ class PlayerWindow: NSWindow {
       if let pwc {
         return pwc.validateUserInterfaceItem(item)
       }
+      log.error("validateUserInterfaceItem: should never reach this line")
       return super.validateUserInterfaceItem(item)
     }
   }

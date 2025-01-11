@@ -755,8 +755,7 @@ extension PlayerWindowController {
 
     if transition.outputLayout.isMusicMode {
       hideBuiltInTitleBarViews()
-    } else if transition.outputLayout.isWindowed,
-              transition.outputLayout.spec.isLegacyStyle {
+    } else if transition.outputLayout.spec.isLegacyStyle, transition.outputLayout.titleBar.isShowable {
       if customTitleBar == nil {
         let titleBar = CustomTitleBarViewController()
         titleBar.windowController = self
@@ -1039,7 +1038,7 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// POST TRANSITION: UPDATE INVISIBLES
-  /// Always instantaneous (not animated)
+  /// Always instantaneous (not animated).
   func doPostTransitionWork(_ transition: LayoutTransition) {
     log.verbose("[\(transition.name)] DoPostTransitionWork")
     // Update blending mode:

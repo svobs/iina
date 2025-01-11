@@ -528,7 +528,7 @@ extension PlayerWindowController {
     }
   }
 
-  // FIXME: this seems to never get called
+  /// This is called explicitly via project code: see `PlayerWindow`.
   func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
     switch item.action {
     case #selector(menuDeleteCurrentFile(_:)), #selector(menuShowCurrentFileInFinder(_:)):
