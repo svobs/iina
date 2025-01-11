@@ -245,6 +245,7 @@ extension PlayerWindowController {
       defer {
         self.currentDragObject = nil
       }
+      log.verbose("PlayerWindow mouseUp: finished drag of object")
       currentDragObject.mouseUp(with: event)
       return
     }

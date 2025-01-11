@@ -174,11 +174,11 @@ extension PlayerWindowController {
     leadingSpacerLeading.identifier = .init("leadingTitleBarLeadingSpacer")
     leadingTitleBarLeadingSpaceConstraint = leadingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
     leadingTitleBarLeadingSpaceConstraint?.isActive = true
-
-    leadingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarLeading,
-                                                            identifier: "leadingSidebarToggleButton",
-                                                            target: self,
-                                                            action: #selector(toggleLeadingSidebarVisibility(_:)))
+    builder.configureTitleBarButton(leadingSidebarToggleButton,
+                                    Images.sidebarLeading,
+                                    identifier: "leadingSidebarToggleButton",
+                                    target: self,
+                                    action: #selector(toggleLeadingSidebarVisibility(_:)))
 
     let leadingSpacerTrailing = NSView()
     leadingSpacerTrailing.identifier = .init("leadingTitleBarTrailingSpacer")
@@ -207,15 +207,17 @@ extension PlayerWindowController {
     trailingTitleBarLeadingSpaceConstraint = trailingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
     trailingTitleBarLeadingSpaceConstraint?.isActive = true
 
-    onTopButton = builder.makeTitleBarButton(Images.onTopOff,
-                                             identifier: "onTopButton",
-                                             target: self, action: #selector(toggleOnTop(_:)))
-    onTopButton.alternateImage = Images.onTopOn
+    builder.configureTitleBarButton(onTopButton,
+                                    Images.onTopOff,
+                                    identifier: "onTopButton",
+                                    target: self, action: #selector(toggleOnTop(_:)))
+    //    onTopButton.alternateImage = Images.onTopOn
 
-    trailingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarTrailing,
-                                                             identifier: "trailingSidebarToggleButton",
-                                                             target: self,
-                                                             action: #selector(toggleTrailingSidebarVisibility(_:)))
+    builder.configureTitleBarButton(trailingSidebarToggleButton,
+                                    Images.sidebarTrailing,
+                                    identifier: "trailingSidebarToggleButton",
+                                    target: self,
+                                    action: #selector(toggleTrailingSidebarVisibility(_:)))
 
     let trailingSpacerTrailing = NSView()
     trailingSpacerTrailing.identifier = .init("trailingTitleBarTrailingSpacer")
@@ -453,7 +455,7 @@ extension PlayerWindowController {
     // Mute button
     muteButton.identifier = .init("muteButton")
     let volImage = Images.volume3
-    muteButton.image = volImage
+    muteButton.image = Images.volume3
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
     muteButton.toolTip = "Toggle mute"

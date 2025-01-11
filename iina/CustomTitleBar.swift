@@ -21,7 +21,7 @@ class CustomTitleBarViewController: NSViewController {
   var closeButton: NSButton?
   var miniaturizeButton: NSButton?
   var zoomButton: NSButton?
-  var leadingSidebarToggleButton: NSButton!
+  let leadingSidebarToggleButton = SymButton()
 
   var trafficLightButtons: [NSButton] {
     return [closeButton, miniaturizeButton, zoomButton].compactMap({ $0 })
@@ -33,8 +33,8 @@ class CustomTitleBarViewController: NSViewController {
 
   // Trailing side
   var trailingTitleBarView: NSStackView!
-  var trailingSidebarToggleButton: NSButton!
-  var onTopButton: NSButton!
+  let trailingSidebarToggleButton = SymButton()
+  let onTopButton = SymButton()
 
   /// Use `loadView` instead of `viewDidLoad` because controller is not using storyboard
   override func loadView() {
@@ -51,10 +51,11 @@ class CustomTitleBarViewController: NSViewController {
     miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
     zoomButton = NSWindow.standardWindowButton(.zoomButton, for: .titled)
     let trafficLightButtons = trafficLightButtons
-    leadingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarLeading,
-                                                            identifier: "leadingSidebarToggleButton",
-                                                            target: windowController,
-                                                            action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
+    builder.configureTitleBarButton(leadingSidebarToggleButton,
+                                    Images.sidebarLeading,
+                                    identifier: "leadingSidebarToggleButton",
+                                    target: windowController,
+                                    action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
 
     let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
     leadingStackView.layer?.backgroundColor = .clear
@@ -63,7 +64,7 @@ class CustomTitleBarViewController: NSViewController {
     leadingStackView.alignment = .centerY
     leadingStackView.spacing = iconSpacingH
     leadingStackView.distribution = .fill
-    leadingStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: iconSpacingH, right: iconSpacingH)
+    leadingStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
     leadingStackView.setHuggingPriority(.init(500), for: .horizontal)
 
     for btn in trafficLightButtons {
@@ -100,16 +101,17 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Trailing views
 
-    onTopButton = builder.makeTitleBarButton(Images.onTopOff,
-                                             identifier: "onTopButton",
-                                             target: windowController,
-                                             action: #selector(windowController.toggleOnTop(_:)))
-    onTopButton.alternateImage = Images.onTopOn
+    builder.configureTitleBarButton(onTopButton,
+                                    Images.onTopOff,
+                                    identifier: "onTopButton",
+                                    target: windowController,
+                                    action: #selector(windowController.toggleOnTop(_:)))
 
-    trailingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarTrailing,
-                                                             identifier: "trailingSidebarToggleButton",
-                                                             target: windowController,
-                                                             action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
+    builder.configureTitleBarButton(trailingSidebarToggleButton,
+                                    Images.sidebarTrailing,
+                                    identifier: "trailingSidebarToggleButton",
+                                    target: windowController,
+                                    action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
     let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
     trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
@@ -232,8 +234,7 @@ class CustomTitleBarViewController: NSViewController {
     // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
     let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
 
-    for view in [leadingSidebarToggleButton, documentIconButton, trailingSidebarToggleButton, onTopButton,
-                 titleText] {
+    for view in [titleText] {
       // Skip buttons which are not visible
       guard let view, view.alphaValue > 0.0 else { continue }
       view.alphaValue = alphaValue
@@ -327,23 +328,28 @@ class TitleTextView: NSTextView {
 class CustomTitleBar {
   static let shared = CustomTitleBar()
 
-  func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector) -> NSButton {
-    let button = NSButton(image: image, target: target, action: action)
+  func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector) -> SymButton {
+    let button = SymButton()
+    configureTitleBarButton(button, image, identifier: identifier, target: target, action: action)
+    return button
+  }
+
+  func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector) {
+    button.image = image
+    button.target = target
+    button.action = action
     button.identifier = .init(identifier)
-    button.setButtonType(.momentaryPushIn)
-    button.bezelStyle = .smallSquare
-    button.isBordered = false
-    button.imagePosition = .imageOnly
     button.refusesFirstResponder = true
-    button.imageScaling = .scaleNone
-    button.font = NSFont.systemFont(ofSize: 17)
     button.isHidden = true
-    // Never expand in size, even if there is extra space:
-    button.setContentHuggingPriority(.required, for: .horizontal)
-    button.setContentHuggingPriority(.required, for: .vertical)
+    // Avoid expanding in size, even if there is extra space:
+    button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+    button.setContentHuggingPriority(.defaultHigh, for: .vertical)
+    // Never get compressed:
     button.setContentCompressionResistancePriority(.required, for: .horizontal)
     button.setContentCompressionResistancePriority(.required, for: .vertical)
-    button.translatesAutoresizingMaskIntoConstraints = false
-    return button
+
+    button.imageScaling = .scaleProportionallyUpOrDown
+
+    button.bounceOnClick = true
   }
 }

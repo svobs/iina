@@ -492,13 +492,6 @@ class LayoutState {
                          (oscPosition == .bottom && bottomBarPlacement == .outsideViewport))
   }
 
-  var contentTintColor: NSColor? {
-    if isMusicMode {
-      return nil
-    }
-    return spec.oscBackgroundIsClear ? .controlForClearBG : nil
-  }
-
   var mode: PlayerWindowMode {
     return spec.mode
   }

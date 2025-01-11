@@ -10,6 +10,9 @@
 class SymButton: NSImageView, NSAccessibilityButton {
   var bounceOnClick: Bool = false
 
+  var regularColor: NSColor? = .controlTextColor
+  var highlightColor: NSColor? = nil
+
   enum ReplacementEffect {
     case downUp
     case upUp
@@ -26,17 +29,20 @@ class SymButton: NSImageView, NSAccessibilityButton {
     configureSelf()
   }
 
+  /// Similar to `NSButton`'s `init` method.
+  init(image: NSImage, target: AnyObject?, action: Selector?) {
+    super.init(frame: .zero)
+    configureSelf()
+    self.image = image
+    self.target = target
+    self.action = action
+  }
+
   private func configureSelf() {
     translatesAutoresizingMaskIntoConstraints = false
     imageScaling = .scaleProportionallyUpOrDown
     imageAlignment = .alignCenter
-    if #available(macOS 11.0, *) {
-      /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
-      /// This is ignored when using play & pause images (they are static assets).
-      /// Looks like `pointSize` here is ignored. Not sure if `scale` is relevant either?
-      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .ultraLight, scale: .large)
-      symbolConfiguration = config
-    }
+    useDefaultColors()
   }
 
   var pwc: PlayerWindowController? {
@@ -52,7 +58,8 @@ class SymButton: NSImageView, NSAccessibilityButton {
     }
     /// Setting this will cause PlayerWindowController to forward `mouseDragged` & `mouseUp` events to this object even when out of bounds
     pwc?.currentDragObject = self
-    updateHighlight(from: event)
+    let isInsideBounds = updateHighlight(from: event)
+    pwc?.log.verbose("SymButton mouseDown insideBounds=\(isInsideBounds.yn)")
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -60,7 +67,8 @@ class SymButton: NSImageView, NSAccessibilityButton {
       super.mouseDragged(with: event)
       return
     }
-    updateHighlight(from: event)
+    let isInsideBounds = updateHighlight(from: event)
+    pwc?.log.verbose("SymButton mouseDragged insideBounds=\(isInsideBounds.yn)")
   }
 
   override func mouseUp(with event: NSEvent) {
@@ -68,18 +76,22 @@ class SymButton: NSImageView, NSAccessibilityButton {
       super.mouseUp(with: event)
       return
     }
-    let isInsideBounds = updateHighlight(from: event)
-    guard isInsideBounds else { return }
+    let isInsideBounds = isInsideBounds(event)
+    pwc?.log.verbose("SymButton mouseUp insideBounds=\(isInsideBounds.yn)")
+    if isInsideBounds {
+      pwc?.currentDragObject = nil
 
-    if #available(macOS 14.0, *), bounceOnClick {
-      addSymbolEffect(.bounce.down.wholeSymbol, options:
-          .speed(Constants.symButtonImageTransitionSpeed)
-          .nonRepeating,
-                      animated: true)
+      if #available(macOS 14.0, *), bounceOnClick {
+        addSymbolEffect(.bounce.down.wholeSymbol, options:
+            .speed(Constants.symButtonImageTransitionSpeed)
+            .nonRepeating,
+                        animated: true)
+      }
+
+      pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
+      sendAction(action, to: target)
+      updateHighlight(isInsideBounds: false)
     }
-
-    pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
-    sendAction(action, to: target)
   }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -94,24 +106,35 @@ class SymButton: NSImageView, NSAccessibilityButton {
     sendAction(action, to: target)
   }
 
+  private func isInsideBounds(_ event: NSEvent) -> Bool {
+    guard let pwc else { return false }
+    return pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
+  }
+
   @discardableResult
   private func updateHighlight(from event: NSEvent) -> Bool {
     guard let pwc else { return false }
     let isInsideBounds = pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
-    if isInsideBounds {
-      if pwc.currentLayout.spec.oscBackgroundIsClear {
-        contentTintColor = .white
-      } else {
-        contentTintColor = .selectedControlTextColor
-      }
-    } else {
-      if pwc.currentLayout.spec.oscBackgroundIsClear {
-        contentTintColor = .controlForClearBG
-      } else {
-        contentTintColor = nil
-      }
-    }
+    updateHighlight(isInsideBounds: isInsideBounds)
     return isInsideBounds
+  }
+
+  private func updateHighlight(isInsideBounds: Bool) {
+    if isInsideBounds {
+      contentTintColor = highlightColor
+    } else {
+      contentTintColor = regularColor
+    }
+  }
+
+  func useDefaultColors() {
+    regularColor = nil
+    highlightColor = .controlTextColor
+  }
+
+  func useColorsForClearBG() {
+    regularColor = .controlForClearBG
+    highlightColor = .white
   }
 
   func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect) {
@@ -135,10 +158,11 @@ class SymButton: NSImageView, NSAccessibilityButton {
   }
 
   func setColors(from layoutState: LayoutState) {
-    contentTintColor = layoutState.contentTintColor
     if layoutState.spec.oscBackgroundIsClear {
+      useColorsForClearBG()
       addShadow()
     } else {
+      useDefaultColors()
       shadow = nil
     }
   }

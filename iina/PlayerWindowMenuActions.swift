@@ -497,7 +497,7 @@ extension PlayerWindowController {
   }
 
   @objc func menuAlwaysOnTop(_ sender: AnyObject) {
-    self.toggleOnTop(sender)
+    toggleOnTop(sender)
   }
 
   @objc func menuTogglePIP(_ sender: NSMenuItem) {

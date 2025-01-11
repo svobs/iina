@@ -416,9 +416,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let leadingTitleBarAccessoryView = NSStackView()
   let trailingTitleBarAccessoryView = NSStackView()
   /// "Pin to Top" icon in title bar, if configured to  be shown
-  var onTopButton: NSButton!
-  var leadingSidebarToggleButton: NSButton!
-  var trailingSidebarToggleButton: NSButton!
+  let onTopButton = SymButton()
+  let leadingSidebarToggleButton = SymButton()
+  let trailingSidebarToggleButton = SymButton()
 
   /// Panel at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
@@ -1384,7 +1384,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let alphaValue = isKey ? 1.0 : 0.4
       for view in [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
         // Skip buttons which are not visible
-        guard let view, view.alphaValue > 0.0 else { continue }
+        guard view.alphaValue > 0.0 else { continue }
         view.alphaValue = alphaValue
       }
     }

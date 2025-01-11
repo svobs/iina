@@ -601,52 +601,50 @@ extension PlayerWindowController {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
 
-      if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
-        let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
-        playButton.contentTintColor = contentTintColor
-        leftArrowButton.contentTintColor = contentTintColor
-        rightArrowButton.contentTintColor = contentTintColor
-        muteButton.contentTintColor = contentTintColor
+      if transition.isWindowInitialLayout || (transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear) {
+        // Default alpha for text labels is 0.5. They don't change their text color.
+        let textAlpha: CGFloat = transition.outputLayout.spec.oscBackgroundIsClear ? 0.8 : 0.5
 
-        // Default alpha for these is 0.5. They don't change their text color.
-        let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 0.8
+        playButton.setColors(from: transition.outputLayout)
+        leftArrowButton.setColors(from: transition.outputLayout)
+        rightArrowButton.setColors(from: transition.outputLayout)
+        muteButton.setColors(from: transition.outputLayout)
+
         leftTimeLabel.alphaValue = textAlpha
         rightTimeLabel.alphaValue = textAlpha
 
         let hasClearBG = transition.outputLayout.spec.oscBackgroundIsClear
         if hasClearBG {
-          playButton.addShadow()
-          leftArrowButton.addShadow()
-          rightArrowButton.addShadow()
-          muteButton.addShadow()
           leftTimeLabel.textColor = .white
-          rightTimeLabel.textColor = .white
           leftTimeLabel.addShadow()
+
           rightTimeLabel.addShadow()
+          rightTimeLabel.textColor = .white
+
           RenderCache.shared.mainKnobColor = NSColor.controlForClearBG
         } else {
-          playButton.shadow = nil
-          leftArrowButton.shadow = nil
-          rightArrowButton.shadow = nil
-          muteButton.shadow = nil
           leftTimeLabel.shadow = nil
-          rightTimeLabel.shadow = nil
           leftTimeLabel.textColor = nil
+
+          rightTimeLabel.shadow = nil
           rightTimeLabel.textColor = nil
+
           RenderCache.shared.mainKnobColor = NSColor.mainSliderKnob
         }
         // invalidate all cached knob images
         RenderCache.shared.invalidateCachedKnobs()
       }
 
+      let timeLabelFont: NSFont
       if transition.outputLayout.isMusicMode {
-        // Decrease font size of time labels
-        leftTimeLabel.font = NSFont.labelFont(ofSize: 9)
-        rightTimeLabel.font = NSFont.labelFont(ofSize: 9)
+        // Decrease font size of time labels for more compact display
+        timeLabelFont = NSFont.labelFont(ofSize: 9)
       } else {
-        leftTimeLabel.font = NSFont.labelFont(ofSize: 13)
-        rightTimeLabel.font = NSFont.labelFont(ofSize: 13)
+        timeLabelFont = NSFont.labelFont(ofSize: 13)
       }
+
+      leftTimeLabel.font = timeLabelFont
+      rightTimeLabel.font = timeLabelFont
 
       if transition.isEnteringMusicMode {
         // Entering music mode
@@ -1417,11 +1415,10 @@ extension PlayerWindowController {
   func updateOnTopButton() {
     let onTopButtonVisibility = currentLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
-    onTopButton.image = image
+    onTopButton.replaceSymbolImage(with: image, effect: .downUp)
     applyVisibility(onTopButtonVisibility, to: onTopButton)
-    onTopButton.setButtonType(.momentaryPushIn)
     if let customTitleBar {
-      customTitleBar.onTopButton.image = image
+      customTitleBar.onTopButton.replaceSymbolImage(with: image, effect: .downUp)
       applyVisibility(onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
 

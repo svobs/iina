@@ -137,7 +137,7 @@ struct Constants {
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
   }
 
-  // Quantities:
+  // - Quantities:
 
   static let maxCachedVideoSizes: Int = 100000
   static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
@@ -450,11 +450,14 @@ struct Images {
   }
 
   static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String,
-                         weight: NSFont.Weight = .ultraLight, scale: SymbolScalePolyfill = .large) -> NSImage {
+                         ptSize: CGFloat = 13, weight: NSFont.Weight = .ultraLight, scale: SymbolScalePolyfill = .medium) -> NSImage {
     if #available(macOS 11.0, *) {
-      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: weight, scale: scale.scaleValue)
-      if let sysImg = NSImage(systemSymbolName: name, accessibilityDescription: desc)?.withSymbolConfiguration(config) {
-        return sysImg
+      if let systemImg = NSImage(systemSymbolName: name, accessibilityDescription: desc) {
+        let config = NSImage.SymbolConfiguration(pointSize: ptSize, weight: weight, scale: scale.scaleValue)
+        if let systemImgBest = systemImg.withSymbolConfiguration(config) {
+          return systemImgBest
+        }
+        return systemImg
       }
     }
     let fallbackName = fallbackName ?? name
@@ -462,9 +465,9 @@ struct Images {
     return NSImage(named: name)!
   }
 
-  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", weight: .light)
-  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", weight: .light)
-  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning", weight: .black)
+  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", weight: .regular, scale: .large)
+  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", weight: .bold, scale: .large)
+  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning", weight: .black, scale: .large)
 
   static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s", weight: .medium , scale: .small)
   static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s", weight: .medium, scale: .small)
@@ -478,8 +481,8 @@ struct Images {
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
   static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
   static let settingsFill = NSImage(imageLiteralResourceName: "gearshape.fill")
-  static let sidebarLeading = NSImage(imageLiteralResourceName: "sidebar.leading")
-  static let sidebarTrailing = NSImage(imageLiteralResourceName: "sidebar.trailing")
+  static let sidebarLeading = makeSymbol(named: "sidebar.leading", desc: "Leading Sidebar", ptSize: 17, weight: .regular, scale: .medium)
+  static let sidebarTrailing = makeSymbol(named: "sidebar.trailing", desc: "Trailing Sidebar", ptSize: 17, weight: .regular, scale: .medium)
 
   static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Volume Muted", weight: .medium)
   static let volume0 = makeSymbol(named: "speaker.fill", fallbackName: "volume-0", desc: "Volume None", weight: .medium)
