@@ -430,17 +430,18 @@ class RenderCache {
       let rightColor = rc.barColorRight.cgColor
       let chapterGapWidth = (baseChapterGapWidth * scaleFactor).rounded()
       let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
+      let hasSpaceForKnob = knobWidth > 0.0
 
       // Determine clipping rects (pixel whitelists)
       let leftClipMaxX: CGFloat
       let rightClipMinX: CGFloat
-      if clearBG {
-        leftClipMaxX = currentValuePointX
-        rightClipMinX = currentValuePointX
-      } else {
+      if hasSpaceForKnob {
         // - Will clip out the knob
         leftClipMaxX = (knobMinX - 1) * scaleFactor
         rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+      } else {
+        leftClipMaxX = currentValuePointX
+        rightClipMinX = currentValuePointX
       }
 
       let hasLeft = leftClipMaxX - outerPadding_Scaled > 0.0
@@ -556,7 +557,7 @@ class RenderCache {
       // Not sure how efficient this is...
 
       let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        if !clearBG {
+        if hasSpaceForKnob {
           // Apply clip (pixel whitelist) to avoid drawing over the knob
           cgc.clip(to: [leftClipRect, rightClipRect])
         }

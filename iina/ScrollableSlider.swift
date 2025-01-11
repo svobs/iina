@@ -115,3 +115,80 @@ class ScrollableSlider: NSSlider {
   }
 
 }
+
+
+class ScrollableSliderCell: NSSliderCell {
+  unowned var _player: PlayerCore!
+  var player: PlayerCore {
+    if let player = _player { return player }
+    _player = wc?.player
+    return _player
+  }
+
+  var wc: PlayerWindowController? {
+    controlView?.window?.windowController as? PlayerWindowController
+  }
+
+  var slider: ScrollableSlider { controlView as! ScrollableSlider }
+
+  var isDragging = false
+
+  var isClearBG: Bool {
+    wc?.currentLayout.spec.oscBackgroundIsClear ?? false
+  }
+  var enableDrawKnob: Bool {
+    return !isClearBG || isDragging
+  }
+
+  override var knobThickness: CGFloat {
+    return knobWidth
+  }
+
+  var knobWidth: CGFloat = 3
+  var knobHeight: CGFloat = 15
+
+  var currentKnobType: RenderCache.KnobType {
+    isHighlighted ? .mainKnobSelected : .mainKnob
+  }
+
+  override func drawKnob(_ knobRect: NSRect) {
+    guard enableDrawKnob else { return }
+    guard let screen = controlView?.window?.screen, let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
+    appearance.applyAppearanceFor {
+      RenderCache.shared.drawKnob(currentKnobType, in: knobRect,
+                                  darkMode: appearance.isDark,
+                                  clearBG: isClearBG,
+                                  knobWidth: knobWidth, mainKnobHeight: knobHeight,
+                                  scaleFactor: screen.backingScaleFactor)
+    }
+  }
+
+  override func knobRect(flipped: Bool) -> NSRect {
+    let barRect = barRect(flipped: flipped)
+    // The usable width of the bar is reduced by the width of the knob.
+    let effectiveBarWidth = barRect.width - knobWidth
+    let pos = barRect.origin.x + slider.progressRatio * effectiveBarWidth
+    let superKnobRect = super.knobRect(flipped: flipped)
+
+    let height: CGFloat
+    if #available(macOS 11, *) {
+      height = (barRect.origin.y - superKnobRect.origin.y) * 2 + barRect.height
+    } else {
+      height = superKnobRect.height
+    }
+    return NSMakeRect(pos, superKnobRect.origin.y, knobWidth, height)
+  }
+
+  override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
+    let result = super.startTracking(at: startPoint, in: controlView)
+    if result {
+      isDragging = true
+    }
+    return result
+  }
+
+  override func stopTracking(last lastPoint: NSPoint, current stopPoint: NSPoint, in controlView: NSView, mouseIsUp flag: Bool) {
+    super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
+    isDragging = false
+  }
+}

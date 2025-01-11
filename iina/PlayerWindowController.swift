@@ -509,7 +509,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// The window's virtual scroll wheel which may result in either volume or playback time seeking depending on direction
   var windowScrollWheel: PWinScrollWheel!
 
-  var isDraggingPlaySlider = false
+  var isDraggingPlaySlider: Bool {
+    playSlider.customCell.isDragging
+  }
 
   var isScrollingOrDraggingPlaySlider: Bool {
     if isDraggingPlaySlider {
@@ -521,6 +523,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? PlaySliderScrollWheel != nil) {
       // Scrolling play slider via in-window scroll
+      return true
+    }
+    return false
+  }
+
+  var isScrollingOrDraggingVolumeSlider: Bool {
+    if (volumeSlider.cell as! VolumeSliderCell).isDragging  {
+      return true
+    }
+    if (volumeSlider.scrollWheelDelegate?.isScrolling() ?? false) {
+      // Scrolling volume slider directly
+      return true
+    }
+    if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? VolumeSliderScrollWheel != nil) {
+      // Scrolling volume slider via in-window scroll
       return true
     }
     return false

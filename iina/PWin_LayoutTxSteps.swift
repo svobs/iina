@@ -570,9 +570,6 @@ extension PlayerWindowController {
           timeLabelFontSize = NSFont.systemFontSize(for: .regular)
         }
       }
-      if let volumeSliderCell = volumeSlider.cell as? VolumeSliderCell {
-        volumeSliderCell.isClearBG = outputLayout.spec.oscBackgroundIsClear
-      }
       seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
@@ -600,7 +597,9 @@ extension PlayerWindowController {
       // Has OSC, or music mode
 
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
-      playSlider.customCell.updateColorsFromPrefs()
+      RenderCache.shared.updateBarColorsFromPrefs()
+      playSlider.needsDisplay = true
+      volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
         let contentTintColor: NSColor? = transition.outputLayout.contentTintColor

@@ -47,6 +47,7 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
 
     // Need to call this to enable debug logging
     super.scrollSessionDidEnd(session)
+    slider.needsDisplay = true  // redraw slider if only showing knob during scroll (e.g. for clear BG style)
   }
 
   override func scrollDidUpdate(_ session: ScrollSession) {
@@ -71,6 +72,11 @@ class VolumeSliderScrollWheel: SliderScrollWheelDelegate {
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     session.sensitivity = Preference.volumeScrollSensitivity()
     session.valueAtStart = slider.doubleValue
+  }
+
+  override func scrollSessionDidEnd(_ session: ScrollSession) {
+    super.scrollSessionDidEnd(session)
+    slider.needsDisplay = true  // redraw slider if only showing knob during scroll (e.g. for clear BG style)
   }
 
 }  /// end `class VolumeSliderScrollWheel`
