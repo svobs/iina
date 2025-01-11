@@ -108,7 +108,7 @@ extension PlayerWindowController {
       // Exiting Full Screen
 
       resetViewsForModeTransition()
-      apply(visibility: .hidden, to: additionalInfoView)
+      applyVisibility(.hidden, to: additionalInfoView)
 
       if transition.inputLayout.isNativeFullScreen {
         // Hide traffic light buttons & title during the animation:
@@ -168,7 +168,7 @@ extension PlayerWindowController {
 
     // Hide all title bar items if top bar placement is changing
     if needToHideTopBar || outputLayout.titleIconAndText == .hidden {
-      apply(visibility: .hidden, documentIconButton, titleTextField, customTitleBar?.view)
+      applyVisibility(.hidden, documentIconButton, titleTextField, customTitleBar?.view)
     }
 
     if needToHideTopBar || outputLayout.trafficLightButtons == .hidden {
@@ -227,7 +227,7 @@ extension PlayerWindowController {
 
     if transition.inputLayout.hasFloatingOSC && !outputLayout.hasFloatingOSC {
       // Hide floating OSC
-      apply(visibility: outputLayout.controlBarFloating, to: controlBarFloating)
+      applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
     }
 
     // Change blending modes
@@ -250,7 +250,7 @@ extension PlayerWindowController {
     }
 
     if outputLayout.mode == .fullScreenInteractive {
-      apply(visibility: .hidden, to: additionalInfoView)
+      applyVisibility(.hidden, to: additionalInfoView)
     }
 
     if transition.isExitingInteractiveMode, let cropController = self.cropSettingsView {
@@ -408,15 +408,15 @@ extension PlayerWindowController {
 
     // Allow for showing/hiding each button individually
 
-    applyHiddenOnly(visibility: outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
-    applyHiddenOnly(visibility: outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
+    applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
+    applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
-    applyHiddenOnly(visibility: onTopButtonVisibility, to: onTopButton)
+    applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
 
     if let customTitleBar {
-      applyHiddenOnly(visibility: outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
-      applyHiddenOnly(visibility: outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
-      applyHiddenOnly(visibility: onTopButtonVisibility, to: customTitleBar.onTopButton)
+      applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
+      applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
+      applyOnlyIfHidden(onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
 
     if outputLayout.titleBar == .hidden || transition.isTopBarPlacementChanging {
@@ -430,11 +430,11 @@ extension PlayerWindowController {
 
     /// These should all be either 0 height or unchanged from `transition.inputLayout`.
     /// But may need to add or remove from fadeableViews
-    apply(visibility: outputLayout.bottomBarView, to: bottomBarView)
+    applyVisibility(outputLayout.bottomBarView, to: bottomBarView)
     // Note: hiding top bar here when entering FS with "top outside" OSC will cause it to go black too soon.
     // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
     if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
-      apply(visibility: outputLayout.topBarView, to: topBarView)
+      applyVisibility(outputLayout.topBarView, to: topBarView)
     }
 
     if !transition.inputLayout.hasFloatingOSC {
@@ -961,11 +961,11 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("[\(transition.name)] FadeInNewViews")
 
-    applyShowableOnly(visibility: outputLayout.controlBarFloating, to: controlBarFloating)
+    applyOnlyIfShowable(outputLayout.controlBarFloating, to: controlBarFloating)
 
     if outputLayout.isFullScreen {
       if !outputLayout.isInteractiveMode && Preference.bool(for: .displayTimeAndBatteryInFullScreen) {
-        apply(visibility: .showFadeableNonTopBar, to: additionalInfoView)
+        applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
       }
     } else if outputLayout.titleBar.isShowable {
       if !transition.isExitingFullScreen {  // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
@@ -983,19 +983,19 @@ extension PlayerWindowController {
         }
       }
 
-      applyShowableOnly(visibility: outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
-      applyShowableOnly(visibility: outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
+      applyOnlyIfShowable(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
+      applyOnlyIfShowable(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
       updateOnTopButton()
 
       if let customTitleBar {
-        apply(visibility: outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
-        apply(visibility: outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
+        applyVisibility(outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
+        applyVisibility(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
         /// onTop button is already handled by `updateOnTopButton()`
       }
 
       // Add back title bar accessories (if needed):
-      applyShowableOnly(visibility: outputLayout.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
-      applyShowableOnly(visibility: outputLayout.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
+      applyOnlyIfShowable(outputLayout.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
+      applyOnlyIfShowable(outputLayout.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
     }
 
     if let cropController = cropSettingsView {
@@ -1410,11 +1410,11 @@ extension PlayerWindowController {
     let onTopButtonVisibility = currentLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
     onTopButton.image = image
-    apply(visibility: onTopButtonVisibility, to: onTopButton)
+    applyVisibility(onTopButtonVisibility, to: onTopButton)
     onTopButton.setButtonType(.momentaryPushIn)
     if let customTitleBar {
       customTitleBar.onTopButton.image = image
-      apply(visibility: onTopButtonVisibility, to: customTitleBar.onTopButton)
+      applyVisibility(onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
 
     if onTopButtonVisibility == .showFadeableTopBar {

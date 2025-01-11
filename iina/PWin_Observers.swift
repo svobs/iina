@@ -234,9 +234,9 @@ extension PlayerWindowController {
     case .displayTimeAndBatteryInFullScreen:
       if let newValue = newValue as? Bool {
         if newValue {
-          apply(visibility: .showFadeableNonTopBar, to: additionalInfoView)
+          applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
         } else {
-          apply(visibility: .hidden, to: additionalInfoView)
+          applyVisibility(.hidden, to: additionalInfoView)
         }
       }
     case .alwaysShowOnTopIcon:
