@@ -401,7 +401,7 @@ class RenderCache {
   }  /// end `struct VolumeBar`
 
   struct Bar {
-    static let baseChapterWidth: CGFloat = 3.0
+    static let baseChapterGapWidth: CGFloat = 1.5
     let image: CGImage
 
     /// `barWidth` does not include added leading or trailing margin
@@ -428,7 +428,7 @@ class RenderCache {
       let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
       let leftColor = rc.barColorLeft.cgColor
       let rightColor = rc.barColorRight.cgColor
-      let chapterGapWidth = (Bar.baseChapterWidth * max(1.0, scaleFactor * 0.5)).rounded()
+      let chapterGapWidth = (baseChapterGapWidth * scaleFactor).rounded()
       let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
 
       // Determine clipping rects (pixel whitelists)

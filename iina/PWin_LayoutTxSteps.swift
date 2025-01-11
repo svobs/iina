@@ -1,5 +1,5 @@
 //
-//  LayoutTransitionTasks.swift
+//  PWin_LayoutTxSteps.swift
 //  iina
 //
 //  Created by Matt Svoboda on 10/4/23.
@@ -14,10 +14,13 @@ fileprivate extension NSStackView.VisibilityPriority {
 }
 
 /// This file contains tasks to run in the animation queue, which form a `LayoutTransition`.
+/// Each task is a separate `CATransaction`. Some tasks are assumed to have animations (although they can also be run immediately),
+/// but others are expected to always be immediate.
 extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// PRE TRANSITION
+  /// Always immediate
   func doPreTransitionWork(_ transition: LayoutTransition) {
     log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true
@@ -158,6 +161,7 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// FADE OUT OLD VIEWS
+  /// Expected to be animated.
   func fadeOutOldViews(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] FadeOutOldViews"}
@@ -268,7 +272,8 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// CLOSE OLD PANELS
-  /// This step is not always executed (e.g., for full screen toggle)
+  /// This step is not always executed (e.g., for full screen toggle).
+  /// Expected to be animated.
   func closeOldPanels(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)"}
@@ -377,6 +382,8 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// MIDPOINT: UPDATE INVISIBLES
+  /// This is needed as its own transaction in case constraints need to be replaced or views need to be added or replaced in the window such that
+  /// there is not an appropriate animation which should be seen.
   func updateHiddenViewsAndConstraints(_ transition: LayoutTransition) {
     guard let window = window else { return }
     let outputLayout = transition.outputLayout
@@ -956,6 +963,7 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// FADE IN NEW VIEWS
+  /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
     guard let window = window else { return }
     let outputLayout = transition.outputLayout
@@ -1031,6 +1039,7 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// POST TRANSITION: UPDATE INVISIBLES
+  /// Always instantaneous (not animated)
   func doPostTransitionWork(_ transition: LayoutTransition) {
     log.verbose("[\(transition.name)] DoPostTransitionWork")
     // Update blending mode:

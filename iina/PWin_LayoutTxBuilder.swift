@@ -177,7 +177,7 @@ extension PlayerWindowController {
     }
 
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
-    // Not enabled for fullScreen transitions.
+    // Not enabled for full screen transitions.
     if transition.needsCloseOldPanels {
       transition.tasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
