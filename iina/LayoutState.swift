@@ -687,7 +687,6 @@ class LayoutState {
   }
 
   func buildFullScreenGeometry(in screen: NSScreen, video: VideoGeometry) -> PWinGeometry {
-    assert(isFullScreen)
     return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
                                       outsideBars: outsideBars,
                                       insideBars: insideBars,

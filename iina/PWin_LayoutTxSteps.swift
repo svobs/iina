@@ -998,6 +998,7 @@ extension PlayerWindowController {
         applyVisibility(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
         /// onTop button is already handled by `updateOnTopButton()`
       }
+      updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
 
       // Add back title bar accessories (if needed):
       applyOnlyIfShowable(outputLayout.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)

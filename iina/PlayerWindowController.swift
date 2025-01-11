@@ -1376,19 +1376,31 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
+  func updateColorsForKeyWindowStatus(isKey: Bool) {
+    if let customTitleBar {
+      // The traffic light buttons should change to active/inactive
+      customTitleBar.leadingTitleBarView.markButtonsDirty()
+      customTitleBar.refreshTitle()
+    } else {
+      /// Duplicate some of the logic in `customTitleBar.refreshTitle()`
+      let alphaValue = isKey ? 1.0 : 0.4
+      for view in [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
+        // Skip buttons which are not visible
+        guard let view, view.alphaValue > 0.0 else { continue }
+        view.alphaValue = alphaValue
+      }
+    }
+  }
+
   func refreshKeyWindowStatus() {
     animationPipeline.submitInstantTask { [self] in
       guard let window else { return }
       guard !isClosing else { return }
 
-      if let customTitleBar {
-        // The traffic light buttons should change to active/inactive
-        customTitleBar.leadingTitleBarView.markButtonsDirty()
-        customTitleBar.refreshTitle()
-      }
-
       let isKey = window.isKeyWindow
       log.verbose{"Window isKey=\(isKey.yesno)"}
+      updateColorsForKeyWindowStatus(isKey: isKey)
+
       if isKey {
         PlayerCore.lastActive = player
         MediaPlayerIntegration.shared.update()
