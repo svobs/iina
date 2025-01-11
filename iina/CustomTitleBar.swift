@@ -18,8 +18,14 @@ class CustomTitleBarViewController: NSViewController {
 
   // Leading side
   var leadingTitleBarView: TitleBarButtonsContainerView!
-  var trafficLightButtons: [NSButton]!
+  var closeButton: NSButton?
+  var miniaturizeButton: NSButton?
+  var zoomButton: NSButton?
   var leadingSidebarToggleButton: NSButton!
+
+  var trafficLightButtons: [NSButton] {
+    return [closeButton, miniaturizeButton, zoomButton].compactMap({ $0 })
+  }
 
   // Center
   var documentIconButton: NSButton!
@@ -40,9 +46,11 @@ class CustomTitleBarViewController: NSViewController {
     // - Leading views
 
     // Add fake traffic light buttons:
-    let btnTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
-    trafficLightButtons = btnTypes.compactMap{ NSWindow.standardWindowButton($0, for: .titled) }
 
+    closeButton = NSWindow.standardWindowButton(.closeButton, for: .titled)
+    miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
+    zoomButton = NSWindow.standardWindowButton(.zoomButton, for: .titled)
+    let trafficLightButtons = trafficLightButtons
     leadingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarLeading,
                                                             identifier: "leadingSidebarToggleButton",
                                                             target: windowController,

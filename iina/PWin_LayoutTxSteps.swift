@@ -414,26 +414,24 @@ extension PlayerWindowController {
     }
 
     // Allow for showing/hiding each button individually
-
-    applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
-    applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
-    applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
 
-    if let customTitleBar {
-      applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
-      applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
-      applyOnlyIfHidden(onTopButtonVisibility, to: customTitleBar.onTopButton)
-    }
-
-    if outputLayout.titleBar == .hidden || transition.isTopBarPlacementChanging {
+    if outputLayout.titleBar == .hidden || transition.isTopBarPlacementChanging || transition.isTogglingFullScreen {
       hideBuiltInTitleBarViews(setAlpha: true)
 
       if let customTitleBar {
         customTitleBar.removeAndCleanUp()
         self.customTitleBar = nil
       }
+    } else if let customTitleBar {
+      applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
+      applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
+      applyOnlyIfHidden(onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
+
+    applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
+    applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
+    applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
 
     /// These should all be either 0 height or unchanged from `transition.inputLayout`.
     /// But may need to add or remove from fadeableViews
@@ -974,7 +972,9 @@ extension PlayerWindowController {
       if !outputLayout.isInteractiveMode && Preference.bool(for: .displayTimeAndBatteryInFullScreen) {
         applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
       }
-    } else if outputLayout.titleBar.isShowable {
+    }
+
+    if outputLayout.titleBar.isShowable {
       if !transition.isExitingFullScreen {  // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
         if outputLayout.spec.isLegacyStyle {
           if let customTitleBar {

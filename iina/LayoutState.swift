@@ -537,38 +537,48 @@ class LayoutState {
 
     // Title bar & title bar accessories:
 
-    if outputLayout.isFullScreen {
-      if layoutSpec.isLegacyStyle {
-        outputLayout.hasTopPaddingForCameraHousing = Preference.bool(for: .allowVideoToOverlapCameraHousing)
-      } else {
-        outputLayout.titleIconAndText = .showAlways
-        outputLayout.trafficLightButtons = .showAlways
-      }
+    if outputLayout.isLegacyFullScreen {
+      outputLayout.hasTopPaddingForCameraHousing = Preference.bool(for: .allowVideoToOverlapCameraHousing)
+    }
 
+    let titleBarVisibleState: VisibilityMode
+    if outputLayout.isNativeFullScreen {
+      titleBarVisibleState = .hidden
+      outputLayout.trafficLightButtons = .showAlways
+      outputLayout.titleIconAndText = .showAlways
+    } else if outputLayout.isLegacyFullScreen {
+      titleBarVisibleState = .hidden
+//      titleBarVisibleState = .showFadeableTopBar
     } else if outputLayout.isWindowed {
-      let visibleState: VisibilityMode = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
+      titleBarVisibleState = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
+    } else {
+      titleBarVisibleState = .hidden
+    }
 
-      outputLayout.topBarView = visibleState
-      outputLayout.titleBar = visibleState
-      outputLayout.trafficLightButtons = visibleState
-      outputLayout.titleIconAndText = visibleState
+    // Title bar views
+    outputLayout.titleBar = titleBarVisibleState
+    if !outputLayout.isNativeFullScreen {
+      outputLayout.trafficLightButtons = titleBarVisibleState
+      outputLayout.titleIconAndText = titleBarVisibleState
+    }
+    outputLayout.titlebarAccessoryViewControllers = titleBarVisibleState
+    if titleBarVisibleState.isShowable {
       // May be overridden depending on OSC layout anyway
       outputLayout.titleBarHeight = PlayerWindowController.standardTitleBarHeight
-
-      outputLayout.titlebarAccessoryViewControllers = visibleState
-
-      // LeadingSidebar toggle button
-      let hasLeadingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.leadingSidebar.tabGroups.isEmpty
-      if hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) {
-        outputLayout.leadingSidebarToggleButton = visibleState
-      }
-      // TrailingSidebar toggle button
-      let hasTrailingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.trailingSidebar.tabGroups.isEmpty
-      if hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) {
-        outputLayout.trailingSidebarToggleButton = visibleState
-      }
-
     }
+    // LeadingSidebar toggle button
+    let hasLeadingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.leadingSidebar.tabGroups.isEmpty
+    if hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) {
+      outputLayout.leadingSidebarToggleButton = titleBarVisibleState
+    }
+    // TrailingSidebar toggle button
+    let hasTrailingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.trailingSidebar.tabGroups.isEmpty
+    if hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) {
+      outputLayout.trailingSidebarToggleButton = titleBarVisibleState
+    }
+
+    // May be overridden below
+    outputLayout.topBarView = titleBarVisibleState
 
     // OSC:
 
