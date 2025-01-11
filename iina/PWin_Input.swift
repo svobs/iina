@@ -275,7 +275,7 @@ extension PlayerWindowController {
         return
       }
     }
-    let titleBarMinY = window!.frame.height - PlayerWindowController.standardTitleBarHeight
+    let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
     if event.clickCount == 2 {
       if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
         if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {

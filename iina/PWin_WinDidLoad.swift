@@ -87,7 +87,7 @@ extension PlayerWindowController {
       // Titlebar accessories
 
       // Update this here to reduce animation jitter on older versions of MacOS:
-      viewportTopOffsetFromTopBarTopConstraint.constant = PlayerWindowController.standardTitleBarHeight
+      viewportTopOffsetFromTopBarTopConstraint.constant = Constants.Distance.standardTitleBarHeight
 
       // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
       // screen mode once overlaying views are fully hidden (issue #3844). After applying this

@@ -126,7 +126,7 @@ class CustomTitleBarViewController: NSViewController {
     // - Add constraints
 
     view.translatesAutoresizingMaskIntoConstraints = false
-    view.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+    view.heightAnchor.constraint(equalToConstant: Constants.Distance.standardTitleBarHeight).isActive = true
 
     view.addSubview(leadingStackView)
     leadingStackView.translatesAutoresizingMaskIntoConstraints = false

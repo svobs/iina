@@ -20,7 +20,7 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// PRE TRANSITION
-  /// Always immediate
+  /// Always immediate (i.e., not animated).
   func doPreTransitionWork(_ transition: LayoutTransition) {
     log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true

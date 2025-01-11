@@ -40,8 +40,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
 
-  static let standardTitleBarHeight = Constants.Distance.standardTitleBarHeight
-
   /** The quick setting sidebar (video, audio, subtitles). */
   let quickSettingView = QuickSettingViewController()
 

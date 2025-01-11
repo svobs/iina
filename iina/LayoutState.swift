@@ -564,7 +564,7 @@ class LayoutState {
     outputLayout.titlebarAccessoryViewControllers = titleBarVisibleState
     if titleBarVisibleState.isShowable {
       // May be overridden depending on OSC layout anyway
-      outputLayout.titleBarHeight = PlayerWindowController.standardTitleBarHeight
+      outputLayout.titleBarHeight = Constants.Distance.standardTitleBarHeight
     }
     // LeadingSidebar toggle button
     let hasLeadingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.leadingSidebar.tabGroups.isEmpty

@@ -274,11 +274,11 @@ struct Constants {
     static let minWindowWidth: CGFloat = 510
     static let outsideBottomBarHeight: CGFloat = 68
     // Show title bar only in windowed mode
-    static let outsideTopBarHeight = PlayerWindowController.standardTitleBarHeight
+    static let outsideTopBarHeight = Constants.Distance.standardTitleBarHeight
 
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
-    static let viewportMargins = MarginQuad(top: PlayerWindowController.standardTitleBarHeight, trailing: 24,
-                                         bottom: PlayerWindowController.standardTitleBarHeight, leading: 24)
+    static let viewportMargins = MarginQuad(top: Constants.Distance.standardTitleBarHeight, trailing: 24,
+                                         bottom: Constants.Distance.standardTitleBarHeight, leading: 24)
   }
   struct AlbumArt {
     static let rawWidth: Int = 1600
