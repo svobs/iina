@@ -2225,6 +2225,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.seek(relativeSecond: left ? -10 : 10, option: .defaultValue)
 
     case .speed:
+      // FIXME: this broke!
       let indexSpeed1x = AppData.availableSpeedValues.count / 2
       let directionUnit: Int = (left ? -1 : 1)
       let currentSpeedIndex = findClosestCurrentSpeedIndex()

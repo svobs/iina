@@ -191,8 +191,8 @@ class MediaMetaCache {
       let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
       metaLock.withLock {
         // Don't let this get too big
-        if cachedFFMeta.count > Constants.SizeLimit.maxCachedVideoSizes {
-          log.debug("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...")
+        if cachedFFMeta.count > Constants.maxCachedVideoSizes {
+          log.debug("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta...")
           cachedFFMeta.removeAll()
         }
         cachedFFMeta[url] = ffMeta

@@ -229,9 +229,9 @@ class StartupHandler {
     for (index, wc) in wcsStalled.enumerated() {
       let winID = wc.window!.savedStateName
       let str: String
-      if index > Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
+      if index > Constants.maxWindowNamesInRestoreTimeoutAlert {
         break
-      } else if index == Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
+      } else if index == Constants.maxWindowNamesInRestoreTimeoutAlert {
         str = "…"
       } else if let path = (wc as? PlayerWindowController)?.player.info.currentPlayback?.path {
         str = "\(index+1). \(path.quoted)  [\(winID)]"

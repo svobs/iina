@@ -73,7 +73,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
 
     if #available(macOS 14.0, *), bounceOnClick {
       addSymbolEffect(.bounce.down.wholeSymbol, options:
-          .speed(Constants.Speed.symButtonImageTransition)
+          .speed(Constants.symButtonImageTransitionSpeed)
           .nonRepeating,
                       animated: true)
     }
@@ -126,9 +126,8 @@ class SymButton: NSImageView, NSAccessibilityButton {
       case .offUp:
         nativeEffect = .replace.offUp
       }
-      setSymbolImage(newImage, contentTransition: nativeEffect,
-                     options:
-          .speed(Constants.Speed.symButtonImageTransition)
+      setSymbolImage(newImage, contentTransition: nativeEffect, options:
+          .speed(Constants.symButtonImageTransitionSpeed)
           .nonRepeating)
     } else {
       image = newImage

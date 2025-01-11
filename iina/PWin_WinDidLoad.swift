@@ -35,7 +35,7 @@ extension PlayerWindowController {
     window.initialFirstResponder = nil
 
     // size
-    window.minSize = Constants.SizeLimit.minVideoSize
+    window.minSize = Constants.minVideoSize
 
     // Registers this window for didChangeScreenProfileNotification
     window.displaysWhenScreenProfileChanges = true

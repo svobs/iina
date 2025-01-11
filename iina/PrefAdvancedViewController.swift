@@ -421,7 +421,7 @@ fileprivate func optionFromString(_ stringItem: String) -> [String] {
 /// Ouput item: `[key, val]`
 fileprivate func readOptionsListFromPasteboard(_ pasteboard: NSPasteboard) -> [[String]] {
   let stringItems = pasteboard.getStringItems()
-  guard stringItems.count <= Constants.SizeLimit.mpvOptionsTableMaxRowsPerOperation else { return [] }
+  guard stringItems.count <= Constants.mpvOptionsTableMaxRowsPerOperation else { return [] }
   var optionPairs: [[String]] = []
   for stringItem in stringItems {
     let option: [String] = optionFromString(stringItem)

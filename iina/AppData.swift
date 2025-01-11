@@ -80,10 +80,12 @@ struct AppData {
   static let disableAnimationsHelpLink = "https://developer.apple.com/design/human-interface-guidelines/accessibility#Motion"
   static let gainAdjustmentHelpLink = "https://mpv.io/manual/stable/#options-replaygain"
   static let audioDriverHellpLink = "https://mpv.io/manual/stable/#audio-output-drivers-coreaudio"
-}
+}  /// end `struct AppData`
+
 
 typealias Str = String
 typealias TimeInt = TimeInterval
+
 struct Constants {
   struct BuildNumber {
     static let V1_0 = 1
@@ -93,6 +95,7 @@ struct Constants {
     static let V1_2_2 = 5
     static let V1_3 = 6
   }
+
   struct String {
     static let degree = "°"
     static let dot = "●"
@@ -133,9 +136,22 @@ struct Constants {
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
   }
-  struct Speed {
-    static let symButtonImageTransition = 2.0
-  }
+
+  // Quantities:
+
+  static let maxCachedVideoSizes: Int = 100000
+  static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
+  static let mpvOptionsTableMaxRowsPerOperation: Int = 1000
+  static let inspectorWatchTableMaxRowsPerOperation: Int = 1000
+
+  // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
+  static let maxConfFileLinesAccepted = 10000
+
+  /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
+  static let minVideoSize = NSSize(width: 8, height: 8)
+
+  static let symButtonImageTransitionSpeed = 2.0
+
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
 
@@ -247,18 +263,6 @@ struct Constants {
     static let minTabHeight: CGFloat = 16
     static let maxTabHeight: CGFloat = 70
   }
-  struct SizeLimit {
-    static let maxCachedVideoSizes: Int = 100000
-    static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
-    static let mpvOptionsTableMaxRowsPerOperation: Int = 1000
-    static let inspectorWatchTableMaxRowsPerOperation: Int = 1000
-
-    // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
-    static let maxConfFileLinesAccepted = 10000
-
-    /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
-    static let minVideoSize = NSMakeSize(8, 8)
-  }
   /// Based on mpv default
   struct DefaultVideoSize {
     static let rawWidth: Int = 640
@@ -344,11 +348,12 @@ struct Constants {
       static let playSliderKnobHeight: CGFloat = 12
     }
   }  /// end `struct Distance`
+     ///
   struct Color {
     static let defaultWindowBackgroundColor = CGColor.black
     static let interactiveModeBackground = NSColor.windowBackgroundColor.cgColor
   }
-}
+}  /// end `Constants`
 
 struct Unit {
   let singular: String

@@ -640,7 +640,7 @@ extension InspectorWindowController: EditableTableViewDelegate {
 
 fileprivate func readWatchListFromPasteboard(_ pasteboard: NSPasteboard) -> [String] {
   let stringItems = pasteboard.getStringItems()
-  guard stringItems.count <= Constants.SizeLimit.inspectorWatchTableMaxRowsPerOperation else { return [] }
+  guard stringItems.count <= Constants.inspectorWatchTableMaxRowsPerOperation else { return [] }
   // Strip values from args to support import from mpv Options table
   let sanitizedItems = stringItems.compactMap { String($0.split(separator: "=").first!) }
   // But if any key has a whitespace char or newline, reject entire drop as invalid

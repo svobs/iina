@@ -243,8 +243,8 @@ extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
         for rawLine in str.split(separator: "\n") {
           if let mapping = InputConfFile.parseRawLine(String(rawLine)) {
             // If the user dropped a huge e-book into IINA by mistake, try to stop it from blowing up
-            if mappingList.count > Constants.SizeLimit.maxConfFileLinesAccepted {
-              Logger.log("Pasteboard exceeds max allowed bindings from string (\(Constants.SizeLimit.maxConfFileLinesAccepted)): aborting", level: .error)
+            if mappingList.count > Constants.maxConfFileLinesAccepted {
+              Logger.log("Pasteboard exceeds max allowed bindings from string (\(Constants.maxConfFileLinesAccepted)): aborting", level: .error)
               return []
             }
             mappingList.append(mapping)
