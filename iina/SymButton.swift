@@ -137,9 +137,9 @@ class SymButton: NSImageView, NSAccessibilityButton {
     highlightColor = .white
   }
 
-  func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect) {
+  func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect? = nil) {
     guard let newImage, newImage != image else { return }
-    if #available(macOS 15.0, *) {
+    if #available(macOS 15.0, *), let effect {
       let nativeEffect: ReplaceSymbolEffect
       switch effect {
       case .downUp:

@@ -55,7 +55,8 @@ class CustomTitleBarViewController: NSViewController {
                                     Images.sidebarLeading,
                                     identifier: "leadingSidebarToggleButton",
                                     target: windowController,
-                                    action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
+                                    action: #selector(windowController.toggleLeadingSidebarVisibility(_:)),
+                                    bounceOnClick: true)
 
     let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
     leadingStackView.layer?.backgroundColor = .clear
@@ -105,13 +106,15 @@ class CustomTitleBarViewController: NSViewController {
                                     Images.onTopOff,
                                     identifier: "onTopButton",
                                     target: windowController,
-                                    action: #selector(windowController.toggleOnTop(_:)))
+                                    action: #selector(windowController.toggleOnTop(_:)),
+                                    bounceOnClick: false)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
                                     identifier: "trailingSidebarToggleButton",
                                     target: windowController,
-                                    action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
+                                    action: #selector(windowController.toggleTrailingSidebarVisibility(_:)),
+                                    bounceOnClick: true)
     let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
     trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
@@ -234,7 +237,7 @@ class CustomTitleBarViewController: NSViewController {
     // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
     let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
 
-    for view in [titleText] {
+    for view in [titleText, leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
       // Skip buttons which are not visible
       guard let view, view.alphaValue > 0.0 else { continue }
       view.alphaValue = alphaValue
@@ -328,20 +331,21 @@ class TitleTextView: NSTextView {
 class CustomTitleBar {
   static let shared = CustomTitleBar()
 
-  func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector) -> SymButton {
+  func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector, bounceOnClick: Bool) -> SymButton {
     let button = SymButton()
-    configureTitleBarButton(button, image, identifier: identifier, target: target, action: action)
+    configureTitleBarButton(button, image, identifier: identifier, target: target, action: action, bounceOnClick: bounceOnClick)
     return button
   }
 
-  func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector) {
+  func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector, bounceOnClick: Bool) {
     button.image = image
     button.target = target
     button.action = action
     button.identifier = .init(identifier)
     button.refusesFirstResponder = true
     button.isHidden = true
-    // Avoid expanding in size, even if there is extra space:
+    // Avoid expanding in size, even if there is extra space.
+    // Use `defaultHigh` instead of `required`: this looks like it helps prevent title bar buttons from getting slightly clipped
     button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     button.setContentHuggingPriority(.defaultHigh, for: .vertical)
     // Never get compressed:
@@ -350,6 +354,6 @@ class CustomTitleBar {
 
     button.imageScaling = .scaleProportionallyUpOrDown
 
-    button.bounceOnClick = true
+    button.bounceOnClick = bounceOnClick
   }
 }

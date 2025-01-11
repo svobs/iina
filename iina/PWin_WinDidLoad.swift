@@ -178,7 +178,8 @@ extension PlayerWindowController {
                                     Images.sidebarLeading,
                                     identifier: "leadingSidebarToggleButton",
                                     target: self,
-                                    action: #selector(toggleLeadingSidebarVisibility(_:)))
+                                    action: #selector(toggleLeadingSidebarVisibility(_:)),
+                                    bounceOnClick: true)
 
     let leadingSpacerTrailing = NSView()
     leadingSpacerTrailing.identifier = .init("leadingTitleBarTrailingSpacer")
@@ -210,14 +211,15 @@ extension PlayerWindowController {
     builder.configureTitleBarButton(onTopButton,
                                     Images.onTopOff,
                                     identifier: "onTopButton",
-                                    target: self, action: #selector(toggleOnTop(_:)))
-    //    onTopButton.alternateImage = Images.onTopOn
+                                    target: self, action: #selector(toggleOnTop(_:)),
+                                    bounceOnClick: false)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
                                     identifier: "trailingSidebarToggleButton",
                                     target: self,
-                                    action: #selector(toggleTrailingSidebarVisibility(_:)))
+                                    action: #selector(toggleTrailingSidebarVisibility(_:)),
+                                    bounceOnClick: true)
 
     let trailingSpacerTrailing = NSView()
     trailingSpacerTrailing.identifier = .init("trailingTitleBarTrailingSpacer")

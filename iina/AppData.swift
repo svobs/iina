@@ -478,8 +478,8 @@ struct Images {
 
   static let toggleAlbumArt: NSImage = makeSymbol(named: "photo", fallbackName: "toggle-album-art", desc: "Toggle Album Art", weight: .medium)
 
-  static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
-  static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
+  static let onTopOn = makeSymbol(named: "pin.fill", fallbackName: "ontop", desc: "On Top: On", ptSize: 13, weight: .light, scale: .medium)
+  static let onTopOff = makeSymbol(named: "pin", fallbackName: "ontop_off", desc: "On Top: Off", ptSize: 13, weight: .light, scale: .medium)
   static let settingsFill = NSImage(imageLiteralResourceName: "gearshape.fill")
   static let sidebarLeading = makeSymbol(named: "sidebar.leading", desc: "Leading Sidebar", ptSize: 17, weight: .regular, scale: .medium)
   static let sidebarTrailing = makeSymbol(named: "sidebar.trailing", desc: "Trailing Sidebar", ptSize: 17, weight: .regular, scale: .medium)
