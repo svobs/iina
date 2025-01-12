@@ -1416,10 +1416,19 @@ extension PlayerWindowController {
     let onTopButtonVisibility = currentLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
     onTopButton.replaceSymbolImage(with: image, effect: nil)
-    onTopButton.alphaValue = 0.8
+    if isOnTop {
+      addOnTopShadow(to: onTopButton)
+    } else {
+      onTopButton.shadow = nil
+    }
     applyVisibility(onTopButtonVisibility, to: onTopButton)
     if let customTitleBar {
       customTitleBar.onTopButton.replaceSymbolImage(with: image, effect: nil)
+      if isOnTop {
+        addOnTopShadow(to: customTitleBar.onTopButton)
+      } else {
+        customTitleBar.onTopButton.shadow = nil
+      }
       applyVisibility(onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
 
@@ -1427,6 +1436,10 @@ extension PlayerWindowController {
       showFadeableViews()
     }
     player.saveState()
+  }
+
+  private func addOnTopShadow(to button: SymButton) {
+    button.addShadow(blurRadiusConstant: 4.0, xOffsetConstant: 0.5, yOffsetConstant: -1, color: .controlAccentColor)
   }
 
   // MARK: - Controller content layout

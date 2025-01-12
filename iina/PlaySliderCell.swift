@@ -62,7 +62,6 @@ class PlaySliderCell: ScrollableSliderCell {
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
     player.log.verbose("PlaySlider drag-to-seek began")
-    guard let wc else { return false }
     isPausedBeforeSeeking = player.info.isPaused
     let result = super.startTracking(at: startPoint, in: controlView)
     if result {
@@ -75,7 +74,6 @@ class PlaySliderCell: ScrollableSliderCell {
   override func stopTracking(last lastPoint: NSPoint, current stopPoint: NSPoint, in controlView: NSView, mouseIsUp flag: Bool) {
     player.log.verbose("PlaySlider drag-to-seek ended")
     super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
-    guard let wc else { return }
     slider.needsDisplay = true
     if !isPausedBeforeSeeking {
       player.resume()
