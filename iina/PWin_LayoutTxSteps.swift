@@ -761,10 +761,10 @@ extension PlayerWindowController {
       if let customTitleBar {
         // Update superview based on placement. Cannot always add to contentView due to constraint issues
         if transition.outputLayout.topBarPlacement == .outsideViewport {
-          customTitleBar.addViewToSuperview(titleBarView)
+          customTitleBar.addViewTo(superview: titleBarView)
         } else {
           if let contentView = window.contentView {
-            customTitleBar.addViewToSuperview(contentView)
+            customTitleBar.addViewTo(superview: contentView)
           }
         }
         if !transition.inputLayout.titleBar.isShowable {

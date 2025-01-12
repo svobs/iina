@@ -59,6 +59,7 @@ class CustomTitleBarViewController: NSViewController {
                                     bounceOnClick: true)
 
     let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
+    leadingStackView.identifier = .init("TitleBar-LeadingStackView")
     leadingStackView.layer?.backgroundColor = .clear
     leadingStackView.orientation = .horizontal
     leadingStackView.detachesHiddenViews = true
@@ -101,6 +102,7 @@ class CustomTitleBarViewController: NSViewController {
     }
 
     let titleText = TitleTextView()
+    titleText.identifier = .init("TitleBar-TextView")
     titleText.isEditable = false
     titleText.isSelectable = false
     titleText.isFieldEditor = false
@@ -113,14 +115,15 @@ class CustomTitleBarViewController: NSViewController {
     self.titleText = titleText
 
     let centerStackView = NSStackView(views: [documentIconButton, titleText])
+    centerStackView.identifier = .init("TitleBar-CenterStackView")
     centerStackView.layer?.backgroundColor = .clear
     centerStackView.orientation = .horizontal
     centerStackView.detachesHiddenViews = true
     centerStackView.alignment = .centerY
     centerStackView.spacing = 0
     centerStackView.distribution = .fill
-    centerStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
-    centerStackView.setHuggingPriority(.init(500), for: .horizontal)
+    centerStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    centerStackView.setHuggingPriority(.init(1000), for: .horizontal)
 
     // - Trailing views
 
@@ -138,6 +141,7 @@ class CustomTitleBarViewController: NSViewController {
                                     action: #selector(windowController.toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)
     let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
+    trailingStackView.identifier = .init("TitleBar-TrailingStackView")
     trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
     trailingStackView.detachesHiddenViews = true
@@ -188,13 +192,11 @@ class CustomTitleBarViewController: NSViewController {
     titleText.setContentCompressionResistancePriority(.init(499), for: .horizontal)  // allow truncation
     titleText.setContentHuggingPriority(.init(499), for: .horizontal)
 
+    documentIconButton.translatesAutoresizingMaskIntoConstraints = false
     documentIconButton.setContentHuggingPriority(.required, for: .horizontal)
     documentIconButton.setContentHuggingPriority(.required, for: .vertical)
     documentIconButton.setContentCompressionResistancePriority(.required, for: .horizontal)
     documentIconButton.setContentCompressionResistancePriority(.required, for: .vertical)
-    documentIconButton.translatesAutoresizingMaskIntoConstraints = false
-    documentIconButton.trailingAnchor.constraint(equalTo: titleText.leadingAnchor).isActive = true
-    documentIconButton.centerYAnchor.constraint(equalTo: titleText.centerYAnchor).isActive = true
 
     // make titleText expand to fill all available space
     let leadTitleCon = documentIconButton.leadingAnchor.constraint(greaterThanOrEqualTo: leadingTitleBarView.trailingAnchor)
@@ -227,7 +229,7 @@ class CustomTitleBarViewController: NSViewController {
   }
 
   // Add to [different] superview
-  func addViewToSuperview(_ superview: NSView) {
+  func addViewTo(superview: NSView) {
     superview.addSubview(view)
     view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
     refreshTitle()
