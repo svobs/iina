@@ -10,8 +10,8 @@
 class SymButton: NSImageView, NSAccessibilityButton {
   var bounceOnClick: Bool = false
 
-  var regularColor: NSColor? = .controlTextColor
-  var highlightColor: NSColor? = nil
+  var regularColor: NSColor? = nil
+  var highlightColor: NSColor? = .controlTextColor
 
   enum ReplacementEffect {
     case downUp
