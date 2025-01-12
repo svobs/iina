@@ -180,7 +180,6 @@ class CustomTitleBarViewController: NSViewController {
     centerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
 
     titleText.translatesAutoresizingMaskIntoConstraints = false
-    titleText.heightAnchor.constraint(equalToConstant: 16).isActive = true
     titleText.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
     // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
     // (>= 500 would interfere with window resize).
@@ -254,8 +253,6 @@ class CustomTitleBarViewController: NSViewController {
       titleText.string = title
       titleText.sizeToFit()
       titleText.invalidateIntrinsicContentSize()
-      //    titleText.superview?.needsLayout = true
-      //    titleText.superview?.needsUpdateConstraints = true
     }
 
     // - Update colors
@@ -340,16 +337,16 @@ class TitleTextView: NSTextView {
 
   // See https://stackoverflow.com/questions/11237622/using-autolayout-with-expanding-nstextviews
   override var intrinsicContentSize: NSSize {
-    guard let textContainer = self.textContainer, let layoutManager = self.layoutManager else { return .zero }
-    layoutManager.ensureLayout(for: textContainer)
-    let contentSize = layoutManager.usedRect(for: textContainer).size
-    Logger.log("••• intrinsicContentSize: \(contentSize): \(textStorage!.string)")
+    let stringSize = attributedString().size()
+    // Note: need to add some extra width to avoid ellipses (…) being used unnecessarily. Not sure why.
+    let contentSize = NSSize(width: (stringSize.width + 5).rounded(), height: stringSize.height)
+    associatedPlayer?.log.trace{"TitleText intrinsicContentSize: \(contentSize): \(textStorage!.string)"}
     return contentSize
   }
 
   override func didChangeText() {
-    super.didChangeText()
     self.invalidateIntrinsicContentSize()
+    super.didChangeText()
   }
 }
 
