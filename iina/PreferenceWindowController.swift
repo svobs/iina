@@ -136,7 +136,7 @@ class PreferenceWindowController: IINAWindowController {
   }
 
   private var tries: [Trie] = []
-  private var lastString: String = ""
+  private var searchString: String = ""
   private var currentCompletionResults: [Trie.ReturnValue] = []
 
   let indexingQueue = DispatchQueue(label: "IINAPreferenceIndexingTask", qos: .userInitiated)
@@ -267,6 +267,11 @@ class PreferenceWindowController: IINAWindowController {
       prefDetailScrollView.scroll(NSPoint())
     })
     self.observers.append(observer)
+
+    // Restore previous search (if any):
+    searchField.stringValue = PreferenceWindowController.getSearchStringFromPrefs() ?? ""
+    searchFieldAction(self)
+
     Logger.log("PreferenceWindowController windowDidLoad done", level: .verbose)
   }
 
@@ -275,6 +280,10 @@ class PreferenceWindowController: IINAWindowController {
   }
 
   // MARK: - Searching
+
+  private static func getSearchStringFromPrefs() -> String? {
+    return UIState.shared.isRestoreEnabled ? Preference.string(for: .uiPrefWindowSearchString) : nil
+  }
 
   private func makeTries(_ labelDict: [String: [String: [String]]]) {
     // search for sections and labels
@@ -290,20 +299,24 @@ class PreferenceWindowController: IINAWindowController {
 
   @IBAction func searchFieldAction(_ sender: Any) {
     guard !isIndexing else { return }
-    let searchString = searchField.stringValue.lowercased().trimWhitespaceSuffix().removedLastSemicolon()
-    if searchString == lastString { return }
-    if searchString.count == 0 {
+    let newSearchString = searchField.stringValue.lowercased().trimWhitespaceSuffix().removedLastSemicolon()
+    guard newSearchString != searchString else { return }
+    if newSearchString.isEmpty {
       dismissCompletionList()
-      return
-    }
-    if searchString.hasPrefix(lastString) {
-      tries.filter { $0.active }.forEach { $0.search(String(searchString.dropFirst(lastString.count))) }
     } else {
-      tries.forEach { $0.reset(); $0.search(searchString) }
+      if newSearchString.hasPrefix(searchString) {
+        tries.filter { $0.active }.forEach { $0.search(String(newSearchString.dropFirst(searchString.count))) }
+      } else {
+        tries.forEach { $0.reset(); $0.search(newSearchString) }
+      }
+      currentCompletionResults = tries.filter { $0.active }.map { $0.returnValue }
+      completeSearchField()
     }
-    lastString = searchString
-    currentCompletionResults = tries.filter { $0.active }.map { $0.returnValue }
-    completeSearchField()
+    // Save search string in UI state, if enabled:
+    if UIState.shared.isRestoreEnabled, Preference.string(for: .uiPrefWindowSearchString) != newSearchString {
+      Preference.set(newSearchString, for: .uiPrefWindowSearchString)
+    }
+    searchString = newSearchString
   }
 
   private func completeSearchField() {

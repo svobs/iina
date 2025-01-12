@@ -509,6 +509,7 @@ struct Preference {
     static let enableRestoreUIStateForCmdLineLaunches = Key("enableRestoreUIStateForCmdLineLaunches")
     static let isRestoreInProgress = Key("isRestoreInProgress")
 
+    static let uiPrefWindowSearchString = Key("uiPrefWindowSearchString")
     // Index of currently selected tab in Navigator table
     static let uiPrefWindowNavTableSelectionIndex = Key("uiPrefWindowNavTableSelectionIndex")
     static let uiPrefDetailViewScrollOffsetY = Key("uiPrefDetailViewScrollOffsetY")
@@ -1377,6 +1378,7 @@ struct Preference {
     .alwaysPauseMediaWhenRestoringAtLaunch: false,
     .enableRestoreUIStateForCmdLineLaunches: false,
     .isRestoreInProgress: false,
+    .uiPrefWindowSearchString: "",
     .uiPrefWindowNavTableSelectionIndex: 0,
     .uiPrefDetailViewScrollOffsetY: 0.0,
     .uiCollapseViewSuppressOSDMessages: true,

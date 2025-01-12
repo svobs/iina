@@ -2041,7 +2041,7 @@ extension NSView {
 #endif
 
   func addConstraintsToFillSuperview(v: Bool = true, h: Bool = true, priority: NSLayoutConstraint.Priority = .required) {
-    guard let superview = superview else { return }
+    guard let superview else { return }
 
     if h {
       let leadingConstraint = leadingAnchor.constraint(equalTo: superview.leadingAnchor)
@@ -2062,7 +2062,7 @@ extension NSView {
   }
 
   func addConstraintsToFillSuperview(top: CGFloat? = nil, bottom: CGFloat? = nil, leading: CGFloat? = nil, trailing: CGFloat? = nil) {
-    guard let superview = superview else { return }
+    guard let superview else { return }
 
     if let top = top {
       let topConstraint = topAnchor.constraint(equalTo: superview.topAnchor, constant: top)

@@ -127,14 +127,20 @@ class SymButton: NSImageView, NSAccessibilityButton {
     }
   }
 
+  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
   func useDefaultColors() {
     regularColor = nil
     highlightColor = .controlTextColor
+    shadow = nil
+    updateHighlight(isInsideBounds: false)
   }
 
+  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
   func useColorsForClearBG() {
     regularColor = .controlForClearBG
     highlightColor = .white
+    addShadow()
+    updateHighlight(isInsideBounds: false)
   }
 
   func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect? = nil) {
@@ -157,13 +163,12 @@ class SymButton: NSImageView, NSAccessibilityButton {
     }
   }
 
+  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
   func setColors(from layoutState: LayoutState) {
     if layoutState.spec.oscBackgroundIsClear {
       useColorsForClearBG()
-      addShadow()
     } else {
       useDefaultColors()
-      shadow = nil
     }
   }
 }

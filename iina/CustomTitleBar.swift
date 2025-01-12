@@ -17,7 +17,7 @@ class CustomTitleBarViewController: NSViewController {
   var windowController: PlayerWindowController!
 
   // Leading side
-  var leadingTitleBarView: TitleBarButtonsContainerView!
+  let leadingStackView = TitleBarButtonsContainerView()
   var closeButton: NSButton?
   var miniaturizeButton: NSButton?
   var zoomButton: NSButton?
@@ -28,11 +28,12 @@ class CustomTitleBarViewController: NSViewController {
   }
 
   // Center
+  let centerStackView = NSStackView()
   var documentIconButton: NSButton!
-  var titleText: NSTextView!
+  let titleText = TitleTextView()
 
   // Trailing side
-  var trailingTitleBarView: NSStackView!
+  let trailingStackView = NSStackView()
   let trailingSidebarToggleButton = SymButton()
   let onTopButton = SymButton()
 
@@ -40,7 +41,6 @@ class CustomTitleBarViewController: NSViewController {
   override func loadView() {
     view = NSView()
     let builder = CustomTitleBar.shared
-
     let iconSpacingH = Constants.Distance.titleBarIconHSpacing
 
     // - Leading views
@@ -58,7 +58,7 @@ class CustomTitleBarViewController: NSViewController {
                                     action: #selector(windowController.toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
 
-    let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
+    leadingStackView.setViews(trafficLightButtons + [leadingSidebarToggleButton], in: .center)
     leadingStackView.identifier = .init("TitleBar-LeadingStackView")
     leadingStackView.layer?.backgroundColor = .clear
     leadingStackView.orientation = .horizontal
@@ -80,8 +80,6 @@ class CustomTitleBarViewController: NSViewController {
       btn.setContentCompressionResistancePriority(.required, for: .vertical)
     }
 
-    leadingTitleBarView = leadingStackView
-
     if leadingStackView.trackingAreas.count <= 1 && trafficLightButtons.count == 3 {
       for btn in trafficLightButtons {
         /// This solution works better than using `window` as owner, because with that the green button would get stuck with highlight
@@ -95,13 +93,10 @@ class CustomTitleBarViewController: NSViewController {
     // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
     windowController.window!.representedURL = windowController.player.info.currentURL
 
-    if #available(macOS 11.0, *) {
-      documentIconButton = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
-      documentIconButton.image = Utility.icon(for: windowController.player.info.currentURL,
-                                              optimizingForHeight: documentIconButton.frame.height)
-    }
+    documentIconButton = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
+    documentIconButton.image = Utility.icon(for: windowController.player.info.currentURL,
+                                            optimizingForHeight: documentIconButton.frame.height)
 
-    let titleText = TitleTextView()
     titleText.identifier = .init("TitleBar-TextView")
     titleText.isEditable = false
     titleText.isSelectable = false
@@ -112,9 +107,8 @@ class CustomTitleBarViewController: NSViewController {
     titleText.defaultParagraphStyle = pStyle
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
     titleText.textColor = .labelColor
-    self.titleText = titleText
 
-    let centerStackView = NSStackView(views: [documentIconButton, titleText])
+    centerStackView.setViews([documentIconButton, titleText], in: .center)
     centerStackView.identifier = .init("TitleBar-CenterStackView")
     centerStackView.layer?.backgroundColor = .clear
     centerStackView.orientation = .horizontal
@@ -123,7 +117,7 @@ class CustomTitleBarViewController: NSViewController {
     centerStackView.spacing = 0
     centerStackView.distribution = .fill
     centerStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    centerStackView.setHuggingPriority(.init(1000), for: .horizontal)
+    centerStackView.setHuggingPriority(.init(500), for: .horizontal)
 
     // - Trailing views
 
@@ -140,7 +134,7 @@ class CustomTitleBarViewController: NSViewController {
                                     target: windowController,
                                     action: #selector(windowController.toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)
-    let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
+    trailingStackView.setViews([trailingSidebarToggleButton, onTopButton], in: .center)
     trailingStackView.identifier = .init("TitleBar-TrailingStackView")
     trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
@@ -151,34 +145,54 @@ class CustomTitleBarViewController: NSViewController {
     trailingStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
     trailingStackView.setHuggingPriority(.init(500), for: .horizontal)
 
-    trailingTitleBarView = trailingStackView
+    initConstraints()
 
+    view.configureSubtreeForCoreAnimation()
+  }
 
-    // - Add constraints
-
+  private func initConstraints() {
+    // Root view:
     view.translatesAutoresizingMaskIntoConstraints = false
     view.heightAnchor.constraint(equalToConstant: Constants.Distance.standardTitleBarHeight).isActive = true
+
+    // Stack views:
     view.addSubview(leadingStackView)
     view.addSubview(centerStackView)
     view.addSubview(trailingStackView)
+    initConstraintsForStackViews()
 
+    initConstraintsForCenterStackViewItems()
+  }
+
+  private func initConstraintsForStackViews() {
     leadingStackView.translatesAutoresizingMaskIntoConstraints = false
-    leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-    leadingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-    leadingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-
     centerStackView.translatesAutoresizingMaskIntoConstraints = false
+    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
+
+    // Vertical constraints:
+
+    leadingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+    centerStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+    trailingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+
+    // Horizontal constraints:
+
+    leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+
     let centerStackLeadingEqCon = centerStackView.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
     centerStackLeadingEqCon.priority = .init(400)
     centerStackLeadingEqCon.isActive = true
     centerStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor).isActive = true
+
     let centerStackTrailingEqCon = centerStackView.trailingAnchor.constraint(equalTo: trailingStackView.trailingAnchor)
     centerStackTrailingEqCon.priority = .init(400)
     centerStackTrailingEqCon.isActive = true
     centerStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingStackView.leadingAnchor).isActive = true
-    centerStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-    centerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
 
+    trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+  }
+
+  private func initConstraintsForCenterStackViewItems() {
     titleText.translatesAutoresizingMaskIntoConstraints = false
     titleText.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
     // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
@@ -197,10 +211,10 @@ class CustomTitleBarViewController: NSViewController {
     documentIconButton.setContentCompressionResistancePriority(.required, for: .horizontal)
     documentIconButton.setContentCompressionResistancePriority(.required, for: .vertical)
 
-    // make titleText expand to fill all available space
-    let leadTitleCon = documentIconButton.leadingAnchor.constraint(greaterThanOrEqualTo: leadingTitleBarView.trailingAnchor)
+    // Make titleText expand to fill all available space
+    let leadTitleCon = documentIconButton.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor)
     leadTitleCon.isActive = true
-    let leadTitleConEQ = documentIconButton.leadingAnchor.constraint(equalTo: leadingTitleBarView.trailingAnchor)
+    let leadTitleConEQ = documentIconButton.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
     leadTitleConEQ.priority = .init(498)
     leadTitleConEQ.isActive = true
     let trailTitleCon = trailingStackView.leadingAnchor.constraint(greaterThanOrEqualTo: titleText.trailingAnchor)
@@ -208,13 +222,6 @@ class CustomTitleBarViewController: NSViewController {
     let trailTitleConEQ = trailingStackView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor)
     trailTitleConEQ.priority = .init(498)
     trailTitleConEQ.isActive = true
-
-    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
-    trailingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-    trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-    trailingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-
-    view.configureSubtreeForCoreAnimation()
   }
 
   private func makeSpacerView() -> NSView {
@@ -264,7 +271,7 @@ class CustomTitleBarViewController: NSViewController {
 
     for view in [titleText, leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
       // Skip buttons which are not visible
-      guard let view, view.alphaValue > 0.0 else { continue }
+      guard view.alphaValue > 0.0 else { continue }
       view.alphaValue = alphaValue
     }
   }
@@ -337,10 +344,15 @@ class TitleTextView: NSTextView {
 
   // See https://stackoverflow.com/questions/11237622/using-autolayout-with-expanding-nstextviews
   override var intrinsicContentSize: NSSize {
+    guard let textContainer = self.textContainer, let layoutManager = self.layoutManager else {
+      return super.intrinsicContentSize
+    }
+    layoutManager.ensureLayout(for: textContainer)
+
     let stringSize = attributedString().size()
     // Note: need to add some extra width to avoid ellipses (…) being used unnecessarily. Not sure why.
-    let contentSize = NSSize(width: (stringSize.width + 5).rounded(), height: stringSize.height)
-    associatedPlayer?.log.trace{"TitleText intrinsicContentSize: \(contentSize): \(textStorage!.string)"}
+    let contentSize = NSSize(width: (stringSize.width + 8).rounded(), height: stringSize.height)
+    associatedPlayer?.log.verbose{"TitleText intrinsicContentSize: \(contentSize): \(textStorage!.string)"}
     return contentSize
   }
 
