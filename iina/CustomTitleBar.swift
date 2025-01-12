@@ -37,6 +37,10 @@ class CustomTitleBarViewController: NSViewController {
   let trailingSidebarToggleButton = SymButton()
   let onTopButton = SymButton()
 
+  var symButtons: [SymButton] {
+    return [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton]
+  }
+
   /// Use `loadView` instead of `viewDidLoad` because controller is not using storyboard
   override func loadView() {
     view = NSView()

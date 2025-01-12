@@ -135,6 +135,18 @@ extension PlayerWindowController {
     })
   }
 
+  /// Returns the first view found in `views` for which the given mouse event's point location lands inside its bounds.
+  func viewForMouseEvent(_ event: NSEvent, in views: [NSView?]) -> NSView? {
+    for view in views {
+      guard let view else { continue }
+      let localPoint = view.convert(event.locationInWindow, from: nil)
+      if view.isMousePoint(localPoint, in: view.bounds) {
+        return view
+      }
+    }
+    return nil
+  }
+
   /// Being called to perform single click action after timeout.
   ///
   /// - SeeAlso: mouseUp(with:)
@@ -149,7 +161,12 @@ extension PlayerWindowController {
   }
 
   override func pressureChange(with event: NSEvent) {
-    log.verbose("PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)")
+    if let clickedButton = viewForMouseEvent(event, in: symButtons) {
+      // Allow these controls to handle the event
+      clickedButton.pressureChange(with: event)
+      return
+    }
+    log.trace{"PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)"}
     if isCurrentPressInSecondStage == false && event.stage == 2 {
       performMouseAction(Preference.enum(for: .forceTouchAction))
       isCurrentPressInSecondStage = true
@@ -172,7 +189,7 @@ extension PlayerWindowController {
       documentIconButton?.mouseDown(with: event)
       return
     }
-    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider, muteButton, playButton, leftArrowButton, rightArrowButton]) else {
+    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]), !isMouseEvent(event, inAnyOf: symButtons)  else {
       // Allow these controls to handle the event
       super.mouseDown(with: event)
       return

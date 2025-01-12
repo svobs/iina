@@ -374,6 +374,7 @@ extension PlayerWindowController {
     leftArrowButton.action = #selector(leftArrowButtonAction(_:))
     leftArrowButton.identifier = .init("leftArrowButton")
     leftArrowButton.refusesFirstResponder = true
+    leftArrowButton.enableAcceleration = true
     leftArrowButton.bounceOnClick = true
 
     // Right Arrow button
@@ -382,6 +383,7 @@ extension PlayerWindowController {
     rightArrowButton.action = #selector(rightArrowButtonAction(_:))
     rightArrowButton.identifier = .init("rightArrowButton")
     rightArrowButton.refusesFirstResponder = true
+    rightArrowButton.enableAcceleration = true
     rightArrowButton.bounceOnClick = true
 
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
