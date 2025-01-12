@@ -9,7 +9,13 @@
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView, NSAccessibilityButton {
   var enableAcceleration: Bool = false
-  var pressureStage: Int = 0
+  var pressureStage: Int = 0 {
+    willSet {
+      if pressureStage != newValue {
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+      }
+    }
+  }
 
   var bounceOnClick: Bool = false
 
@@ -106,7 +112,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
 
   override func pressureChange(with event: NSEvent) {
     guard enableAcceleration else { return }
-    let pseudoStage = Int((event.pressure * 5).rounded())
+    let pseudoStage = Int(event.pressure * 5)
     pwc?.player.log.trace{"SymButton: PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)"}
     pressureStage = pseudoStage
     sendAction(action, to: target)

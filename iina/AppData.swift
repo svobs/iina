@@ -484,8 +484,7 @@ struct Images {
 
   static let onTopOn = makeSymbol(named: "pin.fill", fallbackName: "ontop", desc: "On Top: On", ptSize: 17, weight: .regular, scale: .small,
                                   usePaletteColors: [.controlAccentColor, .labelColor])
-  static let onTopOff = makeSymbol(named: "pin.slash.fill", fallbackName: "ontop_off", desc: "On Top: Off", ptSize: 17, weight: .regular, scale: .small,
-                                   usePaletteColors: [.controlAccentColor, .labelColor])
+  static let onTopOff = makeSymbol(named: "pin", fallbackName: "ontop_off", desc: "On Top: Off", ptSize: 17, weight: .regular, scale: .small)
   static let sidebarLeading = makeSymbol(named: "sidebar.leading", desc: "Leading Sidebar", ptSize: 17, weight: .regular, scale: .medium)
   static let sidebarTrailing = makeSymbol(named: "sidebar.trailing", desc: "Trailing Sidebar", ptSize: 17, weight: .regular, scale: .medium)
 
