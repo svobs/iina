@@ -135,12 +135,9 @@ extension PlayerWindowController {
     })
   }
 
-  /**
-   Being called to perform single click action after timeout.
-
-   - SeeAlso:
-   mouseUp(with:)
-   */
+  /// Being called to perform single click action after timeout.
+  ///
+  /// - SeeAlso: mouseUp(with:)
   @objc internal func performMouseActionLater(_ timer: Timer) {
     guard let action = timer.userInfo as? Preference.MouseClickAction else { return }
     if mouseExitEnterCount >= 2 && action == .hideOSC {
@@ -152,6 +149,7 @@ extension PlayerWindowController {
   }
 
   override func pressureChange(with event: NSEvent) {
+    log.verbose("PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)")
     if isCurrentPressInSecondStage == false && event.stage == 2 {
       performMouseAction(Preference.enum(for: .forceTouchAction))
       isCurrentPressInSecondStage = true
@@ -425,7 +423,7 @@ extension PlayerWindowController {
 
       refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     case .customTitleBar:
-      customTitleBar?.leadingTitleBarView.mouseEntered(with: event)
+      customTitleBar?.leadingStackView.mouseEntered(with: event)
     }
   }
 
@@ -450,7 +448,7 @@ extension PlayerWindowController {
     case .playSlider:
       hideSeekPreview()
     case .customTitleBar:
-      customTitleBar?.leadingTitleBarView.mouseExited(with: event)
+      customTitleBar?.leadingStackView.mouseExited(with: event)
     }
   }
 

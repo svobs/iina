@@ -1416,13 +1416,9 @@ extension PlayerWindowController {
     let onTopButtonVisibility = currentLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
     onTopButton.replaceSymbolImage(with: image, effect: nil)
-//    onTopButton.regularColor = isOnTop ? .controlAccentColor : nil
-//    onTopButton.contentTintColor = onTopButton.regularColor
     applyVisibility(onTopButtonVisibility, to: onTopButton)
     if let customTitleBar {
       customTitleBar.onTopButton.replaceSymbolImage(with: image, effect: nil)
-//      customTitleBar.onTopButton.regularColor = isOnTop ? .controlAccentColor : nil
-//      customTitleBar.onTopButton.contentTintColor = onTopButton.regularColor
       applyVisibility(onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
 

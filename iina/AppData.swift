@@ -450,10 +450,14 @@ struct Images {
   }
 
   static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String,
-                         ptSize: CGFloat = 13, weight: NSFont.Weight = .ultraLight, scale: SymbolScalePolyfill = .medium) -> NSImage {
+                         ptSize: CGFloat = 13, weight: NSFont.Weight = .ultraLight, scale: SymbolScalePolyfill = .medium,
+                         usePaletteColors paletteColors: [NSColor]? = nil) -> NSImage {
     if #available(macOS 11.0, *) {
       if let systemImg = NSImage(systemSymbolName: name, accessibilityDescription: desc) {
-        let config = NSImage.SymbolConfiguration(pointSize: ptSize, weight: weight, scale: scale.scaleValue)
+        var config = NSImage.SymbolConfiguration(pointSize: ptSize, weight: weight, scale: scale.scaleValue)
+        if let paletteColors {
+          config = config.applying(NSImage.SymbolConfiguration(paletteColors: paletteColors))
+        }
         if let systemImgBest = systemImg.withSymbolConfiguration(config) {
           return systemImgBest
         }
@@ -478,8 +482,10 @@ struct Images {
 
   static let toggleAlbumArt: NSImage = makeSymbol(named: "photo", fallbackName: "toggle-album-art", desc: "Toggle Album Art", weight: .medium)
 
-  static let onTopOn = makeSymbol(named: "pin.fill", fallbackName: "ontop", desc: "On Top: On", ptSize: 17, weight: .regular, scale: .small)
-  static let onTopOff = makeSymbol(named: "pin", fallbackName: "ontop_off", desc: "On Top: Off", ptSize: 17, weight: .regular, scale: .small)
+  static let onTopOn = makeSymbol(named: "pin.fill", fallbackName: "ontop", desc: "On Top: On", ptSize: 17, weight: .regular, scale: .small,
+                                  usePaletteColors: [.controlAccentColor, .labelColor])
+  static let onTopOff = makeSymbol(named: "pin.slash.fill", fallbackName: "ontop_off", desc: "On Top: Off", ptSize: 17, weight: .regular, scale: .small,
+                                   usePaletteColors: [.controlAccentColor, .labelColor])
   static let sidebarLeading = makeSymbol(named: "sidebar.leading", desc: "Leading Sidebar", ptSize: 17, weight: .regular, scale: .medium)
   static let sidebarTrailing = makeSymbol(named: "sidebar.trailing", desc: "Trailing Sidebar", ptSize: 17, weight: .regular, scale: .medium)
 
