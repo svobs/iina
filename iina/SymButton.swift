@@ -195,4 +195,14 @@ class SymButton: NSImageView, NSAccessibilityButton {
       useDefaultColors()
     }
   }
+
+  func setShadow(enabled: Bool) {
+    if enabled {
+      guard shadow == nil else { return }
+      addShadow(blurRadiusConstant: 4.0, xOffsetConstant: 0.5, yOffsetConstant: -0.5, color: .controlAccentColor)
+    } else {
+      shadow = nil
+    }
+  }
+
 }

@@ -240,7 +240,7 @@ extension PlayerWindowController {
         }
       }
     case .alwaysShowOnTopIcon:
-      updateOnTopButton()
+      updateOnTopButton(from: currentLayout, showIfFadeable: true)
     case .leadingSidebarPlacement, .trailingSidebarPlacement:
       updateSidebarPlacements()
     case .settingsTabGroupLocation:

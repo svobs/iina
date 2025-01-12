@@ -773,6 +773,10 @@ extension PlayerWindowController {
       }
     }
 
+    if outputLayout.titleBar.isShowable {
+      updateTitleBarUI(from: outputLayout)  // covers both native & custom variants
+    }
+
     if outputLayout.leadingSidebarPlacement == .insideViewport {
       leadingSidebarView.material = .menu
     } else {
@@ -986,21 +990,6 @@ extension PlayerWindowController {
           addTitleBarAccessoryViews()
         }
       }
-
-      applyOnlyIfShowable(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
-      applyOnlyIfShowable(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
-      updateOnTopButton()
-
-      if let customTitleBar {
-        applyVisibility(outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
-        applyVisibility(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
-        /// onTop button is already handled by `updateOnTopButton()`
-      }
-      updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
-
-      // Add back title bar accessories (if needed):
-      applyOnlyIfShowable(outputLayout.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
-      applyOnlyIfShowable(outputLayout.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
     }
 
     if let cropController = cropSettingsView {
@@ -1032,6 +1021,32 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout || transition.outputLayout.isFullScreen {
       updateWindowBorderAndOpacity(using: transition.outputLayout)
     }
+  }
+
+  func updateTitleBarUI(from layoutState: LayoutState) {
+    for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
+      applyVisibility(layoutState.leadingSidebarToggleButton, button)
+      if layoutState.leadingSidebarToggleButton.isShowable {
+        log.verbose("LEADING visible: \(layoutState.leadingSidebar.isVisible)")
+        button.setShadow(enabled: layoutState.leadingSidebar.isVisible)
+      }
+    }
+    for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
+      applyVisibility(layoutState.trailingSidebarToggleButton, button)
+      if layoutState.trailingSidebarToggleButton.isShowable {
+        log.verbose("TRAILING visible: \(layoutState.trailingSidebar.isVisible)")
+        button.setShadow(enabled: layoutState.trailingSidebar.isVisible)
+      }
+    }
+
+    updateOnTopButton(from: layoutState, showIfFadeable: false)
+
+    // Title bar accessories (to cover native windowed mode):
+    applyVisibility(layoutState.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
+    applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
+
+    guard let window else { return }
+    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
   }
 
   /// -------------------------------------------------
@@ -1412,34 +1427,18 @@ extension PlayerWindowController {
     documentIconButton?.alphaValue = 1
   }
 
-  func updateOnTopButton() {
-    let onTopButtonVisibility = currentLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
+  func updateOnTopButton(from layout: LayoutState, showIfFadeable: Bool = false) {
+    let onTopButtonVisibility = layout.computeOnTopButtonVisibility(isOnTop: isOnTop)
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
-    onTopButton.replaceSymbolImage(with: image, effect: nil)
-    if isOnTop {
-      addOnTopShadow(to: onTopButton)
-    } else {
-      onTopButton.shadow = nil
-    }
-    applyVisibility(onTopButtonVisibility, to: onTopButton)
-    if let customTitleBar {
-      customTitleBar.onTopButton.replaceSymbolImage(with: image, effect: nil)
-      if isOnTop {
-        addOnTopShadow(to: customTitleBar.onTopButton)
-      } else {
-        customTitleBar.onTopButton.shadow = nil
-      }
-      applyVisibility(onTopButtonVisibility, to: customTitleBar.onTopButton)
+    for button in [onTopButton, customTitleBar?.onTopButton].compactMap({$0}) {
+      button.replaceSymbolImage(with: image, effect: nil)
+      button.setShadow(enabled: isOnTop)
+      applyVisibility(onTopButtonVisibility, to: button)
     }
 
-    if onTopButtonVisibility == .showFadeableTopBar {
+    if showIfFadeable, onTopButtonVisibility == .showFadeableTopBar {
       showFadeableViews()
     }
-    player.saveState()
-  }
-
-  private func addOnTopShadow(to button: SymButton) {
-    button.addShadow(blurRadiusConstant: 4.0, xOffsetConstant: 0.5, yOffsetConstant: -1, color: .controlAccentColor)
   }
 
   // MARK: - Controller content layout

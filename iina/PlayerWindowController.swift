@@ -1840,7 +1840,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if updateOnTopStatus {
       self.isOnTop = onTop
       player.mpv.setFlag(MPVOption.Window.ontop, onTop)
-      updateOnTopButton()
+      updateOnTopButton(from: currentLayout, showIfFadeable: true)
       player.saveState()
     }
     resetCollectionBehavior()
