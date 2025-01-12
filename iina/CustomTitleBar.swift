@@ -100,6 +100,28 @@ class CustomTitleBarViewController: NSViewController {
                                               optimizingForHeight: documentIconButton.frame.height)
     }
 
+    let titleText = TitleTextView()
+    titleText.isEditable = false
+    titleText.isSelectable = false
+    titleText.isFieldEditor = false
+    titleText.backgroundColor = .clear
+    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+    pStyle.lineBreakMode = .byTruncatingTail  // match native truncation
+    titleText.defaultParagraphStyle = pStyle
+    titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
+    titleText.textColor = .labelColor
+    self.titleText = titleText
+
+    let centerStackView = NSStackView(views: [documentIconButton, titleText])
+    centerStackView.layer?.backgroundColor = .clear
+    centerStackView.orientation = .horizontal
+    centerStackView.detachesHiddenViews = true
+    centerStackView.alignment = .centerY
+    centerStackView.spacing = 0
+    centerStackView.distribution = .fill
+    centerStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
+    centerStackView.setHuggingPriority(.init(500), for: .horizontal)
+
     // - Trailing views
 
     builder.configureTitleBarButton(onTopButton,
@@ -132,51 +154,39 @@ class CustomTitleBarViewController: NSViewController {
 
     view.translatesAutoresizingMaskIntoConstraints = false
     view.heightAnchor.constraint(equalToConstant: Constants.Distance.standardTitleBarHeight).isActive = true
-
     view.addSubview(leadingStackView)
+    view.addSubview(centerStackView)
+    view.addSubview(trailingStackView)
+
     leadingStackView.translatesAutoresizingMaskIntoConstraints = false
     leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
     leadingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
     leadingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
 
-    view.addSubview(documentIconButton)
+    centerStackView.translatesAutoresizingMaskIntoConstraints = false
+    let centerStackLeadingEqCon = centerStackView.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
+    centerStackLeadingEqCon.priority = .init(400)
+    centerStackLeadingEqCon.isActive = true
+    centerStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor).isActive = true
+    let centerStackTrailingEqCon = centerStackView.trailingAnchor.constraint(equalTo: trailingStackView.trailingAnchor)
+    centerStackTrailingEqCon.priority = .init(400)
+    centerStackTrailingEqCon.isActive = true
+    centerStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingStackView.leadingAnchor).isActive = true
+    centerStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+    centerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
 
-    let titleText = TitleTextView()
-    titleText.isEditable = false
-    titleText.isSelectable = false
-    titleText.isFieldEditor = false
-    titleText.backgroundColor = .clear
-    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-    pStyle.lineBreakMode = .byTruncatingTail  // match native truncation
-    titleText.defaultParagraphStyle = pStyle
-    titleText.alignment = .center
-
-    titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
-    titleText.textColor = .labelColor
-
-    view.addSubview(titleText)
     titleText.translatesAutoresizingMaskIntoConstraints = false
     titleText.heightAnchor.constraint(equalToConstant: 16).isActive = true
     titleText.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-    titleText.widthAnchor.constraint(greaterThanOrEqualToConstant: 0).isActive = true
-    // Kludge to include doc icon in text centering calculation, to match native title bar:
-    let halfDocIconBtnWidth = (documentIconButton.image!.size.width * 0.5).rounded()
     // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
     // (>= 500 would interfere with window resize).
     // We want text's horizontal center to align with window's center, but more importantly it should use up
     // all available horizontal space.
-    let cenXCon = titleText.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: halfDocIconBtnWidth)
-    cenXCon.priority = .init(399)
+    let cenXCon = centerStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0)
+    cenXCon.priority = .init(401)  // make priority greater than leading & trailing EQ constraints above
     cenXCon.isActive = true
-    titleText.setContentCompressionResistancePriority(.init(492), for: .horizontal)  // allow truncation
+    titleText.setContentCompressionResistancePriority(.init(499), for: .horizontal)  // allow truncation
     titleText.setContentHuggingPriority(.init(499), for: .horizontal)
-    self.titleText = titleText
-
-    view.addSubview(trailingStackView)
-    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
-    trailingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-    trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-    trailingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
 
     documentIconButton.setContentHuggingPriority(.required, for: .horizontal)
     documentIconButton.setContentHuggingPriority(.required, for: .vertical)
@@ -197,6 +207,11 @@ class CustomTitleBarViewController: NSViewController {
     let trailTitleConEQ = trailingStackView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor)
     trailTitleConEQ.priority = .init(498)
     trailTitleConEQ.isActive = true
+
+    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
+    trailingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+    trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+    trailingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
 
     view.configureSubtreeForCoreAnimation()
   }
@@ -230,6 +245,17 @@ class CustomTitleBarViewController: NSViewController {
       return
     }
 
+    // - Update title text content
+
+    let title = currentPlayback.url.lastPathComponent
+    if titleText.string != title {
+      titleText.string = title
+      titleText.sizeToFit()
+      titleText.invalidateIntrinsicContentSize()
+      //    titleText.superview?.needsLayout = true
+      //    titleText.superview?.needsUpdateConstraints = true
+    }
+
     // - Update colors
 
     let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
@@ -242,12 +268,6 @@ class CustomTitleBarViewController: NSViewController {
       guard let view, view.alphaValue > 0.0 else { continue }
       view.alphaValue = alphaValue
     }
-
-    // - Update title text content
-    
-    let title = currentPlayback.url.lastPathComponent
-    titleText.string = title
-    titleText.sizeToFit()
   }
 
   func removeAndCleanUp() {
@@ -262,6 +282,7 @@ class CustomTitleBarViewController: NSViewController {
   }
 }
 
+// MARK: - Support Classes
 
 /// Leading stack view for custom title bar. Needed to subclass parent view of traffic light buttons
 /// in order to get their highlight working properly. See: https://stackoverflow.com/a/30417372/1347529
@@ -289,7 +310,7 @@ class TitleBarButtonsContainerView: NSStackView {
   }
 }
 
-// Need to override to get mouse working properly for it
+/// Need to override `NSTextView` to get mouse working properly for it.
 class TitleTextView: NSTextView {
   override var acceptsFirstResponder: Bool {
     return false
@@ -319,7 +340,9 @@ class TitleTextView: NSTextView {
   override var intrinsicContentSize: NSSize {
     guard let textContainer = self.textContainer, let layoutManager = self.layoutManager else { return .zero }
     layoutManager.ensureLayout(for: textContainer)
-    return layoutManager.usedRect(for: textContainer).size
+    let contentSize = layoutManager.usedRect(for: textContainer).size
+    Logger.log("••• intrinsicContentSize: \(contentSize): \(textStorage!.string)")
+    return contentSize
   }
 
   override func didChangeText() {
