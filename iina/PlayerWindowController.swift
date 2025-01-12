@@ -158,17 +158,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // might use another obj to handle slider?
   var isMouseInWindow: Bool = false
 
-  // - Left and right arrow buttons
-
-  /** The maximum pressure recorded when clicking on the arrow buttons. */
-  var maxPressure: Int = 0
-
-  /** The value of speedValueIndex before Force Touch. */
-  var oldSpeedValueIndex: Int = AppData.availableSpeedValues.count / 2
-
-  /** When the arrow buttons were last clicked. */
-  var lastClick = Date()
-
   /// Responder chain is a mess. Use this to prevent duplicate event processing
   var lastMouseDownEventID: Int = -1
   var lastMouseUpEventID: Int = -1
@@ -2198,60 +2187,32 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   @objc func leftArrowButtonAction(_ sender: AnyObject) {
-    // FIXME: mimic accelerator button
-    maxPressure = 1
-    arrowButtonAction(left: true, clickPressure: 0)
+    arrowButtonAction(left: true)
   }
 
   @objc func rightArrowButtonAction(_ sender: AnyObject) {
-    maxPressure = 1
-    arrowButtonAction(left: false, clickPressure: 0)
+    arrowButtonAction(left: false)
   }
 
   /** handle action of either left or right arrow button */
-  private func arrowButtonAction(left: Bool, clickPressure: Int) {
-    let didRelease = clickPressure == 0
-
+  private func arrowButtonAction(left: Bool) {
     let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     switch arrowBtnFunction {
     case .unused:
       return
     case .playlist:
-      guard didRelease else { return }
       player.mpv.command(left ? .playlistPrev : .playlistNext, checkError: false)
 
     case .seek:
-      guard didRelease else { return }
       player.seek(relativeSecond: left ? -10 : 10, option: .defaultValue)
 
     case .speed:
-      // FIXME: this broke!
       let indexSpeed1x = AppData.availableSpeedValues.count / 2
       let directionUnit: Int = (left ? -1 : 1)
       let currentSpeedIndex = findClosestCurrentSpeedIndex()
 
-      let newSpeedIndex: Int
-      if didRelease { // Released
-        if maxPressure == 1 &&
-            ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
-             Date().timeIntervalSince(lastClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
-          newSpeedIndex = oldSpeedValueIndex + directionUnit
-        } else { // Force Touch or long press ended
-          newSpeedIndex = indexSpeed1x
-        }
-        maxPressure = 0
-      } else {
-        if clickPressure == 1 && maxPressure == 0 { // First press
-          oldSpeedValueIndex = currentSpeedIndex
-          newSpeedIndex = currentSpeedIndex + directionUnit
-          lastClick = Date()
-        } else { // Force Touch
-          newSpeedIndex = oldSpeedValueIndex + (clickPressure * directionUnit)
-        }
-        maxPressure = max(maxPressure, clickPressure)
-      }
-      let newSpeedIndexClamped = newSpeedIndex.clamped(to: 0..<AppData.availableSpeedValues.count)
-      let newSpeed = AppData.availableSpeedValues[newSpeedIndexClamped]
+      let newSpeedIndex = (currentSpeedIndex + directionUnit).clamped(to: 0..<AppData.availableSpeedValues.count)
+      let newSpeed = AppData.availableSpeedValues[newSpeedIndex]
       player.setSpeed(newSpeed, forceResume: true) // always resume if paused
     }
   }
