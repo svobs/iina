@@ -2031,6 +2031,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func syncPlaySliderABLoop() {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+    guard loaded, !player.isStopping else { return }
     let a = player.abLoopA
     let b = player.abLoopB
 
