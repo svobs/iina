@@ -362,7 +362,7 @@ class PlayerCore: NSObject {
     }
 
     plugins = JavascriptPlugin.plugins.compactMap { pluginMap[$0.identifier] }
-    windowController.quickSettingView.updatePluginTabs()
+    windowController.pluginView.updatePluginTabs()
   }
 
   // MARK: - Control

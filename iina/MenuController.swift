@@ -597,8 +597,10 @@ class MenuController: NSObject, NSMenuDelegate {
   func updatePluginMenu() {
     Logger.log.trace("Updating Plugin menu")
     var keyMappings: [MenuItemMapping] = []
+    let isDisplayingPluginsPanel = false // FIXME: PLUGINS - PlayerCore.active?.windowController.sideBarStatus == .plugins
     pluginMenu.removeAllItems()
-    pluginMenu.addItem(withTitle: NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…"), action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+    pluginMenu.addItem(withTitle: Constants.String.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+    pluginMenu.addItem(withTitle: isDisplayingPluginsPanel ? Constants.String.hidePluginsPanel : Constants.String.showPluginsPanel, action: #selector(PlayerWindowController.showPluginsPanel(_:)), keyEquivalent: "")
     pluginMenu.addItem(.separator())
 
     let developerTool = NSMenuItem()
@@ -1111,22 +1113,28 @@ class MenuController: NSObject, NSMenuDelegate {
 
   /// Disable all menu items.
   ///
-  /// This method is used during application termination to stop any further input from the user.
+  /// This method is used during application termination to stop any further input from the user and when displaying alerts.
   func disableAllMenus() {
     isDisabled = true
-    disableAllMenuItems(NSApp.mainMenu!)
+    setIsEnabledInAllMenuItems(NSApp.mainMenu!, false)
   }
 
-  /// Disable all menu items in the given menu and any submenus.
+  func enableAllMenus() {
+    isDisabled = false
+    setIsEnabledInAllMenuItems(NSApp.mainMenu!, true)
+  }
+
+  /// Set `isEnabled` to the given value in all menu items in the given menu and any submenus.
   ///
-  /// This method recursively descends through the entire tree of menu items disabling all items.
-  /// - Parameter menu: Menu to disable
-  private func disableAllMenuItems(_ menu: NSMenu) {
+  /// This method recursively descends through the entire tree of menu items setting `isEnabled` in all items.
+  /// - Parameter menu: Menu to disable or enable.
+  /// - Parameter value: Value to set `isEnabled` to.
+  private func setIsEnabledInAllMenuItems(_ menu: NSMenu, _ value: Bool) {
     for item in menu.items {
       if item.hasSubmenu {
-        disableAllMenuItems(item.submenu!)
+        setIsEnabledInAllMenuItems(item.submenu!, value)
       }
-      item.isEnabled = false
+      item.isEnabled = value
     }
   }
 }

@@ -135,6 +135,9 @@ struct Constants {
     static let iinaMpvCategoryFmt = "mpv-%@"
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
+    static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")
+    static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Panel")
+    static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Panel")
   }
 
   // - Quantities:

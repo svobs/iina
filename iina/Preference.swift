@@ -1062,6 +1062,7 @@ struct Preference {
     case musicMode
     case subTrack
     case screenshot
+    case plugins
 
     func image() -> NSImage {
       func makeSymbol(_ names: [String], _ fallbackImage: NSImage.Name) -> NSImage {
@@ -1071,12 +1072,13 @@ struct Preference {
       }
       switch self {
       case .settings: return makeSymbol(["gearshape"], NSImage.actionTemplateName)
-      case .playlist: return makeSymbol(["list.bullet"], "playlist")
+      case .playlist: return makeSymbol(["list.bullet.rectangle", "list.bullet"], "playlist")
       case .pip: return makeSymbol(["pip.swap"], "pip")
       case .fullScreen: return makeSymbol(["arrow.up.backward.and.arrow.down.forward.rectangle", "arrow.up.left.and.arrow.down.right"], "fullscreen")
-      case .musicMode: return makeSymbol(["music.note.list"], "toggle-album-art")
+      case .musicMode: return makeSymbol(["music.microphone", "music.mic"], "toggle-album-art")
       case .subTrack: return makeSymbol(["captions.bubble.fill"], "sub-track")
       case .screenshot: return makeSymbol(["camera.shutter.button"], "screenshot")
+      case .plugins: return makeSymbol(["puzzlepiece.extension"], "puzzlepiece.extension")
       }
     }
 
@@ -1090,6 +1092,7 @@ struct Preference {
       case .musicMode: key = "music_mode"
       case .subTrack: key = "sub_track"
       case .screenshot: key = "screenshot"
+      case .plugins: key = "plugins"
       }
 
       return key
@@ -1101,7 +1104,7 @@ struct Preference {
     }
 
     static let allButtonTypes: [Preference.ToolBarButton] = [
-      .settings, .playlist, .pip, .fullScreen, .musicMode, .subTrack, .screenshot
+      .settings, .playlist, .pip, .fullScreen, .musicMode, .subTrack, .screenshot, .plugins
     ]
   }
 

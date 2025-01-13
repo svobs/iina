@@ -468,8 +468,6 @@ class StartupHandler {
     Logger.log("Filenames from args: \(iinaArgFilenames)")
     Logger.log("Derived mpv properties from args: \(commandLineStatus.mpvArguments)")
 
-    print(InfoDictionary.shared.printableBuildInfo)
-
     guard !iinaArgFilenames.isEmpty || commandLineStatus.isStdin else {
       print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
       print("Please ignore this message if you are running in a debug environment.")
@@ -500,7 +498,7 @@ class StartupHandler {
         }
       }
       guard !validFileURLs.isEmpty else {
-        Logger.log("No valid file URLs provided via command line! Nothing to do", level: .error)
+        Logger.log.error("No valid file URLs provided via command line! Nothing to do")
         return
       }
 
@@ -515,18 +513,18 @@ class StartupHandler {
 
     if let pc = lastPlayerCore {
       if commandLineStatus.enterMusicMode {
-        Logger.log("Entering music mode as specified via command line", level: .verbose)
+        Logger.log.verbose("Entering music mode as specified via command line")
         if commandLineStatus.enterPIP {
           // PiP is not supported in music mode. Combining these options is not permitted and is
           // rejected by iina-cli. The IINA executable must have been invoked directly with
           // arguments.
-          Logger.log("Cannot specify both --music-mode and --pip", level: .error)
+          Logger.log.error("Cannot specify both --music-mode and --pip")
           // Command line usage error.
           exit(EX_USAGE)
         }
         pc.enterMusicMode()
       } else if commandLineStatus.enterPIP {
-        Logger.log("Entering PIP as specified via command line", level: .verbose)
+        Logger.log.verbose("Entering PIP as specified via command line")
         pc.windowController.enterPIP()
       }
     }

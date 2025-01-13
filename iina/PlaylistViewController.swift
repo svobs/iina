@@ -108,7 +108,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       return
     }
   }
-  
 
   fileprivate func updateTableColors() {
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)

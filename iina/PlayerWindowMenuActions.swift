@@ -543,6 +543,10 @@ extension PlayerWindowController {
 
   // MARK: - Plugin
 
+  @objc func showPluginsPanel(_ sender: NSMenuItem) {
+    log.error("TODO: Not implemented yet: showPluginsPanel!")// FIXME: PLUGINS - player.mainWindow.showPluginSidebar(tab: nil)
+  }
+
   @objc func reloadAllPlugins(_ sender: NSMenuItem) {
     AppDelegate.shared.menuController.pluginMenu.removeAllItems()
 

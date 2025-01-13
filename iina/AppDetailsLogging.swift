@@ -56,7 +56,9 @@ struct AppDetailsLogging {
 
   func logAllAppDetails() {
     // Start the log file by logging the version of IINA producing the log file.
-    Logger.log(InfoDictionary.shared.printableBuildInfo)
+    let (version, build) = InfoDictionary.shared.version
+    let type = InfoDictionary.shared.buildTypeIdentifier
+    Logger.log("IINA Advance \(version) Build \(build)" + (type == nil ? "" : " " + type!))
 
     // The copyright is used in the Finder "Get Info" window which is a narrow window so the
     // copyright consists of multiple lines.
@@ -72,12 +74,8 @@ struct AppDetailsLogging {
 
   /// Useful to know the versions of significant dependencies that are being used so log that
   /// information as well when it can be obtained.
-
-  /// The version of mpv is not logged at this point because mpv does not provide a static
-  /// method that returns the version. To obtain version related information you must
-  /// construct a mpv object, which has side effects. So the mpv version is logged in
-  /// applicationDidFinishLaunching to preserve the existing order of initialization.
   private func logDependencyDetails() {
+    Logger.log(MPVOptionDefaults.shared.mpvVersion)
     Logger.log("FFmpeg \(String(cString: av_version_info()))")
     // FFmpeg libraries and their versions in alphabetical order.
     let libraries: [(name: String, version: UInt32)] = [("libavcodec", avcodec_version()), ("libavformat", avformat_version()), ("libavutil", avutil_version()), ("libswscale", swscale_version())]
@@ -86,6 +84,7 @@ struct AppDetailsLogging {
       // format which needs to be decoded into a string for display.
       Logger.log("  \(library.name) \(AppDetailsLogging.versionAsString(library.version))")
     }
+    Logger.log("libass \(MPVOptionDefaults.shared.libassVersion)")
   }
 
   /// Log details about when and from what sources IINA was built.

@@ -55,6 +55,7 @@ extension PlayerWindowController {
     windowScrollWheel = PWinScrollWheel(self)
 
     playlistView.windowController = self
+    pluginView.windowController = self
     quickSettingView.windowController = self
 
     // other initialization

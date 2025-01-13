@@ -47,6 +47,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** The playlist and chapter sidebar. */
   let playlistView = PlaylistViewController()
 
+  let pluginView = PluginViewController()
+
+
   /// The music player panel.
   ///
   /// This is only shown while in music mode, and will be a subview of `bottomBarView`. It contains a "mini" OSC, and if configured, the
@@ -2336,6 +2339,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       quickSettingView.showSubChooseMenu(forView: sender, showLoadedSubs: true)
     case .screenshot:
       player.screenshot()
+    case .plugins:
+      break// FIXME: PLUGINS - showPluginSidebar(tab: nil)
     }
   }
 

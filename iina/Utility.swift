@@ -35,28 +35,7 @@ class Utility {
   typealias InputValidator<T> = (T) -> ValidationResult
 
   // MARK: - Logs, alerts
-
-  @available(*, deprecated, message: "showAlert(message:alertStyle:) is deprecated, use showAlert(_ key:comment:arguments:alertStyle:) instead")
-  static func showAlert(message: String, alertStyle: NSAlert.Style = .critical) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let alert = NSAlert()
-    switch alertStyle {
-    case .critical:
-      alert.messageText = NSLocalizedString("alert.title_error", comment: "Error")
-    case .informational:
-      alert.messageText = NSLocalizedString("alert.title_info", comment: "Information")
-    case .warning:
-      alert.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")
-    @unknown default:
-      assertionFailure("Unknown \(type(of: alertStyle)) \(alertStyle)")
-    }
-    alert.informativeText = message
-    alert.alertStyle = alertStyle
-    alert.runModal()
-  }
-
-  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, 
-                        sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, logAlert: Bool = true) {
+  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, disableMenus: Bool = false, logAlert: Bool = true) {
     let alert = NSAlert()
     if let suppressionKey = suppressionKey {
       // This alert includes a suppression button that allows the user to suppress the alert.
@@ -94,10 +73,21 @@ class Utility {
     }
 
     alert.alertStyle = style
+
+    // If an alert occurs early during startup when the first player core is being created then
+    // menus must be disabled while the alert is shown as opening certain menus will cause the menu
+    // controller to attempt to access the player core while it is being initialized resulting in a
+    // crash. See issue #5250.
+    if disableMenus {
+      AppDelegate.shared.menuController.disableAllMenus()
+    }
     if let sheetWindow = sheetWindow {
       alert.beginSheetModal(for: sheetWindow)
     } else {
       alert.runModal()
+    }
+    if disableMenus {
+      AppDelegate.shared.menuController.enableAllMenus()
     }
 
     // If the user asked for this alert to be suppressed set the associated preference.

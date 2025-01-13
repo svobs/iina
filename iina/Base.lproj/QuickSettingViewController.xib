@@ -50,10 +50,6 @@
                 <outlet property="hideSwitch" destination="9f0-0q-rg2" id="tTx-Gl-HNL"/>
                 <outlet property="hueResetBtn" destination="W7J-wR-UH3" id="LmS-Cv-lIw"/>
                 <outlet property="hueSlider" destination="mKB-Mu-l5Y" id="vy8-lj-ko8"/>
-                <outlet property="pluginContentContainerView" destination="GeS-T1-vtB" id="a96-Mh-BMb"/>
-                <outlet property="pluginTabsScrollView" destination="dfw-cq-GHm" id="3z0-CB-HKn"/>
-                <outlet property="pluginTabsView" destination="iNg-R1-bXw" id="2HU-DJ-gyX"/>
-                <outlet property="pluginTabsViewHeightConstraint" destination="ZRN-u2-VBd" id="wWC-3x-wNe"/>
                 <outlet property="rotateSegment" destination="bza-SA-tXE" id="Sdw-vn-MUV"/>
                 <outlet property="saturationResetBtn" destination="lgg-zH-OLr" id="CeN-2F-jXp"/>
                 <outlet property="saturationSlider" destination="VlS-Jo-4C0" id="rJV-p9-OVz"/>
@@ -161,46 +157,6 @@
                 <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="L78-cf-BxB" userLabel="BelowTabButtons Horizontal Line">
                     <rect key="frame" x="0.0" y="861" width="360" height="5"/>
                 </box>
-                <customView translatesAutoresizingMaskIntoConstraints="NO" id="iNg-R1-bXw" userLabel="PluginTabs View">
-                    <rect key="frame" x="0.0" y="828" width="360" height="36"/>
-                    <subviews>
-                        <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="dfw-cq-GHm" userLabel="PluginsTabs Scroll View">
-                            <rect key="frame" x="0.0" y="1" width="360" height="35"/>
-                            <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Q9c-dH-CRI" userLabel="PluginsTabs Clip View">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="35"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <subviews>
-                                    <view id="PF8-CN-LtV">
-                                        <rect key="frame" x="0.0" y="0.0" width="345" height="20"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                    </view>
-                                </subviews>
-                                <color key="backgroundColor" name="SidebarTableBackground"/>
-                            </clipView>
-                            <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="S2H-7J-hUJ">
-                                <rect key="frame" x="-100" y="-100" width="360" height="15"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                            </scroller>
-                            <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="hTR-jv-yCh">
-                                <rect key="frame" x="-100" y="-100" width="15" height="21"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                            </scroller>
-                        </scrollView>
-                        <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="Uvg-kn-ZiM" userLabel="BelowPluginsTabs Horizontal Line">
-                            <rect key="frame" x="0.0" y="-2" width="360" height="5"/>
-                        </box>
-                    </subviews>
-                    <constraints>
-                        <constraint firstAttribute="top" secondItem="dfw-cq-GHm" secondAttribute="top" id="DBW-bI-ICl"/>
-                        <constraint firstItem="dfw-cq-GHm" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="Dfn-E4-5qj"/>
-                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="leading" secondItem="dfw-cq-GHm" secondAttribute="leading" id="HCD-Hu-Owm"/>
-                        <constraint firstAttribute="bottom" secondItem="Uvg-kn-ZiM" secondAttribute="bottom" id="KOj-Va-6Hm"/>
-                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="trailing" secondItem="dfw-cq-GHm" secondAttribute="trailing" id="MBU-DO-CWE"/>
-                        <constraint firstAttribute="height" constant="36" identifier="pluginTabsViewHeightConstraint" id="ZRN-u2-VBd"/>
-                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="top" secondItem="dfw-cq-GHm" secondAttribute="bottom" id="heN-C5-wgL"/>
-                        <constraint firstAttribute="trailing" secondItem="dfw-cq-GHm" secondAttribute="trailing" id="mqw-9f-ZMt"/>
-                    </constraints>
-                </customView>
                 <tabView drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="udA-m2-eJb" userLabel="AllTabs Tab View">
                     <rect key="frame" x="0.0" y="0.0" width="360" height="828"/>
                     <font key="font" metaFont="system"/>
@@ -621,8 +577,16 @@
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OvF-ci-44R">
-                                                                        <rect key="frame" x="14" y="101" width="124" height="16"/>
-                                                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Hardware Decoding" id="WeU-EH-CKN">
+                                                                        <rect key="frame" x="18" y="101" width="124" height="16"/>
+                                                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Hardware Decoding" id="rw1-Qb-0RV">
+                                                                            <font key="font" usesAppearanceFont="YES"/>
+                                                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                        </textFieldCell>
+                                                                    </textField>
+                                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xJo-hi-ale">
+                                                                        <rect key="frame" x="18" y="15" width="32" height="16"/>
+                                                                        <textFieldCell key="cell" lineBreakMode="clipping" title="HDR" id="UW4-by-XRS">
                                                                             <font key="font" usesAppearanceFont="YES"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -638,8 +602,8 @@
                                                                         <rect key="frame" x="12" y="83" width="294" height="5"/>
                                                                     </box>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="m39-41-Kwj">
-                                                                        <rect key="frame" x="14" y="58" width="73" height="16"/>
-                                                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Deinterlace" id="2D9-J3-Dfh">
+                                                                        <rect key="frame" x="18" y="58" width="73" height="16"/>
+                                                                        <textFieldCell key="cell" lineBreakMode="clipping" title="Deinterlace" id="eqd-nF-8ff">
                                                                             <font key="font" usesAppearanceFont="YES"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -654,14 +618,6 @@
                                                                     <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
                                                                         <rect key="frame" x="12" y="40" width="294" height="5"/>
                                                                     </box>
-                                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xJo-hi-ale">
-                                                                        <rect key="frame" x="14" y="15" width="32" height="16"/>
-                                                                        <textFieldCell key="cell" lineBreakMode="clipping" title="HDR" id="kNa-2W-EFl">
-                                                                            <font key="font" usesAppearanceFont="YES"/>
-                                                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                        </textFieldCell>
-                                                                    </textField>
                                                                     <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="TNg-iM-cVP" userLabel="HDR Switch">
                                                                         <rect key="frame" x="262" y="8" width="42" height="25"/>
                                                                         <connections>
@@ -1015,14 +971,14 @@
                         </tabViewItem>
                         <tabViewItem label="Audio" identifier="2" id="bzk-c2-LH5" userLabel="AudioTab Tab View Item">
                             <view key="view" id="Dxl-wa-zgc" userLabel="AudioTab View">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wXn-sV-AmG" userLabel="AudioTab Scroll View">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl" userLabel="AudioTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="311" width="360" height="516"/>
@@ -1048,7 +1004,7 @@
                                                                     <rect key="frame" x="0.0" y="409" width="360" height="75"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq" userLabel="AudioTrackTable Table View">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
@@ -2646,40 +2602,18 @@
                                 </constraints>
                             </view>
                         </tabViewItem>
-                        <tabViewItem label="Plugin" identifier="" id="eE3-9i-hpU" userLabel="PluginTab Tab View Item">
-                            <view key="view" id="rcL-IN-kt1">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <subviews>
-                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="GeS-T1-vtB">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
-                                    </customView>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="GeS-T1-vtB" firstAttribute="top" secondItem="rcL-IN-kt1" secondAttribute="top" id="BKv-7d-4r7"/>
-                                    <constraint firstAttribute="bottom" secondItem="GeS-T1-vtB" secondAttribute="bottom" id="JpX-mz-IBf"/>
-                                    <constraint firstItem="GeS-T1-vtB" firstAttribute="leading" secondItem="rcL-IN-kt1" secondAttribute="leading" id="UtE-9a-d46"/>
-                                    <constraint firstAttribute="trailing" secondItem="GeS-T1-vtB" secondAttribute="trailing" id="zQk-WC-GMV"/>
-                                </constraints>
-                            </view>
-                        </tabViewItem>
                     </tabViewItems>
                 </tabView>
             </subviews>
             <constraints>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="trailing" secondItem="Hz6-mo-xeY" secondAttribute="trailing" id="55S-FG-sbw"/>
-                <constraint firstItem="L78-cf-BxB" firstAttribute="bottom" secondItem="dNi-Ib-2vd" secondAttribute="bottom" constant="1" id="6FU-jB-tn5"/>
+                <constraint firstAttribute="trailing" secondItem="udA-m2-eJb" secondAttribute="trailing" id="7oe-37-KNZ"/>
+                <constraint firstItem="udA-m2-eJb" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Pcu-kX-QYD"/>
+                <constraint firstItem="udA-m2-eJb" firstAttribute="top" secondItem="L78-cf-BxB" secondAttribute="bottom" id="Qbu-kS-zWo"/>
                 <constraint firstAttribute="trailing" secondItem="dNi-Ib-2vd" secondAttribute="trailing" constant="20" id="Ul3-qM-JEr"/>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="top" secondItem="dNi-Ib-2vd" secondAttribute="bottom" id="VjD-2S-qZr"/>
-                <constraint firstItem="iNg-R1-bXw" firstAttribute="top" secondItem="dNi-Ib-2vd" secondAttribute="bottom" id="XRG-Cm-FQw"/>
-                <constraint firstItem="udA-m2-eJb" firstAttribute="trailing" secondItem="iNg-R1-bXw" secondAttribute="trailing" id="Z18-rW-4G3"/>
-                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="360" id="a41-wc-6bR"/>
-                <constraint firstItem="udA-m2-eJb" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="aAs-ug-WAK"/>
                 <constraint firstItem="dNi-Ib-2vd" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="20" id="aDg-IN-ivk"/>
-                <constraint firstItem="udA-m2-eJb" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="bottom" id="cJX-tf-pDr"/>
                 <constraint firstAttribute="bottom" secondItem="udA-m2-eJb" secondAttribute="bottom" id="grA-dL-eg4"/>
-                <constraint firstAttribute="trailing" secondItem="iNg-R1-bXw" secondAttribute="trailing" id="im6-JF-oJl"/>
-                <constraint firstItem="iNg-R1-bXw" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="j0a-1p-fwe"/>
                 <constraint firstItem="dNi-Ib-2vd" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" identifier="ButtonTopConstraint" id="qd3-0i-qbr"/>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="tzm-Ub-xUS"/>
             </constraints>
@@ -2695,13 +2629,10 @@
         <userDefaultsController representsSharedInstance="YES" id="CE5-Ex-Oo6"/>
     </objects>
     <resources>
-        <image name="NSRefreshFreestandingTemplate" width="20" height="20"/>
+        <image name="NSRefreshFreestandingTemplate" width="19" height="19"/>
         <image name="tab_audio" width="26" height="18"/>
         <image name="tab_sub" width="26" height="18"/>
         <image name="tab_video" width="26" height="18"/>
         <image name="triangle-down" width="10" height="14"/>
-        <namedColor name="SidebarTableBackground">
-            <color red="0.0" green="0.0" blue="0.0" alpha="0.019999999552965164" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
     </resources>
 </document>

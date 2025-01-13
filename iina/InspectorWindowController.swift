@@ -193,12 +193,15 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     }
 
     let vbitrate = controller.getInt(MPVProperty.videoBitrate)
-    self.vbitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: vbitrate) + "bit/s"
+    self.vbitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: vbitrate) + "bps"
 
     let abitrate = controller.getInt(MPVProperty.audioBitrate)
-    self.abitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: abitrate) + "bit/s"
+    self.abitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: abitrate) + "bps"
 
     let dynamicStrProperties: [String: NSTextField] = [
+      // At any point in time while the video is playing hardware decoding may fail causing a fall
+      // back to software decoding.
+      MPVProperty.hwdecCurrent: self.vdecoderField,
       MPVProperty.avsync: self.avsyncField,
       MPVProperty.totalAvsyncChange: self.totalAvsyncField,
       MPVProperty.frameDropCount: self.droppedFramesField,
@@ -217,8 +220,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     let sigPeak = controller.getDouble(MPVProperty.videoParamsSigPeak);
     self.vprimariesField.stringValue = sigPeak > 0
-    ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
-    : "N/A";
+      ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
+      : "N/A";
     self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
     if player.info.isFileLoaded {
@@ -232,7 +235,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
         let name: String = {
           if let name = colorspace.name { return name as String }
           if let screenColorSpace, colorspace == screenColorSpace.cgColorSpace,
-             let name = screenColorSpace.localizedName { return name }
+              let name = screenColorSpace.localizedName { return name }
           return "Unspecified"
         }()
         self.vcolorspaceField.stringValue = "\(name) (\(isHdr ? "H" : "S")DR)"
@@ -270,7 +273,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       // in mpv 0.38, video-codec-name is an alias of current-tracks/video/codec, etc
       MPVProperty.currentTracksVideoCodec: self.vformatField,
       MPVProperty.currentTracksVideoCodecDesc: self.vcodecField,
-      MPVProperty.hwdecCurrent: self.vdecoderField,
       MPVProperty.containerFps: self.vfpsField,
       MPVProperty.currentVo: self.voField,
       MPVProperty.currentTracksAudioCodecDesc: self.acodecField,
