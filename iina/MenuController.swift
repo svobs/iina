@@ -74,9 +74,6 @@ class MenuController: NSObject, NSMenuDelegate {
   /** For convenient bindings. see `bind(...)` below. [menu: check state block] */
   private var menuBindingList: [NSMenu: (NSMenuItem) -> Bool] = [:]
 
-  // If too many menu items are added to the Plugin menu (may be hidden)
-  private var pluginErrorNotice = NSMenuItem(title: "⚠︎ Conflicting key shortcuts…", action: nil, keyEquivalent: "")
-
   private var stringForOpen: String!
   private var stringForOpenAlternative: String!
   private var stringForOpenURL: String!
@@ -599,17 +596,13 @@ class MenuController: NSObject, NSMenuDelegate {
 
   func updatePluginMenu() {
     Logger.log.trace("Updating Plugin menu")
-    pluginMenu.removeAllItems()
-    pluginMenu.addItem(pluginErrorNotice)
-    pluginErrorNotice.isHidden = true
-
     var keyMappings: [MenuItemMapping] = []
-
-    pluginMenu.addItem(withTitle: "Manage Plugins…")
+    pluginMenu.removeAllItems()
+    pluginMenu.addItem(withTitle: NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…"), action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
     pluginMenu.addItem(.separator())
 
     let developerTool = NSMenuItem()
-    developerTool.title = "Developer Tool"
+    developerTool.title = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
     developerTool.submenu = NSMenu()
 
     guard let player = PlayerCore.active else { return }
@@ -634,7 +627,7 @@ class MenuController: NSObject, NSMenuDelegate {
           Logger.log("Please avoid adding too many first-level menu items. IINA will only display the first 5 of them.",
                      level: .warning, subsystem: instance.subsystem)
           let moreItem = NSMenuItem()
-          moreItem.title = "More…"
+          moreItem.title = NSLocalizedString("menu.more_plugin", comment: "More…")
           rootMenu = NSMenu()
           moreItem.submenu = rootMenu
           pluginMenu.addItem(moreItem)
@@ -659,7 +652,7 @@ class MenuController: NSObject, NSMenuDelegate {
       pluginMenu.addItem(.separator())
       pluginMenu.addItem(developerTool)
     }
-    pluginMenu.addItem(withTitle: "Reload all plugins", action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
+    pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"), action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
   }
 
   @discardableResult
@@ -941,8 +934,6 @@ class MenuController: NSObject, NSMenuDelegate {
         break
       }
     }
-    // Show Plugin menu error notice if there are binding conflicts:
-    pluginErrorNotice.isHidden = (pluginKeyConflicts.count == 0)
 
     matchKeyEquivalents(with: mpvBindings)
   }

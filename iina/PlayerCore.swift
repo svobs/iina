@@ -326,12 +326,17 @@ class PlayerCore: NSObject {
 
   // MARK: - Plugins
 
-  static func reloadPluginForAll(_ plugin: JavascriptPlugin) {
-    PlayerManager.shared.playerCores.forEach { $0.reloadPlugin(plugin) }
+  static func reloadPluginForAll(_ plugin: JavascriptPlugin, forced: Bool = false) {
+    PlayerManager.shared.playerCores.forEach { $0.reloadPlugin(plugin, forced: forced) }
     AppDelegate.shared.menuController?.updatePluginMenu()
   }
 
-  private func loadPlugins() {
+  func clearPlugins() {
+    pluginMap.removeAll()
+    plugins.removeAll()
+  }
+
+  func loadPlugins() {
     pluginMap.removeAll()
     plugins = JavascriptPlugin.plugins.compactMap { plugin in
       guard plugin.enabled else { return nil }

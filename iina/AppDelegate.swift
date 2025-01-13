@@ -782,6 +782,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     preferenceWindowController.openWindow(self)
   }
 
+  @objc func showPluginPreferences(_ sender: NSMenuItem) {
+    preferenceWindowController.openPreferenceView(withNibName: "PrefPluginViewController")
+  }
+
   @IBAction func showVideoFilterWindow(_ sender: AnyObject) {
     Logger.log("Opening Video Filter window", level: .verbose)
     vfWindow.openWindow(self)
