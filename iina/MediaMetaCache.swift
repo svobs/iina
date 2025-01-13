@@ -3,7 +3,6 @@
 //  iina
 //
 //  Created by Matt Svoboda on 2024-09-22.
-//  Copyright © 2024 lhc. All rights reserved.
 //
 
 // TODO: consider merging this with MediaMeta

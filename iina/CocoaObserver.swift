@@ -3,7 +3,6 @@
 //  iina
 //
 //  Created by Matt Svoboda on 2024-10-15.
-//  Copyright © 2024 lhc. All rights reserved.
 //
 
 import Foundation

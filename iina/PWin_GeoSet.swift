@@ -2,8 +2,7 @@
 //  PWinGeoSet.swift
 //  iina
 //
-//  Created by Matt Svoboda on 5/25/24.
-//  Copyright © 2024 lhc. All rights reserved.
+//  Created by Matt Svoboda on 2024/05/25.
 //
 
 import Foundation

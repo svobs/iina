@@ -3,7 +3,6 @@
 //  iina
 //
 //  Created by Matt Svoboda on 2024-12-19.
-//  Copyright © 2024 lhc. All rights reserved.
 //
 
 extension RenderCache {

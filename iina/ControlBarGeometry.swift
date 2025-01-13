@@ -2,8 +2,7 @@
 //  ControlBarGeometry.swift
 //  iina
 //
-//  Created by Matt Svoboda on 9/8/24.
-//  Copyright © 2024 lhc. All rights reserved.
+//  Created by Matt Svoboda on 2024/09/08.
 //
 
 import Foundation

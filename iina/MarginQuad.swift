@@ -2,8 +2,7 @@
 //  MarginQuad.swift
 //  iina
 //
-//  Created by Matt Svoboda on 5/20/24.
-//  Copyright © 2024 lhc. All rights reserved.
+//  Created by Matt Svoboda on 2024-05/20.
 //
 
 import Foundation

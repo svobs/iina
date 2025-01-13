@@ -3,7 +3,6 @@
 //  iina
 //
 //  Created by Matt Svoboda on 2024-12-22.
-//  Copyright © 2024 lhc. All rights reserved.
 //
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.

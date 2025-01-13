@@ -2,8 +2,7 @@
 //  PWInitialLayoutBldr.swift
 //  iina
 //
-//  Created by Matt Svoboda on 8/5/24.
-//  Copyright © 2024 lhc. All rights reserved.
+//  Created by Matt Svoboda on 2024/08/05
 //
 
 import Foundation
