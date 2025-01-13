@@ -12,6 +12,7 @@ import Cocoa
 // TODO: support parent playlist
 // TODO: stick window to individual side of screen
 // TODO: persist mpv properties in saved player state
+// TODO: auto-adjust window size when Dock shown/hidden
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {

@@ -1128,7 +1128,6 @@ extension PlayerWindowController {
         }
       } else {  // native windowed
         /// Same logic as in `fadeInNewViews()`
-        setWindowStyleToNative()
         if transition.outputLayout.isMusicMode {
           hideBuiltInTitleBarViews()
         } else {
@@ -1170,6 +1169,7 @@ extension PlayerWindowController {
     }
 
     refreshHidesOnDeactivateStatus()
+    updateIsMoveableByWindowBackground()
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()

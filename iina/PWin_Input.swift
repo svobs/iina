@@ -481,7 +481,7 @@ extension PlayerWindowController {
         sidebarResizeCursor = newCursor
       }
       // Kludge to prevent window drag if trying to drag sidebar. This must be false if not dragging the window!
-      window?.isMovableByWindowBackground = false
+      updateIsMoveableByWindowBackground(canDragSomethingElse: true)
     } else {
       if let currentCursor = sidebarResizeCursor {
         currentCursor.pop()
@@ -490,10 +490,9 @@ extension PlayerWindowController {
 
       if let controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
         // Kludge to prevent window drag if trying to drag floating OSC.
-        window?.isMovableByWindowBackground = false
+        updateIsMoveableByWindowBackground(canDragSomethingElse: true)
       } else {
-        // Enable this so that user can drag from title bar with first mouse
-        window?.isMovableByWindowBackground = true
+        updateIsMoveableByWindowBackground()
       }
     }
 
@@ -532,4 +531,13 @@ extension PlayerWindowController {
     rotationHandler.handleRotationGesture(recognizer: recognizer)
   }
 
+  func updateIsMoveableByWindowBackground(canDragSomethingElse: Bool = false) {
+    if canDragSomethingElse || currentLayout.isFullScreen {
+      window?.isMovableByWindowBackground = false
+    } else {
+      // Enable this so that user can drag from title bar with first mouse
+      window?.isMovableByWindowBackground = true
+    }
+
+  }
 }
