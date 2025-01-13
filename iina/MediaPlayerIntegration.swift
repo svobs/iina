@@ -175,6 +175,8 @@ class MediaPlayerIntegration {
     } else {
       info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
       info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
+      info[MPMediaItemPropertyAlbumTitle] = ""
+      info[MPMediaItemPropertyArtist] = ""
     }
     let artwork: MPMediaItemArtwork?
     if activePlayer.info.isVideoTrackSelected, (activePlayer.info.currentPlayback?.thumbnails?.thumbnails.count ?? 0) > 0 {
