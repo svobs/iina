@@ -120,7 +120,7 @@ class RenderCache {
         image = Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
                                knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .mainKnob, .volumeKnob:
-        let shadowColor = isClearBG ? RenderCache.shared.shadowColor : (isDarkMode ? nil : RenderCache.shared.shadowColor)
+        let shadowColor = isClearBG ? RenderCache.shared.shadowColor : ((isClearBG || !isDarkMode) ? RenderCache.shared.shadowColor : nil)
         image = Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: shadowColor,
                                knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .loopKnob:
