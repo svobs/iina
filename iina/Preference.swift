@@ -233,6 +233,8 @@ struct Preference {
     static let settingsTabGroupLocation = Key("settingsTabGroupLocation")
     /// `Playlist` tab group (leading or trailing)
     static let playlistTabGroupLocation = Key("playlistTabGroupLocation")
+    /// `Plugin` tab group (leading or trailing)
+    static let pluginTabGroupLocation = Key("pluginTabGroupLocation")
     /// Preferred height of playlist (excluding music mode)
     static let playlistWidth = Key("playlistWidth")
     static let prefetchPlaylistVideoDuration = Key("prefetchPlaylistVideoDuration")
@@ -1201,6 +1203,7 @@ struct Preference {
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,
     .playlistTabGroupLocation: SidebarLocation.trailingSidebar.rawValue,
+    .pluginTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,
     .leadingSidebarPlacement: PanelPlacement.outsideViewport.rawValue,
     .trailingSidebarPlacement: PanelPlacement.outsideViewport.rawValue,
     .showLeadingSidebarToggleButton: true,

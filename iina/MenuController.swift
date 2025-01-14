@@ -597,7 +597,8 @@ class MenuController: NSObject, NSMenuDelegate {
   func updatePluginMenu() {
     Logger.log.trace("Updating Plugin menu")
     var keyMappings: [MenuItemMapping] = []
-    let isDisplayingPluginsPanel = false // FIXME: PLUGINS - PlayerCore.active?.windowController.sideBarStatus == .plugins
+    let activePlayer = PlayerManager.shared.activePlayer
+    let isDisplayingPluginsPanel = activePlayer?.windowController.getConfiguredSidebar(forTabGroup: .plugin)?.isVisible ?? false
     pluginMenu.removeAllItems()
     pluginMenu.addItem(withTitle: Constants.String.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
     pluginMenu.addItem(withTitle: isDisplayingPluginsPanel ? Constants.String.hidePluginsPanel : Constants.String.showPluginsPanel, action: #selector(PlayerWindowController.showPluginsPanel(_:)), keyEquivalent: "")

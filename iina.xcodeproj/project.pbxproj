@@ -443,6 +443,7 @@
 		E38BA1C4254110BE000B551D /* JavascriptMessageHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38BA1C3254110BD000B551D /* JavascriptMessageHub.swift */; };
 		E38BD4AF20054BD9007635FC /* PlayerWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38BD4AE20054BD9007635FC /* PlayerWindow.swift */; };
 		E3958565253133E80096811F /* SidebarTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3958563253133E80096811F /* SidebarTabView.swift */; };
+    E3958566253133E80096811F /* SidebarTabView.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3958564253133E80096811F /* SidebarTabView.xib */; };
 		E3958586253309C90096811F /* PluginSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3958585253309C90096811F /* PluginSidebarView.swift */; };
 		E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39585892533143F0096811F /* JavascriptAPISidebarView.swift */; };
 		E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3965E192487C99900607EB4 /* JavascriptPluginSubtitle.swift */; };
@@ -2053,6 +2054,7 @@
 		E38BD4AE20054BD9007635FC /* PlayerWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerWindow.swift; sourceTree = "<group>"; };
 		E393669923BDD1850070D626 /* IINA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IINA.entitlements; sourceTree = "<group>"; };
 		E3958563253133E80096811F /* SidebarTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarTabView.swift; sourceTree = "<group>"; };
+    E3958564253133E80096811F /* SidebarTabView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SidebarTabView.xib; sourceTree = "<group>"; };
 		E3958585253309C90096811F /* PluginSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSidebarView.swift; sourceTree = "<group>"; };
 		E39585892533143F0096811F /* JavascriptAPISidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptAPISidebarView.swift; sourceTree = "<group>"; };
 		E3965E192487C99900607EB4 /* JavascriptPluginSubtitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptPluginSubtitle.swift; sourceTree = "<group>"; };
@@ -2754,6 +2756,7 @@
 				E32712AE24EAA14500359DAB /* ScreenshootOSDView.swift */,
 				E32712B424F2B8CA00359DAB /* ScreenshootOSDView.xib */,
 				E3958563253133E80096811F /* SidebarTabView.swift */,
+        E3958564253133E80096811F /* SidebarTabView.xib */,
 				D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */,
 				D1D579532B16C38F009E3520 /* ClickThroughView.swift */,
 				D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */,
@@ -3236,6 +3239,7 @@
 				E34A0E012053F93A00B50097 /* PrefOSCToolbarSettingsSheetController.xib in Resources */,
 				E34E909A24F821280073BF04 /* GuideWindowController.xib in Resources */,
 				34F294C02C0B68B300F14962 /* Contribution.rtf in Resources */,
+        E3958566253133E80096811F /* SidebarTabView.xib in Resources */,
 				8400D5D21E1AB312006785F5 /* InspectorWindowController.xib in Resources */,
 				8400D5CC1E1AB2FF006785F5 /* PlaylistViewController.xib in Resources */,
 				8400D5ED1E1AB33F006785F5 /* PrefAdvancedViewController.xib in Resources */,

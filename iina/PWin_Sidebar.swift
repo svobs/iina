@@ -32,10 +32,11 @@ struct Sidebar {
   enum TabGroup: String {
     case settings
     case playlist
+    case plugin
 
     func width(using sidebarState: SidebarMiscState) -> CGFloat {
       switch self {
-      case .settings:
+      case .settings, .plugin:
         return Constants.Sidebar.settingsWidth
       case .playlist:
         return clampPlaylistWidth(CGFloat(sidebarState.playlistSidebarWidth))
@@ -50,18 +51,25 @@ struct Sidebar {
       if Preference.enum(for: .playlistTabGroupLocation) == locationID {
         tabGroups.insert(.playlist)
       }
+      if Preference.enum(for: .pluginTabGroupLocation) == locationID {
+        tabGroups.insert(.plugin)
+      }
       return tabGroups
     }
   }
 
   // Includes all types of tabs possible in all tab groups
   enum Tab: Equatable {
+    static let nullPluginID = ""
+
     case playlist
     case chapters
 
     case video
     case audio
     case sub
+    /// Plugin tabs are serialized in the format `"plugin:\(id)"`, but `id` can be empty to signify no plugin.
+    /// When deserializing, an empty plugin ID string (`nullPluginID`) should be interpreted as `nil`.
     case plugin(id: String)
 
     init?(name: String?) {
@@ -105,8 +113,10 @@ struct Sidebar {
       switch self {
       case .playlist, .chapters:
         return .playlist
-      case .video, .audio, .sub, .plugin(id: _):
+      case .video, .audio, .sub:
         return .settings
+      case .plugin(id: _):
+        return .plugin
       }
     }
   }  // enum Tab
@@ -211,6 +221,8 @@ struct Sidebar {
         return Sidebar.Tab.playlist
       case .settings:
         return Sidebar.Tab.video
+      case .plugin:
+        return nil
       }
     }
 
@@ -275,6 +287,10 @@ extension PlayerWindowController {
       if let tab = Sidebar.Tab(name: quickSettingView.currentTab.name) {
         showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
       }
+    case .plugin:
+      let pluginID = pluginView.currentPluginID
+      let tab = Sidebar.Tab.plugin(id: pluginID ?? Sidebar.Tab.nullPluginID)
+      showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
     }
   }
 
@@ -574,7 +590,15 @@ extension PlayerWindowController {
   private func prepareRemainingLayoutForOpening(sidebar: Sidebar, sidebarView: NSView, tabContainerView: NSView, tab: Sidebar.Tab) {
     log.verbose("ChangeVisibility pre-animation, show \(sidebar.locationID), \(tab.name.quoted) tab")
 
-    let viewController = (tab.group == .playlist) ? playlistView : quickSettingView
+    let viewController: NSViewController
+    switch tab.group {
+    case .playlist:
+      viewController = playlistView
+    case .settings:
+      viewController = quickSettingView
+    case .plugin:
+      viewController = pluginView
+    }
     let tabGroupView = viewController.view
 
     tabContainerView.addSubview(tabGroupView)
@@ -691,6 +715,13 @@ extension PlayerWindowController {
       }
       log.verbose("Switching to tab \(tab.name.quoted) in quickSettingView")
       quickSettingView.pleaseSwitchToTab(tabType)
+    case .plugin:
+      guard case .plugin(let pluginID) = tab else {
+        log.error("Cannot switch to tab \(tab.name.quoted): bad plugin tab object!")
+        return
+      }
+      log.verbose("Switching to tab \(pluginID.quoted) in pluginView")
+      pluginView.pleaseSwitchToTab(pluginID)
     }
   }
 
@@ -722,7 +753,7 @@ extension PlayerWindowController {
     }
   }
 
-  private func getConfiguredSidebar(forTabGroup tabGroup: Sidebar.TabGroup) -> Sidebar? {
+  func getConfiguredSidebar(forTabGroup tabGroup: Sidebar.TabGroup) -> Sidebar? {
     for sidebar in [currentLayout.leadingSidebar, currentLayout.trailingSidebar] {
       if sidebar.tabGroups.contains(tabGroup) {
         return sidebar

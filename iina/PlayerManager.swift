@@ -38,11 +38,11 @@ class PlayerManager {
     return player
   }
 
-  weak private var _lastActivePlayer: PlayerCore?
+  /// Returns the last player whose window was "active" (or in MacOS terminology, was the key window).
   var lastActivePlayer: PlayerCore? {
     get {
       lock.withLock {
-        return _lastActivePlayer ?? _activePlayer
+        return _lastActivePlayer ?? findCurrentlyActivePlayer()
       }
     }
     set {
@@ -51,6 +51,7 @@ class PlayerManager {
       }
     }
   }
+  weak private var _lastActivePlayer: PlayerCore?
 
   // Returns a copy of the list of PlayerCores, to ensure concurrency
   var playerCores: [PlayerCore] {
@@ -130,7 +131,7 @@ class PlayerManager {
         if Preference.bool(for: .alwaysOpenInNewWindow) {
           core = _getIdleOrCreateNew()
         } else {
-          core = _activePlayer
+          core = findCurrentlyActivePlayer()
         }
       }
     }
@@ -189,12 +190,14 @@ class PlayerManager {
 
   var activePlayer: PlayerCore? {
     lock.withLock {
-      return _activePlayer
+      return findCurrentlyActivePlayer()
     }
   }
 
-  private var _activePlayer: PlayerCore? {
-    if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController, wc.player.isActive {
+  /// The "active" player is the player attached to the current key window, if any.
+  /// If no player window is the key window, returns `nil`.
+  private func findCurrentlyActivePlayer() -> PlayerCore? {
+    if let wc = NSApp.keyWindow?.windowController as? PlayerWindowController, wc.player.isActive {
       return wc.player
     } else {
       return nil

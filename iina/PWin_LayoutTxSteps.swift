@@ -1027,14 +1027,12 @@ extension PlayerWindowController {
     for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
       applyVisibility(layoutState.leadingSidebarToggleButton, button)
       if layoutState.leadingSidebarToggleButton.isShowable {
-        log.verbose("LEADING visible: \(layoutState.leadingSidebar.isVisible)")
         button.setShadow(enabled: layoutState.leadingSidebar.isVisible)
       }
     }
     for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
       applyVisibility(layoutState.trailingSidebarToggleButton, button)
       if layoutState.trailingSidebarToggleButton.isShowable {
-        log.verbose("TRAILING visible: \(layoutState.trailingSidebar.isVisible)")
         button.setShadow(enabled: layoutState.trailingSidebar.isVisible)
       }
     }

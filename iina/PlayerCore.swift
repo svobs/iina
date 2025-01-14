@@ -44,6 +44,8 @@ class PlayerCore: NSObject {
 
   // MARK: - Multiple instances
 
+  /// Returns the last player whose window was "active" (or in MacOS terminology, was the key window).
+  ///
   /// - Important: Code referencing this property **must** be run on the main thread as getting the value of this property _may_
   ///              result in a reference the `active` property and that requires use of the main thread.
   static var lastActive: PlayerCore? {

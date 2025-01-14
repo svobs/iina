@@ -31,9 +31,9 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private var pluginTabsStackView: NSStackView!
   private var pluginTabs: [String: SidebarTabView] = [:]
 
-
   weak var player: PlayerCore!
 
+  /// This is the currently displayed tab
   var currentPluginID: String?
   private var pendingSwitchRequest: String?
 
@@ -68,6 +68,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   }
 
   func pleaseSwitchToTab(_ id: String) {
+    // Convert
+    let id = id == Sidebar.Tab.nullPluginID ? nil : id
     if isViewLoaded {
       switchToTab(id)
     } else {

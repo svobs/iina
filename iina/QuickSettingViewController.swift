@@ -605,6 +605,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func switchToTab(_ tab: TabViewType) {
     guard isViewLoaded else { return }
+    guard currentTab != tab else { return }
     currentTab = tab
     windowController.didChangeTab(to: tab.name)
     tabView.selectTabViewItem(at: tab.buttonTag)

@@ -1412,7 +1412,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       updateColorsForKeyWindowStatus(isKey: isKey)
 
       if isKey {
-        PlayerCore.lastActive = player
+        PlayerManager.shared.lastActivePlayer = player
         MediaPlayerIntegration.shared.update()
         AppDelegate.shared.menuController?.updatePluginMenu()
 
@@ -2341,7 +2341,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .screenshot:
       player.screenshot()
     case .plugins:
-      break// FIXME: PLUGINS - showPluginSidebar(tab: nil)
+      showSidebar(forTabGroup: .plugin)
     }
   }
 
