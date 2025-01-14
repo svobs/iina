@@ -802,6 +802,10 @@ extension PlayerWindowController {
     }
   }
 
+  func isTabGroupVisible(_ tabGroup: Sidebar.TabGroup) -> Bool {
+    return getConfiguredSidebar(forTabGroup: tabGroup)?.visibleTabGroup == tabGroup
+  }
+
   // MARK: - Various functions
 
   func updateSidebarBlendingMode(_ sidebarID: Preference.SidebarLocation, layout: LayoutState) {
