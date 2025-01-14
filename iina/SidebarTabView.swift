@@ -8,13 +8,17 @@
 
 import Cocoa
 
-// This is only used for IINA plugins
+/// This is only used for IINA plugins
 class SidebarTabView: NSViewController {
   var name: String!
   var pluginID: String!
   weak var pluginSidebarView: PluginViewController!
 
   @IBOutlet weak var label: NSTextField!
+
+  override var acceptsFirstResponder: Bool {
+    true
+  }
 
   var isActive: Bool = false {
     didSet {
@@ -24,7 +28,8 @@ class SidebarTabView: NSViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.layer?.cornerRadius = 6.0  // TODO: why?
+    view.wantsLayer = true
+    view.layer?.cornerRadius = 10
     updateStyle()
     label.stringValue = name
   }
@@ -43,5 +48,16 @@ class SidebarTabView: NSViewController {
       view.layer?.backgroundColor = background.withAlphaComponent(0.1).cgColor
       label.textColor = NSColor.textColor.withAlphaComponent(0.5)
     }
+  }
+}
+
+
+class SidebarTabActiveView: NSView {
+  override var acceptsFirstResponder: Bool {
+    true
+  }
+
+  override func mouseDown(with event: NSEvent) {
+    self.nextResponder?.mouseDown(with: event)
   }
 }
