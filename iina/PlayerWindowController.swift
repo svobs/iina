@@ -2341,7 +2341,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .screenshot:
       player.screenshot()
     case .plugins:
-      showSidebar(forTabGroup: .plugin)
+      showSidebar(forTabGroup: .plugins)
     }
   }
 

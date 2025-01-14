@@ -66,6 +66,7 @@ extension PlayerWindowController {
       .trailingSidebarPlacement,
       .settingsTabGroupLocation,
       .playlistTabGroupLocation,
+      .pluginsTabGroupLocation,
       .aspectRatioPanelPresets,
       .cropPanelPresets,
       .showLeadingSidebarToggleButton,
@@ -250,6 +251,10 @@ extension PlayerWindowController {
     case .playlistTabGroupLocation:
       if let newRawValue = newValue as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
         self.moveTabGroup(.playlist, toSidebarLocation: newLocationID)
+      }
+    case .pluginsTabGroupLocation:
+      if let newRawValue = newValue as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
+        self.moveTabGroup(.plugins, toSidebarLocation: newLocationID)
       }
     case .osdAutoHideTimeout, .enableControlBarAutoHide:
       if let newTimeout = newValue as? Double {

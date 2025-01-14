@@ -18,6 +18,7 @@
                 <outlet property="leftSidebarLabel" destination="eh8-tf-wHU" id="125-il-GtB"/>
                 <outlet property="leftSidebarPlacement" destination="KIu-aG-mHw" id="hOM-59-8dV"/>
                 <outlet property="leftSidebarPlaylistTabsRadioButton" destination="1ob-qE-AIw" id="7Kc-bB-FSW"/>
+                <outlet property="leftSidebarPluginTabsRadioButton" destination="7iy-h4-gUL" id="QMn-sB-IPp"/>
                 <outlet property="leftSidebarSettingsTabsRadioButton" destination="jag-I5-s6l" id="GRU-cE-2LV"/>
                 <outlet property="leftSidebarShowToggleButton" destination="H5W-Uo-D64" id="xG8-pg-dSK"/>
                 <outlet property="mpvGeometryRadioButton" destination="VqS-1r-k2A" id="V6d-3D-LCy"/>
@@ -45,6 +46,7 @@
                 <outlet property="rightSidebarLabel" destination="6mM-VC-jd0" id="QYF-r9-WVG"/>
                 <outlet property="rightSidebarPlacement" destination="9fG-Qe-ZAx" id="ivW-uj-TBW"/>
                 <outlet property="rightSidebarPlaylistTabsRadioButton" destination="CMD-AK-icM" id="wkx-2d-XcP"/>
+                <outlet property="rightSidebarPluginTabsRadioButton" destination="Mg7-AR-ye8" id="xfP-kd-tYX"/>
                 <outlet property="rightSidebarSettingsTabsRadioButton" destination="0aS-2P-buo" id="NSO-iY-Vwo"/>
                 <outlet property="rightSidebarShowToggleButton" destination="esN-qM-PXI" id="Bpy-Z7-0bx"/>
                 <outlet property="sectionAccessibilityView" destination="k9o-rY-z6u" id="p0I-TR-Sv6"/>
@@ -2722,10 +2724,10 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="-18" y="563"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="571" height="320"/>
+            <rect key="frame" x="0.0" y="0.0" width="571" height="344"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">
-                    <rect key="frame" x="-2" y="296" width="66" height="16"/>
+                    <rect key="frame" x="-2" y="320" width="66" height="16"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="VMK-jQ-Ujf"/>
                     </constraints>
@@ -2736,17 +2738,18 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="435" height="308"/>
+                    <rect key="frame" x="120" y="8" width="435" height="332"/>
                     <subviews>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
-                            <rect key="frame" x="0.0" y="148" width="435" height="160"/>
+                            <rect key="frame" x="0.0" y="148" width="435" height="184"/>
                             <subviews>
                                 <gridView horizontalCompressionResistancePriority="500" xPlacement="center" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="0.0" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="gHl-nV-4jw" userLabel="SidebarConfigs Grid View">
-                                    <rect key="frame" x="0.0" y="0.0" width="427" height="160"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="427" height="184"/>
                                     <rows>
                                         <gridRow yPlacement="center" height="24" bottomPadding="4" id="hjW-b6-71D" userLabel="Row 0 - SidebarID"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="Mi2-xO-LqY" userLabel="Row 1 - Settings-TabGroup"/>
-                                        <gridRow yPlacement="center" rowAlignment="none" height="24" bottomPadding="12" id="PUY-2y-GX1" userLabel="Row 2 - Playlist-TabGroup"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="PUY-2y-GX1" userLabel="Row 2 - Playlist-TabGroup"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" bottomPadding="12" id="vV4-sP-7hN" userLabel="Row 3 - Plugins-TabGroup"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="rik-aD-Ulq" userLabel="Row 3 - Placement"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="xL6-zv-twO" userLabel="Row 4 - Open-Close-Button"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="lbI-Sg-f3d" userLabel="Row 5 - Close-When-Clicked"/>
@@ -2759,7 +2762,7 @@ For smoothest results, also enable custom full screen.</string>
                                     <gridCells>
                                         <gridCell row="hjW-b6-71D" column="Pgq-7f-mYz" id="NoI-f5-36O">
                                             <textField key="contentView" focusRingType="none" horizontalHuggingPriority="248" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="og0-0i-0wu" userLabel="Blank Text Field">
-                                                <rect key="frame" x="-2" y="140" width="219" height="16"/>
+                                                <rect key="frame" x="-2" y="164" width="219" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="XsQ-RU-5sT">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2769,7 +2772,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="v1D-IJ-G5S" id="82f-7F-ibj">
                                             <textField key="contentView" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eh8-tf-wHU">
-                                                <rect key="frame" x="231" y="140" width="83" height="16"/>
+                                                <rect key="frame" x="231" y="164" width="83" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Left Sidebar" id="8Oi-ew-3cu">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2779,7 +2782,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="P5j-t5-Vfj" id="2f6-h6-Ebf">
                                             <textField key="contentView" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6mM-VC-jd0">
-                                                <rect key="frame" x="332" y="140" width="92" height="16"/>
+                                                <rect key="frame" x="332" y="164" width="92" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Right Sidebar" id="Msi-a9-5mJ">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2789,7 +2792,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="Pgq-7f-mYz" id="YWU-Xf-Jfh">
                                             <textField key="contentView" focusRingType="none" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="RnR-6d-fTg">
-                                                <rect key="frame" x="-2" y="112" width="216" height="16"/>
+                                                <rect key="frame" x="-2" y="136" width="216" height="16"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="16" id="S2R-Qx-GBL"/>
                                                 </constraints>
@@ -2802,7 +2805,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="v1D-IJ-G5S" id="pof-3l-MZg">
                                             <button key="contentView" tag="1" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jag-I5-s6l" userLabel="SettingsTabGroup-LeftSidebar Radio Button">
-                                                <rect key="frame" x="263" y="111" width="18" height="18"/>
+                                                <rect key="frame" x="263" y="135" width="18" height="18"/>
                                                 <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="7RJ-g3-TV2">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2814,7 +2817,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="P5j-t5-Vfj" id="M9Y-f4-Dhk">
                                             <button key="contentView" tag="2" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0aS-2P-buo" userLabel="SettingsTabGroup-RightSidebar Radio Button">
-                                                <rect key="frame" x="369" y="111" width="18" height="18"/>
+                                                <rect key="frame" x="369" y="135" width="18" height="18"/>
                                                 <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="QcH-dA-2Cl">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2826,7 +2829,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="PUY-2y-GX1" column="Pgq-7f-mYz" id="ye5-UH-jwa">
                                             <textField key="contentView" focusRingType="none" verticalHuggingPriority="249" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="oaX-Ob-hdd">
-                                                <rect key="frame" x="-2" y="88" width="194" height="16"/>
+                                                <rect key="frame" x="-2" y="112" width="194" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Location of Playlist &amp; Chapters:" id="pMe-bn-hX9">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2836,7 +2839,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="PUY-2y-GX1" column="v1D-IJ-G5S" id="gbw-KM-aIZ">
                                             <button key="contentView" tag="1" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1ob-qE-AIw" userLabel="PlaylistTabGroup-LeftSidebar Radio Button">
-                                                <rect key="frame" x="263" y="87" width="18" height="18"/>
+                                                <rect key="frame" x="263" y="111" width="18" height="18"/>
                                                 <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="IOP-fU-S8C">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2848,13 +2851,47 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="PUY-2y-GX1" column="P5j-t5-Vfj" id="nvZ-ol-2GY">
                                             <button key="contentView" tag="2" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CMD-AK-icM" userLabel="PlaylistTabGroup-RightSidebar Radio Button">
-                                                <rect key="frame" x="369" y="87" width="18" height="18"/>
+                                                <rect key="frame" x="369" y="111" width="18" height="18"/>
                                                 <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="DRL-3A-B8J">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
                                                 </buttonCell>
                                                 <connections>
                                                     <action selector="playlistSidebarTabGroupAction:" target="-2" id="Cqi-QE-aYT"/>
+                                                </connections>
+                                            </button>
+                                        </gridCell>
+                                        <gridCell row="vV4-sP-7hN" column="Pgq-7f-mYz" id="TOD-ac-u6E">
+                                            <textField key="contentView" focusRingType="none" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="qfS-6V-YrG">
+                                                <rect key="frame" x="-2" y="88" width="146" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Location of plugin tabs:" id="k73-lB-Rii">
+                                                    <font key="font" metaFont="system"/>
+                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                </textFieldCell>
+                                            </textField>
+                                        </gridCell>
+                                        <gridCell row="vV4-sP-7hN" column="v1D-IJ-G5S" id="snT-RH-Ka0">
+                                            <button key="contentView" tag="1" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7iy-h4-gUL" userLabel="PluginsTabGroup-LeftSidebar Radio Button">
+                                                <rect key="frame" x="263" y="87" width="18" height="18"/>
+                                                <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Jqt-OS-OwQ">
+                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <connections>
+                                                    <action selector="pluginsSidebarTabGroupAction:" target="-2" id="4fv-3T-t59"/>
+                                                </connections>
+                                            </button>
+                                        </gridCell>
+                                        <gridCell row="vV4-sP-7hN" column="P5j-t5-Vfj" id="xAk-Ll-RRK">
+                                            <button key="contentView" tag="2" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mg7-AR-ye8" userLabel="PluginsTabGroup-RightSidebar Radio Button">
+                                                <rect key="frame" x="369" y="87" width="18" height="18"/>
+                                                <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="7CN-I4-w2j">
+                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <connections>
+                                                    <action selector="pluginsSidebarTabGroupAction:" target="-2" id="bZY-CS-MY8"/>
                                                 </connections>
                                             </button>
                                         </gridCell>
@@ -2969,7 +3006,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </gridCells>
                                 </gridView>
                                 <customView horizontalHuggingPriority="501" verticalHuggingPriority="501" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="b07-lv-H8K" userLabel="Flexible Spacer">
-                                    <rect key="frame" x="435" y="0.0" width="0.0" height="160"/>
+                                    <rect key="frame" x="435" y="0.0" width="0.0" height="184"/>
                                 </customView>
                             </subviews>
                             <visibilityPriorities>

@@ -103,6 +103,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var rightSidebarSettingsTabsRadioButton: NSButton!
   @IBOutlet weak var leftSidebarPlaylistTabsRadioButton: NSButton!
   @IBOutlet weak var rightSidebarPlaylistTabsRadioButton: NSButton!
+  @IBOutlet weak var leftSidebarPluginTabsRadioButton: NSButton!
+  @IBOutlet weak var rightSidebarPluginTabsRadioButton: NSButton!
   @IBOutlet weak var leftSidebarShowToggleButton: NSButton!
   @IBOutlet weak var leftSidebarClickToCloseButton: NSButton!
   @IBOutlet weak var rightSidebarLabel: NSTextField!
@@ -227,6 +229,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .themeMaterial,
       .settingsTabGroupLocation,
       .playlistTabGroupLocation,
+      .pluginsTabGroupLocation,
       .controlBarToolbarButtons,
       .oscBarHeight,
       .oscBarPlayIconSizeTicks,
@@ -262,7 +265,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         refreshTitleBarAndOSCSection()
         updateWindowGeometrySection()
       }
-    case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation:
+    case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation, PK.pluginsTabGroupLocation:
       updateSidebarSection()
     case PK.oscBarHeight,
       PK.controlBarToolbarButtons,
@@ -300,14 +303,18 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   private func updateSidebarSection() {
     let settingsTabGroup: Preference.SidebarLocation = Preference.enum(for: .settingsTabGroupLocation)
     let playlistTabGroup: Preference.SidebarLocation = Preference.enum(for: .playlistTabGroupLocation)
-    let isUsingLeadingSidebar = settingsTabGroup == .leadingSidebar || playlistTabGroup == .leadingSidebar
-    let isUsingTrailingSidebar = settingsTabGroup == .trailingSidebar || playlistTabGroup == .trailingSidebar
+    let pluginTabGroup: Preference.SidebarLocation = Preference.enum(for: .pluginsTabGroupLocation)
+    let isUsingLeadingSidebar = settingsTabGroup == .leadingSidebar || playlistTabGroup == .leadingSidebar || pluginTabGroup == .leadingSidebar
+    let isUsingTrailingSidebar = settingsTabGroup == .trailingSidebar || playlistTabGroup == .trailingSidebar || pluginTabGroup == .trailingSidebar
 
     leftSidebarSettingsTabsRadioButton.state = (settingsTabGroup == .leadingSidebar) ? .on : .off
     rightSidebarSettingsTabsRadioButton.state = (settingsTabGroup == .trailingSidebar) ? .on : .off
 
     leftSidebarPlaylistTabsRadioButton.state = (playlistTabGroup == .leadingSidebar) ? .on : .off
     rightSidebarPlaylistTabsRadioButton.state = (playlistTabGroup == .trailingSidebar) ? .on : .off
+
+    leftSidebarPluginTabsRadioButton.state = (pluginTabGroup == .leadingSidebar) ? .on : .off
+    rightSidebarPluginTabsRadioButton.state = (pluginTabGroup == .trailingSidebar) ? .on : .off
 
     leftSidebarPlacement.isEnabled = isUsingLeadingSidebar
     leftSidebarShowToggleButton.isEnabled = isUsingLeadingSidebar
@@ -324,6 +331,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBAction func playlistSidebarTabGroupAction(_ sender: NSButton) {
     Preference.set(sender.tag, for: .playlistTabGroupLocation)
+  }
+
+  @IBAction func pluginsSidebarTabGroupAction(_ sender: NSButton) {
+    Preference.set(sender.tag, for: .pluginsTabGroupLocation)
   }
 
   @IBAction func saveAspectPresets(_ sender: AspectTokenField) {

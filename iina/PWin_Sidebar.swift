@@ -32,11 +32,11 @@ struct Sidebar {
   enum TabGroup: String {
     case settings
     case playlist
-    case plugin
+    case plugins
 
     func width(using sidebarState: SidebarMiscState) -> CGFloat {
       switch self {
-      case .settings, .plugin:
+      case .settings, .plugins:
         return Constants.Sidebar.settingsWidth
       case .playlist:
         return clampPlaylistWidth(CGFloat(sidebarState.playlistSidebarWidth))
@@ -51,8 +51,8 @@ struct Sidebar {
       if Preference.enum(for: .playlistTabGroupLocation) == locationID {
         tabGroups.insert(.playlist)
       }
-      if Preference.enum(for: .pluginTabGroupLocation) == locationID {
-        tabGroups.insert(.plugin)
+      if Preference.enum(for: .pluginsTabGroupLocation) == locationID {
+        tabGroups.insert(.plugins)
       }
       return tabGroups
     }
@@ -116,7 +116,7 @@ struct Sidebar {
       case .video, .audio, .sub:
         return .settings
       case .plugin(id: _):
-        return .plugin
+        return .plugins
       }
     }
   }  // enum Tab
@@ -221,7 +221,7 @@ struct Sidebar {
         return Sidebar.Tab.playlist
       case .settings:
         return Sidebar.Tab.video
-      case .plugin:
+      case .plugins:
         return nil
       }
     }
@@ -287,7 +287,7 @@ extension PlayerWindowController {
       if let tab = Sidebar.Tab(name: quickSettingView.currentTab.name) {
         showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
       }
-    case .plugin:
+    case .plugins:
       let pluginID = pluginView.currentPluginID
       let tab = Sidebar.Tab.plugin(id: pluginID ?? Sidebar.Tab.nullPluginID)
       showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
@@ -596,7 +596,7 @@ extension PlayerWindowController {
       viewController = playlistView
     case .settings:
       viewController = quickSettingView
-    case .plugin:
+    case .plugins:
       viewController = pluginView
     }
     let tabGroupView = viewController.view
@@ -715,7 +715,7 @@ extension PlayerWindowController {
       }
       log.verbose("Switching to tab \(tab.name.quoted) in quickSettingView")
       quickSettingView.pleaseSwitchToTab(tabType)
-    case .plugin:
+    case .plugins:
       guard case .plugin(let pluginID) = tab else {
         log.error("Cannot switch to tab \(tab.name.quoted): bad plugin tab object!")
         return

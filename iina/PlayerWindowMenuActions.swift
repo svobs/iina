@@ -544,7 +544,7 @@ extension PlayerWindowController {
   // MARK: - Plugin
 
   @objc func showPluginsPanel(_ sender: NSMenuItem) {
-    showSidebar(forTabGroup: .plugin)
+    showSidebar(forTabGroup: .plugins)
   }
 
   @objc func reloadAllPlugins(_ sender: NSMenuItem) {
