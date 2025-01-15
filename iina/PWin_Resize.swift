@@ -29,14 +29,14 @@ extension PlayerWindowController {
     guard !isAnimatingLayoutTransition else {
       return requestedSize
     }
+    let inLiveResize = window.inLiveResize
 
-    guard !denyWindowResize else {
+    guard inLiveResize || !denyWindowResize else {
       log.verbose{"WinWillResize: denying; currently dragging. Will stay at \(window.frame.size)"}
       return window.frame.size
     }
 
     let currentLayout = currentLayout
-    let inLiveResize = window.inLiveResize
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
     log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) isAnimatingTx=\(isAnimatingLayoutTransition.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
 
