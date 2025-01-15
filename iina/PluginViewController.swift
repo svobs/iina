@@ -142,6 +142,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
                                                       selectedPluginTabID: currentPluginID ?? Sidebar.Tab.nullPluginID)
       windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
+    let sidebarTab = Sidebar.Tab.plugin(id: tab ?? Sidebar.Tab.nullPluginID)
+    windowController.didChangeTab(to: sidebarTab)
     updateTabActiveStatus()
   }
 

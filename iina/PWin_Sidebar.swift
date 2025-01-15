@@ -728,12 +728,8 @@ extension PlayerWindowController {
 
   // This is so that sidebar controllers can notify when they changed tabs in their tab groups, so that
   // the tracking information here can be updated.
-  func didChangeTab(to tabName: String) {
-    guard let tab = Sidebar.Tab(name: tabName) else {
-      log.error("Could not find a matching sidebar tab for \(tabName.quoted)!")
-      return
-    }
-    log.verbose("Changing to tab: \(tabName.quoted)")
+  func didChangeTab(to tab: Sidebar.Tab) {
+    log.verbose("Changing to tab: \(tab.name.quoted)")
 
     // Try to avoid race conditions if possible
     animationPipeline.submitInstantTask { [self] in

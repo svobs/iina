@@ -333,7 +333,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     currentTab = tab
-    windowController.didChangeTab(to: tab.rawValue)
+    if let sidebarTab = Sidebar.Tab(name: tab.rawValue) {
+      windowController.didChangeTab(to: sidebarTab)
+    }
   }
 
   // Updates display of all tabs buttons to indicate that the given tab is active and the rest are not

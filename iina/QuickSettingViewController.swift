@@ -609,8 +609,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard isViewLoaded else { return }
     guard currentTab != tab else { return }
     currentTab = tab
-    windowController.didChangeTab(to: tab.name)
     tabView.selectTabViewItem(at: tab.buttonTag)
+    if let sidebarTab = Sidebar.Tab(name: tab.name) {
+      windowController.didChangeTab(to: sidebarTab)
+    }
     updateTabActiveStatus()
     reload()
   }
