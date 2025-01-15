@@ -21,6 +21,7 @@ extension PlayerWindowController {
       .loadIccProfile,
       .toneMappingAlgorithm,
       .keepOpenOnFileEnd,
+      .useForceTouchForSpeedArrows,
       .playlistAutoPlayNext,
       .themeMaterial,
       .playerWindowOpacity,
@@ -176,6 +177,12 @@ extension PlayerWindowController {
 
     case .keepOpenOnFileEnd, .playlistAutoPlayNext:
       player.mpv.updateKeepOpenOptionFromPrefs()
+
+    case .useForceTouchForSpeedArrows:
+      if let newValue = newValue as? Bool {
+        leftArrowButton.enableAcceleration = newValue
+        rightArrowButton.enableAcceleration = newValue
+      }
 
     case .enableOSC,
         .oscPosition,

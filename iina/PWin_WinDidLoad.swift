@@ -369,13 +369,14 @@ extension PlayerWindowController {
     playbackBtnsVStackView.setHuggingPriority(.init(250), for: .horizontal)
     playbackBtnsVStackView.translatesAutoresizingMaskIntoConstraints = false
 
+    let enableAcceleration = Preference.bool(for: .useForceTouchForSpeedArrows)
     // Left Arrow button
     leftArrowButton.image = oscGeo.leftArrowImage
     leftArrowButton.target = self
     leftArrowButton.action = #selector(leftArrowButtonAction(_:))
     leftArrowButton.identifier = .init("leftArrowButton")
     leftArrowButton.refusesFirstResponder = true
-    leftArrowButton.enableAcceleration = true
+    leftArrowButton.enableAcceleration = enableAcceleration
     leftArrowButton.bounceOnClick = true
 
     // Right Arrow button
@@ -384,7 +385,7 @@ extension PlayerWindowController {
     rightArrowButton.action = #selector(rightArrowButtonAction(_:))
     rightArrowButton.identifier = .init("rightArrowButton")
     rightArrowButton.refusesFirstResponder = true
-    rightArrowButton.enableAcceleration = true
+    rightArrowButton.enableAcceleration = enableAcceleration
     rightArrowButton.bounceOnClick = true
 
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")

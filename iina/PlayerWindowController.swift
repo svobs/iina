@@ -2221,7 +2221,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   /** handle action of either left or right arrow button */
-  private func arrowButtonAction(left: Bool, clickPressure: Int) {
+  func arrowButtonAction(left: Bool, clickPressure: Int) {
     let didRelease = clickPressure == 0
 
     let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
@@ -2240,29 +2240,39 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let indexSpeed1x = AppData.availableSpeedValues.count / 2
       let directionUnit: Int = (left ? -1 : 1)
       let currentSpeedIndex = findClosestCurrentSpeedIndex()
-
       let newSpeedIndex: Int
-      if didRelease { // Released
-        if maxPressure == 1 &&
-            ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
-             Date().timeIntervalSince(lastClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
-          newSpeedIndex = oldSpeedValueIndex + directionUnit
-        } else { // Force Touch or long press ended
-          newSpeedIndex = indexSpeed1x
+
+      if Preference.bool(for: .useForceTouchForSpeedArrows) {
+        if didRelease { // Released
+
+          // Discard redundant release events
+          guard maxPressure > 0 else { return }
+
+          if maxPressure == 1 &&
+              ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
+               Date().timeIntervalSince(lastClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
+            newSpeedIndex = oldSpeedValueIndex + directionUnit
+          } else { // Force Touch or long press ended
+            newSpeedIndex = indexSpeed1x
+          }
+          maxPressure = 0
+        } else {
+          if clickPressure == 1 && maxPressure == 0 { // First press
+            oldSpeedValueIndex = currentSpeedIndex
+            newSpeedIndex = currentSpeedIndex + directionUnit
+            lastClick = Date()
+          } else { // Force Touch
+            newSpeedIndex = oldSpeedValueIndex + (clickPressure * directionUnit)
+          }
+          maxPressure = max(maxPressure, clickPressure)
         }
-        maxPressure = 0
       } else {
-        if clickPressure == 1 && maxPressure == 0 { // First press
-          oldSpeedValueIndex = currentSpeedIndex
-          newSpeedIndex = currentSpeedIndex + directionUnit
-          lastClick = Date()
-        } else { // Force Touch
-          newSpeedIndex = oldSpeedValueIndex + (clickPressure * directionUnit)
-        }
-        maxPressure = max(maxPressure, clickPressure)
+        guard didRelease else { return }
+        newSpeedIndex = currentSpeedIndex + directionUnit
       }
       let newSpeedIndexClamped = newSpeedIndex.clamped(to: 0..<AppData.availableSpeedValues.count)
       let newSpeed = AppData.availableSpeedValues[newSpeedIndexClamped]
+      guard player.info.playSpeed != newSpeed else { return }
       player.setSpeed(newSpeed, forceResume: true) // always resume if paused
     }
   }

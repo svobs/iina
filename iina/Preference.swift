@@ -370,6 +370,7 @@ struct Preference {
     static let arrowButtonAction = Key("arrowBtnAction")
     /// If `true`, the playback speed will be reset to 1x whenever the media is paused
     static let resetSpeedWhenPaused = Key("resetSpeedWhenPaused")
+    static let useForceTouchForSpeedArrows = Key("useForceTouchForSpeedArrows")
     /** (1~4) */
     static let volumeScrollAmount = Key("volumeScrollAmount")
     static let verticalScrollAction = Key("verticalScrollAction")
@@ -1225,6 +1226,7 @@ struct Preference {
     .softVolume: 100,
     .arrowButtonAction: ArrowButtonAction.speed.rawValue,
     .resetSpeedWhenPaused: false,
+    .useForceTouchForSpeedArrows: false,
     .lockViewportToVideoSize: true,
     .moveWindowIntoVisibleScreenOnResize: true,
     .allowVideoToOverlapCameraHousing: false,
