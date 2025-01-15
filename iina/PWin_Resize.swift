@@ -39,77 +39,76 @@ extension PlayerWindowController {
     let inLiveResize = window.inLiveResize
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
     log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) isAnimatingTx=\(isAnimatingLayoutTransition.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
-    return IINAAnimation.disableAnimation { [self] in
-      videoView.videoLayer.enterAsynchronousMode()
 
-      if lockViewportToVideoSize && inLiveResize {
-        /// Notes on the trickiness of live window resize:
-        /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
-        /// "A" works well when the user grabs the top or bottom sides of the window, but will not allow resizing if the user grabs the left
-        /// or right sides. Similarly, "B" works with left or right sides, but will not work with top or bottom.
-        /// 2. We can make all 4 sides allow resizing by first checking if the user is requesting a different height: if yes, use "B";
-        /// and if no, use "A".
-        /// 3. Unfortunately (2) causes resize from the corners to jump all over the place, because in that case either height or width will change
-        /// in small increments (depending on how fast the user moves the cursor) but this will result in a different choice between "A" or "B" schemes
-        /// each time, with very different answers, which causes the jumpiness. In this case either scheme will work fine, just as long as we stick
-        /// to the same scheme for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
-        if isLiveResizingWidth == nil {
-          if window.frame.height != requestedSize.height {
-            isLiveResizingWidth = false
-          } else if window.frame.width != requestedSize.width {
-            isLiveResizingWidth = true
-          }
+    videoView.videoLayer.enterAsynchronousMode()
+
+    if lockViewportToVideoSize && inLiveResize {
+      /// Notes on the trickiness of live window resize:
+      /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
+      /// "A" works well when the user grabs the top or bottom sides of the window, but will not allow resizing if the user grabs the left
+      /// or right sides. Similarly, "B" works with left or right sides, but will not work with top or bottom.
+      /// 2. We can make all 4 sides allow resizing by first checking if the user is requesting a different height: if yes, use "B";
+      /// and if no, use "A".
+      /// 3. Unfortunately (2) causes resize from the corners to jump all over the place, because in that case either height or width will change
+      /// in small increments (depending on how fast the user moves the cursor) but this will result in a different choice between "A" or "B" schemes
+      /// each time, with very different answers, which causes the jumpiness. In this case either scheme will work fine, just as long as we stick
+      /// to the same scheme for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
+      if isLiveResizingWidth == nil {
+        if window.frame.height != requestedSize.height {
+          isLiveResizingWidth = false
+        } else if window.frame.width != requestedSize.width {
+          isLiveResizingWidth = true
         }
-        log.verbose{"WinWillResize: choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")"}
+      }
+      log.verbose{"WinWillResize: choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")"}
+    }
+
+    let isLiveResizingWidth = isLiveResizingWidth ?? true
+    switch currentLayout.mode {
+    case .windowedNormal, .windowedInteractive:
+
+      guard !sessionState.isRestoring else {
+        log.error{"WinWillResize was fired while restoring! Returning existing geometry: \(windowedModeGeo.windowFrame.size)"}
+        return windowedModeGeo.windowFrame.size
+      }
+      let currentGeo = windowedGeoForCurrentFrame()
+      assert(currentGeo.mode == currentLayout.mode,
+             "WinWillResize: currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
+
+      let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
+                                                  inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
+
+      if currentLayout.mode == .windowedNormal {
+        // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
+        player.info.intendedViewportSize = newGeometry.viewportSize
       }
 
-      let isLiveResizingWidth = isLiveResizingWidth ?? true
-      switch currentLayout.mode {
-      case .windowedNormal, .windowedInteractive:
+      /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
+      /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
+      /// only exhibits a small noticeable wobble for some limited cases ...
+      resizeWindowSubviews(using: newGeometry)
 
-        guard !sessionState.isRestoring else {
-          log.error{"WinWillResize was fired while restoring! Returning existing geometry: \(windowedModeGeo.windowFrame.size)"}
-          return windowedModeGeo.windowFrame.size
-        }
-        let currentGeo = windowedGeoForCurrentFrame()
-        assert(currentGeo.mode == currentLayout.mode,
-               "WinWillResize: currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
+      log.verbose{"WinWillResize: returning window size=\(newGeometry.windowFrame.size) for \(currentLayout.mode)"}
+      return newGeometry.windowFrame.size
 
-        let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
-                                                    inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
-
-        if currentLayout.mode == .windowedNormal {
-          // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
-          player.info.intendedViewportSize = newGeometry.viewportSize
-        }
-
-        /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
-        /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
-        /// only exhibits a small noticeable wobble for some limited cases ...
-        resizeWindowSubviews(using: newGeometry)
-
-        log.verbose{"WinWillResize: returning window size=\(newGeometry.windowFrame.size) for \(currentLayout.mode)"}
+    case .fullScreenNormal, .fullScreenInteractive:
+      if currentLayout.isLegacyFullScreen {
+        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
+        videoView.apply(newGeometry)
         return newGeometry.windowFrame.size
-
-      case .fullScreenNormal, .fullScreenInteractive:
-        if currentLayout.isLegacyFullScreen {
-          let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
-          videoView.apply(newGeometry)
-          return newGeometry.windowFrame.size
-        } else {  // is native full screen
-                  // This method can be called as a side effect of the animation. If so, ignore.
-          return requestedSize
-        }
-
-      case .musicMode:
-        guard !sessionState.isRestoring else {
-          log.error{"WinWillResize was fired while restoring! Returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)"}
-          return musicModeGeo.windowFrame.size
-        }
-        let newSize = miniPlayer.musicModeWindowWillResize(window, to: requestedSize, isLiveResizingWidth: isLiveResizingWidth)
-        log.verbose{"WinWillResize: returning window size=\(newSize) for \(currentLayout.mode)"}
-        return newSize
+      } else {  // is native full screen
+                // This method can be called as a side effect of the animation. If so, ignore.
+        return requestedSize
       }
+
+    case .musicMode:
+      guard !sessionState.isRestoring else {
+        log.error{"WinWillResize was fired while restoring! Returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)"}
+        return musicModeGeo.windowFrame.size
+      }
+      let newSize = miniPlayer.musicModeWindowWillResize(window, to: requestedSize, isLiveResizingWidth: isLiveResizingWidth)
+      log.verbose{"WinWillResize: returning window size=\(newSize) for \(currentLayout.mode)"}
+      return newSize
     }
   }
 

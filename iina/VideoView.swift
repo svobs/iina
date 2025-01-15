@@ -207,7 +207,6 @@ class VideoView: NSView {
     newConstraints.centerX.isActive = centerIsActive
     newConstraints.centerY.isActive = centerIsActive
     newConstraints.aspectRatio.isActive = aspectIsActive
-    superview.needsLayout = true
   }
 
   func apply(_ geometry: PWinGeometry?) {
