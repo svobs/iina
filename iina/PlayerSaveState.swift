@@ -1317,7 +1317,8 @@ extension LayoutSpec {
     } else { // v1.3
       csvItems = [PlayerSaveState.specPrefStringVersion2] + csvItems + [
         String(moreSidebarState.selectedSubSegment),
-        String(moreSidebarState.playlistSidebarWidth)
+        String(moreSidebarState.playlistSidebarWidth),
+        moreSidebarState.selectedPluginTabID
       ]
     }
     return csvItems.joined(separator: ",")
@@ -1379,9 +1380,12 @@ extension LayoutSpec {
 
       let moreSidebarState: Sidebar.SidebarMiscState
 
-      if let selectedSubSegment = Int(iter.next() ?? ""), let playlistWidth = Int(iter.next() ?? "") {
+      if let selectedSubSegment = Int(iter.next() ?? ""),
+         let playlistWidth = Int(iter.next() ?? "") {
+        let selectedPluginTabID = iter.next() ?? Sidebar.Tab.nullPluginID
         moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: playlistWidth,
-                                                                   selectedSubSegment: selectedSubSegment)
+                                                    selectedSubSegment: selectedSubSegment,
+                                                    selectedPluginTabID: selectedPluginTabID)
       } else {
         // v1 of the CSV lacked this info. Fall back to default
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
@@ -1395,7 +1399,7 @@ extension LayoutSpec {
     }
 
     do {
-      if let specV2 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 14,
+      if let specV2 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 15,
                                                    expectedVersion: PlayerSaveState.specPrefStringVersion2,
                                                    targetObjName: "LayoutSpec", parsingFunc) {
         return specV2

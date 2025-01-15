@@ -23,16 +23,16 @@
             <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
             <subviews>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="14p-ym-5zO" userLabel="PluginTabs View">
-                    <rect key="frame" x="0.0" y="236" width="480" height="36"/>
+                    <rect key="frame" x="0.0" y="272" width="480" height="0.0"/>
                     <subviews>
                         <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Pm4-0T-kmR" userLabel="PluginsTabs Scroll View">
-                            <rect key="frame" x="0.0" y="1" width="480" height="35"/>
+                            <rect key="frame" x="0.0" y="0.0" width="480" height="0.0"/>
                             <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Yei-VT-MqY" userLabel="PluginsTabs Clip View">
-                                <rect key="frame" x="0.0" y="0.0" width="480" height="35"/>
+                                <rect key="frame" x="0.0" y="0.0" width="480" height="0.0"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view id="TS6-4w-7Ln">
-                                        <rect key="frame" x="0.0" y="0.0" width="465" height="20"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="465" height="0.0"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     </view>
                                 </subviews>
@@ -54,16 +54,18 @@
                     <constraints>
                         <constraint firstAttribute="trailing" secondItem="Pm4-0T-kmR" secondAttribute="trailing" id="Bqj-2w-lIb"/>
                         <constraint firstItem="mMj-ge-Z7V" firstAttribute="leading" secondItem="Pm4-0T-kmR" secondAttribute="leading" id="FZq-wV-C0E"/>
-                        <constraint firstAttribute="height" constant="36" identifier="pluginTabsViewHeightConstraint" id="K2P-ll-mem"/>
+                        <constraint firstItem="Pm4-0T-kmR" firstAttribute="height" secondItem="14p-ym-5zO" secondAttribute="height" id="HWA-uS-zRx"/>
+                        <constraint firstAttribute="height" identifier="pluginTabsViewHeightConstraint" id="K2P-ll-mem"/>
                         <constraint firstItem="Pm4-0T-kmR" firstAttribute="leading" secondItem="14p-ym-5zO" secondAttribute="leading" id="Kjr-h3-z7b"/>
                         <constraint firstAttribute="bottom" secondItem="mMj-ge-Z7V" secondAttribute="bottom" id="MAI-ZV-kcb"/>
-                        <constraint firstItem="mMj-ge-Z7V" firstAttribute="top" secondItem="Pm4-0T-kmR" secondAttribute="bottom" id="YnX-sq-y2F"/>
+                        <constraint firstItem="mMj-ge-Z7V" firstAttribute="top" secondItem="14p-ym-5zO" secondAttribute="bottom" constant="-1" id="YnX-sq-y2F"/>
                         <constraint firstItem="mMj-ge-Z7V" firstAttribute="trailing" secondItem="Pm4-0T-kmR" secondAttribute="trailing" id="txU-Ca-SkX"/>
                         <constraint firstAttribute="top" secondItem="Pm4-0T-kmR" secondAttribute="top" id="uWb-ow-5O0"/>
+                        <constraint firstAttribute="bottom" secondItem="Pm4-0T-kmR" secondAttribute="bottom" id="ucd-JQ-lPK"/>
                     </constraints>
                 </customView>
-                <customView translatesAutoresizingMaskIntoConstraints="NO" id="XYL-E3-hi6">
-                    <rect key="frame" x="0.0" y="0.0" width="480" height="236"/>
+                <customView verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="XYL-E3-hi6">
+                    <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
                 </customView>
             </subviews>
             <constraints>

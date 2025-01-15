@@ -557,6 +557,12 @@ class PlayerCore: NSObject {
     /// This will create & add the `GLVideoLayer` if it was not already init:
     videoView.wantsLayer = true
     loadPlugins()
+    windowController.pluginView.updatePluginTabs()
+    if case .restoring(let priorState) = windowController.sessionState,
+       let selectedPluginTabID = priorState.layoutSpec?.moreSidebarState.selectedPluginTabID {
+      // Restore selected plugin tab
+      windowController.pluginView.pleaseSwitchToTab(selectedPluginTabID)
+    }
     if isAudioOnly {
       log.debug("Player is audio only. Will not init video")
     } else {

@@ -62,8 +62,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   private func updateVerticalConstraints() {
     // may not be available until after load
-    self.buttonTopConstraint?.animateToConstant(downshift)
-    //    self.tabHeightConstraint?.animateToConstant(tabHeight)
+    buttonTopConstraint?.animateToConstant(downshift)
+    pluginTabsViewHeightConstraint.constant = hasTab ? tabHeight + 36 : 0
     view.layoutSubtreeIfNeeded()
   }
 
@@ -92,7 +92,6 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   func updatePluginTabs() {
     guard isViewLoaded else { return }
-    var added = false
     pluginTabsStackView.arrangedSubviews.forEach {
       pluginTabsStackView.removeArrangedSubview($0)
     }
@@ -105,11 +104,14 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       tab.pluginSidebarView = self
       pluginTabsStackView.addArrangedSubview(tab.view)
       pluginTabs[$0.plugin.identifier] = tab
-      added = true
     }
-    pluginTabsView.isHidden = !added
-    pluginTabsViewHeightConstraint.constant = added ? 36 : 0
+    pluginTabsView.isHidden = !hasTab
+    pluginTabsViewHeightConstraint.constant = hasTab ? tabHeight + 36 : 0
     updateTabActiveStatus()
+  }
+
+  private var hasTab: Bool {
+    return !pluginTabs.isEmpty
   }
 
   private func updateTabActiveStatus() {
@@ -120,12 +122,27 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   private func switchToTab(_ tab: String?) {
     guard isViewLoaded else { return }
+    var tab = tab
+    // If tab is nil, select first plugin (if any available)
+    if tab == nil || tab == Sidebar.Tab.nullPluginID, let firstPlugin = player.plugins.first {
+      tab = firstPlugin.plugin.identifier
+    }
 
     if let plugin = player.plugins.first(where: { $0.plugin.identifier == tab }) {
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
       Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": plugin.sidebarTabView])
       currentPluginID = tab
+    }
+    // Update current layout so that new tab can be saved.
+    // Put inside task to protect from race
+    windowController.animationPipeline.submitInstantTask{ [self] in
+      let prevLayout = windowController.currentLayout
+      // TODO: create a clone() method for SidebarMiscState & use it instead
+      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
+                                                      selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
+                                                      selectedPluginTabID: currentPluginID ?? Sidebar.Tab.nullPluginID)
+      windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
     updateTabActiveStatus()
   }

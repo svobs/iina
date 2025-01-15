@@ -125,10 +125,11 @@ struct Sidebar {
   struct SidebarMiscState {
     let playlistSidebarWidth: Int
     let selectedSubSegment: Int
+    let selectedPluginTabID: String
 
     static func fromDefaultPrefs() -> SidebarMiscState {
       return SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
-                              selectedSubSegment: 0)
+                              selectedSubSegment: 0, selectedPluginTabID: Sidebar.Tab.nullPluginID)
     }
   }
 
@@ -939,7 +940,8 @@ extension PlayerWindowController {
         // Update currentLayout with new playlist width
         let oldSidebarState = currentLayout.spec.moreSidebarState
         let newSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
-                                                       selectedSubSegment: oldSidebarState.selectedSubSegment)
+                                                       selectedSubSegment: oldSidebarState.selectedSubSegment,
+                                                       selectedPluginTabID: oldSidebarState.selectedPluginTabID)
         let newSpec = currentLayout.spec.clone(moreSidebarState: newSidebarState)
         currentLayout = LayoutState.buildFrom(newSpec)
       }
@@ -1039,7 +1041,9 @@ extension PlayerWindowController {
     // Update layout also. Do this inside the animation pipeline to prevent races
     animationPipeline.submitInstantTask{ [self] in
       let prevLayout = self.currentLayout
-      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth), selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment)
+      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth),
+                                                      selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
+                                                      selectedPluginTabID: prevLayout.spec.moreSidebarState.selectedPluginTabID)
       self.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
 
