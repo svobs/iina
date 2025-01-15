@@ -489,15 +489,22 @@ extension PlayerWindowController {
       }
     }
 
+    /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
+    if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
+      /// Finish closing (if closing)
+      removeSidebarTabGroupView(group: tabToHide.group)
+    }
+    if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
+      /// Finish closing (if closing).
+      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
+      removeSidebarTabGroupView(group: tabToHide.group)
+    }
+
     // - Leading Sidebar
-    /// Check whether opening *BEFORE* checking for closing: the same transition can be doing both
     if transition.isShowingLeadingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
                               parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
-      /// Finish closing (if closing)
-      removeSidebarTabGroupView(group: tabToHide.group)
     } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
               transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
               transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
@@ -506,15 +513,10 @@ extension PlayerWindowController {
     }
 
     // - Trailing Sidebar
-    /// Check whether opening *BEFORE* checking for closing: the same transition can be doing both
     if transition.isShowingTrailingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                               parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
-      /// Finish closing (if closing).
-      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-      removeSidebarTabGroupView(group: tabToHide.group)
     } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
               transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
               transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
@@ -1591,8 +1593,15 @@ extension PlayerWindowController {
   /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
   private func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
     log.verbose("Removing sidebar tab group view for \(group)")
-    let viewController = group == .playlist ? playlistView : quickSettingView
-    /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
+    let viewController: NSViewController
+    switch group {
+    case .playlist:
+      viewController = playlistView
+    case .settings:
+      viewController = quickSettingView
+    case .plugins:
+      viewController = pluginView
+    }
     viewController.view.removeFromSuperview()
   }
 
