@@ -26,20 +26,21 @@ extension PlayerWindowController {
   /// Do not use because it interferes with animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    guard !isAnimatingLayoutTransition else { return requestedSize }
+    guard !isAnimatingLayoutTransition else {
+      return requestedSize
+    }
+
+    guard !isDragging else {
+      log.verbose{"WinWillResize: denying; currently dragging. Will stay at \(window.frame.size)"}
+      return window.frame.size
+    }
 
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) isAnimatingTx=\(isAnimatingLayoutTransition.yn) lockViewPort=\(lockViewportToVideoSize.yn) denyNext=\(denyNextWindowResize.yn)"}
+    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) isAnimatingTx=\(isAnimatingLayoutTransition.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
     return IINAAnimation.disableAnimation { [self] in
       videoView.videoLayer.enterAsynchronousMode()
-
-      if !currentLayout.isFullScreen && denyNextWindowResize {
-        log.verbose{"WinWillResize: denying this resize. Will stay at \(window.frame.size)"}
-        denyNextWindowResize = false
-        return window.frame.size
-      }
 
       if lockViewportToVideoSize && inLiveResize {
         /// Notes on the trickiness of live window resize:
