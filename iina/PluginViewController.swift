@@ -10,7 +10,6 @@ import Cocoa
 
 class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private var downshift: CGFloat = 0
-  private var tabHeight: CGFloat = 0
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PluginViewController")
@@ -53,17 +52,16 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   }
 
   func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
-    if self.downshift != downshift || self.tabHeight != tabHeight {
+    // tabHeight is not used by this class. It uses its own fixed tab height
+    if self.downshift != downshift {
       self.downshift = downshift
-      self.tabHeight = tabHeight
       updateVerticalConstraints()
     }
   }
 
   private func updateVerticalConstraints() {
-    // may not be available until after load
+    // may not be available until after load; use Optional chaining
     buttonTopConstraint?.animateToConstant(downshift)
-    pluginTabsViewHeightConstraint.constant = hasTab ? tabHeight + 36 : 0
     view.layoutSubtreeIfNeeded()
   }
 
@@ -106,7 +104,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       pluginTabs[$0.plugin.identifier] = tab
     }
     pluginTabsView.isHidden = !hasTab
-    pluginTabsViewHeightConstraint.constant = hasTab ? tabHeight + 36 : 0
+    pluginTabsViewHeightConstraint.constant = hasTab ? 36 : 0
     updateTabActiveStatus()
   }
 

@@ -832,6 +832,7 @@ extension PlayerWindowController {
     log.verbose("Updating sidebars, downshift: \(downshift), tabHeight: \(tabHeight)")
     quickSettingView.setVerticalConstraints(downshift: downshift, tabHeight: tabHeight)
     playlistView.setVerticalConstraints(downshift: downshift, tabHeight: tabHeight)
+    pluginView.setVerticalConstraints(downshift: downshift, tabHeight: tabHeight)
   }
 
   // MARK: - Sidebar resize via drag
