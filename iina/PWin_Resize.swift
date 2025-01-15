@@ -30,7 +30,7 @@ extension PlayerWindowController {
       return requestedSize
     }
 
-    guard !isDragging else {
+    guard !denyWindowResize else {
       log.verbose{"WinWillResize: denying; currently dragging. Will stay at \(window.frame.size)"}
       return window.frame.size
     }

@@ -140,6 +140,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return isVisible || isMinimized
   }
 
+  var denyWindowResize: Bool = false
+
   var isClosing: Bool {
     return player.state.isAtLeast(.stopping)
   }
