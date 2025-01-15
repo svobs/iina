@@ -42,6 +42,10 @@ class VideoView: NSView {
     super.init(frame: frame)
 
     translatesAutoresizingMaskIntoConstraints = false
+    setContentCompressionResistancePriority(.required, for: .horizontal)
+    setContentCompressionResistancePriority(.required, for: .vertical)
+    setContentHuggingPriority(.required, for: .horizontal)
+    setContentHuggingPriority(.required, for: .vertical)
 
     // dragging init
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])

@@ -536,21 +536,18 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
           // We have enough space to realign video to fit within sidebars
           leadingMargin += leadingSidebarWidth
           trailingMargin += trailingSidebarWidth
-          unusedWidth = unusedWidth - leadingSidebarWidth - trailingSidebarWidth
-          let leadingSidebarDeficit = leadingSidebarClearance > 0 ? 0 : -leadingSidebarClearance
-          let trailingSidebarDeficit = trailingSidebarClearance > 0 ? 0 : -trailingSidebarClearance
-
-          if trailingSidebarDeficit > 0 {
+          unusedWidth -= leadingSidebarWidth - trailingSidebarWidth
+          if trailingSidebarClearance < 0 {
             leadingMargin += unusedWidth
-          } else if leadingSidebarDeficit > 0 {
+          } else if leadingSidebarClearance < 0 {
             trailingMargin += unusedWidth
           }
         } else if leadingSidebarWidth == 0 {
-          // Not enough margin to fit both sidebar and video, + only trailing sidebar visible.
+          // Not enough margin to fit both sidebar and video, & only trailing sidebar visible.
           // Allocate all margin to trailing sidebar
           trailingMargin += unusedWidth
         } else if trailingSidebarWidth == 0 {
-          // Not enough margin to fit both sidebar and video, + only leading sidebar visible.
+          // Not enough margin to fit both sidebar and video, & only leading sidebar visible.
           // Allocate all margin to leading sidebar
           leadingMargin += unusedWidth
         } else {
@@ -579,17 +576,17 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
 
       // Round to integers for a smoother animation
-      leadingMargin = leadingMargin.rounded()
-      trailingMargin = trailingMargin.rounded()
-      let excessWidth = leadingMargin + trailingMargin - unusedWidth
-      if excessWidth != 0 {
-        leadingMargin -= excessWidth
-      }
+      let leadingMarginRounded = leadingMargin.rounded()
+      let trailingMarginRounded = trailingMargin.rounded()
+      let excessWidth = leadingMarginRounded + trailingMarginRounded - leadingMargin - trailingMargin
+      leadingMargin = leadingMarginRounded
+      trailingMargin = trailingMarginRounded
+      leadingMargin -= excessWidth
     }
 
-    Logger.log.trace {
+    Logger.log.verbose {
       let remainingWidthForVideo = viewportSize.width - (leadingMargin + trailingMargin)
-      return "[geo] Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)"
+      return "[geo] Viewport width=\(viewportSize.width): Sidebars=[lead:\(insideBars.leading) trail:\(insideBars.trailing)] Margins=[lead:\(leadingMargin) trail:\(trailingMargin)] remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)"
     }
     let unusedHeight = viewportSize.height - videoSize.height
     var topMargin = (unusedHeight * 0.5).rounded()
@@ -601,6 +598,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let computedMargins = MarginQuad(top: topMargin, trailing: trailingMargin,
                                   bottom: btmMargin, leading: leadingMargin)
     assert(videoSize.height + computedMargins.top + computedMargins.bottom == viewportSize.height, "Bad math! VideoSize=\(videoSize) + Margins=\(computedMargins) != ViewportSize=\(viewportSize)")
+    assert(videoSize.width + computedMargins.leading + computedMargins.trailing == viewportSize.width, "Bad math! VideoSize=\(videoSize) + Margins=\(computedMargins) != ViewportSize=\(viewportSize)")
     return computedMargins
   }
 

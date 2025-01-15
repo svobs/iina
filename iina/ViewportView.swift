@@ -14,6 +14,10 @@ class ViewportView: NSView {
   required init?(coder: NSCoder) {
     super.init(coder: coder)
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
+    setContentCompressionResistancePriority(.required, for: .horizontal)
+    setContentCompressionResistancePriority(.required, for: .vertical)
+    setContentHuggingPriority(.required, for: .horizontal)
+    setContentHuggingPriority(.required, for: .vertical)
   }
 
   private var playerWindowController: PlayerWindowController? {
