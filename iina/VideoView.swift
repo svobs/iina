@@ -236,14 +236,23 @@ class VideoView: NSView {
       log.verbose("VideoView: zeroing out constraints")
     }
 
+    CATransaction.begin()
     rebuildConstraints(top: margins.top,
                        trailing: -margins.trailing,
                        bottom: -margins.bottom,
                        leading: margins.leading,
                        aspectMultiplier: videoAspect,
                        eqIsActive: true, eqPriority: eqPriority,
-                       centerIsActive: true, centerPriority: .defaultLow,
+                       centerIsActive: true, centerPriority: .minimum,
                        aspectIsActive: videoAspect > 0.0, aspectPriority: aspectPriority)
+    // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
+    // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
+    // and even though the View Debugger shows it is not distorted...
+    CATransaction.commit()
+    self.needsUpdateConstraints = true
+    self.needsLayout = true
+    superview?.updateConstraints()
+    superview?.layout()
   }
 
   // MARK: - Mouse events

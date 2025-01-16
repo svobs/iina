@@ -529,19 +529,49 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         let freeViewportWidthTotal = viewportSize.width - videoSize.width - leadingSidebarWidth - trailingSidebarWidth
 
         if leadingSidebarClearance >= 0 && trailingSidebarClearance >= 0 {
-          // Easy case: just center the video in the viewport:
+          /*
+           Ideal case: there is enough width to center video in viewport while clearing both inside sidebars.
+           Just center the video in the viewport. L==T (+/- 1pt)
+
+           Leading margin (L)           Window Center          Trailing margin (T)
+           |◄────────────────────►|             |             |◄────────────────────►|
+           ┌───────────┬────────────────────────|─────────────────┬──────────────────┐
+           │           │                        |                 │                  │
+           │           │          ┌─────────────|─────────────┐   │                  │
+           │Leading    │          │                           │   │ Trailing         │
+           │ InsideBar │          │         VideoView         │   │  InsideBar       │
+           │           │          │    (centered in window)   │   │                  │
+           │           │          │                           │   │                  │
+           │           │          │                           │   │                  │
+           │           │          └─────────────|─────────────┘   │                  │
+           │           │                        |                 │                  │
+           └───────────┴────────────────────────|─────────────────┴──────────────────┘
+           |◄─────────────────────────────Viewport─width────────────────────────────►|
+
+           */
           leadingMargin += (unusedWidth * 0.5)
           trailingMargin += (unusedWidth * 0.5)
         } else if freeViewportWidthTotal >= 0 {
           // We have enough space to realign video to fit within sidebars
           leadingMargin += leadingSidebarWidth
           trailingMargin += trailingSidebarWidth
-          unusedWidth -= leadingSidebarWidth - trailingSidebarWidth
-          if trailingSidebarClearance < 0 {
-            leadingMargin += unusedWidth
-          } else if leadingSidebarClearance < 0 {
-            trailingMargin += unusedWidth
+          unusedWidth = unusedWidth - (leadingSidebarWidth + trailingSidebarWidth)
+          let differenceBetweenLeadingAndTrailing = leadingSidebarWidth - trailingSidebarWidth
+          if differenceBetweenLeadingAndTrailing > 0 {
+            // Leading is wider. Give extra width to trailing to ideally even them out
+            let extraForTrailing = min(unusedWidth, differenceBetweenLeadingAndTrailing)
+            trailingMargin += extraForTrailing
+            unusedWidth -= extraForTrailing
+          } else if differenceBetweenLeadingAndTrailing < 0 {
+            // Trailing is wider. Give extra width to leading to ideally even them out
+            let extraForLeading = min(unusedWidth, -differenceBetweenLeadingAndTrailing)
+            leadingMargin += extraForLeading
+            unusedWidth -= extraForLeading
           }
+          // If sidebars are equal widths, then margins are equal. Now just distribute remaining space equally to keep video centered.
+          leadingMargin += (unusedWidth * 0.5)
+          trailingMargin += (unusedWidth * 0.5)
+
         } else if leadingSidebarWidth == 0 {
           // Not enough margin to fit both sidebar and video, & only trailing sidebar visible.
           // Allocate all margin to trailing sidebar
@@ -576,12 +606,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
 
       // Round to integers for a smoother animation
-      let leadingMarginRounded = leadingMargin.rounded()
+      let leadingMarginRounded = leadingMargin.rounded(.down)
       let trailingMarginRounded = trailingMargin.rounded()
       let excessWidth = leadingMarginRounded + trailingMarginRounded - leadingMargin - trailingMargin
+      assert(excessWidth == 1.0 || excessWidth == 0.0, "Excess width (\(excessWidth)) cardinality should be either 0.0 or 1.0! LeadingMargin=\(leadingMargin) TrailingMargin=\(trailingMargin)")
       leadingMargin = leadingMarginRounded
       trailingMargin = trailingMarginRounded
-      leadingMargin -= excessWidth
+      trailingMargin -= excessWidth
     }
 
     Logger.log.verbose {
@@ -597,8 +628,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
     let computedMargins = MarginQuad(top: topMargin, trailing: trailingMargin,
                                   bottom: btmMargin, leading: leadingMargin)
-    assert(videoSize.height + computedMargins.top + computedMargins.bottom == viewportSize.height, "Bad math! VideoSize=\(videoSize) + Margins=\(computedMargins) != ViewportSize=\(viewportSize)")
-    assert(videoSize.width + computedMargins.leading + computedMargins.trailing == viewportSize.width, "Bad math! VideoSize=\(videoSize) + Margins=\(computedMargins) != ViewportSize=\(viewportSize)")
+    assert(videoSize.height + computedMargins.totalHeight == viewportSize.height, "Bad VP margin height! V-Size=\(videoSize) + VP-width(computed)=\(computedMargins) != VP-width(actual)=\(viewportSize.height)")
+    assert(videoSize.width + computedMargins.totalWidth == viewportSize.width,
+           "Bad VP margin width! V-width=\(videoSize.width) + VP-Margins[leading=\(computedMargins.leading), trailing=\(computedMargins.trailing)] → VP-width(computed)=\(videoSize.width + computedMargins.totalWidth) != VP-width(actual)=\(viewportSize.width)")
     return computedMargins
   }
 

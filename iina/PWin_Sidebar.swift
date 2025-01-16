@@ -68,8 +68,10 @@ struct Sidebar {
     case video
     case audio
     case sub
-    /// Plugin tabs are serialized in the format `"plugin:\(id)"`, but `id` can be empty to signify no plugin.
-    /// When deserializing, an empty plugin ID string (`nullPluginID`) should be interpreted as `nil`.
+
+    case anyPlugin
+    /// Plugin tabs are serialized in the format `"plugin:\(id)"`.
+    /// When deserializing, an empty plugin ID string ("", i.e. `nullPluginID`) will be interpreted as `.anyPlugin`.
     case plugin(id: String)
 
     init?(name: String?) {
@@ -89,9 +91,12 @@ struct Sidebar {
         self = .sub
       case "nil":
         return nil
+      case "plugin":
+        self = .anyPlugin
       default:
         if name.hasPrefix("plugin:") {
-          self = .plugin(id: String(name.dropFirst(7)))
+          let pluginID = name.dropFirst(7)
+          self = .plugin(id: String(pluginID))
         } else {
           return nil
         }
@@ -105,6 +110,7 @@ struct Sidebar {
       case .video: return "video"
       case .audio: return "audio"
       case .sub: return "sub"
+      case .anyPlugin: return "plugin"
       case .plugin(let id): return "plugin:\(id)"
       }
     }
@@ -115,7 +121,7 @@ struct Sidebar {
         return .playlist
       case .video, .audio, .sub:
         return .settings
-      case .plugin(id: _):
+      case .plugin(id: _), .anyPlugin:
         return .plugins
       }
     }
@@ -223,7 +229,7 @@ struct Sidebar {
       case .settings:
         return Sidebar.Tab.video
       case .plugins:
-        return nil
+        return Sidebar.Tab.anyPlugin
       }
     }
 
@@ -263,11 +269,12 @@ extension PlayerWindowController {
     animationPipeline.submitInstantTask { [self] in
       guard currentLayout.canShowSidebars else { return }
       let sidebar = currentLayout.sidebar(withID: sidebarID)
-      log.verbose("Toggling visibility of sidebar: \(sidebarID) (isVisible: \(sidebar.isVisible))")
+      let isCurrentlyVisible = sidebar.isVisible
+      log.verbose{"Toggling visibility of sidebar \(sidebarID): isVisible: \(isCurrentlyVisible.yn) → \((!isCurrentlyVisible).yn))"}
       // Do nothing if sidebar has no configured tabs
       guard let tab = sidebar.defaultTabToShow else { return }
 
-      if sidebar.isVisible {
+      if isCurrentlyVisible {
         changeVisibility(forTab: tab, to: false)
       } else {
         changeVisibility(forTab: tab, to: true)
@@ -290,7 +297,7 @@ extension PlayerWindowController {
       }
     case .plugins:
       let pluginID = pluginView.currentPluginID
-      let tab = Sidebar.Tab.plugin(id: pluginID ?? Sidebar.Tab.nullPluginID)
+      let tab: Sidebar.Tab = pluginID == Sidebar.Tab.nullPluginID ? .anyPlugin : Sidebar.Tab.plugin(id: pluginID)
       showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
     }
   }

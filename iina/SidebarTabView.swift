@@ -12,6 +12,7 @@ import Cocoa
 class SidebarTabView: NSViewController {
   var name: String!
   var pluginID: String!
+  /// The parent sidebar of this tab
   weak var pluginSidebarView: PluginViewController!
 
   @IBOutlet weak var label: NSTextField!
