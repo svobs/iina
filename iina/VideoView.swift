@@ -160,7 +160,7 @@ class VideoView: NSView {
   private func rebuildConstraints(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0,
                                   aspectMultiplier: CGFloat,
                                   eqIsActive: Bool = true, eqPriority: NSLayoutConstraint.Priority,
-                                  centerIsActive: Bool = true, centerPriority: NSLayoutConstraint.Priority,
+                                  hCenterActive: Bool, vCenterActive: Bool, centerPriority: NSLayoutConstraint.Priority,
                                   aspectIsActive: Bool = true, aspectPriority: NSLayoutConstraint.Priority) {
     guard let superview else {
       // Should not get here
@@ -191,11 +191,16 @@ class VideoView: NSView {
     newCenterY.priority = centerPriority
     newAspect.priority = aspectPriority
 
+    let vPriority = eqPriority
+    let hPriority = eqPriority
+//    let vPriority: NSLayoutConstraint.Priority = (top == 0 && bottom == 0) ? .required : eqPriority
+//    let hPriority: NSLayoutConstraint.Priority = (vPriority.rawValue != 1000 && leading == 0 && trailing == 0) ? .required : eqPriority
+
     let newConstraints = VideoViewConstraints(
-      eqOffsetTop: addOrUpdate(existing?.eqOffsetTop, .top, .equal, top, eqPriority),
-      eqOffsetTrailing: addOrUpdate(existing?.eqOffsetTrailing, .trailing, .equal, trailing, eqPriority),
-      eqOffsetBottom: addOrUpdate(existing?.eqOffsetBottom, .bottom, .equal, bottom, eqPriority),
-      eqOffsetLeading: addOrUpdate(existing?.eqOffsetLeading, .leading, .equal, leading, eqPriority),
+      eqOffsetTop: addOrUpdate(existing?.eqOffsetTop, .top, .equal, top, vPriority),
+      eqOffsetTrailing: addOrUpdate(existing?.eqOffsetTrailing, .trailing, .equal, trailing, hPriority),
+      eqOffsetBottom: addOrUpdate(existing?.eqOffsetBottom, .bottom, .equal, bottom, vPriority),
+      eqOffsetLeading: addOrUpdate(existing?.eqOffsetLeading, .leading, .equal, leading, hPriority),
 
       centerX: newCenterX,
       centerY: newCenterY,
@@ -208,8 +213,8 @@ class VideoView: NSView {
     newConstraints.eqOffsetTrailing.isActive = eqIsActive
     newConstraints.eqOffsetBottom.isActive = eqIsActive
     newConstraints.eqOffsetLeading.isActive = eqIsActive
-    newConstraints.centerX.isActive = centerIsActive
-    newConstraints.centerY.isActive = centerIsActive
+    newConstraints.centerX.isActive = hCenterActive
+    newConstraints.centerY.isActive = vCenterActive
     newConstraints.aspectRatio.isActive = aspectIsActive
   }
 
@@ -222,9 +227,12 @@ class VideoView: NSView {
     }
 
     let margins: MarginQuad
+    let eqPriority: NSLayoutConstraint.Priority = .init(499)
+
     let videoAspect: Double
     let aspectPriority: NSLayoutConstraint.Priority = .required
-    let eqPriority: NSLayoutConstraint.Priority = .init(499)
+
+    let centerPriority: NSLayoutConstraint.Priority = .minimum
 
     if let geometry, geometry.isVideoVisible {
       margins = geometry.viewportMargins
@@ -236,23 +244,19 @@ class VideoView: NSView {
       log.verbose("VideoView: zeroing out constraints")
     }
 
-    CATransaction.begin()
     rebuildConstraints(top: margins.top,
                        trailing: -margins.trailing,
                        bottom: -margins.bottom,
                        leading: margins.leading,
                        aspectMultiplier: videoAspect,
                        eqIsActive: true, eqPriority: eqPriority,
-                       centerIsActive: true, centerPriority: .minimum,
+                       hCenterActive: true, vCenterActive: true, centerPriority: centerPriority,
                        aspectIsActive: videoAspect > 0.0, aspectPriority: aspectPriority)
     // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
     // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
     // and even though the View Debugger shows it is not distorted...
-    CATransaction.commit()
-    self.needsUpdateConstraints = true
-    self.needsLayout = true
-    superview?.updateConstraints()
-    superview?.layout()
+    needsUpdateConstraints = true
+    needsLayout = true
   }
 
   // MARK: - Mouse events

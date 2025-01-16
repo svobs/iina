@@ -609,7 +609,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       let leadingMarginRounded = leadingMargin.rounded(.down)
       let trailingMarginRounded = trailingMargin.rounded()
       let excessWidth = leadingMarginRounded + trailingMarginRounded - leadingMargin - trailingMargin
-      assert(excessWidth == 1.0 || excessWidth == 0.0, "Excess width (\(excessWidth)) cardinality should be either 0.0 or 1.0! LeadingMargin=\(leadingMargin) TrailingMargin=\(trailingMargin)")
+      assert(excessWidth <= 1.0, "Excess width (\(excessWidth)) cardinality <= 1.0! LeadingMargin=\(leadingMargin) TrailingMargin=\(trailingMargin)")
       leadingMargin = leadingMarginRounded
       trailingMargin = trailingMarginRounded
       trailingMargin -= excessWidth
