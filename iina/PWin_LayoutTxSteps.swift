@@ -83,9 +83,12 @@ extension PlayerWindowController {
 
       if transition.outputLayout.isLegacyFullScreen {
         // stylemask
-        log.verbose{"[\(transition.name)] Entering legacy FS; removing window styleMask.titled"}
+        let hasTitled = window.styleMask.contains(.titled)
+        log.verbose{"[\(transition.name)] Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")"}
         if #available(macOS 10.16, *) {
-          window.styleMask.remove(.titled)
+          if hasTitled {
+            window.styleMask.remove(.titled)
+          }
           window.styleMask.insert(.borderless)
         } else {
           window.styleMask.insert(.fullScreen)

@@ -1142,7 +1142,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
 
-    log.verbose{"Updating presentation options for legacyFS=\(isEnteringLegacyFS ? "entering" : "exiting")"}
+    log.verbose{"Updating presentationOptions, legacyFS=\(isEnteringLegacyFS ? "entering" : "exiting")"}
     if isEnteringLegacyFS {
       // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
       // Fall back to checking this one
@@ -1151,10 +1151,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         return
       }
       NSApp.presentationOptions.insert(.autoHideMenuBar)
-      NSApp.presentationOptions.insert(.autoHideDock)
+      if !NSApp.presentationOptions.contains(.autoHideDock) {
+        NSApp.presentationOptions.insert(.autoHideDock)
+      }
     } else {
-      NSApp.presentationOptions.remove(.autoHideMenuBar)
-      NSApp.presentationOptions.remove(.autoHideDock)
+      if NSApp.presentationOptions.contains(.autoHideMenuBar) {
+        NSApp.presentationOptions.remove(.autoHideMenuBar)
+      }
+      if NSApp.presentationOptions.contains(.autoHideDock) {
+        NSApp.presentationOptions.remove(.autoHideDock)
+      }
     }
   }
 
@@ -1252,7 +1258,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         if currentLayout.isLegacyFullScreen {
           let layout = currentLayout
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose("WindowDidChangeScreen: updating legacy full screen window")
+          log.verbose{"WindowDidChangeScreen: updating legacy full screen window"}
           let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, video: geo.video)
           applyLegacyFSGeo(fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
@@ -1286,7 +1292,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       guard ticket == screenParamsChangedTicketCounter else { return }
 
       UIState.shared.updateCachedScreens()
-      log.verbose{"Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
+      log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
       videoView.refreshAllState()
 
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }

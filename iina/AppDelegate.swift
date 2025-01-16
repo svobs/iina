@@ -152,7 +152,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
         let window = noti.object as! NSWindow
         let screenID = window.screen?.screenID.quoted ?? "nil"
-        Logger.log("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
+        Logger.log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
       }))
 #endif
     } else {
@@ -734,6 +734,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return true
   }
 
+  /// Called when this application becomes the frontmost app (as indicated by its name appearing as a menu next to the Apple menu).
+  ///
+  /// Cases include: at app launch; whenever Dock icon is clicked; when an app window is ordered to front.
   func applicationDidBecomeActive(_ notfication: Notification) {
     // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
     // Make sure to add them again if they are missing:
@@ -742,9 +745,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player.windowController.updateTitle()
       }
     }
-  }
-
-  func applicationWillResignActive(_ notfication: Notification) {
   }
 
   // MARK: - Menu IBActions
