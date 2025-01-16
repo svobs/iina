@@ -141,6 +141,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var denyWindowResize: Bool = false
+  var denyNextWindowResize: Bool = false
 
   var isClosing: Bool {
     return player.state.isAtLeast(.stopping)
@@ -1195,11 +1196,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func windowDidChangeBackingProperties(_ notification: Notification) {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
+    // Do not allow MacOS to change the window size
+    denyNextWindowResize = true
   }
 
   func windowDidChangeScreenProfile(_ notification: Notification) {
     log.verbose("WindowDidChangeScreenProfile received")
     videoView.refreshContentsScale()
+    // Do not allow MacOS to change the window size
+    denyNextWindowResize = true
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -1231,6 +1236,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       $0 += 1
       return $0
     }
+
+    // Do not allow MacOS to change the window size
+    denyNextWindowResize = true
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidChangeScreenThrottlingDelay) { [self] in

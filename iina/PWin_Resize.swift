@@ -38,7 +38,13 @@ extension PlayerWindowController {
 
     let currentLayout = currentLayout
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) isAnimatingTx=\(isAnimatingLayoutTransition.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
+    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn) denyNext=\(denyNextWindowResize.yn)"}
+
+    if !currentLayout.isFullScreen && denyNextWindowResize {
+      log.verbose{"WinWillResize: denying this resize. Will stay at \(window.frame.size)"}
+      denyNextWindowResize = false
+      return window.frame.size
+    }
 
     videoView.videoLayer.enterAsynchronousMode()
 
