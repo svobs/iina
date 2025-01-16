@@ -1402,7 +1402,7 @@ struct Preference {
     .userOptions: [[String]](),
     .useUserDefinedConfDir: false,
     .userDefinedConfDir: "~/.config/mpv/",
-    .iinaEnablePluginSystem: true,
+    .iinaEnablePluginSystem: false,
 
       .keepOpenOnFileEnd: true,
     .quitWhenNoOpenedWindow: false,

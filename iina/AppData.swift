@@ -509,6 +509,7 @@ struct DebugConfig {
   static let enableScrollWheelDebug = false
 
   static let addHistoryWindowLoadingDelay = false
+  static let logAllScreenChangeEvents = false
 #endif
 }
 

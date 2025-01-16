@@ -1221,29 +1221,31 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
     guard let window = window, let screen = window.screen else { return }
+
+    // Do not allow MacOS to change the window size
+    denyNextWindowResize = true
+
     let displayId = screen.displayId
     guard videoView.currentDisplay != displayId else {
       log.trace{"WindowDidChangeScreen: no work needed; currentDisplayID \(displayId) is unchanged"}
       return
     }
-    animationPipeline.submitInstantTask({ [self] in
-      log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-      videoView.refreshAllState()
-      player.events.emit(.windowScreenChanged)
-    })
 
     let ticket: Int = $screenChangedTicketCounter.withLock {
       $0 += 1
       return $0
     }
 
-    // Do not allow MacOS to change the window size
-    denyNextWindowResize = true
-
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidChangeScreenThrottlingDelay) { [self] in
       guard ticket == screenChangedTicketCounter else { return }
       guard !isClosing else { return }
+
+      animationPipeline.submitInstantTask({ [self] in
+        log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
+        videoView.refreshAllState()
+        player.events.emit(.windowScreenChanged)
+      })
 
       // Legacy FS work below can be very slow. Try to avoid if possible
 

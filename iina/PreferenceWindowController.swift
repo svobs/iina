@@ -180,7 +180,7 @@ class PreferenceWindowController: IINAWindowController {
       PrefUtilsViewController(),
     ]
 
-    if IINA_ENABLE_PLUGIN_SYSTEM {
+    if Preference.bool(for: .iinaEnablePluginSystem) {
       viewControllers.insert(PrefPluginViewController(), at: 8)
     }
     self.viewControllers = viewControllers
@@ -240,7 +240,7 @@ class PreferenceWindowController: IINAWindowController {
       ["advanced", "PrefAdvancedViewController"],
       ["utilities", "PrefUtilsViewController"],
     ]
-    if IINA_ENABLE_PLUGIN_SYSTEM {
+    if Preference.bool(for: .iinaEnablePluginSystem) {
       viewMap.insert(["plugins", "PrefPluginViewController"], at: 8)
     }
     let labelDict = [String: [String: [String]]](

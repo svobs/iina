@@ -109,7 +109,7 @@ class JavascriptPlugin: NSObject {
   }
 
   static private func loadPlugins() -> [JavascriptPlugin] {
-    guard IINA_ENABLE_PLUGIN_SYSTEM else { return [] }
+    guard Preference.bool(for: .iinaEnablePluginSystem) else { return [] }
 
     Logger.log("Reading plugins from directory \"\(Utility.pluginsURL)\"")
     guard let contents = try?

@@ -9,8 +9,6 @@
 import Cocoa
 import Sparkle
 
-let IINA_ENABLE_PLUGIN_SYSTEM = Preference.bool(for: .iinaEnablePluginSystem)
-
 /** Tags for "Open File/URL" menu item when "Always open file in new windows" is off. Vice versa. */
 fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
@@ -149,11 +147,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, self.windowDidMiniaturize))
       ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, self.windowDidDeminiaturize))
 #if DEBUG
-      ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
-        let window = noti.object as! NSWindow
-        let screenID = window.screen?.screenID.quoted ?? "nil"
-        Logger.log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
-      }))
+      if DebugConfig.logAllScreenChangeEvents {
+        ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
+          let window = noti.object as! NSWindow
+          let screenID = window.screen?.screenID.quoted ?? "nil"
+          Logger.log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
+        }))
+      }
 #endif
     } else {
       // TODO: remove existing state...somewhere
