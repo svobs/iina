@@ -1226,7 +1226,7 @@ struct Preference {
     .softVolume: 100,
     .arrowButtonAction: ArrowButtonAction.speed.rawValue,
     .resetSpeedWhenPaused: false,
-    .useForceTouchForSpeedArrows: false,
+    .useForceTouchForSpeedArrows: true,
     .lockViewportToVideoSize: true,
     .moveWindowIntoVisibleScreenOnResize: true,
     .allowVideoToOverlapCameraHousing: false,

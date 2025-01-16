@@ -67,6 +67,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBOutlet weak var resetAspectPresetsButton: NSButton!
   @IBOutlet weak var resetCropPresetsButton: NSButton!
+  @IBOutlet weak var usePressureForArrowsButton: NSButton!
 
   @IBOutlet var sectionAppearanceView: NSView!
   @IBOutlet var sectionFullScreenView: NSView!
@@ -440,6 +441,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && Preference.isAdvancedEnabled
     if showTopBarTriggerContainerView.isHidden != !showTopBarTrigger {
       viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
+    }
+
+    let arrowButtonActionIsSpeed = arrowButtonAction == .speed
+    if usePressureForArrowsButton.isHidden != !arrowButtonActionIsSpeed {
+      viewHidePairs.append((usePressureForArrowsButton, !arrowButtonActionIsSpeed))
     }
 
     // Two-phase animation. First show/hide the subviews of each container view with no animation.
