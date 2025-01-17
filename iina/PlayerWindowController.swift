@@ -673,7 +673,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     }
     // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
-    videoView.refreshAllState()
+    videoView.refreshAllVideoState()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
     if !sessionState.isRestoring {  // this can mess up music mode restore
@@ -1243,7 +1243,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        videoView.refreshAllState()
+        videoView.refreshAllVideoState()
         player.events.emit(.windowScreenChanged)
       })
 
@@ -1303,7 +1303,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       UIState.shared.updateCachedScreens()
       log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
-      videoView.refreshAllState()
+      videoView.refreshAllVideoState()
 
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 

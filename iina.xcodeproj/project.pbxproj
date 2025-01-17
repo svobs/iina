@@ -319,6 +319,8 @@
 		D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13350942D06B7E200201623 /* GeometryTransform.swift */; };
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
 		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
+		D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */; };
+		D13A7F102D3A05D000840277 /* VideoView_Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0F2D3A05CB00840277 /* VideoView_Constraints.swift */; };
 		D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWin_GeoSet.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1491F872CEF543900DB0A06 /* SeekPreview.swift */; };
@@ -1849,6 +1851,8 @@
 		D13350942D06B7E200201623 /* GeometryTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTransform.swift; sourceTree = "<group>"; };
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
 		D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutTimer.swift; sourceTree = "<group>"; };
+		D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_DisplayLink.swift; sourceTree = "<group>"; };
+		D13A7F0F2D3A05CB00840277 /* VideoView_Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_Constraints.swift; sourceTree = "<group>"; };
 		D13E807D2C026A2700537954 /* PWin_GeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoSet.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D1491F872CEF543900DB0A06 /* SeekPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekPreview.swift; sourceTree = "<group>"; };
@@ -2773,6 +2777,8 @@
 			children = (
 				8407D13F1E3A684C0043895D /* GLVideoLayer.swift */,
 				84A0BAA01D2FAE7600BC8DA1 /* VideoView.swift */,
+				D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */,
+				D13A7F0F2D3A05CB00840277 /* VideoView_Constraints.swift */,
 				D1D4C7432B10B7D2003B09C2 /* ViewportView.swift */,
 			);
 			name = Video;
@@ -3339,6 +3345,7 @@
 				84D377631D6B66DE007F7396 /* MPVPlaylistItem.swift in Sources */,
 				D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */,
 				E3ECC89E1FE9A6D900BED8C7 /* MPVGeometryDef.swift in Sources */,
+				D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */,
 				D1D87E002924F92100737886 /* ConfTableStateManager.swift in Sources */,
 				E337D5E22411B64A00B5729A /* JavascriptPolyfill.swift in Sources */,
 				84E295C01E2CF9F5006388F7 /* ObjcUtils.m in Sources */,
@@ -3465,6 +3472,7 @@
 				D1FF157B2A7FAE9100C0CE86 /* UIState.swift in Sources */,
 				840AF5821E732C8F00F4AF92 /* JustXMLRPC.swift in Sources */,
 				E3513AF820EF79C500F8C347 /* PreferenceWindowController.swift in Sources */,
+				D13A7F102D3A05D000840277 /* VideoView_Constraints.swift in Sources */,
 				841A599D1E1FF5800079E177 /* SleepPreventer.swift in Sources */,
 				D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */,
 				84ED99FF1E009C8100A5159B /* PrefAdvancedViewController.swift in Sources */,

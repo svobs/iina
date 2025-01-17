@@ -27,17 +27,18 @@ class VideoView: NSView {
   // cached indicator to prevent unnecessary updates of DisplayLink
   var currentDisplay: UInt32?
 
-  private var displayIdleTimer: Timer?
+  var displayIdleTimer: Timer?
 
-  private var videoViewConstraints: VideoViewConstraints? = nil
+  var videoViewConstraints: VideoViewConstraints? = nil
 
-  private lazy var logHDR = Logger.makeSubsystem("hdr-\(player.label)")
+  private let logHDR: Logger.Subsystem
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
 
   // MARK: Init
 
   init(frame: CGRect, player: PlayerCore) {
+    self.logHDR = Logger.makeSubsystem("hdr-\(player.label)")
     self.player = player
     super.init(frame: frame)
 
@@ -59,7 +60,17 @@ class VideoView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  /// Called when property `self.wantsLayer` is set to `true`.
+  override func makeBackingLayer() -> CALayer {
+    let layer = GLVideoLayer(self)
+    return layer
+  }
+
   // MARK: De-Init
+
+  deinit {
+    uninit()
+  }
 
   /// Uninitialize this view.
   ///
@@ -81,182 +92,6 @@ class VideoView: NSView {
       player.mpv.mpvUninitRendering()
       log.verbose("VideoView uninit done")
     }
-  }
-
-  deinit {
-    uninit()
-  }
-
-  /// Called when property `self.wantsLayer` is set to `true`.
-  override func makeBackingLayer() -> CALayer {
-    let layer = GLVideoLayer(self)
-    return layer
-  }
-
-  override func draw(_ dirtyRect: NSRect) {
-    // do nothing
-  }
-
-  /// Returns `true` if screenScaleFactor changed
-  @discardableResult
-  func refreshContentsScale() -> Bool {
-    guard let window else { return false }
-    guard player.isActive else { return false }
-    let oldScaleFactor = videoLayer.contentsScale
-    let newScaleFactor = window.backingScaleFactor
-    if oldScaleFactor != newScaleFactor {
-      log.verbose("Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)")
-      videoLayer.contentsScale = newScaleFactor
-      return true
-    }
-    log.verbose("No change to window backingScaleFactor (\(oldScaleFactor))")
-    return false
-  }
-
-  func refreshAllState() {
-    // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.windowController.loaded, player.isActive && !player.isRestoring else { return }
-    updateDisplayLink()
-    refreshContentsScale()
-    refreshEdrMode()
-  }
-
-  // MARK: - Constraints
-
-  struct VideoViewConstraints {
-    let eqOffsetTop: NSLayoutConstraint
-    let eqOffsetTrailing: NSLayoutConstraint
-    let eqOffsetBottom: NSLayoutConstraint
-    let eqOffsetLeading: NSLayoutConstraint
-
-    // Use aspect ratio constraint + weak center constraints to improve the video resize animation when
-    // tiling the window while lockViewportToVideoSize is enabled.
-    // Previously the video would get squeezed during resize. This became more noticable with the introduction
-    // of MacOS Sequoia 15.0.
-    let centerX: NSLayoutConstraint
-    let centerY: NSLayoutConstraint
-    let aspectRatio: NSLayoutConstraint
-  }
-
-  var aspectMultiplier: CGFloat? {
-    return videoViewConstraints?.aspectRatio.multiplier
-  }
-
-  private func addOrUpdate(_ existingConstraint: NSLayoutConstraint?,
-                   _ attr: NSLayoutConstraint.Attribute, _ relation: NSLayoutConstraint.Relation, _ constant: CGFloat,
-                   _ priority: NSLayoutConstraint.Priority) -> NSLayoutConstraint {
-    let constraint: NSLayoutConstraint
-    if let existingConstraint {
-      constraint = existingConstraint
-      constraint.animateToConstant(constant)
-    } else {
-      constraint = NSLayoutConstraint(item: self, attribute: attr, relatedBy: relation, toItem: superview!,
-                                      attribute: attr, multiplier: 1, constant: constant)
-    }
-    constraint.priority = priority
-    return constraint
-  }
-
-  private func rebuildConstraints(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0,
-                                  aspectMultiplier: CGFloat,
-                                  eqIsActive: Bool = true, eqPriority: NSLayoutConstraint.Priority,
-                                  hCenterActive: Bool, vCenterActive: Bool, centerPriority: NSLayoutConstraint.Priority,
-                                  aspectIsActive: Bool = true, aspectPriority: NSLayoutConstraint.Priority) {
-    guard let superview else {
-      // Should not get here
-      log.error("Cannot rebuild constraints for videoView: it has no superview!")
-      return
-    }
-    var existing = self.videoViewConstraints
-    self.videoViewConstraints = nil
-
-    var newCenterX: NSLayoutConstraint
-    var newCenterY: NSLayoutConstraint
-    let newAspect: NSLayoutConstraint
-    if let existing {
-      newCenterX = existing.centerX
-      newCenterY = existing.centerY
-      if existing.aspectRatio.isActive != aspectIsActive || aspectMultiplier != existing.aspectRatio.multiplier {
-        existing.aspectRatio.isActive = false
-        newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
-      } else {
-        newAspect = existing.aspectRatio
-      }
-    } else {
-      newCenterX = centerXAnchor.constraint(equalTo: superview.centerXAnchor)
-      newCenterY = centerYAnchor.constraint(equalTo: superview.centerYAnchor)
-      newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
-    }
-    newCenterX.priority = centerPriority
-    newCenterY.priority = centerPriority
-    newAspect.priority = aspectPriority
-
-    let vPriority = eqPriority
-    let hPriority = eqPriority
-//    let vPriority: NSLayoutConstraint.Priority = (top == 0 && bottom == 0) ? .required : eqPriority
-//    let hPriority: NSLayoutConstraint.Priority = (vPriority.rawValue != 1000 && leading == 0 && trailing == 0) ? .required : eqPriority
-
-    let newConstraints = VideoViewConstraints(
-      eqOffsetTop: addOrUpdate(existing?.eqOffsetTop, .top, .equal, top, vPriority),
-      eqOffsetTrailing: addOrUpdate(existing?.eqOffsetTrailing, .trailing, .equal, trailing, hPriority),
-      eqOffsetBottom: addOrUpdate(existing?.eqOffsetBottom, .bottom, .equal, bottom, vPriority),
-      eqOffsetLeading: addOrUpdate(existing?.eqOffsetLeading, .leading, .equal, leading, hPriority),
-
-      centerX: newCenterX,
-      centerY: newCenterY,
-      aspectRatio: newAspect
-    )
-    existing = nil
-    videoViewConstraints = newConstraints
-
-    newConstraints.eqOffsetTop.isActive = eqIsActive
-    newConstraints.eqOffsetTrailing.isActive = eqIsActive
-    newConstraints.eqOffsetBottom.isActive = eqIsActive
-    newConstraints.eqOffsetLeading.isActive = eqIsActive
-    newConstraints.centerX.isActive = hCenterActive
-    newConstraints.centerY.isActive = vCenterActive
-    newConstraints.aspectRatio.isActive = aspectIsActive
-  }
-
-  func apply(_ geometry: PWinGeometry?) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    guard player.windowController.pip.status == .notInPIP else {
-      log.verbose("VideoView: currently in PiP; ignoring request to set viewportMargin constraints")
-      return
-    }
-
-    let margins: MarginQuad
-    let eqPriority: NSLayoutConstraint.Priority = .init(499)
-
-    let videoAspect: Double
-    let aspectPriority: NSLayoutConstraint.Priority = .required
-
-    let centerPriority: NSLayoutConstraint.Priority = .minimum
-
-    if let geometry, geometry.isVideoVisible {
-      margins = geometry.viewportMargins
-      videoAspect = geometry.videoViewAspect
-      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
-    } else {
-      margins = .zero
-      videoAspect = -1
-      log.verbose("VideoView: zeroing out constraints")
-    }
-
-    rebuildConstraints(top: margins.top,
-                       trailing: -margins.trailing,
-                       bottom: -margins.bottom,
-                       leading: margins.leading,
-                       aspectMultiplier: videoAspect,
-                       eqIsActive: true, eqPriority: eqPriority,
-                       hCenterActive: true, vCenterActive: true, centerPriority: centerPriority,
-                       aspectIsActive: videoAspect > 0.0, aspectPriority: aspectPriority)
-    // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
-    // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
-    // and even though the View Debugger shows it is not distorted...
-    needsUpdateConstraints = true
-    needsLayout = true
   }
 
   // MARK: - Mouse events
@@ -311,130 +146,34 @@ class VideoView: NSView {
     return player.openFromPasteboard(sender)
   }
 
-  // MARK: - Display link
+  // MARK: - Video State
 
-  /// Returns a [Core Video](https://developer.apple.com/documentation/corevideo) display link.
-  ///
-  /// If a display link has already been created then that link will be returned, otherwise a display link will be created and returned.
-  ///
-  /// - Note: Issue [#4520](https://github.com/iina/iina/issues/4520) reports a case where it appears the call to
-  ///[CVDisplayLinkCreateWithActiveCGDisplays](https://developer.apple.com/documentation/corevideo/1456863-cvdisplaylinkcreatewithactivecgd) is failing. In case that failure is
-  ///encountered again this method is careful to log any failure and include the [result code](https://developer.apple.com/documentation/corevideo/1572713-result_codes) in the alert displayed
-  /// by `Logger.fatal`.
-  /// - Returns: A [CVDisplayLink](https://developer.apple.com/documentation/corevideo/cvdisplaylink-k0k).
-  private func obtainDisplayLink() -> CVDisplayLink {
-    if let link = link { return link }
-    log.verbose("Obtaining DisplayLink")
-    let result = CVDisplayLinkCreateWithActiveCGDisplays(&link)
-    checkResult(result, "CVDisplayLinkCreateWithActiveCGDisplays")
-    guard let link = link else {
-      Logger.fatal("Cannot create display link: \(codeToString(result)) (\(result))")
-    }
-    return link
+  override func draw(_ dirtyRect: NSRect) {
+    // do nothing
   }
 
-  func startDisplayLink() {
-    let link = obtainDisplayLink()
+  /// Returns `true` if screenScaleFactor changed
+  @discardableResult
+  func refreshContentsScale() -> Bool {
+    guard let window else { return false }
+    guard player.isActive else { return false }
+    let oldScaleFactor = videoLayer.contentsScale
+    let newScaleFactor = window.backingScaleFactor
+    if oldScaleFactor != newScaleFactor {
+      log.verbose("Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)")
+      videoLayer.contentsScale = newScaleFactor
+      return true
+    }
+    log.verbose("No change to window backingScaleFactor (\(oldScaleFactor))")
+    return false
+  }
 
-    guard !CVDisplayLinkIsRunning(link) else { return }
+  func refreshAllVideoState() {
+    // Do not execute if hidden during restore! Some of these calls may cause the window to show
+    guard player.windowController.loaded, player.isActive && !player.isRestoring else { return }
     updateDisplayLink()
-
-    checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: self)),
-                "CVDisplayLinkSetOutputCallback")
-    checkResult(CVDisplayLinkStart(link), "CVDisplayLinkStart")
-    log.verbose("Started DisplayLink")
-  }
-
-  func stopDisplayLink() {
-    guard let link = link, CVDisplayLinkIsRunning(link) else { return }
-    checkResult(CVDisplayLinkStop(link), "CVDisplayLinkStop")
-    log.verbose("DisplayLink stopped")
-  }
-
-  /// This should be called at start or if the window has changed displays
-  func updateDisplayLink() {
-    guard let window = window, let link = link, let screen = window.screen else { return }
-    guard !player.isStopping else { return }
-    let displayId = screen.displayId
-
-    // Do nothing if on the same display
-    guard currentDisplay != displayId else {
-      log.trace{"No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged"}
-      return
-    }
-    log.verbose{"Updating DisplayLink for display: \(displayId)"}
-    currentDisplay = displayId
-
-    checkResult(CVDisplayLinkSetCurrentCGDisplay(link, displayId), "CVDisplayLinkSetCurrentCGDisplay")
-    let actualData = CVDisplayLinkGetActualOutputVideoRefreshPeriod(link)
-    let nominalData = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(link)
-    var actualFps: Double = 0
-
-    if (nominalData.flags & Int32(CVTimeFlags.isIndefinite.rawValue)) < 1 {
-      let nominalFps = Double(nominalData.timeScale) / Double(nominalData.timeValue)
-
-      if actualData > 0 {
-        actualFps = 1/actualData
-      }
-
-      if abs(actualFps - nominalFps) > 1 {
-        log.debug("Falling back to nominal display refresh rate: \(nominalFps) from \(actualFps)")
-        actualFps = nominalFps
-      }
-    } else {
-      log.debug("Falling back to standard display refresh rate: 60 from \(actualFps)")
-      actualFps = 60
-    }
-    player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
-
-    log.verbose("Done updating DisplayLink")
-  }
-
-  // MARK: - Reducing Energy Use
-
-  /// Starts the display link if it has been stopped in order to save energy.
-  func displayActive(temporary: Bool = false) {
-    log.trace("VideoView displayActive")
-    assert(DispatchQueue.isExecutingIn(.main))
-    if !temporary {
-      displayIdleTimer?.invalidate()
-    }
-    startDisplayLink()
-    if temporary {
-      displayIdle()
-    }
-  }
-
-  /// Reduces energy consumption when the display link does not need to be running.
-  ///
-  /// Adherence to energy efficiency best practices requires that IINA be absolutely idle when there is no reason to be performing any
-  /// processing, such as when playback is paused. The [CVDisplayLink](https://developer.apple.com/documentation/corevideo/cvdisplaylink-k0k)
-  /// is a high-priority thread that runs at the refresh rate of a display. If the display is not being updated it is desirable to stop the
-  /// display link in order to not waste energy on needless processing.
-  ///
-  /// However, IINA will pause playback for short intervals when performing certain operations. In such cases it does not make sense to
-  /// shutdown the display link only to have to immediately start it again. To avoid this a `Timer` is used to delay shutting down the
-  /// display link. If playback becomes active again before the timer has fired then the `Timer` will be invalidated and the display link
-  /// will not be shutdown.
-  ///
-  /// - Note: In addition to playback the display link must be running for operations such seeking, stepping and entering and leaving
-  ///         full screen mode.
-  func displayIdle() {
-    log.trace("VideoView displayIdle")
-    assert(DispatchQueue.isExecutingIn(.main))
-    displayIdleTimer?.invalidate()
-    // The time of 6 seconds was picked to match up with the time QuickTime delays once playback is
-    // paused before stopping audio. As mpv does not provide an event indicating a frame step has
-    // completed the time used must not be too short or will catch mpv still drawing when stepping.
-    displayIdleTimer = Timer(timeInterval: 6.0, target: self, selector: #selector(makeDisplayIdle), userInfo: nil, repeats: false)
-    // Not super picky about timeout; favor efficiency
-    displayIdleTimer?.tolerance = 0.5
-    RunLoop.current.add(displayIdleTimer!, forMode: .default)
-  }
-
-  @objc func makeDisplayIdle() {
-    videoLayer.exitAsynchronousMode()
-    videoLayer.videoView.stopDisplayLink()
+    refreshContentsScale()
+    refreshEdrMode()
   }
 
   // MARK: - Color
@@ -506,81 +245,7 @@ class VideoView: NSView {
     }
   }
 
-
-  // MARK: - Error Logging
-
-  /// Check the result of calling a [Core Video](https://developer.apple.com/documentation/corevideo) method.
-  ///
-  /// If the result code is not [kCVReturnSuccess](https://developer.apple.com/documentation/corevideo/kcvreturnsuccess)
-  /// then a warning message will be logged. Failures are only logged because previously the result was not checked. We want to see if
-  /// calls have been failing before taking any action other than logging.
-  /// - Note: Error checking was added in response to issue [#4520](https://github.com/iina/iina/issues/4520)
-  ///         where a core video method unexpectedly failed.
-  /// - Parameters:
-  ///   - result: The [CVReturn](https://developer.apple.com/documentation/corevideo/cvreturn)
-  ///           [result code](https://developer.apple.com/documentation/corevideo/1572713-result_codes)
-  ///           returned by the core video method.
-  ///   - method: The core video method that returned the result code.
-  private func checkResult(_ result: CVReturn, _ method: String) {
-    guard result != kCVReturnSuccess else { return }
-    log.warn("Core video method \(method) returned: \(codeToString(result)) (\(result))")
-  }
-
-  /// Return a string describing the given [CVReturn](https://developer.apple.com/documentation/corevideo/cvreturn)
-  ///           [result code](https://developer.apple.com/documentation/corevideo/1572713-result_codes).
-  ///
-  /// What is needed is an API similar to `strerr` for a `CVReturn` code. A search of Apple documentation did not find such a
-  /// method.
-  /// - Parameter code: The [CVReturn](https://developer.apple.com/documentation/corevideo/cvreturn)
-  ///           [result code](https://developer.apple.com/documentation/corevideo/1572713-result_codes)
-  ///           returned by a core video method.
-  /// - Returns: A description of what the code indicates.
-  private func codeToString(_ code: CVReturn) -> String {
-    switch code {
-    case kCVReturnSuccess:
-      return "Function executed successfully without errors"
-    case kCVReturnInvalidArgument:
-      return "At least one of the arguments passed in is not valid. Either out of range or the wrong type"
-    case kCVReturnAllocationFailed:
-      return "The allocation for a buffer or buffer pool failed. Most likely because of lack of resources"
-    case kCVReturnInvalidDisplay:
-      return "A CVDisplayLink cannot be created for the given DisplayRef"
-    case kCVReturnDisplayLinkAlreadyRunning:
-      return "The CVDisplayLink is already started and running"
-    case kCVReturnDisplayLinkNotRunning:
-      return "The CVDisplayLink has not been started"
-    case kCVReturnDisplayLinkCallbacksNotSet:
-      return "The output callback is not set"
-    case kCVReturnInvalidPixelFormat:
-      return "The requested pixelformat is not supported for the CVBuffer type"
-    case kCVReturnInvalidSize:
-      return "The requested size (most likely too big) is not supported for the CVBuffer type"
-    case kCVReturnInvalidPixelBufferAttributes:
-      return "A CVBuffer cannot be created with the given attributes"
-    case kCVReturnPixelBufferNotOpenGLCompatible:
-      return "The Buffer cannot be used with OpenGL as either its size, pixelformat or attributes are not supported by OpenGL"
-    case kCVReturnPixelBufferNotMetalCompatible:
-      return "The Buffer cannot be used with Metal as either its size, pixelformat or attributes are not supported by Metal"
-    case kCVReturnWouldExceedAllocationThreshold:
-      return """
-        The allocation request failed because it would have exceeded a specified allocation threshold \
-        (see kCVPixelBufferPoolAllocationThresholdKey)
-        """
-    case kCVReturnPoolAllocationFailed:
-      return "The allocation for the buffer pool failed. Most likely because of lack of resources. Check if your parameters are in range"
-    case kCVReturnInvalidPoolAttributes:
-      return "A CVBufferPool cannot be created with the given attributes"
-    case kCVReturnRetry:
-      return "a scan hasn't completely traversed the CVBufferPool due to a concurrent operation. The client can retry the scan"
-    default:
-      return "Unrecognized core video return code"
-    }
-  }
-}
-
-// MARK: - HDR
-
-extension VideoView {
+  // MARK: - HDR
 
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }
@@ -693,17 +358,3 @@ extension VideoView {
     return true
   }
 }
-
-fileprivate func displayLinkCallback(
-  _ displayLink: CVDisplayLink, _ inNow: UnsafePointer<CVTimeStamp>,
-  _ inOutputTime: UnsafePointer<CVTimeStamp>,
-  _ flagsIn: CVOptionFlags,
-  _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
-  _ context: UnsafeMutableRawPointer?) -> CVReturn {
-    let videoView = unsafeBitCast(context, to: VideoView.self)
-    videoView.$isUninited.withLock() { isUninited in
-      guard !isUninited else { return }
-      videoView.player.mpv.mpvReportSwap()
-    }
-    return kCVReturnSuccess
-  }
