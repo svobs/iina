@@ -1062,7 +1062,7 @@ extension PlayerWindowController {
 
     fadeableViewsAnimationState = .shown
     fadeableTopBarAnimationState = .shown
-    resetFadeTimer()
+    hideFadeableViewsTimer.restart()
 
     guard let window else { return }
 

@@ -204,12 +204,14 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow: mouseDown should have been handled by CropBoxView")
       return
     }
-    // record current mouse pos
-    mouseDownLocationInWindow = event.locationInWindow
-    // Start resize if applicable
-    let wasHandled = startResizingSidebar(with: event)
-    guard !wasHandled else { return }
 
+    // Start resize if applicable
+    if startResizingSidebar(with: event) {
+      return
+    }
+
+    // Else: could be dragging window.
+    mouseDownLocationInWindow = event.locationInWindow
     restartHideCursorTimer()
 
     PluginInputManager.handle(
@@ -470,7 +472,7 @@ extension PlayerWindowController {
         hideFadeableViews()
       } else {
         // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
-        resetFadeTimer()
+        hideFadeableViewsTimer.restart()
       }
     case .playSlider:
       hideSeekPreview()

@@ -85,9 +85,9 @@ extension PlayerWindowController {
 
     guard wantsTopBarVisible || fadeableViewsAnimationState == .hidden else {
       if restartFadeTimer {
-        resetFadeTimer()
+        hideFadeableViewsTimer.restart()
       } else {
-        hideFadeableViewsTimer?.invalidate()
+        hideFadeableViewsTimer.cancel()
       }
       return tasks
     }
@@ -98,7 +98,7 @@ extension PlayerWindowController {
       guard fadeableViewsAnimationState == .hidden || fadeableViewsAnimationState == .shown else { return }
       fadeableViewsAnimationState = .willShow
       player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
-      hideFadeableViewsTimer?.invalidate()
+      hideFadeableViewsTimer.cancel()
 
       for v in fadeableViews {
         v.animator().alphaValue = 1
@@ -134,7 +134,7 @@ extension PlayerWindowController {
         }
 
         if restartFadeTimer {
-          resetFadeTimer()
+          hideFadeableViewsTimer.restart()
         }
       }
 
@@ -182,7 +182,7 @@ extension PlayerWindowController {
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
       // Don't hide overlays when in PIP or when they are not actually shown
-      destroyFadeTimer()
+      hideFadeableViewsTimer.cancel()
       fadeableViewsAnimationState = .willHide
       fadeableTopBarAnimationState = .willHide
       player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
@@ -252,30 +252,6 @@ extension PlayerWindowController {
     if hideFadeableViews() {
       hideCursor()
     }
-  }
-
-  // MARK: - Fadeable Views Timer
-
-  func resetFadeTimer() {
-    // If timer exists, destroy first
-    hideFadeableViewsTimer?.invalidate()
-
-    // The fade timer is only used if auto-hide is enabled
-    guard Preference.bool(for: .enableControlBarAutoHide) else { return }
-
-    // Create new timer.
-    // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
-    var timeout = Double(Preference.float(for: .controlBarAutoHideTimeout))
-    if timeout < IINAAnimation.DefaultDuration {
-      timeout = IINAAnimation.DefaultDuration
-    }
-    let timer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self, selector: #selector(self.hideFadeableViewsAndCursor), userInfo: nil, repeats: false)
-    timer.tolerance = 0.05
-    hideFadeableViewsTimer = timer
-  }
-
-  func destroyFadeTimer() {
-    hideFadeableViewsTimer?.invalidate()
   }
 
   // MARK: - Cursor visibility

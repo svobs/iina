@@ -38,6 +38,7 @@ extension PlayerWindowController {
       .osdTextSize,
       .osdPosition,
       .enableOSC,
+      .controlBarAutoHideTimeout,
       .oscPosition,
       .oscOverlayStyle,
       .topBarPlacement,
@@ -204,6 +205,9 @@ extension PlayerWindowController {
 
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
       updateTitleBarAndOSC()
+    case .controlBarAutoHideTimeout:
+      hideFadeableViewsTimer.timeout = max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout)))
+      hideFadeableViewsTimer.restart()
     case .lockViewportToVideoSize:
       if let isLocked = newValue as? Bool, isLocked {
         log.debug("Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space")

@@ -240,7 +240,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       // noticeable, we only redraw if we are paused.
       forceDraw()
 
-      resetFadeTimer()
+      hideFadeableViewsTimer.restart()
 
       isWindowMiniaturizedDueToPip = false
       player.saveState()

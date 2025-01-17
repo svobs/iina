@@ -201,8 +201,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fadeableViewsInTopBar = Set<NSView>()
   var fadeableViewsAnimationState: UIAnimationState = .shown
   var fadeableTopBarAnimationState: UIAnimationState = .shown
+
   /// For auto hiding UI after a timeout.
-  var hideFadeableViewsTimer: Timer?
+  /// Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
+  let hideFadeableViewsTimer = TimeoutTimer(timeout: max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout))))
 
   // Other visibility
   var hideCursorTimer: Timer?

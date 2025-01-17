@@ -227,7 +227,6 @@ class PlayerCore: NSObject {
   /// Calls `self.showVideoViewAfterVidChange`
   let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
 
-  let timeout = Constants.TimeInterval.musicModeChangeTrackTimeout
   // test seeking
   var triedUsingExactSeekForCurrentFile: Bool = false
   var useExactSeekForCurrentFile: Bool = true

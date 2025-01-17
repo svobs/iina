@@ -307,7 +307,7 @@ extension PlayerWindowController {
         seekPreview.timeLabel.animator().alphaValue = 0
         if isShowingFadeableViewsForSeek {
           isShowingFadeableViewsForSeek = false
-          resetFadeTimer()
+          hideFadeableViewsTimer.restart()
         }
       })
 
@@ -379,7 +379,7 @@ extension PlayerWindowController {
         if isOSCHidden {
           showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
         } else {
-          hideFadeableViewsTimer?.invalidate()
+          hideFadeableViewsTimer.cancel()
         }
         // Set this to remind ourselves to restart the fade timer when seek is done
         isShowingFadeableViewsForSeek = true
