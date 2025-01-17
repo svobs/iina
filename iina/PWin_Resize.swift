@@ -15,8 +15,12 @@ extension PlayerWindowController {
   /// NSWindowDelegate: start live resize
   func windowWillStartLiveResize(_ notification: Notification) {
     guard !isAnimatingLayoutTransition else { return }
-    log.verbose("WindowWillStartLiveResize")
+    log.verbose{"WindowWillStartLiveResize"}
     isLiveResizingWidth = nil  // reset this
+  }
+
+  func windowDidEndLiveResize(_ notification: Notification) {
+    log.verbose{"WindowDidEndLiveResize"}
   }
 
   /// NSWindowDelegate: windowWillResize
@@ -33,13 +37,23 @@ extension PlayerWindowController {
     let inLiveResize = window.inLiveResize
     let denyWindowResize = denyWindowResize
 
-    guard currentLayout.isFullScreen || inLiveResize || !denyWindowResize else {
-      log.verbose{"WinWillResize: denying request \(requestedSize): inLiveResize=\(inLiveResize.yn), denyFlag=\(denyWindowResize.yn); will stay at \(window.frame.size)"}
-      return window.frame.size
+    if !currentLayout.isFullScreen && !inLiveResize {
+      guard !didChangeScreen else {
+        didChangeScreen = false
+        log.verbose{"WinWillResize: denying request=\(requestedSize) due to screen change; will stay at \(window.frame.size)"}
+        return window.frame.size
+      }
+      // If the window size has been previously set by accessibility APIs or zoom, on the next mouseDown AppKit will snap it back to its
+      // previous size. Try to detect this and stop it.
+      let leftMouseButtonDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0
+      guard !leftMouseButtonDown && !denyWindowResize else {
+        log.verbose{"WinWillResize: denying request=\(requestedSize): liveResize=\(inLiveResize.yn), leftMouseDown=\(leftMouseButtonDown.yn) denyFlag=\(denyWindowResize.yn); will stay at \(window.frame.size)"}
+        return window.frame.size
+      }
     }
 
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
+    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) liveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()
 
@@ -108,7 +122,7 @@ extension PlayerWindowController {
         return musicModeGeo.windowFrame.size
       }
       let newSize = miniPlayer.musicModeWindowWillResize(window, to: requestedSize, isLiveResizingWidth: isLiveResizingWidth)
-      log.verbose{"WinWillResize: returning window size=\(newSize) for \(currentLayout.mode)"}
+      log.verbose{"WinWillResize: returning \(newSize) for \(currentLayout.mode)"}
       return newSize
     }
   }

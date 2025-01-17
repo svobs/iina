@@ -615,7 +615,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       trailingMargin -= excessWidth
     }
 
-    Logger.log.verbose {
+    Logger.log.trace {
       let remainingWidthForVideo = viewportSize.width - (leadingMargin + trailingMargin)
       return "[geo] Viewport width=\(viewportSize.width): Sidebars=[lead:\(insideBars.leading) trail:\(insideBars.trailing)] Margins=[lead:\(leadingMargin) trail:\(trailingMargin)] remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)"
     }

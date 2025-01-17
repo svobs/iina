@@ -56,7 +56,7 @@ extension VideoView {
       log.trace{"No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged"}
       return
     }
-    log.verbose{"Updating DisplayLink for display: \(displayId)"}
+    log.verbose{"Updating DisplayLink for displayID \(displayId)"}
     currentDisplay = displayId
 
     checkResult(CVDisplayLinkSetCurrentCGDisplay(link, displayId), "CVDisplayLinkSetCurrentCGDisplay")

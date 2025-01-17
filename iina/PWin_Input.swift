@@ -177,9 +177,9 @@ extension PlayerWindowController {
 
   override func mouseDown(with event: NSEvent) {
     guard event.eventNumber != lastMouseDownEventID else { return }
+    
     lastMouseDownEventID = event.eventNumber
-    log.verbose{"PlayerWindow mouseDown @ \(event.locationInWindow)"}
-    denyWindowResize = true
+    log.verbose{"PWin MouseDown @ \(event.locationInWindow)"}
 
     if let clickedView = window?.contentView?.hitTest(event.locationInWindow) {
       if clickedView as? SymButton != nil {
@@ -201,7 +201,7 @@ extension PlayerWindowController {
       return
     }
     if let cropSettingsView, !cropSettingsView.cropBoxView.isHidden, isMouseEvent(event, inAnyOf: [cropSettingsView.cropBoxView]) {
-      log.verbose("PlayerWindow: mouseDown should have been handled by CropBoxView")
+      log.verbose("PWin MouseDown: ignoring; should have been handled by CropBoxView")
       return
     }
 
@@ -226,7 +226,7 @@ extension PlayerWindowController {
   }
 
   override func mouseDragged(with event: NSEvent) {
-    log.trace{"PlayerWindow mouseDragged @ \(event.locationInWindow)"}
+    log.trace{"PWin MouseDragged @ \(event.locationInWindow)"}
 
     hideCursorTimer?.invalidate()
     if let currentDragObject {
@@ -246,7 +246,7 @@ extension PlayerWindowController {
         /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
         let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
         guard dragDistance > Constants.Distance.windowControllerMinInitialDragThreshold else { return }
-        log.verbose("PlayerWindow mouseDrag: minimum dragging distance was met")
+        log.verbose{"PWin MouseDrag: minimum dragging distance was met"}
         isDragging = true
       }
       window?.performDrag(with: event)
@@ -257,19 +257,13 @@ extension PlayerWindowController {
   override func mouseUp(with event: NSEvent) {
     guard event.eventNumber != lastMouseUpEventID else { return }
     lastMouseUpEventID = event.eventNumber
-    if log.isVerboseEnabled {
-      log.verbose("PlayerWindow mouseUp @ \(event.locationInWindow), dragging: \(isDragging.yn), clickCount: \(event.clickCount): eventNum: \(event.eventNumber)")
-    }
-
-    // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
-    // Thus, use a timer. Very kludgey, but nothing better discovered yet.
-    denyWindowResizeTimer.restart()
+    log.verbose{"PWin MouseUp @ \(event.locationInWindow), dragging=\(isDragging.yn), clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     if let currentDragObject {
       defer {
         self.currentDragObject = nil
       }
-      log.verbose("PlayerWindow mouseUp: finished drag of object")
+      log.verbose("PWin MouseUp: finished drag of object")
       currentDragObject.mouseUp(with: event)
       return
     }
@@ -279,32 +273,34 @@ extension PlayerWindowController {
 
     if isDragging {
       // if it's a mouseup after dragging window
-      log.verbose("PlayerWindow mouseUp: finished drag of window")
+      log.verbose("PWin MouseUp: finished drag of window")
       isDragging = false
       return
     }
 
     if finishResizingSidebar(with: event) {
-      log.verbose("PlayerWindow mouseUp: finished resizing sidebar")
+      log.verbose("PWin MouseUp: finished resizing sidebar")
       return
     }
 
     // Else: if it's a mouseup after clicking
+    let isSingleClick = event.clickCount == 1
+    let isDoubleClick = event.clickCount == 2
 
     /// Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
     /// but we will only count it as a drag if `isDragging==true`
-    if event.clickCount <= 1 && !isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView, subPopoverView,
+    if isSingleClick && !isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView, subPopoverView,
                                                                topBarView, bottomBarView]) {
       if hideSidebarsOnClick() {
-        log.verbose("PlayerWindow mouseUp: hiding sidebars")
+        log.verbose("PWin MouseUp: hiding sidebars")
         return
       }
     }
     let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
-    if event.clickCount == 2 {
+    if isDoubleClick {
       if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
         if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
-          log.verbose("Double-click occurred in title bar. Executing \(userDefault.quoted)")
+          log.verbose{"Double-click occurred in title bar. Executing \(userDefault.quoted)"}
           if userDefault == "Minimize" {
             window?.performMiniaturize(nil)
           } else if userDefault == "Maximize" {
@@ -315,7 +311,7 @@ extension PlayerWindowController {
           log.verbose("Double-click occurred in title bar, but no action for AppleActionOnDoubleClick")
         }
       } else {
-        log.verbose("Double-click did not occur inside title bar (minY: \(titleBarMinY)) or is full screen (\(isFullScreen))")
+        log.verbose{"Double-click did not occur inside title bar (minY: \(titleBarMinY)) or is full screen (\(isFullScreen))"}
       }
     }
 
@@ -324,7 +320,7 @@ extension PlayerWindowController {
       return
     }
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
-      player.log.verbose("MouseUp: click occurred in a disabled view; ignoring")
+      log.verbose{"PWin MouseUp: click occurred in a disabled view; ignoring"}
       super.mouseUp(with: event)
       return
     }
@@ -333,7 +329,7 @@ extension PlayerWindowController {
       arguments: mouseEventArgs(event), defaultHandler: { [self] in
         let doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
         // default handler
-        if event.clickCount == 1 {
+        if isSingleClick {
           let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
           if doubleClickAction == .none {
             performMouseAction(singleClickAction)
@@ -341,7 +337,7 @@ extension PlayerWindowController {
             singleClickTimer = Timer.scheduledTimer(timeInterval: NSEvent.doubleClickInterval, target: self, selector: #selector(performMouseActionLater), userInfo: singleClickAction, repeats: false)
             mouseExitEnterCount = 0
           }
-        } else if event.clickCount == 2 {
+        } else if isDoubleClick {
           if let timer = singleClickTimer {
             timer.invalidate()
             singleClickTimer = nil
@@ -357,7 +353,7 @@ extension PlayerWindowController {
   }
 
   override func otherMouseUp(with event: NSEvent) {
-    log.verbose("PlayerWindow otherMouseUp!")
+    log.verbose("PWin.otherMouseUp!")
     restartHideCursorTimer()
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
@@ -381,7 +377,7 @@ extension PlayerWindowController {
   override func rightMouseDown(with event: NSEvent) {
     guard event.eventNumber != lastRightMouseDownEventID else { return }
     lastRightMouseDownEventID = event.eventNumber
-    log.verbose("PlayerWindow rightMouseDown!")
+    log.verbose("PWin.rightMouseDown!")
 
     defer {
       /// Apple note (https://developer.apple.com/documentation/appkit/nsview):
@@ -403,7 +399,7 @@ extension PlayerWindowController {
   override func rightMouseUp(with event: NSEvent) {
     guard event.eventNumber != lastRightMouseUpEventID else { return }
     lastRightMouseUpEventID = event.eventNumber
-    log.verbose("PlayerWindow rightMouseUp!")
+    log.verbose("PWin.rightMouseUp!")
     restartHideCursorTimer()
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
@@ -415,7 +411,7 @@ extension PlayerWindowController {
   }
 
   func performMouseAction(_ action: Preference.MouseClickAction) {
-    log.verbose("Performing mouseAction: \(action)")
+    log.verbose{"Performing mouseAction: \(action)"}
     switch action {
     case .pause:
       player.togglePause()
@@ -456,7 +452,7 @@ extension PlayerWindowController {
   override func mouseExited(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
-      log.warn("No data for tracking area")
+      log.warn("MouseExited: no data for tracking area!")
       return
     }
     mouseExitEnterCount += 1

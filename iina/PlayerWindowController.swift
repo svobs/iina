@@ -140,7 +140,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return isVisible || isMinimized
   }
 
+  // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
+  // Thus, use a timer. Very kludgey, but nothing better discovered yet.
   var denyWindowResize: Bool = false
+  var didChangeScreen: Bool = false
   let denyWindowResizeTimer = TimeoutTimer(timeout: Constants.TimeInterval.denyWindowResizeTimeout)
 
   var isClosing: Bool {
@@ -1199,14 +1202,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size
-    denyWindowResizeTimer.restart()
+    didChangeScreen = true
   }
 
   func windowDidChangeScreenProfile(_ notification: Notification) {
     log.verbose("WindowDidChangeScreenProfile received")
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size
-    denyWindowResizeTimer.restart()
+    didChangeScreen = true
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -1225,7 +1228,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard let window = window, let screen = window.screen else { return }
 
     // Do not allow MacOS to change the window size
-    denyWindowResizeTimer.restart()
+    didChangeScreen = true
 
     let displayId = screen.displayId
     guard videoView.currentDisplay != displayId else {
