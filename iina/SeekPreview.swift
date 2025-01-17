@@ -27,7 +27,8 @@ extension PlayerWindowController {
 
     var animationState: UIAnimationState = .shown
     /// For auto hiding seek time & thumbnail after a timeout.
-    var hideTimer: Timer?
+    /// Calls `PlayerWindowController.seekPreviewTimeout` on timeout.
+    let hideTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
 
     init() {
       timeLabel.identifier = .init("SeekTimeLabel")
@@ -52,6 +53,11 @@ extension PlayerWindowController {
       timeLabel.addShadow()
     }
 
+    func restartHideTimer() {
+      guard animationState == .shown else { return }
+      hideTimer.restart()
+    }
+
     /// This is expected to be called at first layout
     func updateTimeLabelFontSize(to newSize: CGFloat) {
       guard timeLabel.font?.pointSize != newSize else { return }
@@ -65,7 +71,7 @@ extension PlayerWindowController {
     func showPreview(withThumbnail showThumbnail: Bool, forTime previewTimeSec: Double,
                      posInWindowX: CGFloat, _ player: PlayerCore,
                      _ currentLayout: LayoutState, currentControlBar: NSView,
-                     _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) -> Bool {
+                     _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) {
 
       let log = player.log
       let margins = SeekPreview.minThumbMargins
@@ -87,6 +93,11 @@ extension PlayerWindowController {
         showThumbnail = false
         thumbWidth = 0
         thumbHeight = 0
+      }
+
+      let stringRepresentation = VideoTime.string(from: previewTimeSec)
+      if timeLabel.stringValue != stringRepresentation {
+        timeLabel.stringValue = stringRepresentation
       }
 
       // Subtract some height for less margin before time label
@@ -140,7 +151,7 @@ extension PlayerWindowController {
           thumbWidth = availableWidth
           thumbHeight = thumbWidth / thumbAspect
         }
-      }
+      }  // end if showThumbnail
 
       let showAbove: Bool
       if currentLayout.isMusicMode {
@@ -253,9 +264,13 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
       thumbnailPeekView.isHidden = !showThumbnail
 
-      return true
+      animationState = .shown
+      // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
+      // reliably, so using a timer works well as a failsafe.
+      restartHideTimer()
     }
-  }
+
+  } // end class SeekPreview
 
   // MARK: - PlayerWindowController methods
 
@@ -269,25 +284,18 @@ extension PlayerWindowController {
     return isScrollingOrDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
   }
 
-  func resetSeekPreviewlTimer() {
-    guard seekPreview.animationState == .shown else { return }
-    seekPreview.hideTimer?.invalidate()
-    seekPreview.hideTimer = Timer.scheduledTimer(timeInterval: Constants.TimeInterval.seekPreviewHideTimeout,
-                                                target: self, selector: #selector(self.seekPreviewTimeout),
-                                                userInfo: nil, repeats: false)
-  }
-
-  @objc private func seekPreviewTimeout() {
+  /// Called by `seekPreview.hideTimer`.
+  func seekPreviewTimeout() {
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
     guard !shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow) else {
-      resetSeekPreviewlTimer()
+      seekPreview.restartHideTimer()
       return
     }
     hideSeekPreview(animated: true)
   }
 
-  @objc func hideSeekPreview(animated: Bool = false) {
-    seekPreview.hideTimer?.invalidate()
+  func hideSeekPreview(animated: Bool = false) {
+    seekPreview.hideTimer.cancel()
 
     if animated {
       var tasks: [IINAAnimation.Task] = []
@@ -342,8 +350,7 @@ extension PlayerWindowController {
 
     // First check if both time & thumbnail are disabled
     guard let currentControlBar, notInMusicModeDisabled else {
-      seekPreview.timeLabel.isHidden = true
-      seekPreview.thumbnailPeekView.isHidden = true
+      hideSeekPreview()
       return
     }
 
@@ -359,8 +366,7 @@ extension PlayerWindowController {
     let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
     if isShowingThumbnailForSeek && (!showThumbnail || !Preference.bool(for: .showThumbnailDuringSliderSeek)) {
       // Do not show any preview if this feature is disabled
-      seekPreview.timeLabel.isHidden = true
-      seekPreview.thumbnailPeekView.isHidden = true
+      hideSeekPreview()
       return
     }
 
@@ -380,29 +386,17 @@ extension PlayerWindowController {
 
       } else if isOSCHidden {
         // Do not show any preview if OSC is hidden and is not a showable seek
-        seekPreview.timeLabel.isHidden = true
-        seekPreview.thumbnailPeekView.isHidden = true
+        hideSeekPreview()
         return
       }
     }
 
-    let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
-                                                                      centerOfKnobInSliderCoordX)
+    let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
     let previewTimeSec = mediaDuration * playbackPositionRatio
-    let stringRepresentation = VideoTime.string(from: previewTimeSec)
-    if seekPreview.timeLabel.stringValue != stringRepresentation {
-      seekPreview.timeLabel.stringValue = stringRepresentation
-    }
 
-    let didShow = seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
-                                          currentControlBar: currentControlBar, geo.video,
-                                          viewportSize: viewportView.frame.size,
-                                          isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
-    guard didShow else { return }
-    seekPreview.animationState = .shown
-    // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
-    // reliably, so using a timer works well as a failsafe.
-    resetSeekPreviewlTimer()
+    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
+                            currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
+                            isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
   }
 
 }

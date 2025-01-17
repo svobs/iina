@@ -318,6 +318,7 @@
 		D13209BB2B90596000069C94 /* AspectTokenField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13209BA2B90596000069C94 /* AspectTokenField.swift */; };
 		D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13350942D06B7E200201623 /* GeometryTransform.swift */; };
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
+		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
 		D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWin_GeoSet.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1491F872CEF543900DB0A06 /* SeekPreview.swift */; };
@@ -443,7 +444,7 @@
 		E38BA1C4254110BE000B551D /* JavascriptMessageHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38BA1C3254110BD000B551D /* JavascriptMessageHub.swift */; };
 		E38BD4AF20054BD9007635FC /* PlayerWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38BD4AE20054BD9007635FC /* PlayerWindow.swift */; };
 		E3958565253133E80096811F /* SidebarTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3958563253133E80096811F /* SidebarTabView.swift */; };
-    E3958566253133E80096811F /* SidebarTabView.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3958564253133E80096811F /* SidebarTabView.xib */; };
+		E3958566253133E80096811F /* SidebarTabView.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3958564253133E80096811F /* SidebarTabView.xib */; };
 		E3958586253309C90096811F /* PluginSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3958585253309C90096811F /* PluginSidebarView.swift */; };
 		E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39585892533143F0096811F /* JavascriptAPISidebarView.swift */; };
 		E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3965E192487C99900607EB4 /* JavascriptPluginSubtitle.swift */; };
@@ -1847,6 +1848,7 @@
 		D13209BA2B90596000069C94 /* AspectTokenField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectTokenField.swift; sourceTree = "<group>"; };
 		D13350942D06B7E200201623 /* GeometryTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTransform.swift; sourceTree = "<group>"; };
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
+		D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutTimer.swift; sourceTree = "<group>"; };
 		D13E807D2C026A2700537954 /* PWin_GeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoSet.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D1491F872CEF543900DB0A06 /* SeekPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekPreview.swift; sourceTree = "<group>"; };
@@ -2054,7 +2056,7 @@
 		E38BD4AE20054BD9007635FC /* PlayerWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerWindow.swift; sourceTree = "<group>"; };
 		E393669923BDD1850070D626 /* IINA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IINA.entitlements; sourceTree = "<group>"; };
 		E3958563253133E80096811F /* SidebarTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarTabView.swift; sourceTree = "<group>"; };
-    E3958564253133E80096811F /* SidebarTabView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SidebarTabView.xib; sourceTree = "<group>"; };
+		E3958564253133E80096811F /* SidebarTabView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SidebarTabView.xib; sourceTree = "<group>"; };
 		E3958585253309C90096811F /* PluginSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSidebarView.swift; sourceTree = "<group>"; };
 		E39585892533143F0096811F /* JavascriptAPISidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptAPISidebarView.swift; sourceTree = "<group>"; };
 		E3965E192487C99900607EB4 /* JavascriptPluginSubtitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptPluginSubtitle.swift; sourceTree = "<group>"; };
@@ -2554,6 +2556,7 @@
 				84A886E21E24F2D3008755BB /* Sub */,
 				8497A4831D2FF573005F504F /* iina-Bridging-Header.h */,
 				513A4FF929B53F8100A8EA7D /* Atomic.swift */,
+				D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */,
 				51854CD92A1C489300C40B78 /* FFmpegLogger.swift */,
 				84EB1F061D2F5E76004FA5A1 /* Utility.swift */,
 				8461C52F1D462488006E91FF /* VideoTime.swift */,
@@ -2756,7 +2759,7 @@
 				E32712AE24EAA14500359DAB /* ScreenshootOSDView.swift */,
 				E32712B424F2B8CA00359DAB /* ScreenshootOSDView.xib */,
 				E3958563253133E80096811F /* SidebarTabView.swift */,
-        E3958564253133E80096811F /* SidebarTabView.xib */,
+				E3958564253133E80096811F /* SidebarTabView.xib */,
 				D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */,
 				D1D579532B16C38F009E3520 /* ClickThroughView.swift */,
 				D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */,
@@ -3239,7 +3242,7 @@
 				E34A0E012053F93A00B50097 /* PrefOSCToolbarSettingsSheetController.xib in Resources */,
 				E34E909A24F821280073BF04 /* GuideWindowController.xib in Resources */,
 				34F294C02C0B68B300F14962 /* Contribution.rtf in Resources */,
-        E3958566253133E80096811F /* SidebarTabView.xib in Resources */,
+				E3958566253133E80096811F /* SidebarTabView.xib in Resources */,
 				8400D5D21E1AB312006785F5 /* InspectorWindowController.xib in Resources */,
 				8400D5CC1E1AB2FF006785F5 /* PlaylistViewController.xib in Resources */,
 				8400D5ED1E1AB33F006785F5 /* PrefAdvancedViewController.xib in Resources */,
@@ -3450,6 +3453,7 @@
 				8487BEC31D76A1AF00FD17B0 /* MenuController.swift in Sources */,
 				8450403D1E0A9EE20079C194 /* InspectorWindowController.swift in Sources */,
 				519CCABD2BFFAEF10079DCAF /* HardwareDecodeCapabilities.swift in Sources */,
+				D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */,
 				E38BA1C0253E54F2000B551D /* JavascriptAPIGlobal.swift in Sources */,
 				E39A11FD240F176E00A67F9F /* StringEncodingName.swift in Sources */,
 				D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */,

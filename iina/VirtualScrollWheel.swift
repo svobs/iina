@@ -127,7 +127,12 @@ class VirtualScrollWheel {
   /// from the underlying source of scroll wheel `NSEvent`s.
   private var state: ScrollState = .notScrolling
 
-  private var scrollSessionTimer: Timer? = nil
+  /// Calls `self.scrollSessionDidTimeOut` on timeout.
+  private let scrollSessionTimer = TimeoutTimer(timeout: Constants.TimeInterval.stepScrollSessionTimeout)
+
+  init() {
+    scrollSessionTimer.action = scrollSessionDidTimeOut
+  }
 
   func scrollWheel(with event: NSEvent) {
     currentSession?.addPendingEvent(event)
@@ -220,7 +225,8 @@ class VirtualScrollWheel {
 
       // - Non-Apple device:
     case .didStepScroll:   // STEP
-      restartScrollSessionTimer(timeout: Constants.TimeInterval.stepScrollSessionTimeout)
+      scrollSessionTimer.restart()
+
       if case .didStepScroll = state {
         // Continuing scroll session. No state changes needed
         break
@@ -278,7 +284,12 @@ class VirtualScrollWheel {
       switch state {
       case .smoothScrolling:
         state = .smoothScrollJustEnded
-        restartScrollSessionTimer(timeout: Constants.TimeInterval.momentumScrollStartTimeout)
+        /// If some amount of time passes from when we receive a `smoothScrollJustEnded` event but do not receive a
+        /// `momentumScrollJustStarted` event, the scroll session should be considered ended.
+        /// This addresses an apparent hole in AppKit's API which leaves us waiting for an event which is not
+        /// guaranteed to be sent.
+        /// In practice this always seems to happen almost immediately. Just reuse existing timer.
+        scrollSessionTimer.restart()
       default:
         notScrolling()
       }
@@ -288,7 +299,7 @@ class VirtualScrollWheel {
     case .momentumScrollJustStarted:  // START
       switch state {
       case .smoothScrollJustEnded:
-        scrollSessionTimer?.invalidate()
+        scrollSessionTimer.cancel()
         state = .momentumScrollJustStarted
 #if DEBUG
         currentSession?.momentumStartTime = Date()
@@ -300,7 +311,7 @@ class VirtualScrollWheel {
     case .momentumScrolling:  // Continue
       switch state {
       case .momentumScrollJustStarted, .momentumScrolling:
-        scrollSessionTimer?.invalidate()
+        scrollSessionTimer.cancel()
         state = .momentumScrolling
       default:
         notScrolling()
@@ -316,14 +327,8 @@ class VirtualScrollWheel {
     }
   }
 
-  private func restartScrollSessionTimer(timeout: TimeInterval) {
-    scrollSessionTimer?.invalidate()
-    scrollSessionTimer = Timer.scheduledTimer(timeInterval: timeout, target: self,
-                                       selector: #selector(self.scrollSessionDidTimeOut), userInfo: nil, repeats: false)
-  }
-
   /// Executed when `scrollSessionTimer` fires.
-  @objc private func scrollSessionDidTimeOut() {
+  private func scrollSessionDidTimeOut() {
     guard isScrolling() else { return }
     Logger.log.verbose("ScrollWheel timed out")
     endScrollSession()

@@ -21,7 +21,8 @@ class StartupHandler {
 
   var state: OpenWindowsState = .stillEnqueuing
 
-  var restoreTimer: Timer? = nil
+  /// Calls `self.restoreTimedOut` on timeout.
+  let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
   var restoreTimeoutAlertPanel: NSAlert? = nil
 
   /**
@@ -41,6 +42,10 @@ class StartupHandler {
   var wcsReady = Set<NSWindowController>()
 
   private var commandLineStatus = CommandLineStatus()
+
+  init() {
+    restoreTimer.action = restoreTimedOut
+  }
 
   func doStartup() {
     // Restore window state *before* hooking up the listener which saves state.
@@ -214,7 +219,6 @@ class StartupHandler {
     return true
   }
 
-  @objc
   func restoreTimedOut() {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
@@ -259,7 +263,8 @@ class StartupHandler {
         log.debug("Looks like windows finished opening - no need to restart restore timer")
         return
       }
-      restartRestoreTimer()
+      dismissTimeoutAlertPanel()
+      restoreTimer.restart()
 
     case .alertSecondButtonReturn:
       log.debug("User chose button 2: discard stalled windows & continue with partial restore")
@@ -305,15 +310,6 @@ class StartupHandler {
     /// This may restart the timer if not in the correct state, so account for that.
   }
 
-  private func restartRestoreTimer() {
-    restoreTimer?.invalidate()
-
-    dismissTimeoutAlertPanel()
-
-    restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
-                                                       target: self, selector: #selector(self.restoreTimedOut), userInfo: nil, repeats: false)
-  }
-
   func abortWaitForOpenFilePlayerStartup() {
     Logger.log.verbose("Aborting wait for Open File player startup")
     openFileCalled = false
@@ -325,7 +321,8 @@ class StartupHandler {
     assert(DispatchQueue.isExecutingIn(.main))
     guard state == .doneEnqueuing else { return }
     guard wcsReady.count == wcsToRestore.count else {
-      restartRestoreTimer()
+      dismissTimeoutAlertPanel()
+      restoreTimer.restart()
       return
     }
     // TODO: change this to support multi-window open for multiple files
@@ -333,7 +330,7 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     log.verbose("All \(wcsToRestore.count) restored \(wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
-    restoreTimer?.invalidate()
+    restoreTimer.cancel()
 
     var prevWindowNumber: Int? = nil
     for wc in wcsToRestore {

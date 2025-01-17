@@ -171,21 +171,37 @@ struct Constants {
     /// This should help cut down on unnecessary requests.
     static let thumbnailRegenerationDelay = 0.5
     static let playerStateSaveDelay = 0.2
+    /// If state save is enabled and video is playing, make sure player is saved every this number of secs
+    static let playTimeSaveStateFrequency: TimeInt = 10.0
+
     /// Delay before auto-loading playlist from files in the opened file's directory
     static let autoLoadDelay = 1.0
+    
     static let pastLaunchResponseTimeout = 1.0
+    static let asynchronousModeTimeout: TimeInt = 2.0
+
+    // TimeoutTimer timeouts
+
     static let seekPreviewHideTimeout = 0.2
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0
 
+    /// May need adjustment for optimal results
+    static let stepScrollSessionTimeout = 0.1
+
+    static let musicModeChangeTrackTimeout = 1.0
     static let historyTableDelayBeforeLoadingMsgDisplay = 0.25
+
+    /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
+    ///
+    /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will
+    /// need to force quit IINA. As termination may involve logging out of an online subtitles provider it can take a while to complete if
+    /// the provider is slow to respond to the logout request.
+    static let appTerminationTimeout = 10.0
+
 
     /// For Force Touch.
     static let minimumPressDuration: TimeInt = 0.5
-
-    /// If state save is enabled and video is playing, make sure player is saved every this number of secs
-    static let playTimeSaveStateFrequency: TimeInt = 10.0
-    static let asynchronousModeTimeout: TimeInt = 2.0
 
     /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
     /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
@@ -200,25 +216,7 @@ struct Constants {
     static let windowDidChangeScreenThrottlingDelay = 0.2
     static let windowDidMoveProcessingDelay = 0.2
 
-    /// May need adjustment for optimal results
-    static let stepScrollSessionTimeout = 0.1
-
-    /// This is a workaround for limitations of the `NSEvent` API and shouldn't need changing.
-    ///
-    /// If this amount of time passes from when we receive a `smoothScrollJustEnded` event but do not receive a
-    /// `momentumScrollJustStarted` event, the scroll session should be considered ended.
-    static let momentumScrollStartTimeout = 0.05
-
-    static let musicModeChangeTrackTimeout = 1.0
-
     static let historyTableCompleteFileStatusReload = 600.0
-
-    /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
-    ///
-    /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will
-    /// need to force quit IINA. As termination may involve logging out of an online subtitles provider it can take a while to complete if
-    /// the provider is slow to respond to the logout request.
-    static let appTerminationTimeout = 10.0
   }
   struct FilterLabel {
     static let crop = "iina_crop"

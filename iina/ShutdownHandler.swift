@@ -14,7 +14,7 @@ class ShutdownHandler {
 
   /// Whether the shutdown sequence timed out.
   private var shutdownTimedOut = false
-  private var shutdownTimer: Timer? = nil
+  private let shutdownTimer = TimeoutTimer(timeout: Constants.TimeInterval.appTerminationTimeout)
 
   private var observers: [NSObjectProtocol] = []
 
@@ -76,11 +76,8 @@ class ShutdownHandler {
     // arbitrary timeout that forces termination to complete. The expectation is that this timeout
     // is never triggered. If a timeout warning is logged during termination then that needs to be
     // investigated.
-    let shutdownTimer = Timer(timeInterval: Constants.TimeInterval.appTerminationTimeout, repeats: false) { _ in
-      self.shutdownDidTimeout()
-    }
-    self.shutdownTimer = shutdownTimer
-    RunLoop.main.add(shutdownTimer, forMode: .common)
+    shutdownTimer.action = shutdownDidTimeout
+    shutdownTimer.restart()
 
     // Establish an observer for a player core stopping.
     var observers: [NSObjectProtocol] = []
@@ -222,7 +219,7 @@ class ShutdownHandler {
 
     Logger.log("Proceeding with application termination")
     // No longer need the timer that forces termination to proceed.
-    shutdownTimer?.invalidate()
+    shutdownTimer.cancel()
     // No longer need the observers for players stopping and shutting down, along with the
     // observer for logout requests completing and saving of playback history finishing.
     ObjcUtils.silenced { [self] in

@@ -161,6 +161,8 @@ extension PlayerWindowController {
     seekPreview.timeLabelVerticalSpaceConstraint = contentView.bottomAnchor.constraint(equalTo: seekPreview.timeLabel.bottomAnchor, constant: 0)
     seekPreview.timeLabelVerticalSpaceConstraint.identifier = .init("SeekTimeHoverLabelVSpaceConstraint")
     seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
+
+    seekPreview.hideTimer.action = self.seekPreviewTimeout
   }
 
   private func initTitleBarAccessories() {

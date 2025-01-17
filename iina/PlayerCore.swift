@@ -224,8 +224,10 @@ class PlayerCore: NSObject {
   @Atomic private var shufflePending = false
 
   var isShowVideoPendingInMiniPlayer: Bool = false
-  var miniPlayerShowVideoTimer: Timer? = nil
+  /// Calls `self.showVideoViewAfterVidChange`
+  let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
 
+  let timeout = Constants.TimeInterval.musicModeChangeTrackTimeout
   // test seeking
   var triedUsingExactSeekForCurrentFile: Bool = false
   var useExactSeekForCurrentFile: Bool = true
@@ -321,6 +323,8 @@ class PlayerCore: NSObject {
     self.keyBindingContext = PlayerInputContext(playerCore: self)
     self.windowController = PlayerWindowController(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
+
+    miniPlayerShowVideoTimer.action = showVideoViewAfterVidChange
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
@@ -2732,7 +2736,7 @@ class PlayerCore: NSObject {
       }
 
       // End of seeking? Set short timer to hide seek time & thumbnail
-      windowController.resetSeekPreviewlTimer()
+      windowController.seekPreview.restartHideTimer()
     }
 
     saveState()
@@ -2916,7 +2920,7 @@ class PlayerCore: NSObject {
       guard isShowVideoPendingInMiniPlayer else { return oldMusicModeGeo }
       /// Must change `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
       isShowVideoPendingInMiniPlayer = false
-      miniPlayerShowVideoTimer?.invalidate()
+      miniPlayerShowVideoTimer.cancel()
       guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return oldMusicModeGeo }
       /// `showDefaultArt` should already have been handled by `applyVideoGeoTransform` so do not change here
       let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
@@ -2933,7 +2937,7 @@ class PlayerCore: NSObject {
   /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
   /// But it will not be called if there is no change (i.e. there are no video tracks at all).
   /// We can bridge the gap by setting a timer which will call `vidChanged`.
-  @objc private func showVideoViewAfterVidChange() {
+  private func showVideoViewAfterVidChange() {
     guard isShowVideoPendingInMiniPlayer else { return }
     mpv.queue.async { [self] in
       log.verbose("Forcing vidChanged() to show videoView")
@@ -2952,11 +2956,8 @@ class PlayerCore: NSObject {
       isShowVideoPendingInMiniPlayer = true
       // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
       // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
-      let timeout = Constants.TimeInterval.musicModeChangeTrackTimeout
-      log.verbose{"Will show music mode video after enabling video track, timeout=\(timeout)s"}
-      miniPlayerShowVideoTimer = Timer.scheduledTimer(timeInterval: timeout,
-                                                      target: self, selector: #selector(showVideoViewAfterVidChange),
-                                                      userInfo: nil, repeats: false)
+      log.verbose{"Will show music mode video after enabling video track, timeout=\(miniPlayerShowVideoTimer.timeout)s"}
+      miniPlayerShowVideoTimer.restart()
     }
 
     mpv.queue.async { [self] in
@@ -2988,7 +2989,7 @@ class PlayerCore: NSObject {
         if showMiniPlayerVideo {
           // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
           // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
-          miniPlayerShowVideoTimer?.invalidate()
+          miniPlayerShowVideoTimer.restart()
           log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
           vidChanged(silent: true)
         }

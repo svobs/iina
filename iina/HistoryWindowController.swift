@@ -59,7 +59,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   @Atomic private var reloadTicketCounter: Int = 0
   private var isInitialLoadDone = false
 
-  private var loadingMsgDelayTimer: Timer? = nil
+  /// Calls `self.showLoadingUI` on timeout.
+  private let loadingMsgDelayTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
 
   private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
   private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
@@ -80,6 +81,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
     super.init(window: nil)
     windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
+
+    loadingMsgDelayTimer.action = showLoadingUI
 
     co = CocoaObserver(log, prefDidChange: prefDidChange, [
       .uiHistoryTableGroupBy,
@@ -199,9 +202,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       DispatchQueue.main.async { [self] in
         if !silent {
           // Schedule timer to show loading msg if loading takes too long
-          loadingMsgDelayTimer?.invalidate()
-          loadingMsgDelayTimer = Timer.scheduledTimer(timeInterval: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay,
-                                                         target: self, selector: #selector(showLoadingUI), userInfo: nil, repeats: false)
+          loadingMsgDelayTimer.restart()
         }
 
         backgroundQueue.async { [self] in
@@ -216,8 +217,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     }
   }
 
-  /// Resets table to loading msg
-  @objc private func showLoadingUI() {
+  /// Resets table to loading msg.
+  private func showLoadingUI() {
     historyData = HistoryWindowController.loadingData
     historyDataKeys = [loadingKey]
     outlineView.reloadData()
@@ -258,7 +259,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     DispatchQueue.main.async { [self] in
       guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
 
-      loadingMsgDelayTimer?.invalidate()
+      loadingMsgDelayTimer.cancel()
 
       // Update data and reload UI
       historyData = historyDataUpdated

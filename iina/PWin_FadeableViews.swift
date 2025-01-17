@@ -177,7 +177,7 @@ extension PlayerWindowController {
 
     if mustHideSeekPreview {
       // Cancel timer now. Hide thumbnail with other views (below)
-      seekPreview.hideTimer?.invalidate()
+      seekPreview.hideTimer.cancel()
     }
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
