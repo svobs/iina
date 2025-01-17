@@ -141,7 +141,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var denyWindowResize: Bool = false
-  var denyNextWindowResize: Bool = false
+  let denyWindowResizeTimer = TimeoutTimer(timeout: Constants.TimeInterval.denyWindowResizeTimeout)
 
   var isClosing: Bool {
     return player.state.isAtLeast(.stopping)
@@ -1199,14 +1199,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size
-    denyNextWindowResize = true
+    denyWindowResizeTimer.restart()
   }
 
   func windowDidChangeScreenProfile(_ notification: Notification) {
     log.verbose("WindowDidChangeScreenProfile received")
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size
-    denyNextWindowResize = true
+    denyWindowResizeTimer.restart()
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -1225,7 +1225,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard let window = window, let screen = window.screen else { return }
 
     // Do not allow MacOS to change the window size
-    denyNextWindowResize = true
+    denyWindowResizeTimer.restart()
 
     let displayId = screen.displayId
     guard videoView.currentDisplay != displayId else {

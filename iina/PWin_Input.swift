@@ -261,12 +261,9 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow mouseUp @ \(event.locationInWindow), dragging: \(isDragging.yn), clickCount: \(event.clickCount): eventNum: \(event.eventNumber)")
     }
 
-    // In some rare cases, we can get a mouseUp without a mouseDown. Be extra sure:
-    denyWindowResize = true
-    // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize
-    DispatchQueue.main.async { [self] in
-      denyWindowResize = false
-    }
+    // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
+    // Thus, use a timer. Very kludgey, but nothing better discovered yet.
+    denyWindowResizeTimer.restart()
 
     if let currentDragObject {
       defer {
@@ -334,10 +331,10 @@ extension PlayerWindowController {
     PluginInputManager.handle(
       input: PluginInputManager.Input.mouse, event: .mouseUp, player: player,
       arguments: mouseEventArgs(event), defaultHandler: { [self] in
-        let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
         let doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
         // default handler
         if event.clickCount == 1 {
+          let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
           if doubleClickAction == .none {
             performMouseAction(singleClickAction)
           } else {

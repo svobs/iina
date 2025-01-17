@@ -191,6 +191,7 @@ struct Constants {
 
     static let musicModeChangeTrackTimeout = 1.0
     static let historyTableDelayBeforeLoadingMsgDisplay = 0.25
+    static let denyWindowResizeTimeout = 0.1
 
     /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
     ///

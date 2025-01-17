@@ -29,22 +29,17 @@ extension PlayerWindowController {
     guard !isAnimatingLayoutTransition else {
       return requestedSize
     }
-    let inLiveResize = window.inLiveResize
-
-    guard inLiveResize || !denyWindowResize else {
-      log.verbose{"WinWillResize: denying; currently dragging. Will stay at \(window.frame.size)"}
-      return window.frame.size
-    }
-
     let currentLayout = currentLayout
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn) denyNext=\(denyNextWindowResize.yn)"}
+    let inLiveResize = window.inLiveResize
+    let denyWindowResize = denyWindowResize
 
-    if !currentLayout.isFullScreen && denyNextWindowResize {
-      log.verbose{"WinWillResize: denying this resize. Will stay at \(window.frame.size)"}
-      denyNextWindowResize = false
+    guard currentLayout.isFullScreen || inLiveResize || !denyWindowResize else {
+      log.verbose{"WinWillResize: denying request \(requestedSize): inLiveResize=\(inLiveResize.yn), denyFlag=\(denyWindowResize.yn); will stay at \(window.frame.size)"}
       return window.frame.size
     }
+
+    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
+    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()
 
