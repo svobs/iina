@@ -455,14 +455,14 @@ extension PlayerWindowController {
     }
 
     if !outputLayout.hasControlBar {
-      fragPositionSliderView?.removeFromSuperview()
+      fragPositionSliderView.removeFromSuperview()
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
     let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    playSliderHeightConstraint?.isActive = false
+    fragPositionSliderView.playSliderHeightConstraint?.isActive = false
 
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
@@ -564,8 +564,8 @@ extension PlayerWindowController {
         let barHeight = oscGeo.barHeight
 
         // Expand slider bounds to entire bar so it's easier to hover and/or click on it
-        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)
-        playSliderHeightConstraint.isActive = true
+        fragPositionSliderView.playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)
+        fragPositionSliderView.playSliderHeightConstraint?.isActive = true
 
         // Knob height > 24 is not supported
 //        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
@@ -670,8 +670,8 @@ extension PlayerWindowController {
         miniPlayer.positionSliderWrapperView.addSubview(fragPositionSliderView)
         fragPositionSliderView.addConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
-        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
-        playSliderHeightConstraint.isActive = true
+        fragPositionSliderView.playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
+        fragPositionSliderView.playSliderHeightConstraint?.isActive = true
         playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
 
         // move playback buttons

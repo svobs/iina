@@ -113,13 +113,14 @@ extension PlayerWindowController {
     }
 
       initSeekPreview(in: contentView)
-      initTitleBarAccessories()
+      initTitleBar()
       initBottomBarView(in: contentView, style: .visualEffectView)
       initSpeedLabel()
       initPlaybackBtnsView()
       initVolumeView()
       initAlbumArtView()
-      fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
+      playSlider.target = self
+      playSlider.action = #selector(playSliderAction(_:))
 
       bufferIndicatorView.roundCorners()
       additionalInfoView.roundCorners()
@@ -175,7 +176,7 @@ extension PlayerWindowController {
     seekPreview.hideTimer.action = self.seekPreviewTimeout
   }
 
-  private func initTitleBarAccessories() {
+  private func initTitleBar() {
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.Distance.titleBarIconHSpacing
     // - LEADING

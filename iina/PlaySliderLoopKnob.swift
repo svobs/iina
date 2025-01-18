@@ -35,7 +35,7 @@ final class PlaySliderLoopKnob: NSImageView {
   // The x coordinate of the last mouse location when dragging.
   private var lastDragLocation: CGFloat = 0
 
-  private var slider: PlaySlider!
+  private let slider: PlaySlider
   private var centerXConstraint: NSLayoutConstraint!
 
   /// The knob's x coordinate associated with the current value.
@@ -104,7 +104,7 @@ final class PlaySliderLoopKnob: NSImageView {
   private func constrainX(_ x: CGFloat) -> CGFloat {
     let bar = slider.customCell.barRect(flipped: isFlipped)
     // The coordinate must be short of the end of the bar to keep the knob within the bar.
-    let maxX = bar.maxX - slider.customCell.knobWidth
+    let maxX = max(bar.minX, bar.maxX - slider.customCell.knobWidth)
     return x.clamped(to: bar.minX...maxX)
   }
 

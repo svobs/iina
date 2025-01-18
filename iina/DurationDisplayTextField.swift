@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let monoSystemFontSmall = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize(for: .small), weight: .regular)
+
 class DurationDisplayTextField: ClickThroughTextField {
   enum DisplayMode {
     case current
@@ -19,6 +21,16 @@ class DurationDisplayTextField: ClickThroughTextField {
   var mode: DisplayMode = .duration { didSet { updateText() } }
   var duration: Double = 0
   var current: Double = 0
+
+  override init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+    font = monoSystemFontSmall
+  }
+  
+  @MainActor required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    font = monoSystemFontSmall
+  }
 
   /** Switches the display mode between duration and remaining time */
   private func switchMode() {

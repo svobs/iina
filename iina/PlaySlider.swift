@@ -43,10 +43,15 @@ final class PlaySlider: ScrollableSlider {
 
   // MARK:- Initialization
 
-  required init?(coder: NSCoder) {
-    super.init(coder: coder)
+  override init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+    cell = PlaySliderCell()
     abLoopAKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop A")
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
   }
 
   var isDarkMode: Bool = false

@@ -27,12 +27,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return player.videoView
   }
 
-  @objc let monospacedFont: NSFont = {
-    let fontSize = NSFont.systemFontSize(for: .small)
-    return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
-  }()
-
-
   // MARK: - Objects, Views
 
   var bestScreen: NSScreen {
@@ -400,7 +394,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
 
-  @IBOutlet weak var playSliderHeightConstraint: NSLayoutConstraint!
   var volumeIconHeightConstraint: NSLayoutConstraint!
   var volumeIconWidthConstraint: NSLayoutConstraint!
 
@@ -499,11 +492,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Toolbar
   var fragToolbarView: ClickThroughStackView? = nil
 
-  /// Container for play slider & time indicator labels
-  @IBOutlet var fragPositionSliderView: NSView!
-  @IBOutlet weak var playSlider: PlaySlider!
-  @IBOutlet weak var rightTimeLabel: DurationDisplayTextField!
-  @IBOutlet weak var leftTimeLabel: DurationDisplayTextField!
+  var fragPositionSliderView = PlayTimeAndSliderView()
+  var playSlider: PlaySlider { fragPositionSliderView.playSlider }
+  var leftTimeLabel: DurationDisplayTextField { fragPositionSliderView.leftTimeLabel }
+  var rightTimeLabel: DurationDisplayTextField { fragPositionSliderView.rightTimeLabel }
 
   /// Differentiate between single clicks and double clicks.
   var singleClickTimer: Timer?
@@ -1941,7 +1933,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Update playback position slider in OSC:
     for label in [leftTimeLabel, rightTimeLabel] {
-      label?.updateText(with: duration, given: position)
+      label.updateText(with: duration, given: position)
     }
     let percentage = (position / duration) * 100
     playSlider.doubleValue = percentage
