@@ -26,6 +26,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @IBOutlet weak var dockMenu: NSMenu!
 
+  var tabService: TabService!
+
   // Need to store these somewhere which isn't only inside a struct.
   // Swift doesn't seem to count them as strong references
   private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
@@ -494,12 +496,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: - Open file(s)
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
-    Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii})")
+    let shouldIgnoreOpenFile = startupHandler.shouldIgnoreOpenFile
+    Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii}), willIgnore=\(shouldIgnoreOpenFile)")
     // if launched from command line, should ignore openFile during launch
-    if startupHandler.state.rawValue < StartupHandler.OpenWindowsState.doneOpening.rawValue, startupHandler.shouldIgnoreOpenFile {
-      startupHandler.shouldIgnoreOpenFile = false
-      return
-    }
+    guard !shouldIgnoreOpenFile else { return }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
 
     // if installing a plugin package
@@ -514,7 +514,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if !openingMultipleWindows {
       // Use only if opening single window.
       // If multiple windows, don't wait; open each as soon as it loads
-      startupHandler.openFileCalled = true
+      startupHandler.openFileCalledForSingleFile = true
     }
 
     DispatchQueue.main.async { [self] in
@@ -561,7 +561,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let url = pboard.string(forType: .string) else { return }
 
     guard let player = PlayerCore.active else { return }
-    startupHandler.openFileCalled = true
+    startupHandler.openFileCalledForSingleFile = true
     startupHandler.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
       startupHandler.abortWaitForOpenFilePlayerStartup()
@@ -601,7 +601,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if parsed.scheme != "iina" {
       // try to open the URL directly
       let player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
-      startupHandler.openFileCalled = true
+      startupHandler.openFileCalledForSingleFile = true
       startupHandler.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
@@ -631,7 +631,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       }
 
-      startupHandler.openFileCalled = true
+      startupHandler.openFileCalledForSingleFile = true
       startupHandler.wcForOpenFile = player.windowController
 
       // enqueue

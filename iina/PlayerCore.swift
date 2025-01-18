@@ -486,8 +486,6 @@ class PlayerCore: NSObject {
       info.currentPlayback = playback
       log.debug{"Opening PlayerWindow for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
 
-      info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
-
       // Reset state flags
       if state == .stopping || state == .idle {
         state = .started

@@ -32,6 +32,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
   }()
 
+
   // MARK: - Objects, Views
 
   var bestScreen: NSScreen {
@@ -49,7 +50,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   let pluginView = PluginViewController()
 
-
   /// The music player panel.
   ///
   /// This is only shown while in music mode, and will be a subview of `bottomBarView`. It contains a "mini" OSC, and if configured, the
@@ -61,6 +61,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // For legacy windowed mode
   var customTitleBar: CustomTitleBarViewController? = nil
+
+
+  // MARK: - Services
+
+  unowned var tabDelegate: TabDelegate?
 
   // For Rotate gesture:
   let rotationHandler = RotationGestureHandler()

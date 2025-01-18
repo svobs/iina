@@ -17,31 +17,52 @@ class StartupHandler {
     case stillEnqueuing = 1
     case doneEnqueuing
     case doneOpening
+
+    var isDone: Bool {
+      return self == .doneOpening
+    }
   }
 
+  // MARK: Properties
+
   var state: OpenWindowsState = .stillEnqueuing
+
+  /**
+   Mainly used to distinguish normal launches from others triggered by drag & drop or double-click from Finder.
+   Use only if opening single window. If multiple windows, don't wait; open each as soon as it loads.
+
+   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called with single file.
+   See also `wcForOpenFile` which may be set to non-nil value after this variable.
+   */
+  var openFileCalledForSingleFile = false
+  var wcForOpenFile: PlayerWindowController? = nil
+
+  // - Restore
+
+  /// The enqueued list of windows to restore, when restoring at launch.
+  /// Try to wait until all windows are ready so that we can show all of them at once (compare with `wcsReady`).
+  /// Make sure order of `wcsToRestore` is from back to front to restore the order properly.
+  var wcsToRestore: [NSWindowController] = []
+  /// Special case for Open File window when restoring. Because it is a panel, not a window, it will not have
+  /// an `NSWindowController`.
+  var restoreOpenFileWindow = false
+
+  var wcsReady = Set<NSWindowController>()
 
   /// Calls `self.restoreTimedOut` on timeout.
   let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
   var restoreTimeoutAlertPanel: NSAlert? = nil
 
-  /**
-   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
-   Mainly used to distinguish normal launches from others triggered by drag-and-dropping files.
-   */
-  var openFileCalled = false
-  var shouldIgnoreOpenFile = false
-
-  var restoreOpenFileWindow = false
-
-  /// Try to wait until all windows are ready so that we can show all of them at once.
-  /// Make sure order of `wcsToRestore` is from back to front to restore the order properly
-  var wcsToRestore: [NSWindowController] = []
-  var wcForOpenFile: PlayerWindowController? = nil
-
-  var wcsReady = Set<NSWindowController>()
+  // Command Line
 
   private var commandLineStatus = CommandLineStatus()
+
+  /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
+  var shouldIgnoreOpenFile: Bool {
+    return commandLineStatus.isCommandLine && !state.isDone
+  }
+
+  // MARK: Init
 
   init() {
     restoreTimer.action = restoreTimedOut
@@ -312,7 +333,7 @@ class StartupHandler {
 
   func abortWaitForOpenFilePlayerStartup() {
     Logger.log.verbose("Aborting wait for Open File player startup")
-    openFileCalled = false
+    openFileCalledForSingleFile = false
     wcForOpenFile = nil
     showWindowsIfReady()
   }
@@ -326,7 +347,7 @@ class StartupHandler {
       return
     }
     // TODO: change this to support multi-window open for multiple files
-    guard !openFileCalled || wcForOpenFile != nil else { return }
+    guard !openFileCalledForSingleFile || wcForOpenFile != nil else { return }
     let log = Logger.Subsystem.restore
 
     log.verbose("All \(wcsToRestore.count) restored \(wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
@@ -471,7 +492,6 @@ class StartupHandler {
       return
     }
 
-    shouldIgnoreOpenFile = true
     commandLineStatus.isCommandLine = true
     commandLineStatus.filenames = iinaArgFilenames
   }
