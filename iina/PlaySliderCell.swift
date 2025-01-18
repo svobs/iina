@@ -17,11 +17,6 @@ class PlaySliderCell: ScrollableSliderCell {
     return wc?.isScrollingOrDraggingPlaySlider ?? true
   }
   
-  override func awakeFromNib() {
-    minValue = 0
-    maxValue = 100
-  }
-
   // MARK:- Displaying the Cell
 
   override func barRect(flipped: Bool) -> NSRect {
@@ -48,13 +43,16 @@ class PlaySliderCell: ScrollableSliderCell {
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
     let progressRatio = slider.progressRatio
-    let barHeight = /*slider.isMouseHovering ? RenderCache.shared.barHeight * 2 :*/ RenderCache.shared.barHeight
+    let seekPreviewState = player.windowController.seekPreview.animationState
+    let barHeight = RenderCache.shared.barHeight
+    let isShowingSeekPreview = seekPreviewState == .shown || seekPreviewState == .willShow
     appearance.applyAppearanceFor {
       let isClearBG = isClearBG
       let knobWidth = enableDrawKnob ? knobWidth : 0
       RenderCache.shared.drawPlayBar(in: rect, barHeight: barHeight, darkMode: appearance.isDark, clearBG: isClearBG,
                                      screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
-                                     durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
+                                     durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges,
+                                     isShowingSeekPreview: isShowingSeekPreview)
     }
   }
 

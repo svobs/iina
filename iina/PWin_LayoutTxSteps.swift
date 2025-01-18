@@ -603,7 +603,7 @@ extension PlayerWindowController {
 
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       RenderCache.shared.updateBarColorsFromPrefs()
-      playSlider.needsDisplay = true
+      playSlider.cell?.controlView?.needsDisplay = true
       volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || (transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear) {

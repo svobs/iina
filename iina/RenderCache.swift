@@ -48,8 +48,9 @@ class RenderCache {
   lazy var maxVolBarHeightNeeded: CGFloat = {
     max(barHeight, volBarGreaterThanMaxHeight)
   }()
+  let barHeightWhileSeeking: CGFloat = 8.0
   lazy var maxPlayBarHeightNeeded: CGFloat = {
-    barHeight
+    max(barHeight, barHeightWhileSeeking)
   }()
 
   let barCornerRadius: CGFloat = 2.0
@@ -237,7 +238,8 @@ class RenderCache {
   func drawPlayBar(in barRect: NSRect, barHeight: CGFloat,
                    darkMode: Bool, clearBG: Bool, screen: NSScreen,
                    knobMinX: CGFloat, knobWidth: CGFloat,
-                   progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
+                   progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)],
+                   isShowingSeekPreview: Bool) {
     assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
     var drawRect = Bar.imageRect(in: barRect, tallestBarHeight: maxPlayBarHeightNeeded)
     if #unavailable(macOS 11) {
@@ -248,7 +250,7 @@ class RenderCache {
     }
     let bar = Bar(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, barHeight: barHeight, screen: screen,
                   knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
-                  durationSec: durationSec, chapters: chapters, cachedRanges: cachedRanges)
+                  durationSec: durationSec, chapters: chapters, cachedRanges: cachedRanges, isShowingSeekPreview: isShowingSeekPreview)
     NSGraphicsContext.current!.cgContext.draw(bar.image, in: drawRect)
   }
 
@@ -438,17 +440,19 @@ class RenderCache {
     /// `barWidth` does not include added leading or trailing margin
     init(darkMode: Bool, clearBG: Bool, barWidth: CGFloat, barHeight: CGFloat,
          screen: NSScreen, knobMinX: CGFloat, knobWidth: CGFloat,
-         progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)]) {
+         progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)],
+         isShowingSeekPreview: Bool) {
       image = Bar.makeImage(barWidth: barWidth, barHeight: barHeight,
                             screen: screen, darkMode: darkMode, clearBG: clearBG,
                             knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
-                            durationSec: durationSec, chapters, cachedRanges: cachedRanges)
+                            durationSec: durationSec, chapters, cachedRanges: cachedRanges, isShowingSeekPreview: isShowingSeekPreview)
     }
 
     static func makeImage(barWidth: CGFloat, barHeight: CGFloat,
                           screen: NSScreen, darkMode: Bool, clearBG: Bool,
                           knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
-                          durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
+                          durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
+                          isShowingSeekPreview: Bool) -> CGImage {
       // - Set up calculations
       let rc = RenderCache.shared
       let scaleFactor = screen.backingScaleFactor
@@ -535,7 +539,7 @@ class RenderCache {
             rc.drawPill(cgc, leftColor,
                         minX: segMinX, maxX: segMaxX,
                         interPillGapWidth: chapterGapWidth,
-                        height: barHeight_Scaled,
+                        height: isShowingSeekPreview ? rc.barHeightWhileSeeking * scaleFactor : barHeight_Scaled,
                         outerPadding_Scaled: outerPadding_Scaled,
                         cornerRadius_Scaled: cornerRadius_Scaled,
                         leftEdge: leftEdge,

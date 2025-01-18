@@ -2053,7 +2053,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       playSlider.abLoopA.posInSliderPercent = secondsToPercent(a)
       playSlider.abLoopB.isHidden = b == 0
       playSlider.abLoopB.posInSliderPercent = secondsToPercent(b)
-      playSlider.needsDisplay = true
+      playSlider.cell?.controlView?.needsDisplay = true
     }
   }
 

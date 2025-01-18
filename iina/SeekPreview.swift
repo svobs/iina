@@ -265,6 +265,7 @@ extension PlayerWindowController {
       thumbnailPeekView.isHidden = !showThumbnail
 
       animationState = .shown
+      player.windowController.playSlider.needsDisplay = true
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
       // reliably, so using a timer works well as a failsafe.
       restartHideTimer()
@@ -303,6 +304,7 @@ extension PlayerWindowController {
       tasks.append(.init(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
         // Don't hide overlays when in PIP or when they are not actually shown
         seekPreview.animationState = .willHide
+        playSlider.cell?.controlView?.needsDisplay = true
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
         seekPreview.timeLabel.animator().alphaValue = 0
         if isShowingFadeableViewsForSeek {
@@ -324,6 +326,7 @@ extension PlayerWindowController {
       seekPreview.thumbnailPeekView.isHidden = true
       seekPreview.timeLabel.isHidden = true
       seekPreview.animationState = .hidden
+      playSlider.cell?.controlView?.needsDisplay = true
     }
   }
 
