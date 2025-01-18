@@ -2614,8 +2614,10 @@
 				D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */,
 				D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */,
 				D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */,
+				D1FF15742A7E072200C0CE86 /* PlayerManager.swift */,
 				D13A7F112D3B6CBE00840277 /* TabService.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
+				D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */,
 				D17780D72CA0B680006B3B33 /* MediaMetaCache.swift */,
 				D1D736172989693A000EB5F4 /* Player */,
 			);
@@ -2924,9 +2926,7 @@
 		D1D736172989693A000EB5F4 /* Player */ = {
 			isa = PBXGroup;
 			children = (
-				D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */,
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
-				D1FF15742A7E072200C0CE86 /* PlayerManager.swift */,
 				D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
 				D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */,
