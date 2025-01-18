@@ -492,10 +492,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Toolbar
   var fragToolbarView: ClickThroughStackView? = nil
 
-  var fragPositionSliderView = PlayTimeAndSliderView()
-  var playSlider: PlaySlider { fragPositionSliderView.playSlider }
-  var leftTimeLabel: DurationDisplayTextField { fragPositionSliderView.leftTimeLabel }
-  var rightTimeLabel: DurationDisplayTextField { fragPositionSliderView.rightTimeLabel }
+  var fragPositionContainerView = PlayPositionContainerView()
+  var playSlider: PlaySlider { fragPositionContainerView.playSlider }
+  var leftTimeLabel: DurationDisplayTextField { fragPositionContainerView.leftTimeLabel }
+  var rightTimeLabel: DurationDisplayTextField { fragPositionContainerView.rightTimeLabel }
 
   /// Differentiate between single clicks and double clicks.
   var singleClickTimer: Timer?

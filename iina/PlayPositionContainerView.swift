@@ -7,7 +7,7 @@
 //
 
 /// Container view for play slider (`PlaySlider`) & time indicator labels (`DurationDisplayTextField`).
-class PlayTimeAndSliderView: ClickThroughView {
+class PlayPositionContainerView: ClickThroughView {
   let playSlider = PlaySlider()
   let leftTimeLabel = DurationDisplayTextField()
   let rightTimeLabel = DurationDisplayTextField()
@@ -30,7 +30,7 @@ class PlayTimeAndSliderView: ClickThroughView {
     addSubview(playSlider)
     addSubview(rightTimeLabel)
 
-    leftTimeLabel.identifier = .init("Playback-LeadingTimeLabel")
+    leftTimeLabel.identifier = .init("PlayPosition-LeftTimeLabel")
     leftTimeLabel.alignment = .right
     leftTimeLabel.isBordered = false
     leftTimeLabel.drawsBackground = false
@@ -54,7 +54,7 @@ class PlayTimeAndSliderView: ClickThroughView {
     playSlider.setContentHuggingPriority(.init(249), for: .horizontal)
     playSlider.setContentCompressionResistancePriority(.init(249), for: .horizontal)
 
-    rightTimeLabel.identifier = .init("Playback-TrailingTimeLabel")
+    rightTimeLabel.identifier = .init("PlayPosition-RightTimeLabel")
     rightTimeLabel.alignment = .left
     rightTimeLabel.isBordered = false
     rightTimeLabel.drawsBackground = false

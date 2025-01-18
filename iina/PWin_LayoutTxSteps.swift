@@ -455,14 +455,14 @@ extension PlayerWindowController {
     }
 
     if !outputLayout.hasControlBar {
-      fragPositionSliderView.removeFromSuperview()
+      fragPositionContainerView.removeFromSuperview()
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
     let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    fragPositionSliderView.playSliderHeightConstraint?.isActive = false
+    fragPositionContainerView.playSliderHeightConstraint?.isActive = false
 
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
@@ -481,7 +481,7 @@ extension PlayerWindowController {
 
         leftTimeLabel.font = NSFont.messageFont(ofSize: 11)
         rightTimeLabel.font = NSFont.messageFont(ofSize: 11)
-        fragPositionSliderView.removeFromSuperview()
+        fragPositionContainerView.removeFromSuperview()
 
         // Make sure to reset constraints for OSD
         miniPlayer.hideControllerButtons()
@@ -564,8 +564,8 @@ extension PlayerWindowController {
         let barHeight = oscGeo.barHeight
 
         // Expand slider bounds to entire bar so it's easier to hover and/or click on it
-        fragPositionSliderView.playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)
-        fragPositionSliderView.playSliderHeightConstraint?.isActive = true
+        fragPositionContainerView.playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)
+        fragPositionContainerView.playSliderHeightConstraint?.isActive = true
 
         // Knob height > 24 is not supported
 //        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
@@ -667,11 +667,11 @@ extension PlayerWindowController {
         playlistView.addConstraintsToFillSuperview()
 
         // move playback position slider
-        miniPlayer.positionSliderWrapperView.addSubview(fragPositionSliderView)
-        fragPositionSliderView.addConstraintsToFillSuperview()
+        miniPlayer.positionSliderWrapperView.addSubview(fragPositionContainerView)
+        fragPositionContainerView.addConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
-        fragPositionSliderView.playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
-        fragPositionSliderView.playSliderHeightConstraint?.isActive = true
+        fragPositionContainerView.playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
+        fragPositionContainerView.playSliderHeightConstraint?.isActive = true
         playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
 
         // move playback buttons
@@ -884,8 +884,8 @@ extension PlayerWindowController {
 
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-        oscFloatingLowerView.addSubview(fragPositionSliderView)
-        fragPositionSliderView.addConstraintsToFillSuperview()
+        oscFloatingLowerView.addSubview(fragPositionContainerView)
+        fragPositionContainerView.addConstraintsToFillSuperview()
 
         controlBarFloating.addMarginConstraints()
       }
@@ -1456,11 +1456,11 @@ extension PlayerWindowController {
     let isControlBarChanging = transition.isControlBarChanging
     if isControlBarChanging {
       containerView.addView(fragPlaybackBtnsView, in: .leading)
-      containerView.addView(fragPositionSliderView, in: .leading)
+      containerView.addView(fragPositionContainerView, in: .leading)
       containerView.addView(fragVolumeView, in: .leading)
 
       containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-      containerView.setVisibilityPriority(.mustHold, for: fragPositionSliderView)
+      containerView.setVisibilityPriority(.mustHold, for: fragPositionContainerView)
       containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     }
 
