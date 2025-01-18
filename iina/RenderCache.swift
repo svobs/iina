@@ -43,7 +43,7 @@ class RenderCache {
 
   // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
   let barHeight: CGFloat = 4.0
-  let volBarGreaterThanMaxHeight: CGFloat = 6.0
+  let volBarGreaterThanMaxHeight: CGFloat = 4.0
 
   lazy var maxVolBarHeightNeeded: CGFloat = {
     max(barHeight, volBarGreaterThanMaxHeight)
@@ -53,10 +53,21 @@ class RenderCache {
   }()
 
   let barCornerRadius: CGFloat = 2.0
-  var barColorLeft = NSColor.controlAccentColor
-  var barColorRight = NSColor.mainSliderBarRight
+  var barColorLeft = NSColor.controlAccentColor.cgColor {
+    didSet {
+      leftCachedColor = RenderCache.exaggerateColor(barColorLeft)
+    }
+  }
+  var barColorRight = NSColor.mainSliderBarRight.cgColor {
+    didSet {
+      rightCachedColor = RenderCache.exaggerateColor(barColorRight)
+    }
+  }
+
+  var leftCachedColor = exaggerateColor(NSColor.controlAccentColor.cgColor)
+  var rightCachedColor = exaggerateColor(NSColor.mainSliderBarRight.cgColor)
   let barMarginRadius: CGFloat = 1.0
-  let drawRightBarGreaterThanMaxVol = false
+  let colorRightBarGreaterThanMaxVol = false
 
   // count should equal number of KnobTypes
   var cachedKnobs = [Knob?](repeating: nil, count: 6)
@@ -217,9 +228,9 @@ class RenderCache {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
     switch userSetting {
     case .gray:
-      barColorLeft = NSColor.mainSliderBarLeft
+      barColorLeft = NSColor.mainSliderBarLeft.cgColor
     default:
-      barColorLeft = NSColor.controlAccentColor
+      barColorLeft = NSColor.controlAccentColor.cgColor
     }
   }
 
@@ -288,8 +299,8 @@ class RenderCache {
       let volBarGreaterThanMaxHeight_Scaled = rc.volBarGreaterThanMaxHeight * scaleFactor
       let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
       let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
-      let leftColor = rc.barColorLeft.cgColor
-      let rightColor = rc.barColorRight.cgColor
+      let leftColor = rc.barColorLeft
+      let rightColor = rc.barColorRight
       let barMinX = outerPadding_Scaled
       let barMaxX = imgSizeScaled.width - (outerPadding_Scaled * 2)
 
@@ -384,7 +395,7 @@ class RenderCache {
         if leftClipMaxX < vol100PercentPointX {
           // Volume is lower than 100%: only need to draw the part of bar which is > 100%
           leftMaxBar = nil
-          if rc.drawRightBarGreaterThanMaxVol {
+          if rc.colorRightBarGreaterThanMaxVol {
             rightMaxBar = CGRect(x: vol100PercentPointX, y: y,
                                  width: barMaxX - vol100PercentPointX, height: volBarGreaterThanMaxHeight_Scaled)
           } else {
@@ -393,7 +404,7 @@ class RenderCache {
         } else {
           leftMaxBar = CGRect(x: vol100PercentPointX, y: y,
                               width: leftClipMaxX - vol100PercentPointX, height: volBarGreaterThanMaxHeight_Scaled)
-          if rc.drawRightBarGreaterThanMaxVol {
+          if rc.colorRightBarGreaterThanMaxVol {
             rightMaxBar = CGRect(x: leftClipMaxX, y: y,
                                  width: barMaxX - leftClipMaxX, height: volBarGreaterThanMaxHeight_Scaled)
           } else {
@@ -402,12 +413,12 @@ class RenderCache {
         }
 
         if let leftMaxBar {
-          let leftMaxColor = exaggerateColor(leftColor)
+          let leftMaxColor = rc.leftCachedColor
           cgc.setFillColor(leftMaxColor)
           cgc.fill(leftMaxBar)
         }
         if let rightMaxBar {
-          let rightMaxColor = exaggerateColor(rightColor)
+          let rightMaxColor = rc.rightCachedColor
           cgc.setFillColor(rightMaxColor)
           cgc.fill(rightMaxBar)
         }
@@ -446,8 +457,8 @@ class RenderCache {
       let barHeight_Scaled = barHeight * scaleFactor
       let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
       let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
-      let leftColor = rc.barColorLeft.cgColor
-      let rightColor = rc.barColorRight.cgColor
+      let leftColor = rc.barColorLeft
+      let rightColor = rc.barColorRight
       let chapterGapWidth = (baseChapterGapWidth * scaleFactor).rounded()
       let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
       let hasSpaceForKnob = knobWidth > 0.0
@@ -582,9 +593,6 @@ class RenderCache {
           cgc.clip(to: [leftClipRect, rightClipRect])
         }
 
-        let leftCachedColor = exaggerateColor(leftColor)
-        let rightCachedColor = exaggerateColor(rightColor)
-
         var rectsLeft: [NSRect] = []
         var rectsRight: [NSRect] = []
         for cachedRange in cachedRanges.sorted(by: { $0.0 < $1.0 }) {
@@ -606,9 +614,9 @@ class RenderCache {
           }
         }
 
-        cgc.setFillColor(leftCachedColor)
+        cgc.setFillColor(rc.leftCachedColor)
         cgc.fill(rectsLeft)
-        cgc.setFillColor(rightCachedColor)
+        cgc.setFillColor(rc.rightCachedColor)
         cgc.fill(rectsRight)
 
         cgc.setBlendMode(.destinationIn)
