@@ -4,6 +4,23 @@
 
 import Cocoa
 
+/// Wraps the observer token received from
+/// NotificationCenter.addObserver(forName:object:queue:using:)
+/// and unregisters it in deinit.
+fileprivate final class NotificationToken: NSObject {
+  let notificationCenter: NotificationCenter
+  let token: Any
+
+  init(notificationCenter: NotificationCenter = .default, token: Any) {
+    self.notificationCenter = notificationCenter
+    self.token = token
+  }
+
+  deinit {
+    notificationCenter.removeObserver(token)
+  }
+}
+
 protocol TabDelegate: AnyObject {
   func createTab(newWindowController: PlayerWindowController,
                  inWindow window: NSWindow,
@@ -20,7 +37,7 @@ class TabService: TabDelegate {
     let window: NSWindow
 
     /// React to window closing, auto-unsubscribing on dealloc
-    let closingSubscription: NSObjectProtocol
+    fileprivate let closingSubscription: NotificationToken
   }
 
   fileprivate(set) var managedWindows: [ManagedWindow] = []
@@ -58,12 +75,14 @@ class TabService: TabDelegate {
 
     guard let window = windowController.window else { return nil }
 
-    let subscription = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: nil) { [unowned self] notification in
+    let nc = NotificationCenter.default
+    let observer = nc.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: nil) { [unowned self] notification in
       guard let window = notification.object as? NSWindow else { return }
       self.removeManagedWindow(forWindow: window)
     }
+    let token = NotificationToken(notificationCenter: nc, token: observer)
     let management = ManagedWindow(windowController: windowController, window: window,
-                                   closingSubscription: subscription)
+                                   closingSubscription: token)
     managedWindows.append(management)
 
     windowController.tabDelegate = self

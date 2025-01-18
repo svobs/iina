@@ -1376,14 +1376,18 @@ extension PlayerWindowController {
       controller.view = trailingTitleBarAccessoryView
       controller.layoutAttribute = .trailing
     }
-    if window.styleMask.contains(.titled) && window.titlebarAccessoryViewControllers.isEmpty {
-      window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
-      leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
-      leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    if window.styleMask.contains(.titled) {
+      if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
+        window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
+        leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
+        leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+      }
 
-      window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
-      trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
-      trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+      if !window.titlebarAccessoryViewControllers.contains(trailingTitlebarAccesoryViewController!) {
+        window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
+        trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
+        trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+      }
     }
   }
 

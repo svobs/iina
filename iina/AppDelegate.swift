@@ -26,7 +26,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @IBOutlet weak var dockMenu: NSMenu!
 
-  var tabService: TabService!
+  // TODO: finish adding support for tabbing windows
+  var tabService: TabService? = nil
+
+  func addTabForPlayer(_ pwc: PlayerWindowController) {
+    if let tabService, let mainWindow = tabService.mainWindow {
+      tabService.createTab(newWindowController: pwc, inWindow: mainWindow, ordered: .above)
+    } else {
+      // If either tabService or mainWindow is nil, there are no prev tabbed windows
+      tabService = TabService(initialWindowController: pwc)
+    }
+  }
 
   // Need to store these somewhere which isn't only inside a struct.
   // Swift doesn't seem to count them as strong references
