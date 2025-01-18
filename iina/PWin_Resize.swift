@@ -23,6 +23,11 @@ extension PlayerWindowController {
     log.verbose{"WindowDidEndLiveResize"}
   }
 
+  func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame newFrame: NSRect) -> NSRect {
+    log.verbose{"WindowWillZoom to: \(newFrame)"}
+    return newFrame
+  }
+
   /// NSWindowDelegate: windowWillResize
   ///
   /// # Notes for other NSWindowDelegate notifications:

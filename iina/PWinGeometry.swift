@@ -108,22 +108,26 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // - Screen:
   // The ID of the screen on which this window is displayed
   let screenID: String
+  /// Describes how a given `PlayerWindow` must fit inside its given screen (corresponding to `screenID`).
   let fitOption: ScreenFitOption
-  // The mode affects lockViewportToVideo behavior and minimum sizes
+  /// The mode affects lockViewportToVideo behavior and size calculations.
   let mode: PlayerWindowMode
 
   // - Window dimensions, outermost → innermost
 
-  /// The size & position (`window.frame`) of an IINA player `NSWindow`.
+  /// The size & position (`window.frame`) of the `PlayerWindow`.
   let windowFrame: NSRect
 
-  // Extra black space (if any) above outsideTopBar, used for covering MacBook's magic camera housing while in legacy fullscreen
+  /// The height of extra black space (if any) above `outsideBars.top`, used for covering MacBook's
+  /// magic camera housing while in legacy fullscreen.
   let topMarginHeight: CGFloat
 
-  /// Outside panels
+  /// 4 values, representing the thickness of each of the 4 "outside" panels.
+  /// A value of `0` indicates the given panel is closed/hidden.
   let outsideBars: MarginQuad
 
-  /// Inside panels
+  /// 4 values, representing the thickness of each of the 4 "inside" panels.
+  /// A value of `0` indicates the given panel is closed/hidden.
   var insideBars: MarginQuad
 
   let viewportMargins: MarginQuad
@@ -131,7 +135,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Initializers / Factory Methods
 
-  /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`
+  /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`.
   init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption,
        mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideBars: MarginQuad, insideBars: MarginQuad,
@@ -463,12 +467,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
-                               minViewportMargins minMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
+                               minViewportMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
     if viewportSize.width == 0 || viewportSize.height == 0 {
       return NSSize.zero
     }
 
-    let minMargins = minMargins ?? minViewportMargins(forMode: mode)
+    let minMargins = minViewportMargins ?? self.minViewportMargins(forMode: mode)
     let usableViewportSize = NSSize(width: viewportSize.width - minMargins.totalWidth,
                                     height: viewportSize.height - minMargins.totalHeight)
     let videoSize: NSSize

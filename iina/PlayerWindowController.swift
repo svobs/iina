@@ -9,9 +9,9 @@
 import Cocoa
 
 // FIXME: Add Sparkle back in
+// TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
 // TODO: stick window to individual side of screen
-// TODO: persist mpv properties in saved player state
 // TODO: auto-adjust window size when Dock shown/hidden
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
@@ -125,7 +125,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
     assert(DispatchQueue.isExecutingIn(.main))
-
     if !self.loaded {
       return false
     }
@@ -626,6 +625,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Initialization
 
+  /// NOTE: this inits this `NSWindowController` & its properties. However, its `window` will be created
+  /// until `self.window` is first accessed, and not until then! None of its `@IBOutlet` properties
+  /// should be accessed without first checking `isLoaded`, otherwise a crash can occur. Do not use
+  /// `isWindowLoaded` because that will cause `window` to be loaded (and will definitely crash if not
+  /// accessed on the main thread).
   init(playerCore player: PlayerCore) {
     self.player = player
     self.osd = OSDState(log: player.log)

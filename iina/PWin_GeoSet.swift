@@ -11,7 +11,8 @@ import Foundation
 struct GeometrySet {
   /// The window geometry, whether in regular  or interactive mode.
   ///
-  /// (Full screen geometry is not
+  /// Full screen geometry is not stored in a `GeometrySet`, but is expected to be derived from the properties
+  /// of `windowed`
   let windowed: PWinGeometry
   let musicMode: MusicModeGeometry
   let video: VideoGeometry
