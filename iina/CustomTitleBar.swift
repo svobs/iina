@@ -14,7 +14,7 @@ fileprivate let inactiveControlOpacity: CGFloat = 0.40
 
 /// For legacy windowed mode. Manual reconstruction of title bar is needed when not using `titled` window style.
 class CustomTitleBarViewController: NSViewController {
-  var windowController: PlayerWindowController!
+  unowned var windowController: PlayerWindowController!
 
   // Leading side
   let leadingStackView = TitleBarButtonsContainerView()
@@ -55,6 +55,9 @@ class CustomTitleBarViewController: NSViewController {
     miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
     zoomButton = NSWindow.standardWindowButton(.zoomButton, for: .titled)
     let trafficLightButtons = trafficLightButtons
+
+    // Add leading title bar accessory view
+
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
                                     identifier: "leadingSidebarToggleButton",
@@ -127,14 +130,14 @@ class CustomTitleBarViewController: NSViewController {
 
     builder.configureTitleBarButton(onTopButton,
                                     Images.onTopOff,
-                                    identifier: "onTopButton",
+                                    identifier: "OnTopButton",
                                     target: windowController,
                                     action: #selector(windowController.toggleOnTop(_:)),
-                                    bounceOnClick: false)
+                                    bounceOnClick: false) // Do not bounce (looks weird)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
-                                    identifier: "trailingSidebarToggleButton",
+                                    identifier: "TrailingSidebarToggleButton",
                                     target: windowController,
                                     action: #selector(windowController.toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)

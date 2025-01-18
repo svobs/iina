@@ -332,14 +332,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var viewportViewHeightContraint: NSLayoutConstraint? = nil
 
-  // Spacers in left title bar accessory view:
-  var leadingTitleBarLeadingSpaceConstraint: NSLayoutConstraint? = nil
-  var leadingTitleBarTrailingSpaceConstraint: NSLayoutConstraint? = nil
-
-  // Spacers in right title bar accessory view:
-  var trailingTitleBarLeadingSpaceConstraint: NSLayoutConstraint? = nil
-  var trailingTitleBarTrailingSpaceConstraint: NSLayoutConstraint? = nil
-
   // - Top bar (title bar and/or top OSC) constraints
   @IBOutlet weak var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!

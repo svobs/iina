@@ -183,21 +183,12 @@ extension PlayerWindowController {
     let leadingTB = leadingTitleBarAccessoryView
     leadingTB.idString = "leadingTitleBarAccessoryView"
 
-    let leadingSpacerLeading = NSView()
-    leadingSpacerLeading.identifier = .init("leadingTitleBarLeadingSpacer")
-    leadingTitleBarLeadingSpaceConstraint = leadingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
-    leadingTitleBarLeadingSpaceConstraint?.isActive = true
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
-                                    identifier: "leadingSidebarToggleButton",
+                                    identifier: "LeadingSidebarToggleButton_Native",
                                     target: self,
                                     action: #selector(toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
-
-    let leadingSpacerTrailing = NSView()
-    leadingSpacerTrailing.identifier = .init("leadingTitleBarTrailingSpacer")
-    leadingTitleBarTrailingSpaceConstraint = leadingSpacerTrailing.widthAnchor.constraint(equalToConstant: 0)
-    leadingTitleBarTrailingSpaceConstraint?.isActive = true
 
     leadingTB.orientation = .horizontal
     leadingTB.alignment = .centerY
@@ -206,38 +197,25 @@ extension PlayerWindowController {
     leadingTB.detachesHiddenViews = true
     leadingTB.setHuggingPriority(.init(500), for: .horizontal)
 
-    leadingTB.addArrangedSubview(leadingSpacerLeading)
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
-    leadingTB.addArrangedSubview(leadingSpacerTrailing)
 
     // - TRAILING
 
     let trailingTB = trailingTitleBarAccessoryView
     trailingTB.idString = "trailingTitleBarAccessoryView"
 
-    let trailingSpacerLeading = NSView()
-    trailingSpacerLeading.identifier = .init("trailingTitleBarLeadingSpacer")
-    
-    trailingTitleBarLeadingSpaceConstraint = trailingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
-    trailingTitleBarLeadingSpaceConstraint?.isActive = true
-
     builder.configureTitleBarButton(onTopButton,
                                     Images.onTopOff,
-                                    identifier: "onTopButton",
+                                    identifier: "OnTopButton_Native",
                                     target: self, action: #selector(toggleOnTop(_:)),
-                                    bounceOnClick: false)
+                                    bounceOnClick: false) // Do not bounce (looks weird)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
-                                    identifier: "trailingSidebarToggleButton",
+                                    identifier: "TrailingSidebarToggleButton_Native",
                                     target: self,
                                     action: #selector(toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)
-
-    let trailingSpacerTrailing = NSView()
-    trailingSpacerTrailing.identifier = .init("trailingTitleBarTrailingSpacer")
-    trailingTitleBarTrailingSpaceConstraint = trailingSpacerTrailing.widthAnchor.constraint(equalToConstant: 0)
-    trailingTitleBarTrailingSpaceConstraint?.isActive = true
 
     trailingTB.orientation = .horizontal
     trailingTB.alignment = .centerY
@@ -245,11 +223,10 @@ extension PlayerWindowController {
     trailingTB.spacing = iconSpacingH
     trailingTB.detachesHiddenViews = true
     trailingTB.setHuggingPriority(.init(500), for: .horizontal)
+    trailingTB.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
 
-    trailingTB.addArrangedSubview(trailingSpacerLeading)
     trailingTB.addArrangedSubview(trailingSidebarToggleButton)
     trailingTB.addArrangedSubview(onTopButton)
-    trailingTB.addArrangedSubview(trailingSpacerTrailing)
 
     addTitleBarAccessoryViews()
   }
