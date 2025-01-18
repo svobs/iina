@@ -392,6 +392,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var leftArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
   var rightArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
 
+  var playSliderHeightConstraint: NSLayoutConstraint?
+
   @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
 
   var volumeIconHeightConstraint: NSLayoutConstraint!
@@ -492,10 +494,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Toolbar
   var fragToolbarView: ClickThroughStackView? = nil
 
-  var fragPositionContainerView = PlayPositionContainerView()
-  var playSlider: PlaySlider { fragPositionContainerView.playSlider }
-  var leftTimeLabel: DurationDisplayTextField { fragPositionContainerView.leftTimeLabel }
-  var rightTimeLabel: DurationDisplayTextField { fragPositionContainerView.rightTimeLabel }
+  let playPositionContainerView = ClickThroughView()
+  let playSlider = PlaySlider()
+  let leftTimeLabel = DurationDisplayTextField()
+  let rightTimeLabel = DurationDisplayTextField()
 
   /// Differentiate between single clicks and double clicks.
   var singleClickTimer: Timer?

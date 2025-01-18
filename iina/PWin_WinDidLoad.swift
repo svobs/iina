@@ -117,6 +117,7 @@ extension PlayerWindowController {
       initBottomBarView(in: contentView, style: .visualEffectView)
       initSpeedLabel()
       initPlaybackBtnsView()
+      initPlayPositionContainerView()
       initVolumeView()
       initAlbumArtView()
       playSlider.target = self
@@ -437,6 +438,67 @@ extension PlayerWindowController {
     leftArrowBtnVertOffsetConstraint.isActive = true
     let rightArrowBtnVertOffsetConstraint = rightArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     rightArrowBtnVertOffsetConstraint.isActive = true
+  }
+
+  private func initPlayPositionContainerView() {
+    // - Configure playPositionContainerView
+    playPositionContainerView.translatesAutoresizingMaskIntoConstraints = false
+    playPositionContainerView.userInterfaceLayoutDirection = .leftToRight
+    playPositionContainerView.setContentHuggingPriority(.init(249), for: .horizontal)
+    playPositionContainerView.setContentCompressionResistancePriority(.init(249), for: .horizontal)
+
+    // - Configure subviews
+
+    leftTimeLabel.identifier = .init("PlayPosition-LeftTimeLabel")
+    leftTimeLabel.alignment = .right
+    leftTimeLabel.isBordered = false
+    leftTimeLabel.drawsBackground = false
+    leftTimeLabel.isEditable = false
+    leftTimeLabel.refusesFirstResponder = true
+    leftTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+    leftTimeLabel.setContentHuggingPriority(.init(501), for: .horizontal)
+    leftTimeLabel.setContentCompressionResistancePriority(.init(501), for: .horizontal)
+
+    playSlider.identifier = .init("PlaySlider")
+    playSlider.minValue = 0
+    playSlider.maxValue = 100
+    playSlider.isContinuous = true
+    playSlider.refusesFirstResponder = true
+    playSlider.translatesAutoresizingMaskIntoConstraints = false
+    playSlider.setContentHuggingPriority(.init(249), for: .horizontal)
+    playSlider.setContentCompressionResistancePriority(.init(249), for: .horizontal)
+
+    rightTimeLabel.identifier = .init("PlayPosition-RightTimeLabel")
+    rightTimeLabel.alignment = .left
+    rightTimeLabel.isBordered = false
+    rightTimeLabel.drawsBackground = false
+    rightTimeLabel.isEditable = false
+    rightTimeLabel.refusesFirstResponder = true
+    rightTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+    rightTimeLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    rightTimeLabel.setContentCompressionResistancePriority(.init(749), for: .horizontal)
+
+    playPositionContainerView.addSubview(leftTimeLabel)
+    playPositionContainerView.addSubview(playSlider)
+    playPositionContainerView.addSubview(rightTimeLabel)
+
+    // - Add constraints to subviews
+
+    playPositionContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: 150.0).isActive = true
+
+    leftTimeLabel.leadingAnchor.constraint(equalTo: playPositionContainerView.leadingAnchor).isActive = true
+    playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: 4).isActive = true
+
+    // Expand slider bounds to entire bar so it's easier to hover and/or click on it
+    playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: 20.0)
+    playSliderHeightConstraint?.isActive = true
+
+    playSlider.centerYAnchor.constraint(equalTo: playPositionContainerView.centerYAnchor).isActive = true
+    playSlider.centerYAnchor.constraint(equalTo: leftTimeLabel.centerYAnchor).isActive = true
+    playSlider.centerYAnchor.constraint(equalTo: rightTimeLabel.centerYAnchor).isActive = true
+
+    rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: 4).isActive = true
+    rightTimeLabel.trailingAnchor.constraint(equalTo: playPositionContainerView.trailingAnchor).isActive = true
   }
 
   private func initVolumeView() {
