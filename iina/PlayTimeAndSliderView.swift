@@ -32,6 +32,8 @@ class PlayTimeAndSliderView: ClickThroughView {
 
     leftTimeLabel.identifier = .init("Playback-LeadingTimeLabel")
     leftTimeLabel.alignment = .right
+    leftTimeLabel.isBordered = false
+    leftTimeLabel.drawsBackground = false
     leftTimeLabel.isEditable = false
     leftTimeLabel.refusesFirstResponder = true
     leftTimeLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -54,6 +56,8 @@ class PlayTimeAndSliderView: ClickThroughView {
 
     rightTimeLabel.identifier = .init("Playback-TrailingTimeLabel")
     rightTimeLabel.alignment = .left
+    rightTimeLabel.isBordered = false
+    rightTimeLabel.drawsBackground = false
     rightTimeLabel.isEditable = false
     rightTimeLabel.refusesFirstResponder = true
     rightTimeLabel.translatesAutoresizingMaskIntoConstraints = false

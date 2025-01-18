@@ -43,10 +43,14 @@ class RenderCache {
 
   // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
   let barHeight: CGFloat = 4.0
-  let volBarGreaterThanMaxHeight: CGFloat = 4.0
-  /// This must be <= the numbers above
-  var maxVolBarHeightNeeded: CGFloat = 4.0
-  let maxPlayBarHeightNeeded: CGFloat = 4.0
+  let volBarGreaterThanMaxHeight: CGFloat = 6.0
+
+  lazy var maxVolBarHeightNeeded: CGFloat = {
+    max(barHeight, volBarGreaterThanMaxHeight)
+  }()
+  lazy var maxPlayBarHeightNeeded: CGFloat = {
+    barHeight
+  }()
 
   let barCornerRadius: CGFloat = 2.0
   var barColorLeft = NSColor.controlAccentColor
@@ -237,6 +241,8 @@ class RenderCache {
     NSGraphicsContext.current!.cgContext.draw(bar.image, in: drawRect)
   }
 
+  // MARK: - Volume Bar
+
   func drawVolumeBar(in barRect: NSRect, barHeight: CGFloat, screen: NSScreen,
                      darkMode: Bool, clearBG: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
                      currentValue: CGFloat, maxValue: CGFloat) {
@@ -279,6 +285,7 @@ class RenderCache {
       let imgSizeScaled = Bar.imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxVolBarHeightNeeded, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
       let barHeight_Scaled = barHeight * scaleFactor
+      let volBarGreaterThanMaxHeight_Scaled = rc.volBarGreaterThanMaxHeight * scaleFactor
       let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
       let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
       let leftColor = rc.barColorLeft.cgColor
@@ -292,7 +299,7 @@ class RenderCache {
       // Determine clipping rects (pixel whitelists)
       let leftClipMaxX: CGFloat
       let rightClipMinX: CGFloat
-      if clearBG {
+      if clearBG || knobWidth < 1.0 {
         leftClipMaxX = currentValuePointX
         rightClipMinX = currentValuePointX
       } else {
@@ -304,12 +311,21 @@ class RenderCache {
       let hasLeft = leftClipMaxX - outerPadding_Scaled > 0.0
       let hasRight = rightClipMinX + outerPadding_Scaled < imgSizeScaled.width
 
+      // If volume can exceed 100%, let's draw the part of the bar which is >100% differently
+      let vol100PercentPointX = (outerPadding_Scaled + ((100.0 / maxValue) * barWidth_Scaled)).rounded()
+
       let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        func drawEntireBar(color: CGColor) {
+
+        func drawEntireBar(color: CGColor, pillHeight: CGFloat, clipMinX: CGFloat, clipMaxX: CGFloat) {
+          cgc.resetClip()
+          cgc.clip(to: CGRect(x: clipMinX, y: 0,
+                              width: clipMaxX - clipMinX,
+                              height: imgSizeScaled.height))
+
           rc.addPillPath(cgc, minX: barMinX,
                          maxX: barMaxX,
                          interPillGapWidth: 0,
-                         height: barHeight_Scaled,
+                         height: pillHeight,
                          outerPadding_Scaled: outerPadding_Scaled,
                          cornerRadius_Scaled: cornerRadius_Scaled,
                          leftEdge: .noBorderingPill,
@@ -320,58 +336,63 @@ class RenderCache {
                       minX: barMinX,
                       maxX: barMaxX,
                       interPillGapWidth: 0,
-                      height: barHeight_Scaled,
+                      height: pillHeight,
                       outerPadding_Scaled: outerPadding_Scaled,
                       cornerRadius_Scaled: cornerRadius_Scaled,
                       leftEdge: .noBorderingPill,
                       rightEdge: .noBorderingPill)
         }
 
-        if hasLeft {
-          let leftClipRect = CGRect(x: 0, y: 0,
-                                    width: leftClipMaxX,
-                                    height: imgSizeScaled.height)
-          // Left of knob
-          cgc.resetClip()
-          cgc.clip(to: leftClipRect)
-          drawEntireBar(color: leftColor)
+        var pillHeight = barHeight_Scaled
+
+        if hasLeft {  // Left of knob (i.e. "completed" section of bar)
+          var minX = 0.0
+
+          if vol100PercentPointX < leftClipMaxX {
+            drawEntireBar(color: leftColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: vol100PercentPointX)
+            // Update for next segment:
+            minX = vol100PercentPointX
+            pillHeight = volBarGreaterThanMaxHeight_Scaled
+          }
+
+          drawEntireBar(color: leftColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: leftClipMaxX)
         }
 
-        if hasRight {
-          let rightClipRect = CGRect(x: rightClipMinX, y: 0,
-                                     width: imgSizeScaled.width - rightClipMinX,
-                                     height: imgSizeScaled.height)
-          cgc.resetClip()
-          cgc.clip(to: rightClipRect)
-          drawEntireBar(color: rightColor)
+        if hasRight {  // Right of knob
+          var minX = rightClipMinX
+
+          if vol100PercentPointX > rightClipMinX && vol100PercentPointX < imgSizeScaled.width {
+            drawEntireBar(color: rightColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: vol100PercentPointX)
+            // Update for next segment:
+            minX = vol100PercentPointX
+            pillHeight = volBarGreaterThanMaxHeight_Scaled
+          }
+
+          drawEntireBar(color: rightColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: imgSizeScaled.width)
         }
       }
 
-      guard maxValue > 100.0 else { return barImg }
 
       // If volume can exceed 100%, draw that section in special color
+      guard maxValue > 100.0 else { return barImg }
       let highlightOverlayImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-        let regularMaxRatio = 100.0 / maxValue
-        let oneHundredPointX = (outerPadding_Scaled + (regularMaxRatio * barWidth_Scaled)).rounded()
-
-        let volBarGreaterThanMaxHeight_Scaled = rc.volBarGreaterThanMaxHeight * scaleFactor
 
         let y = (CGFloat(cgc.height) - volBarGreaterThanMaxHeight_Scaled) * 0.5  // y should include outerPadding_Scaled here
 
         let leftMaxBar: CGRect?
         let rightMaxBar: CGRect?
-        if leftClipMaxX < oneHundredPointX {
+        if leftClipMaxX < vol100PercentPointX {
           // Volume is lower than 100%: only need to draw the part of bar which is > 100%
           leftMaxBar = nil
           if rc.drawRightBarGreaterThanMaxVol {
-            rightMaxBar = CGRect(x: oneHundredPointX, y: y,
-                                 width: barMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
+            rightMaxBar = CGRect(x: vol100PercentPointX, y: y,
+                                 width: barMaxX - vol100PercentPointX, height: volBarGreaterThanMaxHeight_Scaled)
           } else {
             rightMaxBar = nil
           }
         } else {
-          leftMaxBar = CGRect(x: oneHundredPointX, y: y,
-                              width: leftClipMaxX - oneHundredPointX, height: volBarGreaterThanMaxHeight_Scaled)
+          leftMaxBar = CGRect(x: vol100PercentPointX, y: y,
+                              width: leftClipMaxX - vol100PercentPointX, height: volBarGreaterThanMaxHeight_Scaled)
           if rc.drawRightBarGreaterThanMaxVol {
             rightMaxBar = CGRect(x: leftClipMaxX, y: y,
                                  width: barMaxX - leftClipMaxX, height: volBarGreaterThanMaxHeight_Scaled)
