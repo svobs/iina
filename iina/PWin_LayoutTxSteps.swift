@@ -602,7 +602,7 @@ extension PlayerWindowController {
       // Has OSC, or music mode
 
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
-      RenderCache.shared.updateBarColorsFromPrefs()
+      BarFactory.shared.updateBarColorsFromPrefs()
       playSlider.cell?.controlView?.needsDisplay = true
       volumeSlider.needsDisplay = true
 
@@ -626,7 +626,7 @@ extension PlayerWindowController {
           rightTimeLabel.addShadow()
           rightTimeLabel.textColor = .white
 
-          RenderCache.shared.mainKnobColor = NSColor.controlForClearBG
+          KnobFactory.shared.mainKnobColor = NSColor.controlForClearBG
         } else {
           leftTimeLabel.shadow = nil
           leftTimeLabel.textColor = nil
@@ -634,10 +634,10 @@ extension PlayerWindowController {
           rightTimeLabel.shadow = nil
           rightTimeLabel.textColor = nil
 
-          RenderCache.shared.mainKnobColor = NSColor.mainSliderKnob
+          KnobFactory.shared.mainKnobColor = NSColor.mainSliderKnob
         }
         // invalidate all cached knob images
-        RenderCache.shared.invalidateCachedKnobs()
+        KnobFactory.shared.invalidateCachedKnobs()
       }
 
       let timeLabelFont: NSFont

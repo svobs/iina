@@ -5,7 +5,7 @@
 //  Created by Matt Svoboda on 2024-12-19.
 //
 
-extension RenderCache {
+extension BarFactory {
 
   enum PillEdgeType {
     case squareClip

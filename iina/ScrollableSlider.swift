@@ -147,7 +147,7 @@ class ScrollableSliderCell: NSSliderCell {
   var knobWidth: CGFloat = 3
   var knobHeight: CGFloat = 15
 
-  var currentKnobType: RenderCache.KnobType {
+  var currentKnobType: KnobFactory.KnobType {
     isHighlighted ? .mainKnobSelected : .mainKnob
   }
 
@@ -155,7 +155,7 @@ class ScrollableSliderCell: NSSliderCell {
     guard enableDrawKnob else { return }
     guard let screen = controlView?.window?.screen, let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawKnob(currentKnobType, in: knobRect,
+      KnobFactory.shared.drawKnob(currentKnobType, in: knobRect,
                                   darkMode: appearance.isDark,
                                   clearBG: isClearBG,
                                   knobWidth: knobWidth, mainKnobHeight: knobHeight,

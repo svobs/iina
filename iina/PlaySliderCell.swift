@@ -21,7 +21,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let extraHeightNeeded = (RenderCache.shared.maxPlayBarHeightNeeded + 2 * RenderCache.shared.barMarginRadius) - superRect.height
+    let extraHeightNeeded = (BarFactory.shared.maxPlayBarHeightNeeded + 2 * BarFactory.shared.barMarginRadius) - superRect.height
     if extraHeightNeeded <= 0.0 {
       return superRect
     }
@@ -44,12 +44,12 @@ class PlaySliderCell: ScrollableSliderCell {
     let chaptersToDraw = drawChapters ? chapters : []
     let progressRatio = slider.progressRatio
     let seekPreviewState = player.windowController.seekPreview.animationState
-    let barHeight = RenderCache.shared.barHeight
+    let barHeight = BarFactory.shared.barHeight
     let isShowingSeekPreview = seekPreviewState == .shown || seekPreviewState == .willShow
     appearance.applyAppearanceFor {
       let isClearBG = isClearBG
       let knobWidth = enableDrawKnob ? knobWidth : 0
-      RenderCache.shared.drawPlayBar(in: rect, barHeight: barHeight, darkMode: appearance.isDark, clearBG: isClearBG,
+      BarFactory.shared.drawPlayBar(in: rect, barHeight: barHeight, darkMode: appearance.isDark, clearBG: isClearBG,
                                      screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,
                                      durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges,
                                      isShowingSeekPreview: isShowingSeekPreview)

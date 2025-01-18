@@ -14,7 +14,7 @@ class VolumeSliderCell: ScrollableSliderCell {
     return wc?.isScrollingOrDraggingVolumeSlider ?? true
   }
 
-  override var currentKnobType: RenderCache.KnobType {
+  override var currentKnobType: KnobFactory.KnobType {
     isHighlighted ? .volumeKnobSelected : .volumeKnob
   }
 
@@ -28,7 +28,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let extraHeightNeeded = (RenderCache.shared.maxVolBarHeightNeeded + 2*RenderCache.shared.barMarginRadius) - superRect.height
+    let extraHeightNeeded = (BarFactory.shared.maxVolBarHeightNeeded + 2*BarFactory.shared.barMarginRadius) - superRect.height
     if extraHeightNeeded <= 0.0 {
       return superRect
     }
@@ -45,7 +45,7 @@ class VolumeSliderCell: ScrollableSliderCell {
     let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
     let knobWidth = enableDrawKnob ? knobWidth : 0
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawVolumeBar(in: rect, barHeight: RenderCache.shared.barHeight, screen: screen,
+      BarFactory.shared.drawVolumeBar(in: rect, barHeight: BarFactory.shared.barHeight, screen: screen,
                                        darkMode: appearance.isDark, clearBG: isClearBG,
                                        knobMinX: knobMinX, knobWidth: knobWidth, currentValue: doubleValue, maxValue: maxValue)
     }

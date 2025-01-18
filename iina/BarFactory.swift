@@ -1,5 +1,5 @@
 //
-//  RenderCache.swift
+//  BarFactory.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-11-07.
@@ -9,35 +9,9 @@
 /// In the future, the sliders should be entirely custom, instead of relying on legacy `NSSlider`. Then the knob & slider can be
 /// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
-class RenderCache {
-  static let shared = RenderCache()
-  let knobScaleFactor = 2.0  // always draw knob with this resolution (just looks a bit better)
-
-  // MARK: - Knob
-
-  enum KnobType: Int {
-    case mainKnob = 0
-    case mainKnobSelected
-    case loopKnob
-    case loopKnobSelected
-    case volumeKnob
-    case volumeKnobSelected
-  }
-
-  init() {
-  }
-
-  // - Knob Constants
-
-  /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
-  let knobMarginRadius: CGFloat = 1.0
-  let knobCornerRadius: CGFloat = 1
-
-  var mainKnobColor = NSColor.mainSliderKnob
-  var mainKnobActiveColor = NSColor.mainSliderKnobActive
-  var loopKnobColor = NSColor.mainSliderLoopKnob
-  let shadowColor = NSShadow().shadowColor!.cgColor
-  let glowColor = NSColor.white.withAlphaComponent(1.0/3.0).cgColor
+class BarFactory {
+  static let shared = BarFactory()
+  // MARK: - Bar
 
   // - Bar Constants
 
@@ -48,20 +22,21 @@ class RenderCache {
   lazy var maxVolBarHeightNeeded: CGFloat = {
     max(barHeight, volBarGreaterThanMaxHeight)
   }()
-  let barHeightWhileSeeking: CGFloat = 8.0
+  let leftBarHeightWhileSeeking: CGFloat = 9.0
+  let rightBarHeightWhileSeeking: CGFloat = 6.0
   lazy var maxPlayBarHeightNeeded: CGFloat = {
-    max(barHeight, barHeightWhileSeeking)
+    max(barHeight, leftBarHeightWhileSeeking, rightBarHeightWhileSeeking)
   }()
 
   let barCornerRadius: CGFloat = 2.0
   var barColorLeft = NSColor.controlAccentColor.cgColor {
     didSet {
-      leftCachedColor = RenderCache.exaggerateColor(barColorLeft)
+      leftCachedColor = BarFactory.exaggerateColor(barColorLeft)
     }
   }
   var barColorRight = NSColor.mainSliderBarRight.cgColor {
     didSet {
-      rightCachedColor = RenderCache.exaggerateColor(barColorRight)
+      rightCachedColor = BarFactory.exaggerateColor(barColorRight)
     }
   }
 
@@ -69,161 +44,6 @@ class RenderCache {
   var rightCachedColor = exaggerateColor(NSColor.mainSliderBarRight.cgColor)
   let barMarginRadius: CGFloat = 1.0
   let colorRightBarGreaterThanMaxVol = false
-
-  // count should equal number of KnobTypes
-  var cachedKnobs = [Knob?](repeating: nil, count: 6)
-
-  func invalidateCachedKnobs() {
-    for i in 0..<cachedKnobs.count {
-      cachedKnobs[i] = nil
-    }
-  }
-
-  func getKnob(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
-               knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) -> Knob {
-    if let cachedKnob = cachedKnobs[knobType.rawValue], cachedKnob.isDarkMode == darkMode,
-       cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight,
-       cachedKnob.scaleFactor == knobScaleFactor {
-      return cachedKnob
-    }
-    // There may some minor loss due to races, but it will settle quickly. Don't need lousy locksss
-    let knob = Knob(knobType, isDarkMode: darkMode, isClearBG: clearBG,
-                    knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: knobScaleFactor)
-    cachedKnobs[knobType.rawValue] = knob
-    return knob
-  }
-
-  func getKnobImage(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
-                    knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) -> CGImage {
-    return getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
-                   knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: scaleFactor).image
-  }
-
-  func drawKnob(_ knobType: KnobType, in knobRect: NSRect, darkMode: Bool, clearBG: Bool,
-                knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
-    let knob = getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
-                       knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: knobScaleFactor)
-
-    let image = knob.image
-
-    let knobHeightAdj = knobType == .loopKnob ? knob.loopKnobHeight : knob.mainKnobHeight
-    let knobImageSize = Knob.imageSize(knobWidth: knobWidth, knobHeight: knobHeightAdj)
-    let drawRect = NSRect(x: round(knobRect.origin.x) - RenderCache.shared.knobMarginRadius,
-                          y: knobRect.origin.y - RenderCache.shared.knobMarginRadius + (0.5 * (knobRect.height - knobHeightAdj)),
-                          width: knobImageSize.width, height: knobImageSize.height)
-    NSGraphicsContext.current!.cgContext.draw(image, in: drawRect)
-  }
-
-  struct Knob {
-
-    /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
-    ///
-    /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
-    static let loopKnobHeightAdjustment: CGFloat = 0.75
-
-    let isDarkMode: Bool
-    let isClearBG: Bool
-    let knobWidth: CGFloat
-    let mainKnobHeight: CGFloat
-    let image: CGImage
-    let scaleFactor: CGFloat
-
-    init(_ knobType: KnobType, isDarkMode: Bool, isClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
-      let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-      let shadowOrGlowColor = isDarkMode ? RenderCache.shared.glowColor : RenderCache.shared.shadowColor
-      switch knobType {
-      case .mainKnobSelected, .volumeKnobSelected:
-        image = Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
-                               knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
-      case .mainKnob, .volumeKnob:
-        let shadowColor = isClearBG ? RenderCache.shared.shadowColor : ((isClearBG || !isDarkMode) ? RenderCache.shared.shadowColor : nil)
-        image = Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: shadowColor,
-                               knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
-      case .loopKnob:
-        image = Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
-                               knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
-      case .loopKnobSelected:
-        image = isDarkMode ?
-        Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
-                       knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor) :
-        Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
-                       knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
-      }
-      self.isDarkMode = isDarkMode
-      self.isClearBG = isClearBG
-      self.knobWidth = knobWidth
-      self.mainKnobHeight = mainKnobHeight
-      self.scaleFactor = scaleFactor
-    }
-
-    static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat,
-                          scaleFactor: CGFloat) -> CGImage {
-      let knobImageSizeScaled = Knob.imgSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
-      let knobMarginRadius_Scaled = RenderCache.shared.knobMarginRadius * scaleFactor
-      let knobCornerRadius_Scaled = RenderCache.shared.knobCornerRadius * scaleFactor
-      let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
-                                               height: knobImageSizeScaled.heightInt) { cgContext in
-
-        // Round the X position for cleaner drawing
-        let pathRect = NSMakeRect(knobMarginRadius_Scaled,
-                                  knobMarginRadius_Scaled,
-                                  knobWidth * scaleFactor,
-                                  knobHeight * scaleFactor)
-        let path = CGPath(roundedRect: pathRect, cornerWidth: knobCornerRadius_Scaled,
-                          cornerHeight: knobCornerRadius_Scaled, transform: nil)
-
-        if let shadow {
-          cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadow)
-        }
-        cgContext.beginPath()
-        cgContext.addPath(path)
-
-        cgContext.setFillColor(fill.cgColor)
-        cgContext.fillPath()
-
-        if let shadow {
-          /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
-          cgContext.beginPath()
-          cgContext.addPath(path)
-          cgContext.setLineWidth(0.4 * scaleFactor)
-          cgContext.setStrokeColor(shadow)
-          cgContext.strokePath()
-        }
-      }
-      return knobImage
-    }
-
-    var loopKnobHeight: CGFloat {
-      Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-    }
-
-    func imageSize(_ knobType: KnobType) -> CGSize {
-      switch knobType {
-      case .mainKnob, .mainKnobSelected, .volumeKnob, .volumeKnobSelected:
-        return Knob.imageSize(knobWidth: knobWidth, knobHeight: mainKnobHeight)
-      case .loopKnob, .loopKnobSelected:
-        let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-        return Knob.imageSize(knobWidth: knobWidth, knobHeight: loopKnobHeight)
-      }
-    }
-
-    static func loopKnobHeight(mainKnobHeight: CGFloat) -> CGFloat {
-      // We want loop knobs to be shorter than the primary knob.
-      return round(mainKnobHeight * Knob.loopKnobHeightAdjustment)
-    }
-
-    static func imageSize(knobWidth: CGFloat, knobHeight: CGFloat) -> CGSize {
-      return CGSize(width: knobWidth + (2 * RenderCache.shared.knobMarginRadius),
-                    height: knobHeight + (2 * RenderCache.shared.knobMarginRadius))
-    }
-
-    static func imgSizeScaled(knobWidth: CGFloat, knobHeight: CGFloat, scaleFactor: CGFloat) -> CGSize {
-      let size = imageSize(knobWidth: knobWidth, knobHeight: knobHeight)
-      return size.multiplyThenRound(scaleFactor)
-    }
-  }  // end struct Knob
-
-  // MARK: - Bar
 
   func updateBarColorsFromPrefs() {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
@@ -293,7 +113,7 @@ class RenderCache {
                           knobMinX: CGFloat, knobWidth: CGFloat,
                           currentValue: Double, maxValue: Double) -> CGImage {
       // - Set up calculations
-      let rc = RenderCache.shared
+      let rc = BarFactory.shared
       let scaleFactor = screen.backingScaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxVolBarHeightNeeded, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
@@ -454,7 +274,7 @@ class RenderCache {
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
                           isShowingSeekPreview: Bool) -> CGImage {
       // - Set up calculations
-      let rc = RenderCache.shared
+      let rc = BarFactory.shared
       let scaleFactor = screen.backingScaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxPlayBarHeightNeeded, scaleFactor: scaleFactor)
       let barWidth_Scaled = barWidth * scaleFactor
@@ -539,7 +359,7 @@ class RenderCache {
             rc.drawPill(cgc, leftColor,
                         minX: segMinX, maxX: segMaxX,
                         interPillGapWidth: chapterGapWidth,
-                        height: isShowingSeekPreview ? rc.barHeightWhileSeeking * scaleFactor : barHeight_Scaled,
+                        height: isShowingSeekPreview ? rc.leftBarHeightWhileSeeking * scaleFactor : barHeight_Scaled,
                         outerPadding_Scaled: outerPadding_Scaled,
                         cornerRadius_Scaled: cornerRadius_Scaled,
                         leftEdge: leftEdge,
@@ -571,7 +391,7 @@ class RenderCache {
             rc.drawPill(cgc, rightColor,
                         minX: segMinX, maxX: segMaxX,
                         interPillGapWidth: chapterGapWidth,
-                        height: barHeight_Scaled,
+                        height: isShowingSeekPreview ? rc.rightBarHeightWhileSeeking * scaleFactor : barHeight_Scaled,
                         outerPadding_Scaled: outerPadding_Scaled,
                         cornerRadius_Scaled: cornerRadius_Scaled,
                         leftEdge: leftEdge,
@@ -632,7 +452,7 @@ class RenderCache {
 
     /// Measured in points, not pixels!
     static func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
-      let margin = RenderCache.shared.barMarginRadius
+      let margin = BarFactory.shared.barMarginRadius
       let imgHeight = (2 * margin) + tallestBarHeight
       // can be negative:
       let spareHeight = drawRect.height - imgHeight
@@ -644,7 +464,7 @@ class RenderCache {
     /// `scaleFactor` should match `backingScaleFactor` from the current screen.
     /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
     static func imgSizeScaled(barWidth: CGFloat, tallestBarHeight: CGFloat, scaleFactor: CGFloat) -> CGSize {
-      let marginPairSum = (2 * RenderCache.shared.barMarginRadius)
+      let marginPairSum = (2 * BarFactory.shared.barMarginRadius)
       let size = CGSize(width: barWidth + marginPairSum, height: marginPairSum + tallestBarHeight)
       return size.multiplyThenRound(scaleFactor)
     }
