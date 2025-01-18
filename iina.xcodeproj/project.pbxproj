@@ -2751,12 +2751,7 @@
 				D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */,
 				D1EAF5E628E6B6780023BACF /* TableUIChange.swift */,
 				D1D87E032932086000737886 /* TableUIChangeBuilder.swift */,
-				D1C741092CB3833500522FA7 /* ScrollableSlider.swift */,
-				D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */,
-				51E63DFA29CFB031008AFC20 /* PlaySlider.swift */,
-				51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */,
-				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
-				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
+				D13A7F172D3C55AD00840277 /* Slider */,
 				8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */,
 				8487BEC01D744FA800FD17B0 /* FlippedView.swift */,
 				84817C971DBDCE4300CC2279 /* RoundedColorWell.swift */,
@@ -2883,6 +2878,22 @@
 			path = mpv;
 			sourceTree = "<group>";
 		};
+		D13A7F172D3C55AD00840277 /* Slider */ = {
+			isa = PBXGroup;
+			children = (
+				D1C741092CB3833500522FA7 /* ScrollableSlider.swift */,
+				D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */,
+				51E63DFA29CFB031008AFC20 /* PlaySlider.swift */,
+				51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */,
+				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
+				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
+				D13A7F152D3C512B00840277 /* KnobFactory.swift */,
+				D16A434C2CDDB7570012D66F /* BarFactory.swift */,
+				D160783A2D140DDB00105001 /* RenderUtil.swift */,
+			);
+			path = Slider;
+			sourceTree = "<group>";
+		};
 		D1A44D882A5E18B10089B283 /* PlayerWindow */ = {
 			isa = PBXGroup;
 			children = (
@@ -2938,9 +2949,6 @@
 				846121BC1F35FCA500ABB39C /* DraggingDetect.swift */,
 				84FBCB361EEACDDD0076C77C /* FFmpegController.h */,
 				84FBCB371EEACDDD0076C77C /* FFmpegController.m */,
-				D13A7F152D3C512B00840277 /* KnobFactory.swift */,
-				D16A434C2CDDB7570012D66F /* BarFactory.swift */,
-				D160783A2D140DDB00105001 /* RenderUtil.swift */,
 			);
 			name = Player;
 			sourceTree = "<group>";
