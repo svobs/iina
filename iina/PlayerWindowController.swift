@@ -254,7 +254,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       geo = geo.clone(windowed: newValue)
       log.verbose("Updated windowedModeGeo ≔ \(newValue)")
       assert(newValue.mode.isWindowed, "windowedModeGeo has unexpected mode: \(newValue.mode)")
-      assert(!newValue.fitOption.isFullScreen, "windowedModeGeo has invalid fitOption: \(newValue.fitOption)")
+      assert(!newValue.screenFit.isFullScreen, "windowedModeGeo has invalid screenFit: \(newValue.screenFit)")
     }
   }
 
@@ -274,7 +274,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if csv?.isEmpty ?? true {
       Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry")
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
-      if savedGeo.mode.isWindowed && !savedGeo.fitOption.isFullScreen {
+      if savedGeo.mode.isWindowed && !savedGeo.screenFit.isFullScreen {
         Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)")
         return savedGeo
       } else {
@@ -286,7 +286,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return LayoutState.buildFrom(LayoutSpec.defaultLayout()).buildDefaultInitialGeometry(screen: defaultScreen)
   }() {
     didSet {
-      guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.fitOption.isFullScreen else {
+      guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
         Logger.log.error("Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)")
         return
       }

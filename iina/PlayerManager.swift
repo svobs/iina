@@ -227,7 +227,7 @@ class PlayerManager {
   }
 
   private func _createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
-    Logger.log("Creating PlayerCore instance with ID \(label?.quoted ?? "(no label)")")
+    Logger.log("Creating PlayerCore instance with ID \(label?.quoted ?? "(nil)")")
     let pc: PlayerCore
     if let label = label {
       if _playerExists(withLabel: label) {

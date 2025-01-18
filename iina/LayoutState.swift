@@ -657,7 +657,7 @@ class LayoutState {
 
     var geo = resizedBarsGeo.refitted()
     if offsetIndex > 0 {
-      let screenVisibleFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: geo.screenID, fitOption: .stayInside)!
+      let screenVisibleFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: geo.screenID, screenFit: .stayInside)!
       let offsetIncrement = Constants.Distance.multiWindowOpenOffsetIncrement
       for _ in 1...offsetIndex {
         var newWindowFrame = NSRect(origin: NSPoint(x: geo.windowFrame.origin.x + offsetIncrement,
@@ -696,7 +696,7 @@ class LayoutState {
     case .windowedInteractive:
       return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, video: video)
     case .windowedNormal:
-      let geo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
+      let geo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: .stayInside,
                              mode: mode,
                              topMarginHeight: 0,  // is only nonzero when in legacy FS
                              outsideBars: outsideBars,

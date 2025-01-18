@@ -1142,7 +1142,7 @@ extension PWinGeometry {
                self.windowFrame.origin.y.stringMaxFrac2,
                self.windowFrame.width.stringMaxFrac2,
                self.windowFrame.height.stringMaxFrac2,
-               String(self.fitOption.rawValue),
+               String(self.screenFit.rawValue),
                self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
                String(self.mode.rawValue),
                self.video.toEmbeddedCSV()
@@ -1199,8 +1199,8 @@ extension PWinGeometry {
         Logger.log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
         return nil
       }
-      guard let fitOption = ScreenFitOption(rawValue: fitOptionRawValue) else {
-        Logger.log.error("\(errPreamble) unrecognized ScreenFitOption: \(fitOptionRawValue)")
+      guard let screenFit = ScreenFit(rawValue: fitOptionRawValue) else {
+        Logger.log.error("\(errPreamble) unrecognized ScreenFit: \(fitOptionRawValue)")
         return nil
       }
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
@@ -1216,7 +1216,7 @@ extension PWinGeometry {
         return nil
       }
 
-      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
+      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit, mode: mode, topMarginHeight: topMarginHeight,
                           outsideBars: outsideBars, insideBars: insideBars,
                           viewportMargins: viewportMargins, video: videoGeo)
     }
@@ -1261,8 +1261,8 @@ extension PWinGeometry {
         Logger.log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
         return nil
       }
-      guard let fitOption = ScreenFitOption(rawValue: fitOptionRawValue) else {
-        Logger.log.error("\(errPreamble) unrecognized ScreenFitOption: \(fitOptionRawValue)")
+      guard let screenFit = ScreenFit(rawValue: fitOptionRawValue) else {
+        Logger.log.error("\(errPreamble) unrecognized ScreenFit: \(fitOptionRawValue)")
         return nil
       }
       let windowFrame = NSRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
@@ -1285,7 +1285,7 @@ extension PWinGeometry {
         video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
       }
 
-      let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
+      let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit, mode: mode, topMarginHeight: topMarginHeight,
                           outsideBars: outsideBars, insideBars: insideBars,
                           viewportMargins: viewportMargins, video: video)
       return pwinGeo

@@ -373,7 +373,7 @@ extension PlayerWindowController {
         let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
                                     size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
         let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID,
-                                      fitOption: transition.outputGeometry.fitOption, mode: .windowedNormal, topMarginHeight: 0,
+                                      screenFit: transition.outputGeometry.screenFit, mode: .windowedNormal, topMarginHeight: 0,
                                       outsideBars: MarginQuad(top: outsideTopBarHeight),
                                       insideBars: MarginQuad.zero,
                                       video: transition.outputGeometry.video)
@@ -391,7 +391,7 @@ extension PlayerWindowController {
 
       let middleWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
-                          fitOption: baseGeo.fitOption, mode: .musicMode, topMarginHeight: 0,
+                          screenFit: baseGeo.screenFit, mode: .musicMode, topMarginHeight: 0,
                           outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero,
                           video: baseGeo.video)
     } else if transition.isExitingMusicMode {

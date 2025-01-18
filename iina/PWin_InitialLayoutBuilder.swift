@@ -248,11 +248,11 @@ extension PlayerWindowController {
 
     // Clean up windowedModeGeo if serious errors found with it
     let priorWindowedModeGeo = priorState.geoSet.windowed
-    if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.fitOption.isFullScreen {
-      log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or fitOption (\(priorWindowedModeGeo.fitOption)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")
+    if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.screenFit.isFullScreen {
+      log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or screenFit (\(priorWindowedModeGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")
       let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
       let windowed: PWinGeometry
-      if lastClosedGeo.mode.isWindowed && !lastClosedGeo.fitOption.isFullScreen {
+      if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
         windowed = initialLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
                                                              keepFullScreenDimensions: false)
       } else {

@@ -525,12 +525,12 @@ extension PlayerWindowController {
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {
         log.verbose{"[applyVideoGeo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)"}
-        return windowGeo.scalingViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
+        return windowGeo.scalingViewport(to: screenVisibleFrame.size, screenFit: .centerInside)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
         let scaledVideoSize = newVidGeo.videoSizeCAR * resizeRatio
         log.verbose{"[applyVideoGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)"}
-        let centeredScaledGeo = windowGeo.scalingVideo(to: scaledVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
+        let centeredScaledGeo = windowGeo.scalingVideo(to: scaledVideoSize, screenFit: .centerInside, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = centeredScaledGeo.viewportSize
         log.verbose{"[applyVideoGeo C-3] After scaleVideo: \(centeredScaledGeo)"}
@@ -576,10 +576,10 @@ extension PlayerWindowController {
 
         // FIXME: regression: viewport keeps expanding when video runs into screen boundary
         let videoSizeScaled = oldVideoGeo.videoSizeCAR * desiredVideoScale
-        let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingVideo(to: videoSizeScaled, fitOption: .noConstraints)
+        let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-        let fitOption: ScreenFitOption = .stayInside
-        let newGeometry = newGeoUnconstrained.refitted(using: fitOption)
+        let screenFit: ScreenFit = .stayInside
+        let newGeometry = newGeoUnconstrained.refitted(using: screenFit)
 
         log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVideoGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
         buildApplyWindowGeoTasks(newGeometry, thenRun: true)
@@ -599,14 +599,14 @@ extension PlayerWindowController {
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
       let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingViewport(to: desiredViewportSize,
-                                                                           fitOption: .noConstraints)
+                                                                           screenFit: .noConstraints)
       if currentLayout.mode == .windowedNormal {
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       }
 
-      let fitOption: ScreenFitOption = centerOnScreen ? .centerInside : .stayInside
-      let newGeometry = newGeoUnconstrained.refitted(using: fitOption)
+      let screenFit: ScreenFit = centerOnScreen ? .centerInside : .stayInside
+      let newGeometry = newGeoUnconstrained.refitted(using: screenFit)
       log.verbose{"Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(newGeometry.windowFrame)"}
       buildApplyWindowGeoTasks(newGeometry, duration: duration, thenRun: true)
     case .musicMode:

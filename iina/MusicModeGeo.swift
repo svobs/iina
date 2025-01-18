@@ -130,7 +130,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   func toPWinGeometry() -> PWinGeometry {
     let winGeo = PWinGeometry(windowFrame: windowFrame,
                               screenID: screenID,
-                              fitOption: .stayInside,
+                              screenFit: .stayInside,
                               mode: .musicMode,
                               topMarginHeight: 0,
                               outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + playlistHeight),
@@ -167,7 +167,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
   /// height-bounded instead of width-bounded.
   func refitted() -> MusicModeGeometry {
-    let containerFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: .stayInside)!
+    let containerFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: .stayInside)!
 
     /// When the window's width changes, the video scales to match while keeping its aspect ratio,
     /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
@@ -210,7 +210,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let newWindowSize = NSSize(width: newWidth, height: newHeight)
 
     var newWindowFrame = NSRect(origin: windowFrame.origin, size: newWindowSize)
-    if ScreenFitOption.stayInside.shouldMoveWindowToKeepInContainer {
+    if ScreenFit.stayInside.shouldMoveWindowToKeepInContainer {
       newWindowFrame = newWindowFrame.constrain(in: containerFrame)
     }
     let fittedGeo = self.clone(windowFrame: newWindowFrame)
@@ -230,7 +230,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     log.verbose("Scaling MusicMode video to desiredWidth \(newVideoWidth)")
 
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .stayInside)!
+    let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, screenFit: .stayInside)!
 
     // Constrain desired width within min and max allowed, then recalculate height from new value
     newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
@@ -283,7 +283,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let newWindowSize = NSSize(width: newVideoWidth, height: windowHeight)
     var newWindowFrame = NSRect(origin: newWindowOrigin, size: newWindowSize)
 
-    if ScreenFitOption.stayInside.shouldMoveWindowToKeepInContainer {
+    if ScreenFit.stayInside.shouldMoveWindowToKeepInContainer {
       newWindowFrame = newWindowFrame.constrain(in: containerFrame)
     }
 
