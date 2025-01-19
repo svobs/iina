@@ -25,7 +25,7 @@ class KnobFactory {
 
   /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
   let knobMarginRadius: CGFloat = 1.0
-  let knobCornerRadius: CGFloat = 1
+  let knobCornerRadius: CGFloat = 1.0
 
   var mainKnobColor = NSColor.mainSliderKnob
   var mainKnobActiveColor = NSColor.mainSliderKnobActive

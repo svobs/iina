@@ -476,10 +476,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var pipOverlayView: NSVisualEffectView!
   @IBOutlet weak var viewportView: ViewportView!
 
-  let defaultAlbumArtView = NSView()
+  let defaultAlbumArtView = ClickThroughView()
 
   /// Container for volume slider & mute button
-  var fragVolumeView = NSView()
+  var fragVolumeView = ClickThroughView()
   let muteButton = SymButton()
   let volumeSlider = ScrollableSlider()
 

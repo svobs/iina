@@ -44,11 +44,42 @@ class IINAAnimation {
     return try closure()
   }
 
-  /// Convenience wrapper for chaining multiple tasks together via `NSAnimationContext.runAnimationGroup()`. Does not use pipeline.
+  /// Convenience func to reduce code verbosity
+  static func runAsync(duration: CGFloat? = nil, _ timingName: CAMediaTimingFunctionName? = nil,
+                       _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+    runAsync(Task(duration: duration, timing: timingName, runFunc), then: doAfter)
+  }
+
+  /// Convenience func for running the giving closure in a transactional way
+  static func runInstantAsync(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+    runAsync(.instantTask(runFunc), then: doAfter)
+  }
+
+  /// Convenience wrapper for running a task asynchronously and immediately via `NSAnimationContext.runAnimationGroup()`.
+  /// Does not use pipeline.
   static func runAsync(_ task: Task, then doAfter: TaskFunc? = nil) {
+    runAsync([task], then: doAfter)
+  }
+
+  /// Convenience wrapper for executing a chain of tasks sequentially via `NSAnimationContext.runAnimationGroup()`.
+  /// The first task in the chain is launched immediately & asynchronously (does not use pipeline).
+  static func runAsync(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
+    var tasks = tasks
+    if let doAfter {
+      tasks.append(.instantTask(doAfter))
+    }
+
+    let taskIterator: IndexingIterator<Array<Task>> = tasks.makeIterator()
+    runSequentially(taskIterator)
+  }
+
+  // Recursive function which executes code for a single Task in a chain of tasks.
+  private static func runSequentially(_ taskIterator: IndexingIterator<Array<Task>>) {
     // Fail if not running on main thread:
     assert(DispatchQueue.isExecutingIn(.main))
 
+    var taskIterator = taskIterator
+    guard let task = taskIterator.next() else { return }
     NSAnimationContext.runAnimationGroup({ context in
       let disableAnimation = !isAnimationEnabled
       if disableAnimation {
@@ -66,28 +97,11 @@ class IINAAnimation {
       } catch IINAError.cancelAnimationTransaction {
         Logger.log.debug("Animation pipeline: async task was cancelled")
       } catch {
-        Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
+        Logger.log.error("Animation pipeline: unexpected error thrown by async task: \(error)")
       }
     }, completionHandler: {
-      if let doAfter = doAfter {
-        do {
-          try doAfter()
-        } catch {
-          Logger.log("Animation pipeline: unexpected error thrown by doAfter func: \(error)")
-        }
-      }
+      runSequentially(taskIterator)
     })
-  }
-
-  /// Convenience func for less verbose code
-  static func runAsync(duration: CGFloat? = nil, _ timingName: CAMediaTimingFunctionName? = nil,
-                         _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
-    runAsync(Task(duration: duration, timing: timingName, runFunc), then: doAfter)
-  }
-
-  /// Convenience func for running the giving closure in a transactional way
-  static func runInstantAsync(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
-    runAsync(.instantTask(runFunc), then: doAfter)
   }
 }
 
