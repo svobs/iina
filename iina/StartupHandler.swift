@@ -240,6 +240,8 @@ class StartupHandler {
     return true
   }
 
+  /// Called by a `TimeoutTimer` if the restore process is taking too long.  Displays a dialog prompting
+  /// the user to discard the stored state, or keep waiting.
   func restoreTimedOut() {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
@@ -319,6 +321,8 @@ class StartupHandler {
     }
   }
 
+  /// Called if all the windows become ready while still displaying the timeout dialog, Dismisses the dialog
+  /// automatically, so the user does not have to do it themselves.
   private func dismissTimeoutAlertPanel() {
     guard let restoreTimeoutAlertPanel else { return }
 
@@ -331,6 +335,8 @@ class StartupHandler {
     /// This may restart the timer if not in the correct state, so account for that.
   }
 
+  /// Call this if the user opened a new file at startup but we want to discard the state for it
+  /// (for example if it couldn't be opened).
   func abortWaitForOpenFilePlayerStartup() {
     Logger.log.verbose("Aborting wait for Open File player startup")
     openFileCalledForSingleFile = false
@@ -346,7 +352,7 @@ class StartupHandler {
       restoreTimer.restart()
       return
     }
-    // TODO: change this to support multi-window open for multiple files
+    // If a new file was opened at startup (i.e. not a restored window), wait for this also.
     guard !openFileCalledForSingleFile || wcForOpenFile != nil else { return }
     let log = Logger.Subsystem.restore
 
@@ -364,8 +370,15 @@ class StartupHandler {
       prevWindowNumber = wc.window?.windowNumber
       wc.showWindow(self)
     }
-    if let wcForOpenFile = wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
-      wcForOpenFile.showWindow(self)  // open last, thus making frontmost
+
+    // Opened file (if any):
+    if let wc = wcForOpenFile, !(wc.window?.isMiniaturized ?? false) {
+      // Make this topmost
+      if let prevWindowNumber {
+        wc.window?.order(.above, relativeTo: prevWindowNumber)
+      }
+      prevWindowNumber = wc.window?.windowNumber
+      wc.showWindow(self)
     }
 
     if restoreOpenFileWindow {

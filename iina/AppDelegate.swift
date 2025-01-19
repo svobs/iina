@@ -538,8 +538,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       if openingMultipleWindows {
         if urls.count > 10 {
-          // TODO: put up a warning dialog
-          Logger.log.debug("Opening a lot of windows (count: \(urls.count))")
+          // TODO: put up a confirmation prompt
+          Logger.log.warn("User requested to open a lot of windows (count: \(urls.count))")
         }
         var windowCount = 0
         for url in urls {
