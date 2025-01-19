@@ -31,9 +31,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func addTabForPlayer(_ pwc: PlayerWindowController) {
     if let tabService, let mainWindow = tabService.mainWindow {
+      Logger.log("Adding tab for PlayerWindow \(pwc.player.label.quoted)")
       tabService.createTab(newWindowController: pwc, inWindow: mainWindow, ordered: .above)
     } else {
       // If either tabService or mainWindow is nil, there are no prev tabbed windows
+      Logger.log("Creating new TabService with initial PlayerWindow \(pwc.player.label.quoted)")
       tabService = TabService(initialWindowController: pwc)
     }
   }
@@ -226,7 +228,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // other initializations at App level
     NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+
+    // TODO: try to get tabbing working
     NSWindow.allowsAutomaticWindowTabbing = false
+    // NSWindow.userTabbingPreference
 
     JavascriptPlugin.loadGlobalInstances()
 

@@ -778,8 +778,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     log.verbose("PlayerWindow openWindow starting")
 
-//    AppDelegate.shared.addTabForPlayer(self)
-
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
     // Catalina and Big Sur. The problem was not reproducible in early versions of Monterey. It
     // reappeared in Ventura. The status of other versions of macOS is unknown, however the
