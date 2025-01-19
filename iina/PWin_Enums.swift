@@ -157,6 +157,7 @@ extension PlayerWindowController {
 
     case playerWindow = 0
     case playSlider
+    case volumeSlider
     case customTitleBar
   }
 

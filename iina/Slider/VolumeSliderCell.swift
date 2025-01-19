@@ -12,7 +12,7 @@ import Cocoa
 class VolumeSliderCell: ScrollableSliderCell {
   override var enableDrawKnob: Bool {
     guard let wc else { return false }
-    return wc.isScrollingOrDraggingVolumeSlider
+    return wc.isScrollingOrDraggingVolumeSlider || wc.isMouseHoveringOverVolumeSlider
   }
 
   override var currentKnobType: KnobFactory.KnobType {

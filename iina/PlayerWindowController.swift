@@ -542,6 +542,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return false
   }
 
+  var isMouseHoveringOverVolumeSlider = false
+
   // Other state
 
   var symButtons: [SymButton] {
@@ -813,6 +815,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       playSlider.abLoopB.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopB.bounds, options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
     }
 
+    if volumeSlider.trackingAreas.isEmpty {
+      volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds,
+                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                                  owner: self, userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
+    }
     // truncate middle for title
     if let attrTitle = titleTextField?.attributedStringValue.mutableCopy() as? NSMutableAttributedString, attrTitle.length > 0 {
       let p = attrTitle.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as! NSMutableParagraphStyle

@@ -444,6 +444,10 @@ extension PlayerWindowController {
       if currentDragObject != nil { return }
 
       refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
+    case .volumeSlider:
+      if currentDragObject != nil { return }
+      isMouseHoveringOverVolumeSlider = true
+      player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseEntered(with: event)
     }
@@ -469,6 +473,9 @@ extension PlayerWindowController {
       }
     case .playSlider:
       hideSeekPreview()
+    case .volumeSlider:
+      isMouseHoveringOverVolumeSlider = false
+      player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseExited(with: event)
     }
