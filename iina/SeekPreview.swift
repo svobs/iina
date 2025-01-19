@@ -25,7 +25,14 @@ extension PlayerWindowController {
     var timeLabelHorizontalCenterConstraint: NSLayoutConstraint!
     var timeLabelVerticalSpaceConstraint: NSLayoutConstraint!
 
-    var animationState: UIAnimationState = .shown
+    var animationState: UIAnimationState = .shown {
+      didSet {
+        if animationState == .willHide || animationState == .hidden {
+          currentPreviewTimeSec = nil
+        }
+      }
+    }
+    var currentPreviewTimeSec: Double? = nil  // only non-nil when shown
     /// For auto hiding seek time & thumbnail after a timeout.
     /// Calls `PlayerWindowController.seekPreviewTimeout` on timeout.
     let hideTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
@@ -264,6 +271,7 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
       thumbnailPeekView.isHidden = !showThumbnail
 
+      currentPreviewTimeSec = previewTimeSec
       animationState = .shown
       player.windowController.playSlider.needsDisplay = true
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire

@@ -11,7 +11,8 @@ import Cocoa
 /// See also: `PlaySliderCell`
 class VolumeSliderCell: ScrollableSliderCell {
   override var enableDrawKnob: Bool {
-    return wc?.isScrollingOrDraggingVolumeSlider ?? true
+    guard let wc else { return false }
+    return wc.isScrollingOrDraggingVolumeSlider
   }
 
   override var currentKnobType: KnobFactory.KnobType {
@@ -39,15 +40,25 @@ class VolumeSliderCell: ScrollableSliderCell {
     return rect
   }
 
-  override func drawBar(inside rect: NSRect, flipped: Bool) {
+  override func drawBar(inside barRect: NSRect, flipped: Bool) {
+    let bf = BarFactory.shared
+    assert(bf.barHeight <= barRect.height, "barHeight \(bf.barHeight) > barRect.height \(barRect.height)")
     guard let screen = controlView?.window?.screen else { return }
     guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance else { return }
     let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
     let knobWidth = enableDrawKnob ? knobWidth : 0
     appearance.applyAppearanceFor {
-      BarFactory.shared.drawVolumeBar(in: rect, barHeight: BarFactory.shared.barHeight, screen: screen,
-                                       darkMode: appearance.isDark, clearBG: isClearBG,
-                                       knobMinX: knobMinX, knobWidth: knobWidth, currentValue: doubleValue, maxValue: maxValue)
+      var drawRect = bf.imageRect(in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded)
+      if #unavailable(macOS 11) {
+        drawRect = NSRect(x: drawRect.origin.x,
+                          y: drawRect.origin.y + 1,
+                          width: drawRect.width,
+                          height: drawRect.height - 2)
+      }
+      let volBarImg = bf.buildVolumeBarImage(darkMode: appearance.isDark, clearBG: isClearBG, barWidth: barRect.width,
+                                             barHeight: bf.barHeight, screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
+                                             currentValue: doubleValue, maxValue: maxValue)
+      NSGraphicsContext.current!.cgContext.draw(volBarImg, in: drawRect)
     }
   }
 

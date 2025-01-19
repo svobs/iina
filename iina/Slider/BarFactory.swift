@@ -16,21 +16,21 @@ class BarFactory {
   // - Bar Constants
 
   // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
-  let barHeight: CGFloat = 4.0
-  let volBarGreaterThanMaxHeight: CGFloat = 4.0
+  let barHeight: CGFloat = 3.0
+  let volBarGreaterThanMaxHeight: CGFloat = 3.0
 
   let baseChapterGapWidth: CGFloat = 1.5
 
   lazy var maxVolBarHeightNeeded: CGFloat = {
     max(barHeight, volBarGreaterThanMaxHeight)
   }()
-  let leftBarHeightWhileSeeking: CGFloat = 9.0
+  let leftBarHeightWhileSeeking: CGFloat = 6.0
   let rightBarHeightWhileSeeking: CGFloat = 6.0
   lazy var maxPlayBarHeightNeeded: CGFloat = {
     max(barHeight, leftBarHeightWhileSeeking, rightBarHeightWhileSeeking)
   }()
 
-  let barCornerRadius: CGFloat = 2.0
+  let barCornerRadius: CGFloat = 1.5
   var barColorLeft = NSColor.controlAccentColor.cgColor {
     didSet {
       leftCachedColor = BarFactory.exaggerateColor(barColorLeft)
@@ -57,46 +57,7 @@ class BarFactory {
     }
   }
 
-  func drawPlayBar(in barRect: NSRect, barHeight: CGFloat,
-                   darkMode: Bool, clearBG: Bool, screen: NSScreen,
-                   knobMinX: CGFloat, knobWidth: CGFloat,
-                   progressRatio: CGFloat, durationSec: CGFloat, chapters: [MPVChapter], cachedRanges: [(Double, Double)],
-                   isShowingSeekPreview: Bool) {
-    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
-    var drawRect = imageRect(in: barRect, tallestBarHeight: maxPlayBarHeightNeeded)
-    if #unavailable(macOS 11) {
-      drawRect = NSRect(x: drawRect.origin.x,
-                        y: drawRect.origin.y + 1,
-                        width: drawRect.width,
-                        height: drawRect.height - 2)
-    }
-
-    let barImg = buildBarImage(barWidth: barRect.width, barHeight: barHeight,
-                               screen: screen, darkMode: darkMode, clearBG: clearBG,
-                               knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
-                               durationSec: durationSec, chapters, cachedRanges: cachedRanges, isShowingSeekPreview: isShowingSeekPreview)
-    NSGraphicsContext.current!.cgContext.draw(barImg, in: drawRect)
-  }
-
   // MARK: - Volume Bar
-
-  func drawVolumeBar(in barRect: NSRect, barHeight: CGFloat, screen: NSScreen,
-                     darkMode: Bool, clearBG: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
-                     currentValue: CGFloat, maxValue: CGFloat) {
-    assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
-    var drawRect = imageRect(in: barRect, tallestBarHeight: maxVolBarHeightNeeded)
-    if #unavailable(macOS 11) {
-      drawRect = NSRect(x: drawRect.origin.x,
-                        y: drawRect.origin.y + 1,
-                        width: drawRect.width,
-                        height: drawRect.height - 2)
-    }
-    let volBarImg = buildVolumeBarImage(darkMode: darkMode, clearBG: clearBG, barWidth: barRect.width, barHeight: barHeight,
-                                        screen: screen,
-                                        knobMinX: knobMinX, knobWidth: knobWidth,
-                                        currentValue: currentValue, maxValue: maxValue)
-    NSGraphicsContext.current!.cgContext.draw(volBarImg, in: drawRect)
-  }
 
   func buildVolumeBarImage(darkMode: Bool, clearBG: Bool,
                            barWidth: CGFloat, barHeight: CGFloat,
@@ -244,11 +205,11 @@ class BarFactory {
   }  // end func buildVolumeBarImage
 
   /// `barWidth` does not include added leading or trailing margin
-  func buildBarImage(barWidth: CGFloat, barHeight: CGFloat,
-                     screen: NSScreen, darkMode: Bool, clearBG: Bool,
-                     knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
-                     durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
-                     isShowingSeekPreview: Bool) -> CGImage {
+  func buildPlayBarImage(barWidth: CGFloat, barHeight: CGFloat,
+                         screen: NSScreen, darkMode: Bool, clearBG: Bool,
+                         knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
+                         durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
+                         currentPreviewTimeSec: Double?) -> CGImage {
     // - Set up calculations
     let rc = BarFactory.shared
     let scaleFactor = screen.backingScaleFactor
@@ -262,6 +223,15 @@ class BarFactory {
     let chapterGapWidth = (baseChapterGapWidth * scaleFactor).rounded()
     let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
     let hasSpaceForKnob = knobWidth > 0.0
+    let currentHoverX: CGFloat?
+    if let currentPreviewTimeSec {
+      currentHoverX = currentPreviewTimeSec / durationSec * barWidth_Scaled
+    } else {
+      currentHoverX = nil
+    }
+    let isHovering = currentHoverX != nil
+    let leftBarHeight = isHovering ? rc.leftBarHeightWhileSeeking * scaleFactor : barHeight_Scaled
+    let rightBarHeight = isHovering ? rc.rightBarHeightWhileSeeking * scaleFactor : barHeight_Scaled
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
@@ -314,6 +284,9 @@ class BarFactory {
         var done = false
         while !done && segIndex < segsMaxX.count {
           let segMaxX = segsMaxX[segIndex]
+          if let currentHoverX, currentHoverX < segMaxX {
+            // Is hovering in chapter
+          }
 
           if segIndex == segsMaxX.count - 1 {
             // Is last pill
@@ -324,7 +297,7 @@ class BarFactory {
             rc.addPillPath(cgc, minX: segMinX,
                            maxX: segMaxX,
                            interPillGapWidth: chapterGapWidth,
-                           height: barHeight_Scaled,
+                           height: leftBarHeight,
                            outerPadding_Scaled: outerPadding_Scaled,
                            cornerRadius_Scaled: cornerRadius_Scaled,
                            leftEdge: leftEdge,
@@ -335,7 +308,7 @@ class BarFactory {
           rc.drawPill(cgc, leftColor,
                       minX: segMinX, maxX: segMaxX,
                       interPillGapWidth: chapterGapWidth,
-                      height: isShowingSeekPreview ? rc.leftBarHeightWhileSeeking * scaleFactor : barHeight_Scaled,
+                      height: leftBarHeight,
                       outerPadding_Scaled: outerPadding_Scaled,
                       cornerRadius_Scaled: cornerRadius_Scaled,
                       leftEdge: leftEdge,
@@ -367,7 +340,7 @@ class BarFactory {
           rc.drawPill(cgc, rightColor,
                       minX: segMinX, maxX: segMaxX,
                       interPillGapWidth: chapterGapWidth,
-                      height: isShowingSeekPreview ? rc.rightBarHeightWhileSeeking * scaleFactor : barHeight_Scaled,
+                      height: rightBarHeight,
                       outerPadding_Scaled: outerPadding_Scaled,
                       cornerRadius_Scaled: cornerRadius_Scaled,
                       leftEdge: leftEdge,
@@ -400,17 +373,17 @@ class BarFactory {
         let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
         if startX > leftClipMaxX {
           rectsRight.append(CGRect(x: startX, y: outerPadding_Scaled,
-                                   width: endX - startX, height: barHeight_Scaled))
+                                   width: endX - startX, height: leftBarHeight))
         } else if endX > leftClipMaxX {
           rectsLeft.append(CGRect(x: startX, y: outerPadding_Scaled,
-                                  width: leftClipMaxX - startX, height: barHeight_Scaled))
+                                  width: leftClipMaxX - startX, height: leftBarHeight))
 
           let start2ndX = leftClipMaxX
           rectsRight.append(CGRect(x: start2ndX, y: outerPadding_Scaled,
-                                   width: endX - start2ndX, height: barHeight_Scaled))
+                                   width: endX - start2ndX, height: rightBarHeight))
         } else {
           rectsLeft.append(CGRect(x: startX, y: outerPadding_Scaled,
-                                  width: endX - startX, height: barHeight_Scaled))
+                                  width: endX - startX, height: rightBarHeight))
         }
       }
 
