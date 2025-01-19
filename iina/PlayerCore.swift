@@ -384,7 +384,7 @@ class PlayerCore: NSObject {
      `0` if no playable files were found & the player window was not opened.
    */
   @discardableResult
-  func openURLs(_ urls: [URL]) -> Int? {
+  func openURLs(_ urls: [URL]) -> Int {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
@@ -404,7 +404,7 @@ class PlayerCore: NSObject {
 
       info.shouldAutoLoadFiles = false
       openPlayerWindow(urls)
-      return nil
+      return 1
     }
     // Else open multiple URL args...
 

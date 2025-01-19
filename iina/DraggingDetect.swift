@@ -201,7 +201,7 @@ extension PlayerCore {
 
       let urls = paths.map{ URL(fileURLWithPath: $0) }
       // try open files
-      guard let loadedFileCount = openURLs(urls) else { return true }
+      let loadedFileCount = openURLs(urls)
       if loadedFileCount == 0 {
         // if no playable files, try add subtitle files
         var loadedSubtitle = false

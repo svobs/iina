@@ -545,7 +545,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         for url in urls {
           // open one window per file
           let newPlayer = PlayerManager.shared.getIdleOrCreateNew()
-          let playerFilesOpened = newPlayer.openURLs([url]) ?? 1
+          let playerFilesOpened = newPlayer.openURLs([url])
           newPlayer.openedWindowsSetIndex = windowCount
           windowCount += 1
           totalFilesOpened += playerFilesOpened
@@ -555,7 +555,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         let player = PlayerManager.shared.getActiveOrCreateNew()
         startupHandler.wcForOpenFile = player.windowController
         // openURLs will return nil for playlist files, etc. Count them as successes.
-        let playerFilesOpened = player.openURLs(urls) ?? 1
+        let playerFilesOpened = player.openURLs(urls)
         totalFilesOpened += playerFilesOpened
       }
 
