@@ -29,13 +29,13 @@ class StartupHandler {
 
   /**
    Mainly used to distinguish normal launches from others triggered by drag & drop or double-click from Finder.
-   Use only if opening single window. If multiple windows, don't wait; open each as soon as it loads.
 
-   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called with single file.
-   See also `wcForOpenFile` which may be set to non-nil value after this variable.
+   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called with file(s).
+   See also `wcsForOpenFiles` which is expected be set to a non-nil (and non-empty) value after this variable
+   becomes true. If needing to abort the new windows, `isOpeningNewWindows` should be set to false again.
    */
-  var openFileCalledForSingleFile = false
-  var wcForOpenFile: PlayerWindowController? = nil
+  var isOpeningNewWindows = false
+  var wcsForOpenFiles: [PlayerWindowController]? = nil
 
   // - Restore
 
@@ -338,9 +338,9 @@ class StartupHandler {
   /// Call this if the user opened a new file at startup but we want to discard the state for it
   /// (for example if it couldn't be opened).
   func abortWaitForOpenFilePlayerStartup() {
-    Logger.log.verbose("Aborting wait for Open File player startup")
-    openFileCalledForSingleFile = false
-    wcForOpenFile = nil
+    Logger.log.verbose("Aborting wait for open files")
+    isOpeningNewWindows = false
+    wcsForOpenFiles = nil
     showWindowsIfReady()
   }
 
@@ -352,11 +352,13 @@ class StartupHandler {
       restoreTimer.restart()
       return
     }
-    // If a new file was opened at startup (i.e. not a restored window), wait for this also.
-    guard !openFileCalledForSingleFile || wcForOpenFile != nil else { return }
+    // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
+    // If isOpeningNewWindows is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
+    guard !isOpeningNewWindows || wcsForOpenFiles != nil else { return }
     let log = Logger.Subsystem.restore
 
-    log.verbose("All \(wcsToRestore.count) restored \(wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
+    let newWindCount = wcsForOpenFiles?.count ?? 0
+    log.verbose("All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")")
     restoreTimer.cancel()
 
     var prevWindowNumber: Int? = nil
@@ -371,14 +373,20 @@ class StartupHandler {
       wc.showWindow(self)
     }
 
-    // Opened file (if any):
-    if let wc = wcForOpenFile, !(wc.window?.isMiniaturized ?? false) {
-      // Make this topmost
-      if let prevWindowNumber {
-        wc.window?.order(.above, relativeTo: prevWindowNumber)
+    // Windows for opened files (if any).
+    // Don't wait for these to be ready. But at least ensure that their ordering is correct.
+    if let wcsForOpenFiles {
+      for wc in wcsForOpenFiles {
+        let windowIsMinimized = (wc.window?.isMiniaturized ?? false)
+        guard !windowIsMinimized else { continue }
+
+        // Make this topmost
+        if let prevWindowNumber {
+          wc.window?.order(.above, relativeTo: prevWindowNumber)
+        }
+        prevWindowNumber = wc.window?.windowNumber
+        wc.showWindow(self)
       }
-      prevWindowNumber = wc.window?.windowNumber
-      wc.showWindow(self)
     }
 
     if restoreOpenFileWindow {
@@ -395,7 +403,7 @@ class StartupHandler {
 
     state = .doneOpening
 
-    let didOpenSomething = didRestoreSomething || wcForOpenFile != nil
+    let didOpenSomething = didRestoreSomething || wcsForOpenFiles != nil
     if !commandLineStatus.isCommandLine && !didOpenSomething {
       // Fall back to default action:
       AppDelegate.shared.doLaunchOrReopenAction()

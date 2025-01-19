@@ -529,34 +529,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if !openingMultipleWindows {
       // Use only if opening single window.
       // If multiple windows, don't wait; open each as soon as it loads
-      startupHandler.openFileCalledForSingleFile = true
+      startupHandler.isOpeningNewWindows = true
     }
 
     DispatchQueue.main.async { [self] in
       Logger.log.debug("Opening URLs (count: \(urls.count))")
       var totalFilesOpened = 0
 
+      var wcsForOpenFiles: [PlayerWindowController] = []
       if openingMultipleWindows {
         if urls.count > 10 {
           // TODO: put up a confirmation prompt
           Logger.log.warn("User requested to open a lot of windows (count: \(urls.count))")
         }
-        var windowCount = 0
         for url in urls {
           // open one window per file
           let newPlayer = PlayerManager.shared.getIdleOrCreateNew()
           let playerFilesOpened = newPlayer.openURLs([url])
-          newPlayer.openedWindowsSetIndex = windowCount
-          windowCount += 1
+
+          guard playerFilesOpened > 0 else { continue }
+          newPlayer.openedWindowsSetIndex = wcsForOpenFiles.count
+          wcsForOpenFiles.append(newPlayer.windowController)
           totalFilesOpened += playerFilesOpened
         }
       } else {
         // open pending files in single window
         let player = PlayerManager.shared.getActiveOrCreateNew()
-        startupHandler.wcForOpenFile = player.windowController
-        // openURLs will return nil for playlist files, etc. Count them as successes.
         let playerFilesOpened = player.openURLs(urls)
-        totalFilesOpened += playerFilesOpened
+        if playerFilesOpened > 0 {
+          wcsForOpenFiles.append(player.windowController)
+          totalFilesOpened += playerFilesOpened
+        }
       }
 
       if totalFilesOpened == 0 {
@@ -564,7 +567,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
         Logger.log.verbose("Notifying user nothing was opened")
         Utility.showAlert("nothing_to_open")
+      } else {
+        Logger.log.verbose("Total new windows opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files")
+        // Now set wcsForOpenFiles in StartupHandler:
+        startupHandler.wcsForOpenFiles = wcsForOpenFiles
       }
+      startupHandler.showWindowsIfReady()
     }
   }
 
@@ -576,11 +584,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let url = pboard.string(forType: .string) else { return }
 
     guard let player = PlayerCore.active else { return }
-    startupHandler.openFileCalledForSingleFile = true
-    startupHandler.wcForOpenFile = player.windowController
+    startupHandler.isOpeningNewWindows = true
     if player.openURLString(url) == 0 {
       startupHandler.abortWaitForOpenFilePlayerStartup()
+    } else {
+      startupHandler.wcsForOpenFiles = [player.windowController]
     }
+    startupHandler.showWindowsIfReady()
   }
 
   // MARK: - URL Scheme
@@ -609,18 +619,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private func parsePendingURL(_ url: String) {
     Logger.log("Parsing URL \(url.pii)")
     guard let parsed = URLComponents(string: url) else {
-      Logger.log("Cannot parse URL using URLComponents", level: .warning)
+      Logger.log.warn("Cannot parse URL using URLComponents")
       return
     }
 
     if parsed.scheme != "iina" {
       // try to open the URL directly
       let player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
-      startupHandler.openFileCalledForSingleFile = true
-      startupHandler.wcForOpenFile = player.windowController
+      startupHandler.isOpeningNewWindows = true
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
+      } else {
+        startupHandler.wcsForOpenFiles = [player.windowController]
       }
+      startupHandler.showWindowsIfReady()
       return
     }
 
@@ -646,9 +658,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       }
 
-      startupHandler.openFileCalledForSingleFile = true
-      startupHandler.wcForOpenFile = player.windowController
-
       // enqueue
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
          let lastActivePlayer = PlayerManager.shared.lastActivePlayer,
@@ -656,8 +665,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         lastActivePlayer.addToPlaylist(urlValue)
         lastActivePlayer.sendOSD(.addToPlaylist(1))
       } else {
+        startupHandler.isOpeningNewWindows = true
         if player.openURLString(urlValue) == 0 {
           startupHandler.abortWaitForOpenFilePlayerStartup()
+        } else {
+          startupHandler.wcsForOpenFiles = [player.windowController]
         }
       }
 
@@ -681,6 +693,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
 
       Logger.log("Finished URL scheme handling")
+      startupHandler.showWindowsIfReady()
     }
   }
 
