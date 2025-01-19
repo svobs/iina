@@ -13,6 +13,14 @@ class PlaySliderCell: ScrollableSliderCell {
 
   var isPausedBeforeSeeking = false
 
+  var iinaAppearance: NSAppearance? {
+    controlView?.window?.contentView?.iinaAppearance
+  }
+
+  var isDarkMode: Bool {
+    iinaAppearance?.isDark ?? false
+  }
+
   override var enableDrawKnob: Bool {
     return wc?.isScrollingOrDraggingPlaySlider ?? true
   }
@@ -38,8 +46,9 @@ class PlaySliderCell: ScrollableSliderCell {
     /// The position of the knob, rounded for cleaner drawing
     let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
     let cachedRanges = player.cachedRanges
+    let isClearBG = isClearBG
 
-    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance,
+    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
     let progressRatio = slider.progressRatio
@@ -47,7 +56,6 @@ class PlaySliderCell: ScrollableSliderCell {
     let barHeight = BarFactory.shared.barHeight
     let isShowingSeekPreview = seekPreviewState == .shown || seekPreviewState == .willShow
     appearance.applyAppearanceFor {
-      let isClearBG = isClearBG
       let knobWidth = enableDrawKnob ? knobWidth : 0
       BarFactory.shared.drawPlayBar(in: rect, barHeight: barHeight, darkMode: appearance.isDark, clearBG: isClearBG,
                                      screen: screen, knobMinX: knobMinX, knobWidth: knobWidth, progressRatio: progressRatio,

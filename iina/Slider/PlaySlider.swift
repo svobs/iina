@@ -17,10 +17,8 @@ import Cocoa
 /// - Requires: The custom slider cell provided by `PlaySliderCell` **must** be used with this class.
 /// - Note: Unlike `NSSlider` the `draw` method of this class will do nothing if the view is hidden.
 final class PlaySlider: ScrollableSlider {
-  // Redrawing the slider bar is a very expensive operation, so do not redraw it if there is no noticeable change.
-  static let minPixelChangeThreshold: CGFloat = 1.0
-
-  var isMouseHovering = false
+  /// Cache this to keep track of PlaySliderLoopKnob style
+  var isDarkMode: Bool = false
 
   /// Knob representing the A loop point for the mpv A-B loop feature.
   var abLoopA: PlaySliderLoopKnob { abLoopAKnob }
@@ -53,8 +51,6 @@ final class PlaySlider: ScrollableSlider {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-
-  var isDarkMode: Bool = false
 
   // MARK:- Drawing
 

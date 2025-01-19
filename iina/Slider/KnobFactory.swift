@@ -84,7 +84,7 @@ class KnobFactory {
     /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
     static let loopKnobHeightAdjustment: CGFloat = 0.75
 
-    let isDarkMode: Bool
+    let isDarkMode: Bool/PopBase/status/1859950958626668956/photo/1
     let isClearBG: Bool
     let knobWidth: CGFloat
     let mainKnobHeight: CGFloat

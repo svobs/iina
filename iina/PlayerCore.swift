@@ -270,7 +270,9 @@ class PlayerCore: NSObject {
     /// Returns the value of the A loop point, a timestamp in seconds if set, otherwise returns zero.
     /// - Note: The value of the A loop point is not required by mpv to be before the B loop point.
     /// - Returns:value of the mpv option `ab-loop-a`
-    get { mpv.getDouble(MPVOption.PlaybackControl.abLoopA) }
+    get {
+      mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
+    }
     /// Sets the value of the A loop point as an absolute timestamp in seconds.
     ///
     /// The loop points of the mpv A-B loop command can be adjusted at runtime. This method updates the A loop point. Setting a
@@ -290,7 +292,9 @@ class PlayerCore: NSObject {
     /// Returns the value of the B loop point, a timestamp in seconds if set, otherwise returns zero.
     /// - Note: The value of the B loop point is not required by mpv to be after the A loop point.
     /// - Returns:value of the mpv option `ab-loop-b`
-    get { mpv.getDouble(MPVOption.PlaybackControl.abLoopB) }
+    get {
+      mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
+    }
     /// Sets the value of the B loop point as an absolute timestamp in seconds.
     ///
     /// The loop points of the mpv A-B loop command can be adjusted at runtime. This method updates the B loop point. Setting a
