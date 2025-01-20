@@ -210,16 +210,19 @@ extension PlayerWindowController {
       let timeLabelOriginY: CGFloat
       let thumbOriginY: CGFloat
       if showAbove {
-        let quarterMargin = margins.bottom * 0.25
         let halfMargin = margins.bottom * 0.5
+        let quarterMargin = margins.bottom * 0.25
         // Show thumbnail above seek time, which is above slider
-        timeLabelOriginY = oscOriginInWindowY + oscHeight + quarterMargin
+        if currentLayout.oscPosition == .floating {
+          timeLabelOriginY = oscOriginInWindowY + oscHeight + quarterMargin
+        } else {
+          timeLabelOriginY = oscOriginInWindowY + (oscHeight * 0.5) + (player.windowController.playSlider.customCell.knobHeight * 0.5) + quarterMargin
+        }
         thumbOriginY = timeLabelOriginY + timeLabelHeight + halfMargin
       } else {
-        let quarterMargin = margins.top * 0.25
         let halfMargin = margins.top * 0.5
         // Show thumbnail below slider
-        timeLabelOriginY = oscOriginInWindowY - quarterMargin - timeLabelHeight
+        timeLabelOriginY = oscOriginInWindowY - (player.windowController.playSlider.customCell.knobHeight * 0.5) - timeLabelHeight
         thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
       // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
