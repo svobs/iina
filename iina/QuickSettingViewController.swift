@@ -39,52 +39,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   let sliderSteps = 24.0
 
-  enum TabViewType: Equatable {
-    case video
-    case audio
-    case sub
-
-    init(buttonTag: Int) {
-      self = [.video, .audio, .sub][at: buttonTag] ?? .video
-    }
-
-    init?(name: String) {
-      switch name {
-      case "video":
-        self = .video
-      case "audio":
-        self = .audio
-      case "sub":
-        self = .sub
-      default:
-        self = .video
-      }
-    }
-
-    var buttonTag: Int {
-      switch self {
-      case .video: return 0
-      case .audio: return 1
-      case .sub: return 2
-      }
-    }
-
-    var name: String {
-      switch self {
-      case .video: return "video"
-      case .audio: return "audio"
-      case .sub: return "sub"
-      }
-    }
-  }
-
   /**
    Similar to the one in `PlaylistViewController`.
    Since IBOutlet is `nil` when the view is not loaded at first time,
    use this variable to cache which tab it need to switch to when the
    view is ready. The value will be handled after loaded.
    */
-  private var pendingSwitchRequest: TabViewType?
+  private var pendingSwitchRequest: Sidebar.Tab?
 
   // TODO: clean this up. It's super kludgey
   /// is showing secondary sub if `false`.
@@ -116,7 +77,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
-  var currentTab: TabViewType = .video
+  private(set) var currentTab: Sidebar.Tab = .video
 
   var observers: [NSObjectProtocol] = []
 
@@ -269,7 +230,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     withAllTableViews { tableView, _ in tableView.backgroundColor = NSColor.sidebarTableBackground }
 
     if pendingSwitchRequest == nil {
-      updateTabActiveStatus()
+      updateTabButtons()
     } else {
       switchToTab(pendingSwitchRequest!)
       pendingSwitchRequest = nil
@@ -605,24 +566,37 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     hueResetBtn.isHidden = player.info.hue == 0
   }
 
-  private func switchToTab(_ tab: TabViewType) {
+  private func switchToTab(_ tab: Sidebar.Tab) {
     guard isViewLoaded else { return }
     guard currentTab != tab else { return }
-    currentTab = tab
-    tabView.selectTabViewItem(at: tab.buttonTag)
-    if let sidebarTab = Sidebar.Tab(name: tab.name) {
-      windowController.didChangeTab(to: sidebarTab)
+    guard tab.group == .settings else {
+      player.log.error("QuickSettingsViewController: cannot switch to tab: \(tab)")
+      return
     }
-    updateTabActiveStatus()
+
+    // See also: tabBtnAction()
+    let buttonTag: Int
+    switch tab {
+    case .video:
+      buttonTag = 0
+    case .audio:
+      buttonTag = 1
+    case .sub:
+      buttonTag = 2
+    default:
+      Logger.fatal("QuickSettingsViewController: Invalid tab: \(tab)")
+    }
+    currentTab = tab
+    tabView.selectTabViewItem(at: buttonTag)
+    windowController.didChangeTab(to: tab)
+    updateTabButtons()
     reload()
   }
 
-  private func updateTabActiveStatus() {
-    let currentTag = currentTab.buttonTag
-    [videoTabBtn, audioTabBtn, subTabBtn].forEach { btn in
-      let isActive = currentTag == btn!.tag
-      btn!.contentTintColor = isActive ? .sidebarTabTintActive : .sidebarTabTint
-    }
+  private func updateTabButtons() {
+    updateTabActiveStatus(for: videoTabBtn, isActive: currentTab == .video)
+    updateTabActiveStatus(for: audioTabBtn, isActive: currentTab == .audio)
+    updateTabActiveStatus(for: subTabBtn, isActive: currentTab == .sub)
   }
 
   /// Reload Quick Settings controls for the current tab
@@ -641,6 +615,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       subTableView.reloadData()
       secSubTableView.reloadData()
       updateSubTabControls()
+    default:
+      player.log.error("QuickSettingsViewController.reload(): currentTab is invalid: \(currentTab)")
     }
   }
 
@@ -654,8 +630,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   // MARK: - Switch tab
 
-  /** Switch tab (call from other objects) */
-  func pleaseSwitchToTab(_ tab: TabViewType) {
+  /// Switch tab (call from other objects)
+  func pleaseSwitchToTab(_ tab: Sidebar.Tab) {
     if isViewLoaded {
       switchToTab(tab)
     } else {
@@ -764,7 +740,20 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   // MARK: Tab buttons
 
   @IBAction func tabBtnAction(_ sender: NSButton) {
-    switchToTab(.init(buttonTag: sender.tag))
+    let tab: Sidebar.Tab
+    let buttonTag = sender.tag
+    switch buttonTag {
+    case 0:
+      tab = .video
+    case 1:
+      tab = .audio
+    case 2:
+      tab = .sub
+    default:
+      player.log.error("Invalid button tag: \(sender.tag)")
+      return
+    }
+    switchToTab(tab)
   }
 
   // MARK: Video tab

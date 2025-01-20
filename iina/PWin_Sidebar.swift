@@ -125,6 +125,7 @@ struct Sidebar {
         return .plugins
       }
     }
+
   }  // enum Tab
 
 
@@ -217,7 +218,7 @@ struct Sidebar {
   var defaultTabToShow: Sidebar.Tab? {
     // Use last visible tab if still valid:
     if let lastVisibleTab = lastVisibleTab, tabGroups.contains(lastVisibleTab.group) {
-      Logger.log("Returning last visible tab for \(locationID): \(lastVisibleTab.name.quoted)", level: .verbose)
+      Logger.log.verbose("Returning last visible tab for \(locationID): \(lastVisibleTab.name.quoted)")
       return lastVisibleTab
     }
 
@@ -234,7 +235,7 @@ struct Sidebar {
     }
 
     // If sidebar has no tab groups, can't show anything:
-    Logger.log("No tab groups found for \(locationID), returning nil for defaultTab", level: .verbose)
+    Logger.log.verbose("No tab groups found for \(locationID), returning nil for defaultTab")
     return nil
   }
 
@@ -284,13 +285,10 @@ extension PlayerWindowController {
 
   /// Shows or toggles visibility of given `tabGroup`
   func showSidebar(forTabGroup tabGroup: Sidebar.TabGroup, force: Bool = false, hideIfAlreadyShown: Bool = true) {
-    Logger.log("ShowSidebar for tabGroup: \(tabGroup.rawValue.quoted), force: \(force), hideIfAlreadyShown: \(hideIfAlreadyShown)",
-               level: .verbose, subsystem: player.subsystem)
+    log.verbose("ShowSidebar for tabGroup: \(tabGroup.rawValue.quoted), force: \(force), hideIfAlreadyShown: \(hideIfAlreadyShown)")
     switch tabGroup {
     case .playlist:
-      if let tab = Sidebar.Tab(name: playlistView.currentTab.rawValue) {
-        showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
-      }
+      showSidebar(tab: playlistView.currentTab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
     case .settings:
       if let tab = Sidebar.Tab(name: quickSettingView.currentTab.name) {
         showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
@@ -710,19 +708,11 @@ extension PlayerWindowController {
     // Make it the active tab in its parent tab group (can do this whether or not it's shown):
     switch tab.group {
     case .playlist:
-      guard let tabType = PlaylistViewController.TabViewType(name: tab.name) else {
-        log.error("Cannot switch to tab \(tab.name.quoted): could not convert to PlaylistView tab!")
-        return
-      }
       log.verbose("Switching to tab \(tab.name.quoted) in playlistView")
-      playlistView.pleaseSwitchToTab(tabType)
+      playlistView.pleaseSwitchToTab(tab)
     case .settings:
-      guard let tabType = QuickSettingViewController.TabViewType(name: tab.name) else {
-        log.error("Cannot switch to tab \(tab.name.quoted): could not convert to QuickSettingView tab!")
-        return
-      }
       log.verbose("Switching to tab \(tab.name.quoted) in quickSettingView")
-      quickSettingView.pleaseSwitchToTab(tabType)
+      quickSettingView.pleaseSwitchToTab(tab)
     case .plugins:
       guard case .plugin(let pluginID) = tab else {
         log.error("Cannot switch to tab \(tab.name.quoted): bad plugin tab object!")
@@ -1108,4 +1098,9 @@ protocol SidebarTabGroupViewController {
 
 extension SidebarTabGroupViewController {
   var customTabHeight: CGFloat? { return nil }
+
+  func updateTabActiveStatus(for btn: NSButton, isActive: Bool) {
+    btn.contentTintColor = isActive ? .sidebarTabTintActive : .sidebarTabTint
+  }
+
 }

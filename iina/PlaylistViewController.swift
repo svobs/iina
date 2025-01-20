@@ -21,31 +21,14 @@ fileprivate let isPlayingPrefixTextBlendFraction: CGFloat = 0.4
 
 class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate, SidebarTabGroupViewController, NSMenuItemValidation {
 
-  /// Enum for tab switching in `PlaylistViewController`
-  enum TabViewType: String {
-    case playlist
-    case chapters
-
-    init?(name: String) {
-      switch name {
-      case "playlist":
-        self = .playlist
-      case "chapters":
-        self = .chapters
-      default:
-        return nil
-      }
-    }
-  }
-
-  var currentTab: TabViewType = .playlist
+  private(set) var currentTab: Sidebar.Tab = .playlist
 
   /** Similar to the one in `QuickSettingViewController`.
    Since IBOutlet is `nil` when the view is not loaded at first time,
    use this variable to cache which tab it need to switch to when the
    view is ready. The value will be handled after loaded.
    */
-  private var pendingSwitchRequest: TabViewType?
+  private var pendingSwitchRequest: Sidebar.Tab?
 
   weak var player: PlayerCore!
   weak var windowController: PlayerWindowController! {
@@ -165,7 +148,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       pendingSwitchRequest = nil
     } else {
       // Initial display: need to draw highlight for currentTab
-      updateTabButtons(activeTab: currentTab)
+      updateTabButtons()
     }
 
     updateVerticalConstraints()
@@ -217,7 +200,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @objc func systemColorSettingsDidChange(notification: Notification) {
-    Logger.log("Detected change to user accent color pref reloading tables", level: .verbose)
+    player.log.verbose("Detected change to user accent color pref reloading tables")
     updateTableColors()
   }
 
@@ -312,7 +295,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // MARK: - Tab switching
 
   /** Switch tab (call from other objects) */
-  func pleaseSwitchToTab(_ tab: TabViewType) {
+  func pleaseSwitchToTab(_ tab: Sidebar.Tab) {
     if isViewLoaded {
       switchToTab(tab)
     } else {
@@ -322,36 +305,30 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   /** Switch tab (for internal call) */
-  private func switchToTab(_ tab: TabViewType) {
-    updateTabButtons(activeTab: tab)
+  private func switchToTab(_ tab: Sidebar.Tab) {
+    guard tab.group == .playlist else {
+      player.log.error("PlaylistViewController: cannot switch to tab: \(tab)")
+      return
+    }
     switch tab {
     case .playlist:
       refreshNowPlayingIndex()
       tabView.selectTabViewItem(at: 0)
     case .chapters:
       tabView.selectTabViewItem(at: 1)
+    default:
+      Logger.fatal("PlaylistViewController: invalid tab requested for switching: \(tab)")
     }
 
     currentTab = tab
-    if let sidebarTab = Sidebar.Tab(name: tab.rawValue) {
-      windowController.didChangeTab(to: sidebarTab)
-    }
+    updateTabButtons()
+    windowController.didChangeTab(to: tab)
   }
 
   // Updates display of all tabs buttons to indicate that the given tab is active and the rest are not
-  private func updateTabButtons(activeTab: TabViewType) {
-    switch activeTab {
-    case .playlist:
-      updateTabActiveStatus(for: playlistBtn, isActive: true)
-      updateTabActiveStatus(for: chaptersBtn, isActive: false)
-    case .chapters:
-      updateTabActiveStatus(for: playlistBtn, isActive: false)
-      updateTabActiveStatus(for: chaptersBtn, isActive: true)
-    }
-  }
-
-  private func updateTabActiveStatus(for btn: NSButton, isActive: Bool) {
-    btn.contentTintColor = isActive ? NSColor.sidebarTabTintActive : NSColor.sidebarTabTint
+  private func updateTabButtons() {
+    updateTabActiveStatus(for: playlistBtn, isActive: currentTab == .playlist)
+    updateTabActiveStatus(for: chaptersBtn, isActive: currentTab == .chapters)
   }
 
   // MARK: - NSTableViewDataSource
@@ -369,9 +346,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // MARK: - Drag and Drop
 
-  /*
-   Drag start: set session variables.
-   */
+  /// Drag start: set session variables.
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
     self.draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
@@ -387,8 +362,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       pboard.setPropertyList(filePaths, forType: .nsFilenames)
     } catch {
       // Internal error, archivedData should not fail.
-      Logger.log("Failed to copy from playlist to pasteboard: \(error)", level: .error,
-                 subsystem: player.subsystem)
+      player.log.error("Failed to copy from playlist to pasteboard: \(error)")
     }
   }
 
@@ -443,7 +417,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           player.playlistMove(oldIndex, to: row + newIndexOffset)
           newIndexOffset += 1
         }
-        Logger.log("Playlist Drag & Drop from \(oldIndex) to \(row)", subsystem: player.subsystem)
+        player.log.debug("Playlist Drag & Drop from \(oldIndex) to \(row)")
       }
       player.postNotification(.iinaPlaylistChanged)
       return true
