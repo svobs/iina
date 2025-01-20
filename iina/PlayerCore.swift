@@ -343,6 +343,8 @@ class PlayerCore: NSObject {
   func clearPlugins() {
     pluginMap.removeAll()
     plugins.removeAll()
+
+    windowController.pluginView.updatePluginTabs()
   }
 
   func loadPlugins() {
@@ -353,6 +355,8 @@ class PlayerCore: NSObject {
       pluginMap[plugin.identifier] = instance
       return instance
     }
+
+    windowController.pluginView.updatePluginTabs()
   }
 
   func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
@@ -562,12 +566,6 @@ class PlayerCore: NSObject {
     /// This will create & add the `GLVideoLayer` if it was not already init:
     videoView.wantsLayer = true
     loadPlugins()
-    windowController.pluginView.updatePluginTabs()
-    if case .restoring(let priorState) = windowController.sessionState,
-       let selectedPluginTabID = priorState.layoutSpec?.moreSidebarState.selectedPluginTabID {
-      // Restore selected plugin tab
-      windowController.pluginView.pleaseSwitchToTab(selectedPluginTabID)
-    }
     if isAudioOnly {
       log.debug("Player is audio only. Will not init video")
     } else {

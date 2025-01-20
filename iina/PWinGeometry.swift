@@ -1014,7 +1014,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let ΔOutsideWidth = geo.outsideBars.totalWidth - outsideBars.totalWidth
     let ΔOutsideHeight = geo.outsideBars.totalHeight - outsideBars.totalHeight
 
-    log.debug("[ResizeBars] W={Δ:\(ΔOutsideWidth.logStr) fill:\(fillWidthOfScreen.yn)}, H={Δ:\(ΔOutsideHeight.logStr) fill:\(fillHeightOfScreen.yn)) moveToKeepInScreen:\(geo.screenFit.shouldMoveWindowToKeepInContainer.yesno)")
+    log.verbose("[ResizeBars] W={Δ:\(ΔOutsideWidth.logStr) fill:\(fillWidthOfScreen.yn)}, H={Δ:\(ΔOutsideHeight.logStr) fill:\(fillHeightOfScreen.yn)) moveToKeepInScreen:\(geo.screenFit.shouldMoveWindowToKeepInContainer.yesno)")
 
     let newViewportSize: NSSize
     // If window already fills screen width, do not shrink window width when collapsing outside sidebars.

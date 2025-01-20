@@ -310,15 +310,19 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.error("PlaylistViewController: cannot switch to tab: \(tab)")
       return
     }
+    assert(player.windowController.isShowing(sidebarTabGroup: .playlist),
+           "switchToTab should not be called when playlist TabGroup is not shown")
+    let buttonTag: Int
     switch tab {
     case .playlist:
       refreshNowPlayingIndex()
-      tabView.selectTabViewItem(at: 0)
+      buttonTag = 0
     case .chapters:
-      tabView.selectTabViewItem(at: 1)
+      buttonTag = 1
     default:
       Logger.fatal("PlaylistViewController: invalid tab requested for switching: \(tab)")
     }
+    tabView.selectTabViewItem(at: buttonTag)
 
     currentTab = tab
     updateTabButtons()

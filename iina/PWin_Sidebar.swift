@@ -246,10 +246,9 @@ struct Sidebar {
 extension PlayerWindowController {
   // MARK: - Show/Hide functions
 
-  // For JavascriptAPICore:
-  func isShowingSettingsSidebar() -> Bool {
+  func isShowing(sidebarTabGroup tabGroup: Sidebar.TabGroup) -> Bool {
     let layout = currentLayout
-    return layout.leadingSidebar.visibleTabGroup == .settings || layout.trailingSidebar.visibleTabGroup == .settings
+    return layout.leadingSidebar.visibleTabGroup == tabGroup || layout.trailingSidebar.visibleTabGroup == tabGroup
   }
 
   func isShowing(sidebarTab tab: Sidebar.Tab) -> Bool {
@@ -271,7 +270,7 @@ extension PlayerWindowController {
       guard currentLayout.canShowSidebars else { return }
       let sidebar = currentLayout.sidebar(withID: sidebarID)
       let isCurrentlyVisible = sidebar.isVisible
-      log.verbose{"Toggling visibility of sidebar \(sidebarID): isVisible: \(isCurrentlyVisible.yn) → \((!isCurrentlyVisible).yn))"}
+      log.verbose{"Toggling visibility of sidebar \(sidebarID): \(isCurrentlyVisible.yn) → \((!isCurrentlyVisible).yn)"}
       // Do nothing if sidebar has no configured tabs
       guard let tab = sidebar.defaultTabToShow else { return }
 
@@ -703,8 +702,12 @@ extension PlayerWindowController {
   }
 
   // MARK: - Changing tabs
-  
+
+  /// Assuming the correct sidebar is already showing, & it is showing the correct tab group, switches to the given tab in the same tab group.
   func switchToTabInTabGroup(tab: Sidebar.Tab) {
+    assert((getConfiguredSidebar(forTabGroup: tab.group)!.visibleTabGroup == tab.group),
+           "switchToTabInTabGroup: expected TabGroup \(tab.group) to be visible")
+
     // Make it the active tab in its parent tab group (can do this whether or not it's shown):
     switch tab.group {
     case .playlist:

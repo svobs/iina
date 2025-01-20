@@ -237,7 +237,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
     case "visible":
       return window.window!.occlusionState == .visible
     case "sidebar":
-      return window.isShowingSettingsSidebar() ? window.quickSettingView.currentTab.name : NSNull()
+      return window.isShowing(sidebarTabGroup: .settings) ? window.quickSettingView.currentTab.name : NSNull()
     case "screens":
       let current = window.window!.screen!
       let main = NSScreen.main

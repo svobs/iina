@@ -89,6 +89,11 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   func updatePluginTabs() {
     guard isViewLoaded else { return }
+
+    guard player.windowController.isShowing(sidebarTabGroup: .plugins) else {
+      player.log.verbose("Skipping update of Plugins sidebar; it is not visible")
+      return
+    }
     pluginTabsStackView.arrangedSubviews.forEach {
       pluginTabsStackView.removeArrangedSubview($0)
     }
@@ -131,6 +136,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   private func switchToTab(_ tabID: String) {
     guard isViewLoaded else { return }
+    assert(player.windowController.isShowing(sidebarTabGroup: .plugins),
+           "switchToTab should not be called when plugins TabGroup is not shown")
     currentPluginID = tabID
     updateTabActiveStatus()
 
