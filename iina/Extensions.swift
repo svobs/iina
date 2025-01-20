@@ -1970,18 +1970,20 @@ extension NSLayoutConstraint.Priority {
   static let minimum: NSLayoutConstraint.Priority = NSLayoutConstraint.Priority(rawValue: 1)
 }
 
-fileprivate let defaultShadowColor: NSColor = NSShadow().shadowColor ?? NSColor.black.withAlphaComponent(0.667)
+/// `NSShadow.shadowColor` is not dark enough. Use pure black.
+fileprivate let defaultShadowColor: NSColor = .black
+fileprivate let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
 extension NSControl {
 
-  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = 2.0,
+  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = iconDefaultShadowBlurRadiusConstant,
                  shadowOffsetMultiplier: CGFloat = 0.0,
                  xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
-                 color: NSColor? = nil) {
+                 color: NSColor = defaultShadowColor) {
     let controlHeight = fittingSize.height
     let shadow = NSShadow()
     // Amount of blur (in pixels) applied to the shadow.
     shadow.shadowBlurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
-    shadow.shadowColor = color ?? defaultShadowColor
+    shadow.shadowColor = color
     // the distance from the text the shadow is dropped (+X = to the right; -Y = below the text):
     shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier + xOffsetConstant, height: controlHeight * shadowOffsetMultiplier + yOffsetConstant)
     self.shadow = shadow

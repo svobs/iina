@@ -503,7 +503,7 @@ extension PlayerWindowController {
     } else {
       assert(leadingSidebar.placement == .outsideViewport)
       let cropView = NSView()
-      cropView.identifier = NSUserInterfaceItemIdentifier(rawValue: "leadingSidebarCropView")
+      cropView.identifier = .init("leadingSidebarCropView")
       leadingSidebarView.addSubview(cropView, positioned: .below, relativeTo: leadingSidebarTrailingBorder)
       cropView.translatesAutoresizingMaskIntoConstraints = false
       // Cling to superview for all sides but trailing:
@@ -562,7 +562,7 @@ extension PlayerWindowController {
     } else {
       assert(trailingSidebar.placement == .outsideViewport)
       let cropView = NSView()
-      cropView.identifier = NSUserInterfaceItemIdentifier(rawValue: "trailingSidebarCropView")
+      cropView.identifier = .init("trailingSidebarCropView")
       trailingSidebarView.addSubview(cropView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
       cropView.translatesAutoresizingMaskIntoConstraints = false
       // Cling to superview for all sides but leading:
@@ -617,7 +617,7 @@ extension PlayerWindowController {
     // Update blending mode instantaneously. It doesn't animate well
     updateSidebarBlendingMode(sidebar.locationID, layout: self.currentLayout)
 
-    // Make it the active tab in its parent tab group (can do this whether or not it's shown):
+    // Make it the active tab in its parent tab group:
     switchToTabInTabGroup(tab: tab)
 
     sidebarView.needsUpdateConstraints = true

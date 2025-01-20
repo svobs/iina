@@ -22,13 +22,68 @@ class BarFactory {
 
   let baseChapterGapWidth: CGFloat = 1.5
 
+  struct BarConfig {
+    let scaleFactor: CGFloat
+
+    let imgPadding: CGFloat
+    let imgHeight: CGFloat
+    let interPillGapWidth: CGFloat
+
+    let fillColor: CGColor
+    let pillHeight: CGFloat
+    let pillCornerRadius: CGFloat
+
+    func rescaling(to newScaleFactor: CGFloat) -> BarConfig {
+      let scaleRatio = newScaleFactor / scaleFactor
+      return BarConfig(
+        scaleFactor: newScaleFactor,
+        imgPadding: imgPadding * scaleRatio,
+        imgHeight: imgHeight * scaleRatio,
+        interPillGapWidth: interPillGapWidth * scaleRatio,
+        fillColor: fillColor,
+        pillHeight: pillHeight * scaleRatio,
+        pillCornerRadius: pillCornerRadius * scaleRatio
+      )
+    }
+
+    func cloned(imgPadding: CGFloat? = nil,
+                imgHeight: CGFloat? = nil,
+                interPillGapWidth: CGFloat? = nil,
+                fillColor: CGColor? = nil,
+                pillHeight: CGFloat? = nil,
+                pillCornerRadius: CGFloat? = nil) -> BarConfig {
+      BarConfig(
+        scaleFactor: scaleFactor,
+        imgPadding: imgPadding ?? self.imgPadding,
+        imgHeight: imgHeight ?? self.imgHeight,
+        interPillGapWidth: interPillGapWidth ?? self.interPillGapWidth,
+        fillColor: fillColor ?? self.fillColor,
+        pillHeight: pillHeight ?? self.pillHeight,
+        pillCornerRadius: pillCornerRadius ?? self.pillCornerRadius)
+    }
+  }
+
+  // Current vs Other Chapter?
+  // Focused vs Not Focused?
+  struct PlayBarConfigSet {
+    let currentChapter_Left: BarConfig
+    let currentChapter_Right: BarConfig
+
+    let nonCurrentChapter_Left: BarConfig
+    let nonCurrentChapter_Right: BarConfig
+  }
+
+//  var playBar_Normal: PlayBarConfigSet
+//  var playBar_Focused: PlayBarConfigSet
+
+
   lazy var maxVolBarHeightNeeded: CGFloat = {
     max(barHeight, volBarGreaterThanMaxHeight)
   }()
-  let leftBarHeightWhileSeeking: CGFloat = 6.0
-  let rightBarHeightWhileSeeking: CGFloat = 6.0
+  let leftBarHeightForHover: CGFloat = 6.0
+  let rightBarHeightForHover: CGFloat = 6.0
   lazy var maxPlayBarHeightNeeded: CGFloat = {
-    max(barHeight, leftBarHeightWhileSeeking, rightBarHeightWhileSeeking)
+    max(barHeight, leftBarHeightForHover, rightBarHeightForHover)
   }()
 
   let barCornerRadius: CGFloat = 1.5
@@ -231,8 +286,8 @@ class BarFactory {
       currentHoverX = nil
     }
     let isHovering = currentHoverX != nil
-    let leftBarHeight = isHovering ? rc.leftBarHeightWhileSeeking * scaleFactor : barHeight_Scaled
-    let rightBarHeight = isHovering ? rc.rightBarHeightWhileSeeking * scaleFactor : barHeight_Scaled
+    let leftBarHeight = isHovering ? rc.leftBarHeightForHover * scaleFactor : barHeight_Scaled
+    let rightBarHeight = isHovering ? rc.rightBarHeightForHover * scaleFactor : barHeight_Scaled
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat

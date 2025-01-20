@@ -621,9 +621,9 @@ extension PlayerWindowController {
         let hasClearBG = transition.outputLayout.spec.oscBackgroundIsClear
         if hasClearBG {
           leftTimeLabel.textColor = .white
-          leftTimeLabel.addShadow()
+          leftTimeLabel.addShadow(blurRadiusConstant: 1.0)
 
-          rightTimeLabel.addShadow()
+          rightTimeLabel.addShadow(blurRadiusConstant: 1.0)
           rightTimeLabel.textColor = .white
 
           KnobFactory.shared.mainKnobColor = NSColor.controlForClearBG

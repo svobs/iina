@@ -57,7 +57,8 @@ extension PlayerWindowController {
       thumbnailPeekView.isHidden = true
 
       timeLabel.isHidden = true
-      timeLabel.addShadow()
+      timeLabel.alphaValue = 0.0
+      addShadow()
     }
 
     func restartHideTimer() {
@@ -65,11 +66,18 @@ extension PlayerWindowController {
       hideTimer.restart()
     }
 
+    func addShadow() {
+      // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
+      // (with no bar gradient or shading).
+      timeLabel.addShadow(blurRadiusConstant: 2.0)
+    }
+
     /// This is expected to be called at first layout
     func updateTimeLabelFontSize(to newSize: CGFloat) {
       guard timeLabel.font?.pointSize != newSize else { return }
+
       timeLabel.font = NSFont.boldSystemFont(ofSize: newSize)
-      timeLabel.addShadow()
+      addShadow()
     }
 
     /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be
