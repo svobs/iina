@@ -93,14 +93,26 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       pluginTabsStackView.removeArrangedSubview($0)
     }
     pluginTabs.removeAll()
-    player.plugins.forEach {
-      guard let name = $0.plugin.sidebarTabName else { return }
+    var selectedPluginTabExists: Bool = false
+    for plugin in player.plugins {
+      guard let name = plugin.plugin.sidebarTabName else { return }
       let tab = SidebarTabView()
       tab.name = name
-      tab.pluginID = $0.plugin.identifier
+      tab.pluginID = plugin.plugin.identifier
       tab.pluginSidebarView = self
       pluginTabsStackView.addArrangedSubview(tab.view)
-      pluginTabs[$0.plugin.identifier] = tab
+      pluginTabs[plugin.plugin.identifier] = tab
+      if currentPluginID == plugin.plugin.identifier {
+        selectedPluginTabExists = true
+      }
+    }
+    if !selectedPluginTabExists {
+      if hasTab, let firstPlugin = player.plugins.first(where: { $0.plugin.sidebarTabName != nil}) {
+        // If tab is nil, select first plugin (if any available)
+        switchToTab(firstPlugin.plugin.identifier)
+      } else {
+        switchToTab(Sidebar.Tab.nullPluginID)
+      }
     }
     pluginTabsView.isHidden = !hasTab
     pluginTabsViewHeightConstraint.constant = hasTab ? 36 : 0
@@ -117,26 +129,21 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     }
   }
 
-  private func switchToTab(_ tab: String) {
+  private func switchToTab(_ tabID: String) {
     guard isViewLoaded else { return }
-    var tabToSelect: String
-    if tab != Sidebar.Tab.nullPluginID {
-      tabToSelect = tab
-    } else {
-      // If tab is nil, select first plugin (if any available)
-      if let firstPlugin = player.plugins.first {
-        tabToSelect = firstPlugin.plugin.identifier
-      } else {
-        tabToSelect = Sidebar.Tab.nullPluginID
-      }
-    }
+    currentPluginID = tabID
+    updateTabActiveStatus()
 
-    if let plugin = player.plugins.first(where: { $0.plugin.identifier == tabToSelect }) {
-      pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
+    pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
+    if currentPluginID != Sidebar.Tab.nullPluginID {
+      guard let plugin = player.plugins.first(where: { $0.plugin.identifier == currentPluginID }) else {
+        player.log.error("Cannot switch to tab: failed to find plugin with ID \(currentPluginID)")
+        return
+      }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
       Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": plugin.sidebarTabView])
     }
-    currentPluginID = tabToSelect
+
     // Update current layout so that new tab can be saved.
     // Put inside task to protect from race
     windowController.animationPipeline.submitInstantTask{ [self] in
@@ -147,18 +154,13 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
                                                       selectedPluginTabID: currentPluginID)
       windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
-    let sidebarTab = tabToSelect == Sidebar.Tab.nullPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: tabToSelect)
+    let sidebarTab = currentPluginID == Sidebar.Tab.nullPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
     windowController.didChangeTab(to: sidebarTab)
-    updateTabActiveStatus()
   }
 
   func removePluginTab(withIdentifier pluginID: String) {
     guard isViewLoaded else { return }
     guard pluginID != Sidebar.Tab.nullPluginID else { return }
-    if currentPluginID == pluginID {
-      switchToTab(Sidebar.Tab.nullPluginID)
-      pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
-    }
     updatePluginTabs()
   }
 }
