@@ -158,10 +158,10 @@ extension PlayerWindowController {
   }
 
   private func initSeekPreview(in contentView: NSView) {
-    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-    seekPreview.timeLabel.nextResponder = playSlider
     contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
     contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
+    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+    seekPreview.timeLabel.nextResponder = playSlider
 
     // Yes, left, not leading!
     seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 200) // dummy value for now
