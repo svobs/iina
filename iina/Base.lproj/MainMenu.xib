@@ -244,7 +244,7 @@ CA
                         </items>
                     </menu>
                 </menuItem>
-                <menuItem title="Playback" id="jxT-CU-nIS" userLabel="Control">
+                <menuItem title="Playback" id="jxT-CU-nIS">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Playback" id="GEO-Iw-cKr">
                         <items>
@@ -275,16 +275,16 @@ CA
                             <menuItem title="Speed:" enabled="NO" id="8pV-XQ-AvB">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Speed Up to 2x" id="Lqa-OG-EEg">
+                            <menuItem title="Speed Up by 2x" id="Lqa-OG-EEg">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Speed Up to 1.1x" tag="2" alternate="YES" id="91n-xW-L37">
+                            <menuItem title="Speed Up by 1.1x" tag="2" alternate="YES" id="91n-xW-L37">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Speed Down to 0.5x" tag="1" id="HsE-LN-Nd6">
+                            <menuItem title="Speed Down by 0.5x" tag="1" id="HsE-LN-Nd6">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Speed Down to 0.9x" tag="3" alternate="YES" id="DUP-nm-BJt">
+                            <menuItem title="Speed Down by 0.9x" tag="3" alternate="YES" id="DUP-nm-BJt">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
                             <menuItem title="Reset Speed" tag="5" id="5Gn-90-oDu">
