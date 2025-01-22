@@ -1312,6 +1312,20 @@ extension CGImage {
       bitsPerPixel: 0)
   }
 
+  static func buildCompositeBarImg(barImg: CGImage, highlightOverlayImg: CGImage) -> CGImage {
+    let compositeImg = CGImage.buildBitmapImage(width: barImg.width, height: barImg.height) { cgc in
+      let bounds = CGRect(origin: .zero, size: barImg.size())
+
+      cgc.setBlendMode(.normal)
+      cgc.draw(barImg, in: bounds)
+
+      cgc.setBlendMode(.overlay)
+      cgc.draw(highlightOverlayImg, in: bounds)
+    }
+    return compositeImg
+  }
+
+
   /// returns the transform equivalent of rotating a rect around its center
   private func rotateTransformRectAroundCenter(rect:CGRect, angle:CGFloat) -> CGAffineTransform {
     let t = CGAffineTransformConcat(
