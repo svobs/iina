@@ -56,9 +56,11 @@ class VolumeSliderCell: ScrollableSliderCell {
                           width: drawRect.width,
                           height: drawRect.height - 2)
       }
+      let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value
       let volBarImg = bf.buildVolumeBarImage(darkMode: appearance.isDark, clearBG: isClearBG, barWidth: barRect.width,
                                              screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
-                                             currentValue: doubleValue, maxValue: maxValue)
+                                             currentValue: doubleValue, maxValue: maxValue,
+                                             currentPreviewValue: previewValue)
       NSGraphicsContext.current!.cgContext.draw(volBarImg, in: drawRect)
     }
   }

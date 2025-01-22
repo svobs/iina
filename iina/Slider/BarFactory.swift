@@ -9,16 +9,25 @@
 // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
 
 fileprivate let barHeight_Normal: CGFloat = 3.0
-fileprivate let barCornerRadius_Normal: CGFloat = 1.5
+fileprivate let barCornerRadius_Normal: CGFloat = barCornerRadius_Normal * 0.5
 
 fileprivate let barHeight_FocusedCurrChapter: CGFloat = 6.0
-fileprivate let barCornerRadius_FocusedCurrChapter: CGFloat = 3.0
+fileprivate let barCornerRadius_FocusedCurrChapter: CGFloat = barHeight_FocusedCurrChapter * 0.5
 
 fileprivate let barHeight_FocusedNonCurrChapter: CGFloat = 4.0
-fileprivate let barCornerRadius_FocusedNonCurrChapter: CGFloat = 3.0
+fileprivate let barCornerRadius_FocusedNonCurrChapter: CGFloat = barHeight_FocusedNonCurrChapter * 0.5
 
-fileprivate let barHeight_VolumeAbove100_Left: CGFloat = 3.0
-fileprivate let barHeight_VolumeAbove100_Right: CGFloat = 2.0
+fileprivate let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
+fileprivate let barCornerRadius_VolumeAbove100_Left: CGFloat = barHeight_VolumeAbove100_Left * 0.5
+fileprivate let barHeight_VolumeAbove100_Right: CGFloat = barHeight_VolumeAbove100_Left * 0.5
+fileprivate let barCornerRadius_VolumeAbove100_Right: CGFloat = barHeight_VolumeAbove100_Right * 0.5
+
+fileprivate let barHeight_Volume_Focused: CGFloat = barHeight_FocusedCurrChapter
+fileprivate let barCornerRadius_Volume_Focused: CGFloat = barHeight_Volume_Focused * 0.5
+fileprivate let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_Volume_Focused
+fileprivate let barCornerRadius_Focused_VolumeAbove100_Left: CGFloat = barHeight_Focused_VolumeAbove100_Left * 0.5
+fileprivate let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
+fileprivate let barCornerRadius_Focused_VolumeAbove100_Right: CGFloat = barHeight_Focused_VolumeAbove100_Right * 0.5
 
 fileprivate let barImgPadding: CGFloat = 1.0
 fileprivate let chapterGapWidth: CGFloat = 1.5
@@ -162,6 +171,29 @@ struct PlayBarImgConf {
   var imgWidth: CGFloat { imgSize.width }
 }
 
+struct VolBarConfScaleSet {
+  var volumeBelow100_Left: BarConfScaleSet
+  var volumeBelow100_Right: BarConfScaleSet
+
+  var volumeAbove100_Left: BarConfScaleSet
+  var volumeAbove100_Right: BarConfScaleSet
+
+  /// `scale` should match `backingScaleFactor` from the current screen.
+  /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
+  func forImg(scale: CGFloat, barWidth: CGFloat) -> VolBarImgConf {
+    let below100Left = volumeBelow100_Left.getScale(scale)
+    let imgWidth = (barWidth * scale) + (2 * below100Left.imgPadding)
+    let imgSize = CGSize(width: imgWidth, height: below100Left.imgHeight)
+    return VolBarImgConf(below100_Left: below100Left,
+                         below100_Right: volumeBelow100_Right.getScale(scale),
+                         above100_Left: volumeAbove100_Left.getScale(scale),
+                         above100_Right: volumeAbove100_Right.getScale(scale),
+                         imgSize: imgSize)
+  }
+
+}
+
+
 /// - Current vs Other Chapter?
 /// - Focused vs Not Focused?
 struct VolBarImgConf {
@@ -198,14 +230,12 @@ class BarFactory {
   var playBar_Normal:  PlayBarConfScaleSet
   var playBar_Focused:  PlayBarConfScaleSet
 
-  var volumeBelow100_Left: BarConfScaleSet
-  var volumeBelow100_Right: BarConfScaleSet
-
-  var volumeAbove100_Left: BarConfScaleSet
-  var volumeAbove100_Right: BarConfScaleSet
+  var volBar_Normal: VolBarConfScaleSet
+  var volBar_Focused: VolBarConfScaleSet
 
   let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
-  let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right)
+  let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right,
+                                  barHeight_Volume_Focused, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right)
 
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
@@ -241,33 +271,31 @@ class BarFactory {
     let volumeBelow100_Left = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: verticalPaddingTotal + maxVolBarHeightNeeded,
                                               barHeight: barHeight_Normal, interPillGapWidth: 0.0,
                                               fillColor: barColorLeft, pillCornerRadius: barCornerRadius_Normal)
-    self.volumeBelow100_Left = volumeBelow100_Left
     let volumeBelow100_Right = volumeBelow100_Left.cloned(fillColor: barColorRight)
-    self.volumeBelow100_Right = volumeBelow100_Right
 
     let volAbove100_Left_FillColor = BarFactory.exaggerateColor(volumeBelow100_Left.fillColor)
     let volAbove100_Right_FillColor = volumeBelow100_Right.fillColor //BarFactory.exaggerateColor(volumeBelow100_Right.fillColor)
-    volumeAbove100_Left = volumeBelow100_Left.cloned(barHeight: barHeight_VolumeAbove100_Left,
-                                                     fillColor: volAbove100_Left_FillColor)
-    volumeAbove100_Right = volumeBelow100_Right.cloned(barHeight: barHeight_VolumeAbove100_Right,
-                                                       fillColor: volAbove100_Right_FillColor)
+    let volumeAbove100_Left = volumeBelow100_Left.cloned(barHeight: barHeight_VolumeAbove100_Left,
+                                                     fillColor: volAbove100_Left_FillColor,
+                                                     pillCornerRadius: barCornerRadius_VolumeAbove100_Left)
+    let volumeAbove100_Right = volumeBelow100_Right.cloned(barHeight: barHeight_VolumeAbove100_Right,
+                                                       fillColor: volAbove100_Right_FillColor,
+                                                       pillCornerRadius: barCornerRadius_VolumeAbove100_Right)
+
+    volBar_Normal = VolBarConfScaleSet(volumeBelow100_Left: volumeBelow100_Left,
+                                       volumeBelow100_Right: volumeBelow100_Right,
+                                       volumeAbove100_Left: volumeAbove100_Left,
+                                       volumeAbove100_Right: volumeAbove100_Right)
+
+    volBar_Focused = VolBarConfScaleSet(volumeBelow100_Left: volumeBelow100_Left.cloned(barHeight: barHeight_Volume_Focused, pillCornerRadius: barCornerRadius_Volume_Focused),
+                                       volumeBelow100_Right: volumeBelow100_Right.cloned(barHeight: barHeight_Volume_Focused, pillCornerRadius: barCornerRadius_Volume_Focused),
+                                       volumeAbove100_Left: volumeAbove100_Left.cloned(barHeight: barHeight_Focused_VolumeAbove100_Left, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Left),
+                                       volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
   }
 
   func updateBarColorsFromPrefs() {
+    // Just replace the whole instance:
     BarFactory.shared = BarFactory()
-  }
-
-  /// `scale` should match `backingScaleFactor` from the current screen.
-  /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
-  func volBarImgConf(scale: CGFloat, barWidth: CGFloat) -> VolBarImgConf {
-    let below100Left = volumeBelow100_Left.getScale(scale)
-    let imgWidth = (barWidth * scale) + (2 * below100Left.imgPadding)
-    let imgSize = CGSize(width: imgWidth, height: below100Left.imgHeight)
-    return VolBarImgConf(below100_Left: below100Left,
-                         below100_Right: volumeBelow100_Right.getScale(scale),
-                         above100_Left: volumeAbove100_Left.getScale(scale),
-                         above100_Right: volumeAbove100_Right.getScale(scale),
-                         imgSize: imgSize)
   }
 
   private static func barColorLeftFromPrefs() -> CGColor {
@@ -286,11 +314,12 @@ class BarFactory {
                            barWidth: CGFloat,
                            screen: NSScreen,
                            knobMinX: CGFloat, knobWidth: CGFloat,
-                           currentValue: Double, maxValue: Double) -> CGImage {
+                           currentValue: Double, maxValue: Double,
+                           currentPreviewValue: CGFloat? = nil) -> CGImage {
 
     // - Set up calculations
     let scaleFactor = screen.backingScaleFactor
-    let conf = volBarImgConf(scale: scaleFactor, barWidth: barWidth)
+    let conf = (currentPreviewValue == nil ? volBar_Normal : volBar_Focused).forImg(scale: scaleFactor, barWidth: barWidth)
 
     let currentValueRatio = currentValue / maxValue
     let currentValuePointX = (conf.imgPadding + (currentValueRatio * conf.barWidth)).rounded()
@@ -431,6 +460,7 @@ class BarFactory {
       } else {
         segsMaxX = []
       }
+
       // Add right end of bar (don't forget to subtract left & right padding from img)
       let lastSegMaxX = confSet.imgWidth - (confSet.imgPadding * 2)
       segsMaxX.append(lastSegMaxX)
@@ -446,36 +476,41 @@ class BarFactory {
         cgc.resetClip()
         cgc.clip(to: leftClipRect)
 
-        var done = false
-        while !done && segIndex < segsMaxX.count {
+        var doneWithLeft = false
+        while !doneWithLeft && segIndex < segsMaxX.count {
           let segMaxX = segsMaxX[segIndex]
-          if let currentHoverX, currentHoverX < segMaxX {
+          let conf: BarConf
+          if let currentHoverX, currentHoverX > segMinX && currentHoverX < segMaxX {
             // Is hovering in chapter
+            conf = confSet.currentChapter_Left
+          } else {
+            conf = confSet.nonCurrentChapter_Left
           }
 
           if segIndex == segsMaxX.count - 1 {
             // Is last pill
             rightEdge = .noBorderingPill
-            done = true
+            doneWithLeft = true
           } else if segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
             // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
             addPillPath(cgc, minX: segMinX,
                         maxX: segMaxX,
-                        confSet.currentChapter_Left,
+                        conf,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge)
             cgc.clip()
-            done = true
+            doneWithLeft = true
           }
+
           drawPill(cgc, minX: segMinX, maxX: segMaxX,
-                   confSet.currentChapter_Left,
+                   conf,
                    leftEdge: leftEdge,
                    rightEdge: rightEdge)
 
           // Set for all but first pill
           leftEdge = .bordersAnotherPill
 
-          if !done {
+          if !doneWithLeft {
             // Advance for next loop
             segMinX = segMaxX
             segIndex += 1
@@ -491,13 +526,20 @@ class BarFactory {
         while segIndex < segsMaxX.count {
           let segMaxX = segsMaxX[segIndex]
 
+          let conf: BarConf
+          if let currentHoverX, currentHoverX > segMinX && currentHoverX < segMaxX {
+            conf = confSet.currentChapter_Right
+          } else {
+            conf = confSet.nonCurrentChapter_Right
+          }
+
           if segIndex == segsMaxX.count - 1 {
             rightEdge = .noBorderingPill
           }
 
           drawPill(cgc,
                    minX: segMinX, maxX: segMaxX,
-                   confSet.currentChapter_Right,
+                   conf,
                    leftEdge: leftEdge,
                    rightEdge: rightEdge)
 
