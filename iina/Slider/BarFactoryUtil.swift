@@ -1,5 +1,5 @@
 //
-//  BarFactoryUtils.swift
+//  BarFactoryUtil.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-12-19.
