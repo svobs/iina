@@ -5,6 +5,180 @@
 //  Created by Matt Svoboda on 2024-11-07.
 //
 
+// Constants. All in pts (not scaled).
+// Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
+
+fileprivate let barHeightNormal: CGFloat = 3.0
+fileprivate let barCornerRadiusNormal: CGFloat = 1.5
+
+fileprivate let barHeightFocusedCurrChapter: CGFloat = 6.0
+fileprivate let barCornerRadiusFocusedCurrChapter: CGFloat = 3.0
+
+fileprivate let barHeightFocusedNonCurrChapter: CGFloat = 4.0
+fileprivate let barCornerRadiusFocusedNonCurrChapter: CGFloat = 4.0
+
+fileprivate let barHeightVolumeAbove100: CGFloat = 6.0
+
+fileprivate let barImgPadding: CGFloat = 1.0
+fileprivate let chapterGapWidth: CGFloat = 1.5
+
+// MARK: - Support Classes
+
+struct BarConf {
+  let scaleFactor: CGFloat
+
+  let imgPadding: CGFloat
+  /// `imgHeight` is independent of `barHeight`
+  let imgHeight: CGFloat
+  let barHeight: CGFloat
+  let interPillGapWidth: CGFloat
+
+  let fillColor: CGColor
+  let pillCornerRadius: CGFloat
+
+  init(scaleFactor: CGFloat, imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
+       fillColor: CGColor, pillCornerRadius: CGFloat) {
+    self.scaleFactor = scaleFactor
+    self.imgPadding = imgPadding
+    self.imgHeight = imgHeight
+    self.barHeight = barHeight
+    self.interPillGapWidth = interPillGapWidth
+    self.fillColor = fillColor
+    self.pillCornerRadius = pillCornerRadius
+  }
+
+  func rescaled(to newScaleFactor: CGFloat) -> BarConf {
+    let scaleRatio = newScaleFactor / scaleFactor
+    return BarConf(
+      scaleFactor: newScaleFactor,
+      imgPadding: imgPadding * scaleRatio,
+      imgHeight: imgHeight * scaleRatio,
+      barHeight: barHeight * scaleRatio,
+      interPillGapWidth: interPillGapWidth * scaleRatio,
+      fillColor: fillColor,
+      pillCornerRadius: pillCornerRadius * scaleRatio
+    )
+  }
+
+  func cloned(imgPadding: CGFloat? = nil,
+              imgHeight: CGFloat? = nil,
+              barHeight: CGFloat? = nil,
+              interPillGapWidth: CGFloat? = nil,
+              fillColor: CGColor? = nil,
+              pillCornerRadius: CGFloat? = nil) -> BarConf {
+    BarConf(
+      scaleFactor: scaleFactor,
+      imgPadding: imgPadding ?? self.imgPadding,
+      imgHeight: imgHeight ?? self.imgHeight,
+      barHeight: barHeight ?? self.barHeight,
+      interPillGapWidth: interPillGapWidth ?? self.interPillGapWidth,
+      fillColor: fillColor ?? self.fillColor,
+      pillCornerRadius: pillCornerRadius ?? self.pillCornerRadius)
+  }
+}
+
+struct BarConfScaleSet {
+  let x1: BarConf
+  let x2: BarConf
+
+  init(x1: BarConf, x2: BarConf) {
+    self.x1 = x1
+    self.x2 = x2
+  }
+
+  init(imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
+       fillColor: CGColor, pillCornerRadius: CGFloat) {
+    let x1 = BarConf(scaleFactor: 1.0, imgPadding: imgPadding, imgHeight: imgHeight, barHeight: barHeight, interPillGapWidth: interPillGapWidth, fillColor: fillColor, pillCornerRadius: pillCornerRadius)
+    self.x1 = x1
+    self.x2 = x1.rescaled(to: 2.0)
+  }
+
+  func cloned(imgPadding: CGFloat? = nil,
+              imgHeight: CGFloat? = nil,
+              barHeight: CGFloat? = nil,
+              interPillGapWidth: CGFloat? = nil,
+              fillColor: CGColor? = nil,
+              pillCornerRadius: CGFloat? = nil) -> BarConfScaleSet {
+    let x1New = x1.cloned(imgPadding: imgPadding, imgHeight: imgHeight, barHeight: barHeight, interPillGapWidth: interPillGapWidth,
+                          fillColor: fillColor, pillCornerRadius: pillCornerRadius)
+    let x2New = x1New.rescaled(to: 2.0)
+    return BarConfScaleSet(x1: x1New, x2: x2New)
+  }
+
+  var fillColor: CGColor { x1.fillColor }
+
+  func getScale(_ scale: CGFloat) -> BarConf {
+    switch scale {
+    case 1.0:
+      return x1
+    case 2.0:
+      return x2
+    default:
+      fatalError("Unimplemented scale: \(scale)")
+    }
+  }
+}
+
+/// - Current vs Other Chapter?
+/// - Focused vs Not Focused?
+struct PlayBarConfScaleSet {
+  let currentChapter_Left: BarConfScaleSet
+  let currentChapter_Right: BarConfScaleSet
+
+  let nonCurrentChapter_Left: BarConfScaleSet
+  let nonCurrentChapter_Right: BarConfScaleSet
+
+  /// `scale` should match `backingScaleFactor` from the current screen.
+  /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
+  func forImg(scale: CGFloat, barWidth: CGFloat) -> PlayBarImgConf {
+    let scaledConf = currentChapter_Left.getScale(scale)
+    let imgWidth = (barWidth * scale) + (2 * scaledConf.imgPadding)
+    let imgSize = CGSize(width: imgWidth, height: scaledConf.imgHeight)
+    return PlayBarImgConf(currentChapter_Left: scaledConf,
+                          currentChapter_Right: currentChapter_Right.getScale(scale),
+                          nonCurrentChapter_Left: nonCurrentChapter_Left.getScale(scale),
+                          nonCurrentChapter_Right: nonCurrentChapter_Right.getScale(scale),
+                          imgSize: imgSize)
+  }
+}
+
+struct PlayBarImgConf {
+  let currentChapter_Left: BarConf
+  let currentChapter_Right: BarConf
+
+  let nonCurrentChapter_Left: BarConf
+  let nonCurrentChapter_Right: BarConf
+
+  let imgSize: CGSize
+
+  var barWidth: CGFloat {
+    imgWidth - (2 * imgPadding)
+  }
+  var imgPadding: CGFloat { currentChapter_Left.imgPadding }
+  var imgHeight: CGFloat { imgSize.height }
+  var imgWidth: CGFloat { imgSize.width }
+}
+
+/// - Current vs Other Chapter?
+/// - Focused vs Not Focused?
+struct VolBarImgConf {
+  let below100_Left: BarConf
+  let below100_Right: BarConf
+
+  let above100_Left: BarConf
+  let above100_Right: BarConf
+
+  let imgSize: CGSize
+
+  var barWidth: CGFloat {
+    imgWidth - (2 * imgPadding)
+  }
+  var imgPadding: CGFloat { below100_Left.imgPadding }
+  var imgHeight: CGFloat { imgSize.height }
+  var imgWidth: CGFloat { imgSize.width }
+
+}
+
 
 /// Draws slider bars, e.g., play slider & volume slider.
 /// 
@@ -12,130 +186,110 @@
 /// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class BarFactory {
-  static let shared = BarFactory()
+  static var shared = BarFactory()
 
-  // - Bar Constants
+  // MARK: - Init / Config
 
-  // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
-  let barHeight: CGFloat = 3.0
-  let volBarGreaterThanMaxHeight: CGFloat = 3.0
+  var playBar_Normal:  PlayBarConfScaleSet
+  var playBar_Focused:  PlayBarConfScaleSet
 
-  let baseChapterGapWidth: CGFloat = 1.5
+  var volumeBelow100_Left: BarConfScaleSet
+  var volumeBelow100_Right: BarConfScaleSet
 
-  struct BarConfig {
-    let scaleFactor: CGFloat
+  var volumeAbove100_Left: BarConfScaleSet
+  var volumeAbove100_Right: BarConfScaleSet
 
-    let imgPadding: CGFloat
-    let imgHeight: CGFloat
-    let interPillGapWidth: CGFloat
+  let maxPlayBarHeightNeeded = max(barHeightNormal, barHeightFocusedCurrChapter, barHeightFocusedNonCurrChapter)
+  let maxVolBarHeightNeeded = max(barHeightNormal, barHeightVolumeAbove100)
 
-    let fillColor: CGColor
-    let pillHeight: CGFloat
-    let pillCornerRadius: CGFloat
+  private var leftCachedColor: CGColor
+  private var rightCachedColor: CGColor
 
-    func rescaling(to newScaleFactor: CGFloat) -> BarConfig {
-      let scaleRatio = newScaleFactor / scaleFactor
-      return BarConfig(
-        scaleFactor: newScaleFactor,
-        imgPadding: imgPadding * scaleRatio,
-        imgHeight: imgHeight * scaleRatio,
-        interPillGapWidth: interPillGapWidth * scaleRatio,
-        fillColor: fillColor,
-        pillHeight: pillHeight * scaleRatio,
-        pillCornerRadius: pillCornerRadius * scaleRatio
-      )
-    }
+  init() {
+    let barColorLeft = BarFactory.barColorLeftFromPrefs()
+    leftCachedColor = BarFactory.exaggerateColor(barColorLeft)
 
-    func cloned(imgPadding: CGFloat? = nil,
-                imgHeight: CGFloat? = nil,
-                interPillGapWidth: CGFloat? = nil,
-                fillColor: CGColor? = nil,
-                pillHeight: CGFloat? = nil,
-                pillCornerRadius: CGFloat? = nil) -> BarConfig {
-      BarConfig(
-        scaleFactor: scaleFactor,
-        imgPadding: imgPadding ?? self.imgPadding,
-        imgHeight: imgHeight ?? self.imgHeight,
-        interPillGapWidth: interPillGapWidth ?? self.interPillGapWidth,
-        fillColor: fillColor ?? self.fillColor,
-        pillHeight: pillHeight ?? self.pillHeight,
-        pillCornerRadius: pillCornerRadius ?? self.pillCornerRadius)
-    }
+    let barColorRight = NSColor.mainSliderBarRight.cgColor
+    rightCachedColor = BarFactory.exaggerateColor(barColorRight)
+
+    let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: maxPlayBarHeightNeeded,
+                                         barHeight: barHeightNormal, interPillGapWidth: chapterGapWidth,
+                                         fillColor: barColorLeft, pillCornerRadius: barCornerRadiusNormal)
+    let playNormalRight = playNormalLeft.cloned(fillColor: barColorRight)
+    rightCachedColor = BarFactory.exaggerateColor(barColorRight)
+
+    playBar_Normal =  PlayBarConfScaleSet(currentChapter_Left: playNormalLeft, currentChapter_Right: playNormalRight,
+                                          nonCurrentChapter_Left: playNormalLeft, nonCurrentChapter_Right: playNormalRight)
+
+    let focusedCurrChapterLeft = playNormalLeft.cloned(barHeight: barHeightFocusedCurrChapter,
+                                                       pillCornerRadius: barCornerRadiusFocusedCurrChapter)
+    let focusedCurrChapterRight = playNormalRight.cloned(barHeight: barHeightFocusedCurrChapter,
+                                                         pillCornerRadius: barCornerRadiusFocusedCurrChapter)
+    let nonCurrChapterLeft = playNormalLeft.cloned(barHeight: barHeightFocusedNonCurrChapter,
+                                                   pillCornerRadius: barCornerRadiusFocusedNonCurrChapter)
+    let nonCurrChapterRight = playNormalRight.cloned(barHeight: barHeightFocusedNonCurrChapter,
+                                                     pillCornerRadius: barCornerRadiusFocusedNonCurrChapter)
+    playBar_Focused =  PlayBarConfScaleSet(currentChapter_Left: focusedCurrChapterLeft, currentChapter_Right: focusedCurrChapterRight,
+                                           nonCurrentChapter_Left: nonCurrChapterLeft, nonCurrentChapter_Right: nonCurrChapterRight)
+
+    let volumeBelow100_Left = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: maxVolBarHeightNeeded,
+                                              barHeight: barHeightNormal, interPillGapWidth: 0.0,
+                                              fillColor: barColorLeft, pillCornerRadius: barCornerRadiusNormal)
+    self.volumeBelow100_Left = volumeBelow100_Left
+    let volumeBelow100_Right = volumeBelow100_Left.cloned(fillColor: barColorRight)
+    self.volumeBelow100_Right = volumeBelow100_Right
+
+    let volAbove100_Left_FillColor = BarFactory.exaggerateColor(volumeBelow100_Left.fillColor)
+    let volAbove100_Right_FillColor = volumeBelow100_Right.fillColor //BarFactory.exaggerateColor(volumeBelow100_Right.fillColor)
+    volumeAbove100_Left = volumeBelow100_Left.cloned(barHeight: barHeightVolumeAbove100,
+                                                     fillColor: volAbove100_Left_FillColor)
+    volumeAbove100_Right = volumeBelow100_Right.cloned(barHeight: barHeightVolumeAbove100,
+                                                       fillColor: volAbove100_Right_FillColor)
   }
-
-  // Current vs Other Chapter?
-  // Focused vs Not Focused?
-  struct PlayBarConfigSet {
-    let currentChapter_Left: BarConfig
-    let currentChapter_Right: BarConfig
-
-    let nonCurrentChapter_Left: BarConfig
-    let nonCurrentChapter_Right: BarConfig
-  }
-
-//  var playBar_Normal: PlayBarConfigSet
-//  var playBar_Focused: PlayBarConfigSet
-
-
-  lazy var maxVolBarHeightNeeded: CGFloat = {
-    max(barHeight, volBarGreaterThanMaxHeight)
-  }()
-  let leftBarHeightForHover: CGFloat = 6.0
-  let rightBarHeightForHover: CGFloat = 6.0
-  lazy var maxPlayBarHeightNeeded: CGFloat = {
-    max(barHeight, leftBarHeightForHover, rightBarHeightForHover)
-  }()
-
-  let barCornerRadius: CGFloat = 1.5
-  var barColorLeft = NSColor.controlAccentColor.cgColor {
-    didSet {
-      leftCachedColor = BarFactory.exaggerateColor(barColorLeft)
-    }
-  }
-  var barColorRight = NSColor.mainSliderBarRight.cgColor {
-    didSet {
-      rightCachedColor = BarFactory.exaggerateColor(barColorRight)
-    }
-  }
-
-  var leftCachedColor = exaggerateColor(NSColor.controlAccentColor.cgColor)
-  var rightCachedColor = exaggerateColor(NSColor.mainSliderBarRight.cgColor)
-  let barMarginRadius: CGFloat = 1.0
-  let colorRightBarGreaterThanMaxVol = false
 
   func updateBarColorsFromPrefs() {
+    BarFactory.shared = BarFactory()
+  }
+
+  /// `scale` should match `backingScaleFactor` from the current screen.
+  /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
+  func volBarImgConf(scale: CGFloat, barWidth: CGFloat) -> VolBarImgConf {
+    let below100Left = volumeBelow100_Left.getScale(scale)
+    let imgWidth = (barWidth * scale) + (2 * below100Left.imgPadding)
+    let imgSize = CGSize(width: imgWidth, height: below100Left.imgHeight)
+    return VolBarImgConf(below100_Left: below100Left,
+                         below100_Right: volumeBelow100_Right.getScale(scale),
+                         above100_Left: volumeAbove100_Left.getScale(scale),
+                         above100_Right: volumeAbove100_Right.getScale(scale),
+                         imgSize: imgSize)
+  }
+
+  private static func barColorLeftFromPrefs() -> CGColor {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
     switch userSetting {
     case .gray:
-      barColorLeft = NSColor.mainSliderBarLeft.cgColor
+      return NSColor.mainSliderBarLeft.cgColor
     default:
-      barColorLeft = NSColor.controlAccentColor.cgColor
+      return NSColor.controlAccentColor.cgColor
     }
   }
 
   // MARK: - Volume Bar
 
   func buildVolumeBarImage(darkMode: Bool, clearBG: Bool,
-                           barWidth: CGFloat, barHeight: CGFloat,
+                           barWidth: CGFloat,
                            screen: NSScreen,
                            knobMinX: CGFloat, knobWidth: CGFloat,
                            currentValue: Double, maxValue: Double) -> CGImage {
+
     // - Set up calculations
-    let rc = BarFactory.shared
     let scaleFactor = screen.backingScaleFactor
-    let imgSizeScaled = imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxVolBarHeightNeeded, scaleFactor: scaleFactor)
-    let barWidth_Scaled = barWidth * scaleFactor
-    let barHeight_Scaled = barHeight * scaleFactor
-    let volBarGreaterThanMaxHeight_Scaled = rc.volBarGreaterThanMaxHeight * scaleFactor
-    let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
-    let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
-    let leftColor = rc.barColorLeft
-    let rightColor = rc.barColorRight
-    let barMinX = outerPadding_Scaled
-    let barMaxX = imgSizeScaled.width - (outerPadding_Scaled * 2)
+    let conf = volBarImgConf(scale: scaleFactor, barWidth: barWidth)
+    let barMinX = conf.imgPadding
+    let barMaxX = conf.imgWidth - (conf.imgPadding * 2)
 
     let currentValueRatio = currentValue / maxValue
-    let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
+    let currentValuePointX = (conf.imgPadding + (currentValueRatio * conf.barWidth)).rounded()
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
@@ -149,149 +303,99 @@ class BarFactory {
       rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
     }
 
-    let hasLeft = leftClipMaxX - outerPadding_Scaled > 0.0
-    let hasRight = rightClipMinX + outerPadding_Scaled < imgSizeScaled.width
+    let hasLeft = leftClipMaxX - conf.imgPadding > 0.0
+    let hasRight = rightClipMinX + conf.imgPadding < conf.imgWidth
 
     // If volume can exceed 100%, let's draw the part of the bar which is >100% differently
-    let vol100PercentPointX = (outerPadding_Scaled + ((100.0 / maxValue) * barWidth_Scaled)).rounded()
+    let vol100PercentPointX = (conf.imgPadding + ((100.0 / maxValue) * conf.barWidth)).rounded()
 
-    let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
+    let barImg = CGImage.buildBitmapImage(width: Int(conf.imgWidth), height: Int(conf.imgHeight)) { cgc in
 
-      func drawEntireBar(color: CGColor, pillHeight: CGFloat, clipMinX: CGFloat, clipMaxX: CGFloat) {
+      func drawEntireBar(_ barConf: BarConf, clipMinX: CGFloat, clipMaxX: CGFloat) {
         cgc.resetClip()
         cgc.clip(to: CGRect(x: clipMinX, y: 0,
                             width: clipMaxX - clipMinX,
-                            height: imgSizeScaled.height))
+                            height: barConf.imgHeight))
 
-        rc.addPillPath(cgc, minX: barMinX,
-                       maxX: barMaxX,
-                       interPillGapWidth: 0,
-                       height: pillHeight,
-                       outerPadding_Scaled: outerPadding_Scaled,
-                       cornerRadius_Scaled: cornerRadius_Scaled,
-                       leftEdge: .noBorderingPill,
-                       rightEdge: .noBorderingPill)
-        cgc.clip()
-
-        rc.drawPill(cgc, color,
-                    minX: barMinX,
+        addPillPath(cgc, minX: barMinX,
                     maxX: barMaxX,
-                    interPillGapWidth: 0,
-                    height: pillHeight,
-                    outerPadding_Scaled: outerPadding_Scaled,
-                    cornerRadius_Scaled: cornerRadius_Scaled,
+                    barConf,
                     leftEdge: .noBorderingPill,
                     rightEdge: .noBorderingPill)
+        cgc.clip()
+
+        drawPill(cgc,
+                 minX: barMinX,
+                 maxX: barMaxX,
+                 barConf,
+                 leftEdge: .noBorderingPill,
+                 rightEdge: .noBorderingPill)
       }
 
-      var pillHeight = barHeight_Scaled
+      var barConf = conf.below100_Left
 
       if hasLeft {  // Left of knob (i.e. "completed" section of bar)
         var minX = 0.0
 
         if vol100PercentPointX < leftClipMaxX {
-          drawEntireBar(color: leftColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: vol100PercentPointX)
+          // Current volume > 100%. Finish drawing (< 100%) first.
+          drawEntireBar(barConf, clipMinX: minX, clipMaxX: vol100PercentPointX)
           // Update for next segment:
           minX = vol100PercentPointX
-          pillHeight = volBarGreaterThanMaxHeight_Scaled
+          barConf = conf.above100_Left
         }
 
-        drawEntireBar(color: leftColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: leftClipMaxX)
+        drawEntireBar(barConf, clipMinX: minX, clipMaxX: leftClipMaxX)
       }
 
       if hasRight {  // Right of knob
         var minX = rightClipMinX
+        if vol100PercentPointX <= rightClipMinX {
+          barConf = conf.above100_Right
+        } else {
+          barConf = conf.below100_Right
 
-        if vol100PercentPointX > rightClipMinX && vol100PercentPointX < imgSizeScaled.width {
-          drawEntireBar(color: rightColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: vol100PercentPointX)
-          // Update for next segment:
-          minX = vol100PercentPointX
-          pillHeight = volBarGreaterThanMaxHeight_Scaled
+          if vol100PercentPointX > rightClipMinX && vol100PercentPointX < conf.imgWidth {
+            drawEntireBar(barConf, clipMinX: minX, clipMaxX: vol100PercentPointX)
+            // Update for next segment:
+            minX = vol100PercentPointX
+            barConf = conf.above100_Right
+          }
         }
 
-        drawEntireBar(color: rightColor, pillHeight: pillHeight, clipMinX: minX, clipMaxX: imgSizeScaled.width)
+        drawEntireBar(barConf, clipMinX: minX, clipMaxX: conf.imgWidth)
       }
     }
-
-
-    // If volume can exceed 100%, draw that section in special color
-    guard maxValue > 100.0 else { return barImg }
-    let highlightOverlayImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
-
-      let y = (CGFloat(cgc.height) - volBarGreaterThanMaxHeight_Scaled) * 0.5  // y should include outerPadding_Scaled here
-
-      let leftMaxBar: CGRect?
-      let rightMaxBar: CGRect?
-      if leftClipMaxX < vol100PercentPointX {
-        // Volume is lower than 100%: only need to draw the part of bar which is > 100%
-        leftMaxBar = nil
-        if rc.colorRightBarGreaterThanMaxVol {
-          rightMaxBar = CGRect(x: vol100PercentPointX, y: y,
-                               width: barMaxX - vol100PercentPointX, height: volBarGreaterThanMaxHeight_Scaled)
-        } else {
-          rightMaxBar = nil
-        }
-      } else {
-        leftMaxBar = CGRect(x: vol100PercentPointX, y: y,
-                            width: leftClipMaxX - vol100PercentPointX, height: volBarGreaterThanMaxHeight_Scaled)
-        if rc.colorRightBarGreaterThanMaxVol {
-          rightMaxBar = CGRect(x: leftClipMaxX, y: y,
-                               width: barMaxX - leftClipMaxX, height: volBarGreaterThanMaxHeight_Scaled)
-        } else {
-          rightMaxBar = nil
-        }
-      }
-
-      if let leftMaxBar {
-        let leftMaxColor = rc.leftCachedColor
-        cgc.setFillColor(leftMaxColor)
-        cgc.fill(leftMaxBar)
-      }
-      if let rightMaxBar {
-        let rightMaxColor = rc.rightCachedColor
-        cgc.setFillColor(rightMaxColor)
-        cgc.fill(rightMaxBar)
-      }
-
-      cgc.setBlendMode(.destinationIn)
-      cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
-    }
-
-    return rc.makeCompositeBarImg(barImg: barImg, highlightOverlayImg: highlightOverlayImg)
+    
+    return barImg
   }  // end func buildVolumeBarImage
 
+  // MARK: - Play Bar
+
   /// `barWidth` does not include added leading or trailing margin
-  func buildPlayBarImage(barWidth: CGFloat, barHeight: CGFloat,
+  func buildPlayBarImage(barWidth: CGFloat,
                          screen: NSScreen, darkMode: Bool, clearBG: Bool,
                          knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
                          durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
                          currentPreviewTimeSec: Double?) -> CGImage {
     // - Set up calculations
-    let rc = BarFactory.shared
     let scaleFactor = screen.backingScaleFactor
-    let imgSizeScaled = imgSizeScaled(barWidth: barWidth, tallestBarHeight: rc.maxPlayBarHeightNeeded, scaleFactor: scaleFactor)
-    let barWidth_Scaled = barWidth * scaleFactor
-    let barHeight_Scaled = barHeight * scaleFactor
-    let outerPadding_Scaled = rc.barMarginRadius * scaleFactor
-    let cornerRadius_Scaled = rc.barCornerRadius * scaleFactor
-    let leftColor = rc.barColorLeft
-    let rightColor = rc.barColorRight
-    let chapterGapWidth = (baseChapterGapWidth * scaleFactor).rounded()
-    let currentValuePointX = (outerPadding_Scaled + (currentValueRatio * barWidth_Scaled)).rounded()
-    let hasSpaceForKnob = knobWidth > 0.0
+
+    let confSet = (currentPreviewTimeSec != nil ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
+
     let currentHoverX: CGFloat?
     if let currentPreviewTimeSec {
-      currentHoverX = currentPreviewTimeSec / durationSec * barWidth_Scaled
+      currentHoverX = currentPreviewTimeSec / durationSec * confSet.barWidth
     } else {
       currentHoverX = nil
     }
-    let isHovering = currentHoverX != nil
-    let leftBarHeight = isHovering ? rc.leftBarHeightForHover * scaleFactor : barHeight_Scaled
-    let rightBarHeight = isHovering ? rc.rightBarHeightForHover * scaleFactor : barHeight_Scaled
+
+    let currentValuePointX = (confSet.imgPadding + (currentValueRatio * confSet.barWidth)).rounded()
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
     let rightClipMinX: CGFloat
+    let hasSpaceForKnob = knobWidth > 0.0
     if hasSpaceForKnob {
       // - Will clip out the knob
       leftClipMaxX = (knobMinX - 1) * scaleFactor
@@ -301,33 +405,33 @@ class BarFactory {
       rightClipMinX = currentValuePointX
     }
 
-    let hasLeft = leftClipMaxX - outerPadding_Scaled > 0.0
-    let hasRight = rightClipMinX + outerPadding_Scaled < imgSizeScaled.width
+    let hasLeft = leftClipMaxX - confSet.imgPadding > 0.0
+    let hasRight = rightClipMinX + confSet.imgPadding < confSet.imgWidth
 
     let leftClipRect = CGRect(x: 0, y: 0,
                               width: leftClipMaxX,
-                              height: imgSizeScaled.height)
+                              height: confSet.imgHeight)
 
     let rightClipRect = CGRect(x: rightClipMinX, y: 0,
-                               width: imgSizeScaled.width - rightClipMinX,
-                               height: imgSizeScaled.height)
+                               width: confSet.imgWidth - rightClipMinX,
+                               height: confSet.imgHeight)
 
-    let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
+    let barImg = CGImage.buildBitmapImage(width: Int(confSet.imgWidth), height: Int(confSet.imgHeight)) { cgc in
 
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
       var segsMaxX: [Double]
       if chapters.count > 0, durationSec > 0 {
-        segsMaxX = chapters[1...].map{ $0.startTime / durationSec * barWidth_Scaled }
+        segsMaxX = chapters[1...].map{ $0.startTime / durationSec * confSet.barWidth }
       } else {
         segsMaxX = []
       }
       // Add right end of bar (don't forget to subtract left & right padding from img)
-      let lastSegMaxX = imgSizeScaled.width - (outerPadding_Scaled * 2)
+      let lastSegMaxX = confSet.imgWidth - (confSet.imgPadding * 2)
       segsMaxX.append(lastSegMaxX)
 
       var segIndex = 0
-      var segMinX = outerPadding_Scaled
+      var segMinX = confSet.imgPadding
 
       var leftEdge: PillEdgeType = .noBorderingPill
       var rightEdge: PillEdgeType = .bordersAnotherPill
@@ -350,25 +454,18 @@ class BarFactory {
             done = true
           } else if segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
             // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
-            rc.addPillPath(cgc, minX: segMinX,
-                           maxX: segMaxX,
-                           interPillGapWidth: chapterGapWidth,
-                           height: leftBarHeight,
-                           outerPadding_Scaled: outerPadding_Scaled,
-                           cornerRadius_Scaled: cornerRadius_Scaled,
-                           leftEdge: leftEdge,
-                           rightEdge: rightEdge)
+            addPillPath(cgc, minX: segMinX,
+                        maxX: segMaxX,
+                        confSet.currentChapter_Left,
+                        leftEdge: leftEdge,
+                        rightEdge: rightEdge)
             cgc.clip()
             done = true
           }
-          rc.drawPill(cgc, leftColor,
-                      minX: segMinX, maxX: segMaxX,
-                      interPillGapWidth: chapterGapWidth,
-                      height: leftBarHeight,
-                      outerPadding_Scaled: outerPadding_Scaled,
-                      cornerRadius_Scaled: cornerRadius_Scaled,
-                      leftEdge: leftEdge,
-                      rightEdge: rightEdge)
+          drawPill(cgc, minX: segMinX, maxX: segMaxX,
+                   confSet.currentChapter_Left,
+                   leftEdge: leftEdge,
+                   rightEdge: rightEdge)
 
           // Set for all but first pill
           leftEdge = .bordersAnotherPill
@@ -393,14 +490,11 @@ class BarFactory {
             rightEdge = .noBorderingPill
           }
 
-          rc.drawPill(cgc, rightColor,
-                      minX: segMinX, maxX: segMaxX,
-                      interPillGapWidth: chapterGapWidth,
-                      height: rightBarHeight,
-                      outerPadding_Scaled: outerPadding_Scaled,
-                      cornerRadius_Scaled: cornerRadius_Scaled,
-                      leftEdge: leftEdge,
-                      rightEdge: rightEdge)
+          drawPill(cgc,
+                   minX: segMinX, maxX: segMaxX,
+                   confSet.currentChapter_Right,
+                   leftEdge: leftEdge,
+                   rightEdge: rightEdge)
 
           segIndex += 1
           // For next loop
@@ -416,7 +510,7 @@ class BarFactory {
     // Show cached ranges (if enabled)
     // Not sure how efficient this is...
 
-    let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
+    let cacheImg = CGImage.buildBitmapImage(width: Int(confSet.imgWidth), height: Int(confSet.imgHeight)) { cgc in
       if hasSpaceForKnob {
         // Apply clip (pixel whitelist) to avoid drawing over the knob
         cgc.clip(to: [leftClipRect, rightClipRect])
@@ -425,53 +519,48 @@ class BarFactory {
       var rectsLeft: [NSRect] = []
       var rectsRight: [NSRect] = []
       for cachedRange in cachedRanges.sorted(by: { $0.0 < $1.0 }) {
-        let startX: CGFloat = cachedRange.0 / durationSec * barWidth_Scaled
-        let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
+        let startX: CGFloat = cachedRange.0 / durationSec * confSet.barWidth
+        let endX: CGFloat = cachedRange.1 / durationSec * confSet.barWidth
         if startX > leftClipMaxX {
-          rectsRight.append(CGRect(x: startX, y: outerPadding_Scaled,
-                                   width: endX - startX, height: leftBarHeight))
+          rectsRight.append(CGRect(x: startX, y: confSet.imgPadding,
+                                   width: endX - startX, height: confSet.currentChapter_Left.barHeight))
         } else if endX > leftClipMaxX {
-          rectsLeft.append(CGRect(x: startX, y: outerPadding_Scaled,
-                                  width: leftClipMaxX - startX, height: leftBarHeight))
+          rectsLeft.append(CGRect(x: startX, y: confSet.imgPadding,
+                                  width: leftClipMaxX - startX, height: confSet.currentChapter_Left.barHeight))
 
           let start2ndX = leftClipMaxX
-          rectsRight.append(CGRect(x: start2ndX, y: outerPadding_Scaled,
-                                   width: endX - start2ndX, height: rightBarHeight))
+          rectsRight.append(CGRect(x: start2ndX, y: confSet.imgPadding,
+                                   width: endX - start2ndX, height: confSet.currentChapter_Right.barHeight))
         } else {
-          rectsLeft.append(CGRect(x: startX, y: outerPadding_Scaled,
-                                  width: endX - startX, height: rightBarHeight))
+          rectsLeft.append(CGRect(x: startX, y: confSet.imgPadding,
+                                  width: endX - startX, height: confSet.currentChapter_Right.barHeight))
         }
       }
 
-      cgc.setFillColor(rc.leftCachedColor)
+      cgc.setFillColor(leftCachedColor)
       cgc.fill(rectsLeft)
-      cgc.setFillColor(rc.rightCachedColor)
+      cgc.setFillColor(rightCachedColor)
       cgc.fill(rectsRight)
 
       cgc.setBlendMode(.destinationIn)
-      cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
+      cgc.draw(barImg, in: CGRect(origin: .zero, size: confSet.imgSize))
     }
 
-    return rc.makeCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
+    return makeCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
+  }
+
+  func heightNeeded(tallestBarHeight: CGFloat) -> CGFloat {
+    return (2 * barImgPadding) + tallestBarHeight
   }
 
   /// Measured in points, not pixels!
   func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
-    let margin = BarFactory.shared.barMarginRadius
-    let imgHeight = (2 * margin) + tallestBarHeight
+    let imgHeight = heightNeeded(tallestBarHeight: tallestBarHeight)
     // can be negative:
     let spareHeight = drawRect.height - imgHeight
     let y = drawRect.origin.y + (spareHeight * 0.5)
-    return CGRect(x: drawRect.origin.x - margin, y: y,
-                  width: drawRect.width + (2 * margin), height: imgHeight)
-  }
-
-  /// `scaleFactor` should match `backingScaleFactor` from the current screen.
-  /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
-  func imgSizeScaled(barWidth: CGFloat, tallestBarHeight: CGFloat, scaleFactor: CGFloat) -> CGSize {
-    let marginPairSum = (2 * BarFactory.shared.barMarginRadius)
-    let size = CGSize(width: barWidth + marginPairSum, height: marginPairSum + tallestBarHeight)
-    return size.multiplyThenRound(scaleFactor)
+    return CGRect(x: drawRect.origin.x - barImgPadding, y: y,
+                  width: drawRect.width + (2 * barImgPadding), height: imgHeight)
   }
 
   private static func exaggerateColor(_ baseColor: CGColor) -> CGColor {

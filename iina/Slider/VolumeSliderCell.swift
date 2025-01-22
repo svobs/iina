@@ -29,7 +29,9 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let extraHeightNeeded = (BarFactory.shared.maxVolBarHeightNeeded + 2*BarFactory.shared.barMarginRadius) - superRect.height
+    let bf = BarFactory.shared
+    let imgHeight = bf.heightNeeded(tallestBarHeight: bf.maxVolBarHeightNeeded)
+    let extraHeightNeeded = imgHeight - superRect.height
     if extraHeightNeeded <= 0.0 {
       return superRect
     }
@@ -42,7 +44,6 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
     let bf = BarFactory.shared
-    assert(bf.barHeight <= barRect.height, "barHeight \(bf.barHeight) > barRect.height \(barRect.height)")
     guard let screen = controlView?.window?.screen else { return }
     guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance else { return }
     let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
@@ -56,7 +57,7 @@ class VolumeSliderCell: ScrollableSliderCell {
                           height: drawRect.height - 2)
       }
       let volBarImg = bf.buildVolumeBarImage(darkMode: appearance.isDark, clearBG: isClearBG, barWidth: barRect.width,
-                                             barHeight: bf.barHeight, screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
+                                             screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
                                              currentValue: doubleValue, maxValue: maxValue)
       NSGraphicsContext.current!.cgContext.draw(volBarImg, in: drawRect)
     }

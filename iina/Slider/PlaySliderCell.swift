@@ -30,7 +30,9 @@ class PlaySliderCell: ScrollableSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let extraHeightNeeded = (BarFactory.shared.maxPlayBarHeightNeeded + 2 * BarFactory.shared.barMarginRadius) - superRect.height
+    let bf = BarFactory.shared
+    let imgHeight = bf.heightNeeded(tallestBarHeight: bf.maxPlayBarHeightNeeded)
+    let extraHeightNeeded = imgHeight - superRect.height
     if extraHeightNeeded <= 0.0 {
       return superRect
     }
@@ -54,12 +56,10 @@ class PlaySliderCell: ScrollableSliderCell {
     let screen = controlView?.window?.screen else { return }
     let progressRatio = slider.progressRatio
     let seekPreview = player.windowController.seekPreview
-    let barHeight = bf.barHeight
     let currentPreviewTimeSec = seekPreview.currentPreviewTimeSec
     appearance.applyAppearanceFor {
       let knobWidth = enableDrawKnob ? knobWidth : 0
 
-      assert(barHeight <= barRect.height, "barHeight \(barHeight) > barRect.height \(barRect.height)")
       var drawRect = bf.imageRect(in: barRect, tallestBarHeight: bf.maxPlayBarHeightNeeded)
       if #unavailable(macOS 11) {
         drawRect = NSRect(x: drawRect.origin.x,
@@ -68,7 +68,7 @@ class PlaySliderCell: ScrollableSliderCell {
                           height: drawRect.height - 2)
       }
 
-      let barImg = bf.buildPlayBarImage(barWidth: barRect.width, barHeight: barHeight,
+      let barImg = bf.buildPlayBarImage(barWidth: barRect.width,
                                         screen: screen, darkMode: appearance.isDark, clearBG: isClearBG,
                                         knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
                                         durationSec: durationSec, chapters, cachedRanges: cachedRanges,
