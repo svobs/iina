@@ -64,8 +64,9 @@ class JSPluginSub {
         Logger.log("Cannot find subtitle provider \"\(id)\"", level: .error)
         return .value([])
       }
+      let plugins = player.plugins
       guard case .plugin(let pluginID, _) = provider.origin,
-        let plugin = player.plugins.first(where: { $0.plugin.identifier == pluginID }) else {
+        let plugin = plugins.first(where: { $0.plugin.identifier == pluginID }) else {
         Logger.log("Cannot find a plugin with id \"\(id)\"", level: .error)
         return .value([])
       }

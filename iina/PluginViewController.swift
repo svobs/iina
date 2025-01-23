@@ -27,7 +27,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   @IBOutlet weak var pluginContentContainerView: NSView!
   @IBOutlet weak var buttonTopConstraint: NSLayoutConstraint!
 
-  private var pluginTabsStackView: NSStackView!
+  /// Contains instances of `SidebarTabView`.
+  private let pluginTabsStackView = NSStackView()
   private var pluginTabs: [String: SidebarTabView] = [:]
 
   weak var player: PlayerCore!
@@ -41,7 +42,6 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
     pluginContentContainerView.translatesAutoresizingMaskIntoConstraints = false
 
-    updateVerticalConstraints()
     initPluginTabs()
     if pendingSwitchRequest == nil {
       updateTabActiveStatus()
@@ -60,8 +60,10 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   }
 
   private func updateVerticalConstraints() {
-    // may not be available until after load; use Optional chaining
+    // May not be available until after load
+    guard isViewLoaded else { return }
     buttonTopConstraint?.animateToConstant(downshift)
+    pluginTabsViewHeightConstraint?.animateToConstant(hasTab ? 36 : 0)
     view.layoutSubtreeIfNeeded()
   }
 
@@ -78,12 +80,12 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private func initPluginTabs() {
     let container = NSView()
     container.translatesAutoresizingMaskIntoConstraints = false
-    pluginTabsStackView = NSStackView()
     pluginTabsStackView.translatesAutoresizingMaskIntoConstraints = false
     pluginTabsStackView.alignment = .centerY
     container.addSubview(pluginTabsStackView)
     pluginTabsScrollView.documentView = container
-    Utility.quickConstraints(["H:|-8-[v]-8-|", "V:|-0-[v(==36)]-0-|"], ["v": pluginTabsStackView])
+    pluginTabsStackView.addConstraintsToFillSuperview()
+//    Utility.quickConstraints(["H:|-8-[v]-8-|", "V:|-0-[v(==36)]-0-|"], ["v": pluginTabsStackView])
     updatePluginTabs()
   }
 
@@ -99,7 +101,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     }
     pluginTabs.removeAll()
     var selectedPluginTabExists: Bool = false
-    for plugin in player.plugins {
+    let plugins = player.plugins
+    for plugin in plugins {
       guard let name = plugin.plugin.sidebarTabName else { return }
       let tab = SidebarTabView()
       tab.name = name
@@ -112,15 +115,15 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       }
     }
     if !selectedPluginTabExists {
-      if hasTab, let firstPlugin = player.plugins.first(where: { $0.plugin.sidebarTabName != nil}) {
+      if hasTab, let firstPlugin = plugins.first(where: { $0.plugin.sidebarTabName != nil}) {
         // If tab is nil, select first plugin (if any available)
         switchToTab(firstPlugin.plugin.identifier)
       } else {
         switchToTab(Sidebar.Tab.nullPluginID)
       }
     }
+    updateVerticalConstraints()
     pluginTabsView.isHidden = !hasTab
-    pluginTabsViewHeightConstraint.constant = hasTab ? 36 : 0
     updateTabActiveStatus()
   }
 
@@ -141,14 +144,17 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     currentPluginID = tabID
     updateTabActiveStatus()
 
-    pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
-    if currentPluginID != Sidebar.Tab.nullPluginID {
-      guard let plugin = player.plugins.first(where: { $0.plugin.identifier == currentPluginID }) else {
+    let plugins = player.plugins
+    if currentPluginID == Sidebar.Tab.nullPluginID {
+      pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
+    } else {
+      guard let plugin = plugins.first(where: { $0.plugin.identifier == currentPluginID }) else {
         player.log.error("Cannot switch to tab: failed to find plugin with ID \(currentPluginID)")
         return
       }
+      pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
-      Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": plugin.sidebarTabView])
+      plugin.sidebarTabView.addConstraintsToFillSuperview()
     }
 
     // Update current layout so that new tab can be saved.
@@ -156,18 +162,12 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     windowController.animationPipeline.submitInstantTask{ [self] in
       let prevLayout = windowController.currentLayout
       // TODO: create a clone() method for SidebarMiscState & use it instead
-      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
-                                                      selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
-                                                      selectedPluginTabID: currentPluginID)
-      windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
+      let state = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
+                                           selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
+                                           selectedPluginTabID: currentPluginID)
+      windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: state))
     }
     let sidebarTab = currentPluginID == Sidebar.Tab.nullPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
     windowController.didChangeTab(to: sidebarTab)
-  }
-
-  func removePluginTab(withIdentifier pluginID: String) {
-    guard isViewLoaded else { return }
-    guard pluginID != Sidebar.Tab.nullPluginID else { return }
-    updatePluginTabs()
   }
 }

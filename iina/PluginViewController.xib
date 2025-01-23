@@ -22,16 +22,16 @@
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY">
             <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
             <subviews>
-                <customView translatesAutoresizingMaskIntoConstraints="NO" id="14p-ym-5zO" userLabel="PluginTabs View">
+                <customView translatesAutoresizingMaskIntoConstraints="NO" id="14p-ym-5zO" userLabel="Plugin-Tab-Buttons View">
                     <rect key="frame" x="0.0" y="272" width="480" height="0.0"/>
                     <subviews>
-                        <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Pm4-0T-kmR" userLabel="PluginsTabs Scroll View">
+                        <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Pm4-0T-kmR" userLabel="Plugins-Tab-Buttons Scroll View">
                             <rect key="frame" x="0.0" y="0.0" width="480" height="0.0"/>
-                            <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Yei-VT-MqY" userLabel="PluginsTabs Clip View">
+                            <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Yei-VT-MqY" userLabel="Plugins-Tab-Buttons Clip View">
                                 <rect key="frame" x="0.0" y="0.0" width="480" height="0.0"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
-                                    <view id="TS6-4w-7Ln">
+                                    <view id="TS6-4w-7Ln" userLabel="Document View">
                                         <rect key="frame" x="0.0" y="0.0" width="465" height="0.0"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     </view>
@@ -64,7 +64,7 @@
                         <constraint firstAttribute="bottom" secondItem="Pm4-0T-kmR" secondAttribute="bottom" id="ucd-JQ-lPK"/>
                     </constraints>
                 </customView>
-                <customView verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="XYL-E3-hi6">
+                <customView verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="XYL-E3-hi6" userLabel="PluginContentContainer View">
                     <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
                 </customView>
             </subviews>

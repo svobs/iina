@@ -610,7 +610,8 @@ class MenuController: NSObject, NSMenuDelegate {
     developerTool.submenu = NSMenu()
 
     guard let player = PlayerCore.active else { return }
-    for (index, instance) in player.plugins.enumerated() {
+    let plugins = player.plugins
+    for (index, instance) in plugins.enumerated() {
       var counter = 0
       var rootMenu: NSMenu! = pluginMenu
       let menuItems = (instance.plugin.globalInstance?.menuItems ?? []) + instance.menuItems

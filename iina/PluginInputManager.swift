@@ -86,7 +86,8 @@ class PluginInputManager: NSObject {
   ///   - handler: the normal handler for this event in IINA
   ///   - defaultHandler: the fallback handler for this event if it's not handled by the normal handler
   static func handle(input: String, event: PluginInputManager.Event, player: PlayerCore, arguments: [Any], handler: (() -> Bool)? = nil, defaultHandler: (() -> Void)? = nil) {
-    let listeners = player.plugins.compactMap {
+    let plugins = player.plugins
+    let listeners = plugins.compactMap {
       $0.input.listener(forInput: input, event: event)
     }.sorted(by: { $0.priority > $1.priority })
     
