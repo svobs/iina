@@ -468,11 +468,47 @@ extension PlayerWindowController {
 
     playSliderHeightConstraint?.isActive = false
 
+    // Music mode: enter/exit
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
 
-      if transition.isExitingMusicMode {
+      if transition.isEnteringMusicMode {
+        // Entering music mode: add views to bottom bar
+        bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
+        miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+
+        let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
+        bottomConstraint.priority = .defaultHigh
+        bottomConstraint.isActive = true
+
+        // move playist view
+        let playlistView = playlistView.view
+        playlistView.removeFromSuperview()
+        miniPlayer.playlistWrapperView.addSubview(playlistView)
+        playlistView.addConstraintsToFillSuperview()
+
+        // move playback position slider
+        miniPlayer.positionSliderWrapperView.addSubview(playPositionContainerView)
+        playPositionContainerView.addConstraintsToFillSuperview()
+        // Expand slider bounds so that hovers are more likely to register
+        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
+        playSliderHeightConstraint?.isActive = true
+        playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
+
+        // move playback buttons
+        if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
+          miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
+          miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
+          miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
+        }
+
+        seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
+
+        // Update music mode UI
+        updateTitle()
+        applyThemeMaterial()
+      } else { // Exiting music mode
         log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
         miniPlayer.view.removeFromSuperview()
 
@@ -495,40 +531,8 @@ extension PlayerWindowController {
       }
     }
 
-    /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-    if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
-      /// Finish closing (if closing)
-      removeSidebarTabGroupView(group: tabToHide.group)
-    }
-    if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
-      /// Finish closing (if closing).
-      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-      removeSidebarTabGroupView(group: tabToHide.group)
-    }
-
-    // - Leading Sidebar
-    if transition.isShowingLeadingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
-              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
-              transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
-      // Tab group is already showing, but just need to switch tab
-      switchToTabInTabGroup(tab: tabToShow)
-    }
-
-    // - Trailing Sidebar
-    if transition.isShowingTrailingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
-              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
-              transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
-      // Tab group is already showing, but just need to switch tab
-      switchToTabInTabGroup(tab: tabToShow)
-    }
+    // Need to call this for initial layout also:
+    updateMusicModeButtonsVisibility(using: musicModeGeo)
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
@@ -583,22 +587,13 @@ extension PlayerWindowController {
     } else if outputLayout.isMusicMode {
 
       // Music mode always has a control bar
-      miniPlayer.loadIfNeeded()
       currentControlBar = miniPlayer.musicModeControlBarView
-
-      // move playback buttons
-      if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
-        miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
-        miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
-        miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
-      }
 
     } else {  // No OSC & not music mode
       currentControlBar = nil
     }
 
-    if currentControlBar == nil {
-    } else {
+    if currentControlBar != nil {
       // Has OSC, or music mode
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.cell?.controlView?.needsDisplay = true
@@ -634,7 +629,7 @@ extension PlayerWindowController {
 
           KnobFactory.shared.mainKnobColor = NSColor.mainSliderKnob
         }
-        // invalidate all cached knob images
+        // Invalidate all cached knob images so they are rebuilt with new style
         KnobFactory.shared.invalidateCachedKnobs()
       }
 
@@ -648,43 +643,6 @@ extension PlayerWindowController {
 
       leftTimeLabel.font = timeLabelFont
       rightTimeLabel.font = timeLabelFont
-
-      if transition.isEnteringMusicMode {
-        // Entering music mode
-        bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
-        miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-
-        let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
-        bottomConstraint.priority = .defaultHigh
-        bottomConstraint.isActive = true
-
-        // move playist view
-        let playlistView = playlistView.view
-        playlistView.removeFromSuperview()
-        miniPlayer.playlistWrapperView.addSubview(playlistView)
-        playlistView.addConstraintsToFillSuperview()
-
-        // move playback position slider
-        miniPlayer.positionSliderWrapperView.addSubview(playPositionContainerView)
-        playPositionContainerView.addConstraintsToFillSuperview()
-        // Expand slider bounds so that hovers are more likely to register
-        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
-        playSliderHeightConstraint?.isActive = true
-        playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
-
-        // move playback buttons
-        if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
-          miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
-          miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
-          miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
-        }
-
-        seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
-
-        // Update music mode UI
-        updateTitle()
-        applyThemeMaterial()
-      }
     }
 
     // Not floating OSC!
@@ -692,9 +650,7 @@ extension PlayerWindowController {
       addSpeedLabelToControlBar(transition)
     }
 
-    // Need to call this for initial layout also:
-    updateMusicModeButtonsVisibility(using: musicModeGeo)
-
+    // Interactive mode
     if transition.isTogglingInteractiveMode {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
       if let cropController = self.cropSettingsView {
@@ -751,33 +707,74 @@ extension PlayerWindowController {
       }
     }
 
+    // Title bar views
     if transition.outputLayout.isMusicMode {
       hideBuiltInTitleBarViews()
-    } else if transition.outputLayout.spec.isLegacyStyle, transition.outputLayout.titleBar.isShowable {
-      if customTitleBar == nil {
-        let titleBar = CustomTitleBarViewController()
-        titleBar.windowController = self
-        customTitleBar = titleBar
-        titleBar.view.alphaValue = 0  // prep it to fade in later
-      }
+    } else if outputLayout.titleBar.isShowable {
+      if transition.outputLayout.spec.isLegacyStyle {
 
-      if let customTitleBar {
-        // Update superview based on placement. Cannot always add to contentView due to constraint issues
-        if transition.outputLayout.topBarPlacement == .outsideViewport {
-          customTitleBar.addViewTo(superview: titleBarView)
-        } else {
-          if let contentView = window.contentView {
-            customTitleBar.addViewTo(superview: contentView)
+        // Custom title bar
+        if customTitleBar == nil {
+          let titleBar = CustomTitleBarViewController()
+          titleBar.windowController = self
+          customTitleBar = titleBar
+          titleBar.view.alphaValue = 0  // prep it to fade in later
+        }
+
+        if let customTitleBar {
+          // Update superview based on placement. Cannot always add to contentView due to constraint issues
+          if transition.outputLayout.topBarPlacement == .outsideViewport {
+            customTitleBar.addViewTo(superview: titleBarView)
+          } else {
+            if let contentView = window.contentView {
+              customTitleBar.addViewTo(superview: contentView)
+            }
+          }
+          if !transition.inputLayout.titleBar.isShowable {
+            customTitleBar.view.alphaValue = 0  // prep it to fade in later
           }
         }
-        if !transition.inputLayout.titleBar.isShowable {
-          customTitleBar.view.alphaValue = 0  // prep it to fade in later
-        }
       }
+
+      // covers both native & custom variants
+      updateTitleBarUI(from: outputLayout)
     }
 
-    if outputLayout.titleBar.isShowable {
-      updateTitleBarUI(from: outputLayout)  // covers both native & custom variants
+    // Sidebars
+
+    /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
+    if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
+      /// Finish closing (if closing)
+      removeSidebarTabGroupView(group: tabToHide.group)
+    }
+    if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
+      /// Finish closing (if closing).
+      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
+      removeSidebarTabGroupView(group: tabToHide.group)
+    }
+
+    // - Leading Sidebar
+    if transition.isShowingLeadingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
+              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
+              transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
+      // Tab group is already showing, but just need to switch tab
+      switchToTabInTabGroup(tab: tabToShow)
+    }
+
+    // - Trailing Sidebar
+    if transition.isShowingTrailingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
+              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
+              transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
+      // Tab group is already showing, but just need to switch tab
+      switchToTabInTabGroup(tab: tabToShow)
     }
 
     if outputLayout.leadingSidebarPlacement == .insideViewport {
@@ -801,6 +798,8 @@ extension PlayerWindowController {
     if !transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: outputLayout)
     }
+
+    // Other misc views
 
     updateAdditionalInfo()
     updateVolumeUI()
