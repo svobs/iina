@@ -202,7 +202,7 @@ extension PlayerWindowController {
         .allowVideoToOverlapCameraHousing,
         .useLegacyWindowedMode,
         .arrowButtonAction,
-      // These need calls to BarFactory.shared.updateBarStylesFromPrefs():
+      // These need calls to BarFactory.current.updateBarStylesFromPrefs():
         .roundCornersInSliders,
         .playSliderBarLeftColor:
 

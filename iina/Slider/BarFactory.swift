@@ -28,7 +28,8 @@ fileprivate extension CGColor {
 /// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class BarFactory {
-  static var shared = BarFactory()
+  /// The current configuration for drawing bars, based on prefs.
+  static var current = BarFactory()
 
   // MARK: - Init / Config
 
@@ -58,6 +59,12 @@ class BarFactory {
 
     let barHeight_Normal: CGFloat = 3.0
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
+
+    let barColorLeft = BarFactory.barColorLeftFromPrefs()
+    leftCachedColor = barColorLeft.exaggerated()
+
+    let barColorRight = NSColor.mainSliderBarRight.cgColor
+    rightCachedColor = barColorRight.exaggerated()
 
     // - PlaySlider:
 
@@ -91,11 +98,7 @@ class BarFactory {
                                     barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
     self.maxVolBarHeightNeeded = maxVolBarHeightNeeded
 
-    let barColorLeft = BarFactory.barColorLeftFromPrefs()
-    leftCachedColor = barColorLeft.exaggerated()
-
-    let barColorRight = NSColor.mainSliderBarRight.cgColor
-    rightCachedColor = barColorRight.exaggerated()
+    // - PlaySlider config sets
 
     let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxPlayBarHeightNeeded,
                                          barHeight: barHeight_Normal, interPillGapWidth: chapterGapWidth,
@@ -116,6 +119,8 @@ class BarFactory {
                                                      pillCornerRadius: barCornerRadius_FocusedNonCurrChapter)
     playBar_Focused =  PlayBarConfScaleSet(currentChapter_Left: focusedCurrChapterLeft, currentChapter_Right: focusedCurrChapterRight,
                                            nonCurrentChapter_Left: nonCurrChapterLeft, nonCurrentChapter_Right: nonCurrChapterRight)
+
+    // - VolumeSlider config sets
 
     let volumeBelow100_Left = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxVolBarHeightNeeded,
                                               barHeight: barHeight_Normal, interPillGapWidth: 0.0,
@@ -154,12 +159,12 @@ class BarFactory {
 
   func updateBarStylesFromPrefs() {
     // Just replace the whole instance:
-    BarFactory.shared = BarFactory()
+    BarFactory.current = BarFactory()
   }
 
   // MARK: - Volume Bar
 
-  func buildVolumeBarImage(darkMode: Bool, clearBG: Bool,
+  func buildVolumeBarImage(darkMode: Bool, clearBG: Bool, useFocusEffect: Bool,
                            barWidth: CGFloat,
                            screen: NSScreen,
                            knobMinX: CGFloat, knobWidth: CGFloat,
@@ -168,7 +173,7 @@ class BarFactory {
 
     // - Set up calculations
     let scaleFactor = screen.backingScaleFactor
-    let conf = (currentPreviewValue == nil ? volBar_Normal : volBar_Focused).forImg(scale: scaleFactor, barWidth: barWidth)
+    let conf = (useFocusEffect ? volBar_Focused : volBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
     let currentValueRatio = currentValue / maxValue
     let currentValuePointX = (conf.imgPadding + (currentValueRatio * conf.barWidth)).rounded()
@@ -255,14 +260,14 @@ class BarFactory {
 
   /// `barWidth` does not include added leading or trailing margin
   func buildPlayBarImage(barWidth: CGFloat,
-                         screen: NSScreen, darkMode: Bool, clearBG: Bool,
+                         screen: NSScreen, darkMode: Bool, useFocusEffect: Bool,
                          knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
                          durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
                          currentPreviewTimeSec: Double?) -> CGImage {
     // - Set up calculations
     let scaleFactor = screen.backingScaleFactor
 
-    let confSet = (currentPreviewTimeSec == nil ? playBar_Normal : playBar_Focused).forImg(scale: scaleFactor, barWidth: barWidth)
+    let confSet = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
     let currentHoverX: CGFloat?
     if let currentPreviewTimeSec {
@@ -440,6 +445,8 @@ class BarFactory {
     return CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
   }
 
+  // MARK: - Other API functions
+
   func heightNeeded(tallestBarHeight: CGFloat) -> CGFloat {
     return barVerticalPaddingTotal + tallestBarHeight
   }
@@ -452,6 +459,18 @@ class BarFactory {
     let y = drawRect.origin.y + (spareHeight * 0.5)
     return CGRect(x: drawRect.origin.x - barImgPadding, y: y,
                   width: drawRect.width + (2 * barImgPadding), height: imgHeight)
+  }
+
+  func drawBar(_ barImg: CGImage, in barRect: NSRect, tallestBarHeight: CGFloat) {
+    var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight)
+    if #unavailable(macOS 11) {
+      drawRect = NSRect(x: drawRect.origin.x,
+                        y: drawRect.origin.y + 1,
+                        width: drawRect.width,
+                        height: drawRect.height - 2)
+    }
+
+    NSGraphicsContext.current!.cgContext.draw(barImg, in: drawRect)
   }
 
 }

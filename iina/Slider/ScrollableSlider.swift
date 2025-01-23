@@ -131,6 +131,10 @@ class ScrollableSliderCell: NSSliderCell {
 
   var slider: ScrollableSlider { controlView as! ScrollableSlider }
 
+  var iinaAppearance: NSAppearance? {
+    controlView?.window?.contentView?.iinaAppearance
+  }
+
   var isDragging = false
 
   var isClearBG: Bool {
@@ -177,6 +181,13 @@ class ScrollableSliderCell: NSSliderCell {
       height = superKnobRect.height
     }
     return NSMakeRect(pos, superKnobRect.origin.y, knobWidth, height)
+  }
+
+  func knobMinXAndWidth(enableDrawKnob: Bool) -> (CGFloat, CGFloat) {
+    // can use flipped=true because we don't care about Y value
+    let knobMinX: CGFloat = ((knobRect(flipped: true).origin.x) + (enableDrawKnob ? 0 : self.knobWidth * 0.5)).rounded()
+    let knobWidth = enableDrawKnob ? knobWidth : 0
+    return (knobMinX, knobWidth)
   }
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {

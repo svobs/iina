@@ -29,7 +29,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let bf = BarFactory.shared
+    let bf = BarFactory.current
     let imgHeight = bf.heightNeeded(tallestBarHeight: bf.maxVolBarHeightNeeded)
     let extraHeightNeeded = imgHeight - superRect.height
     if extraHeightNeeded <= 0.0 {
@@ -43,25 +43,23 @@ class VolumeSliderCell: ScrollableSliderCell {
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    let bf = BarFactory.shared
-    guard let screen = controlView?.window?.screen else { return }
-    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : controlView?.window?.contentView?.iinaAppearance else { return }
-    let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
-    let knobWidth = enableDrawKnob ? knobWidth : 0
+    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : iinaAppearance,
+          let screen = controlView?.window?.screen else { return }
+
+    let enableDrawKnob = enableDrawKnob
+    let (knobMinX, knobWidth) = knobMinXAndWidth(enableDrawKnob: enableDrawKnob)
+    let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
+    let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value
+
     appearance.applyAppearanceFor {
-      var drawRect = bf.imageRect(in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded)
-      if #unavailable(macOS 11) {
-        drawRect = NSRect(x: drawRect.origin.x,
-                          y: drawRect.origin.y + 1,
-                          width: drawRect.width,
-                          height: drawRect.height - 2)
-      }
-      let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value
-      let volBarImg = bf.buildVolumeBarImage(darkMode: appearance.isDark, clearBG: isClearBG, barWidth: barRect.width,
+      let bf = BarFactory.current
+      let volBarImg = bf.buildVolumeBarImage(darkMode: appearance.isDark, clearBG: isClearBG, useFocusEffect: useFocusEffect,
+                                             barWidth: barRect.width,
                                              screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
                                              currentValue: doubleValue, maxValue: maxValue,
                                              currentPreviewValue: previewValue)
-      NSGraphicsContext.current!.cgContext.draw(volBarImg, in: drawRect)
+      
+      bf.drawBar(volBarImg, in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded)
     }
   }
 

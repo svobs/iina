@@ -484,6 +484,11 @@ class LayoutState {
                          (oscPosition == .bottom && bottomBarView.isFadeable))
   }
 
+  /// Whether PlaySlider & VolumeSlider should change height when in focus (on mouse hover or during scroll)
+  var useSliderFocusEffect: Bool {
+    return enableOSC && (oscPosition == .top || oscPosition == .bottom)
+  }
+
   var hasPermanentControlBar: Bool {
     if isMusicMode {
       return true

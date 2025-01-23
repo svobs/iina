@@ -13,10 +13,6 @@ class PlaySliderCell: ScrollableSliderCell {
 
   var isPausedBeforeSeeking = false
 
-  var iinaAppearance: NSAppearance? {
-    controlView?.window?.contentView?.iinaAppearance
-  }
-
   var isDarkMode: Bool {
     iinaAppearance?.isDark ?? false
   }
@@ -30,7 +26,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let bf = BarFactory.shared
+    let bf = BarFactory.current
     let imgHeight = bf.heightNeeded(tallestBarHeight: bf.maxPlayBarHeightNeeded)
     let extraHeightNeeded = imgHeight - superRect.height
     if extraHeightNeeded <= 0.0 {
@@ -44,36 +40,30 @@ class PlaySliderCell: ScrollableSliderCell {
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    let bf = BarFactory.shared
-    let chapters = drawChapters ? player.info.chapters : []
-    let durationSec = player.info.playbackDurationSec ?? 0.0
-    /// The position of the knob, rounded for cleaner drawing
-    let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
-    let cachedRanges = player.cachedRanges
-    let isClearBG = isClearBG
-
     guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : iinaAppearance,
-    let screen = controlView?.window?.screen else { return }
+          let screen = controlView?.window?.screen else { return }
+
+    /// The position of the knob, rounded for cleaner drawing
+    let enableDrawKnob = enableDrawKnob
+    let (knobMinX, knobWidth) = knobMinXAndWidth(enableDrawKnob: enableDrawKnob)
+    let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
+
+    let chapters = drawChapters ? player.info.chapters : []
+    let cachedRanges = player.cachedRanges
+    let durationSec = player.info.playbackDurationSec ?? 0.0
+
     let progressRatio = slider.progressRatio
-    let seekPreview = player.windowController.seekPreview
-    let currentPreviewTimeSec = seekPreview.currentPreviewTimeSec
+    let currentPreviewTimeSec = player.windowController.seekPreview.currentPreviewTimeSec
+
     appearance.applyAppearanceFor {
-      let knobWidth = enableDrawKnob ? knobWidth : 0
+      let bf = BarFactory.current
+      let playBarImg = bf.buildPlayBarImage(barWidth: barRect.width,
+                                            screen: screen, darkMode: appearance.isDark, useFocusEffect: useFocusEffect,
+                                            knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
+                                            durationSec: durationSec, chapters, cachedRanges: cachedRanges,
+                                            currentPreviewTimeSec: currentPreviewTimeSec)
 
-      var drawRect = bf.imageRect(in: barRect, tallestBarHeight: bf.maxPlayBarHeightNeeded)
-      if #unavailable(macOS 11) {
-        drawRect = NSRect(x: drawRect.origin.x,
-                          y: drawRect.origin.y + 1,
-                          width: drawRect.width,
-                          height: drawRect.height - 2)
-      }
-
-      let barImg = bf.buildPlayBarImage(barWidth: barRect.width,
-                                        screen: screen, darkMode: appearance.isDark, clearBG: isClearBG,
-                                        knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
-                                        durationSec: durationSec, chapters, cachedRanges: cachedRanges,
-                                        currentPreviewTimeSec: currentPreviewTimeSec)
-      NSGraphicsContext.current!.cgContext.draw(barImg, in: drawRect)
+      bf.drawBar(playBarImg, in: barRect, tallestBarHeight: bf.maxPlayBarHeightNeeded)
     }
   }
 
