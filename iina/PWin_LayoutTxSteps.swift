@@ -466,10 +466,10 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    playSliderHeightConstraint?.isActive = false
-
     // Music mode: enter/exit
     if transition.isTogglingMusicMode {
+      playSliderHeightConstraint?.isActive = false
+
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
 
@@ -564,10 +564,11 @@ extension PlayerWindowController {
         }
       }
 
+      playSliderHeightConstraint?.isActive = false
+
       let timeLabelFontSize: CGFloat
-      if outputLayout.oscPosition == .floating {
-        timeLabelFontSize = NSFont.smallSystemFontSize
-      } else {
+      switch outputLayout.oscPosition {
+      case .top, .bottom:
         let barHeight = oscGeo.barHeight
 
         // Expand slider bounds to entire bar so it's easier to hover and/or click on it
@@ -575,13 +576,16 @@ extension PlayerWindowController {
         playSliderHeightConstraint?.isActive = true
 
         // Knob height > 24 is not supported
-//        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
+        //        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
         if barHeight >= 36, #available(macOS 11.0, *) {
           timeLabelFontSize = NSFont.systemFontSize(for: .large)
         } else {
           timeLabelFontSize = NSFont.systemFontSize(for: .regular)
         }
+      case .floating:
+        timeLabelFontSize = NSFont.smallSystemFontSize
       }
+
       seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
@@ -807,7 +811,7 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
-  }
+  }  /// end `updateHiddenViewsAndConstraints`
 
   /// -------------------------------------------------
   /// OPEN PANELS & FINALIZE OFFSETS
