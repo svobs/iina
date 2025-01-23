@@ -489,10 +489,6 @@ extension PlayerWindowController {
     leftTimeLabel.leadingAnchor.constraint(equalTo: playPositionContainerView.leadingAnchor).isActive = true
     playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: 4).isActive = true
 
-    // Expand slider bounds to entire bar so it's easier to hover and/or click on it
-    playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: 20.0)
-    playSliderHeightConstraint?.isActive = true
-
     playSlider.centerYAnchor.constraint(equalTo: playPositionContainerView.centerYAnchor).isActive = true
     playSlider.centerYAnchor.constraint(equalTo: leftTimeLabel.centerYAnchor).isActive = true
     playSlider.centerYAnchor.constraint(equalTo: rightTimeLabel.centerYAnchor).isActive = true

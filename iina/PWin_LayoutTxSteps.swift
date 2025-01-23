@@ -454,8 +454,12 @@ extension PlayerWindowController {
       }
     }
 
-    if !outputLayout.hasControlBar {
+    if !outputLayout.hasControlBar || transition.inputLayout.oscPosition != transition.outputLayout.oscPosition {
       playPositionContainerView.removeFromSuperview()
+    }
+
+    if !transition.outputLayout.hasBottomOSC {
+      oscBottomMainView.removeFromSuperview()
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -481,7 +485,6 @@ extension PlayerWindowController {
 
         leftTimeLabel.font = NSFont.messageFont(ofSize: 11)
         rightTimeLabel.font = NSFont.messageFont(ofSize: 11)
-        playPositionContainerView.removeFromSuperview()
 
         // Make sure to reset constraints for OSD
         miniPlayer.hideControllerButtons()
@@ -595,9 +598,6 @@ extension PlayerWindowController {
     }
 
     if currentControlBar == nil {
-      if transition.inputLayout.hasTopOSC {
-        oscBottomMainView.removeFromSuperview()
-      }
     } else {
       // Has OSC, or music mode
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
@@ -1448,7 +1448,7 @@ extension PlayerWindowController {
 
   // MARK: - Controller content layout
 
-  /// For `bottom` and `top` OSC only - not `floating`
+  /// For "bar"-type OSCs: `bottom` and `top` only - not `floating` or music mode.
   private func addControlBarViews(to containerView: NSStackView,
                                   _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
     let isControlBarChanging = transition.isControlBarChanging
