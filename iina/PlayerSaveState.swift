@@ -1382,7 +1382,8 @@ extension LayoutSpec {
 
       if let selectedSubSegment = Int(iter.next() ?? ""),
          let playlistWidth = Int(iter.next() ?? "") {
-        let selectedPluginTabID = iter.next() ?? Sidebar.Tab.nullPluginID
+        // Default to anyPlugin: it will just select first plugin tab found in PluginSidebar
+        let selectedPluginTabID = iter.next() ?? Constants.Sidebar.anyPluginID
         moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: playlistWidth,
                                                     selectedSubSegment: selectedSubSegment,
                                                     selectedPluginTabID: selectedPluginTabID)
@@ -1401,12 +1402,12 @@ extension LayoutSpec {
     do {
       if let specV2 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 15,
                                                    expectedVersion: PlayerSaveState.specPrefStringVersion2,
-                                                   targetObjName: "LayoutSpec", parsingFunc) {
+                                                   targetObjName: "LayoutSpec v2", parsingFunc) {
         return specV2
       } else {
         let specV1 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
                                                   expectedVersion: PlayerSaveState.specPrefStringVersion1,
-                                                  targetObjName: "LayoutSpec", parsingFunc)
+                                                  targetObjName: "LayoutSpec v1", parsingFunc)
         return specV1
       }
     } catch {

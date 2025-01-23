@@ -34,7 +34,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   weak var player: PlayerCore!
 
   /// This is the currently displayed tab
-  var currentPluginID: String = Sidebar.Tab.nullPluginID
+  var currentPluginID: String = Constants.Sidebar.anyPluginID
   private var pendingSwitchRequest: String?
 
   override func viewDidLoad() {
@@ -123,7 +123,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
         // If tab is nil, select first plugin (if any available)
         switchToTab(firstPlugin.plugin.identifier)
       } else {
-        switchToTab(Sidebar.Tab.nullPluginID)
+        switchToTab(Constants.Sidebar.anyPluginID)
       }
     }
     updateVerticalConstraints()
@@ -146,7 +146,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     assert(player.windowController.isShowing(sidebarTabGroup: .plugins),
            "switchToTab should not be called when plugins TabGroup is not shown")
 
-    if tabID == Sidebar.Tab.nullPluginID {
+    if tabID == Constants.Sidebar.anyPluginID {
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       addNoPluginsLabel()
     } else {
@@ -173,7 +173,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
                                            selectedPluginTabID: currentPluginID)
       windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: state))
     }
-    let sidebarTab = currentPluginID == Sidebar.Tab.nullPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
+    let sidebarTab = currentPluginID == Constants.Sidebar.anyPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
     windowController.didChangeTab(to: sidebarTab)
   }
 

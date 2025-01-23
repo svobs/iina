@@ -60,7 +60,6 @@ struct Sidebar {
 
   // Includes all types of tabs possible in all tab groups
   enum Tab: Equatable {
-    static let nullPluginID = ""
 
     case playlist
     case chapters
@@ -71,7 +70,7 @@ struct Sidebar {
 
     case anyPlugin
     /// Plugin tabs are serialized in the format `"plugin:\(id)"`.
-    /// When deserializing, an empty plugin ID string ("", i.e. `nullPluginID`) will be interpreted as `.anyPlugin`.
+    /// A plugin cannot have any ID matching `Constants.Sidebar.anyPluginID`, because that is reserved to represent `anyPlugin`.
     case plugin(id: String)
 
     init?(name: String?) {
@@ -91,7 +90,7 @@ struct Sidebar {
         self = .sub
       case "nil":
         return nil
-      case "plugin":
+      case Constants.Sidebar.anyPluginID:
         self = .anyPlugin
       default:
         if name.hasPrefix("plugin:") {
@@ -110,7 +109,7 @@ struct Sidebar {
       case .video: return "video"
       case .audio: return "audio"
       case .sub: return "sub"
-      case .anyPlugin: return "plugin"
+      case .anyPlugin: return Constants.Sidebar.anyPluginID
       case .plugin(let id): return "plugin:\(id)"
       }
     }
@@ -136,7 +135,7 @@ struct Sidebar {
 
     static func fromDefaultPrefs() -> SidebarMiscState {
       return SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
-                              selectedSubSegment: 0, selectedPluginTabID: Sidebar.Tab.nullPluginID)
+                              selectedSubSegment: 0, selectedPluginTabID: Constants.Sidebar.anyPluginID)
     }
   }
 
@@ -294,7 +293,7 @@ extension PlayerWindowController {
       }
     case .plugins:
       let pluginID = pluginView.currentPluginID
-      let tab: Sidebar.Tab = pluginID == Sidebar.Tab.nullPluginID ? .anyPlugin : Sidebar.Tab.plugin(id: pluginID)
+      let tab: Sidebar.Tab = pluginID == Constants.Sidebar.anyPluginID ? .anyPlugin : Sidebar.Tab.plugin(id: pluginID)
       showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
     }
   }

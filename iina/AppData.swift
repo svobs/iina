@@ -245,6 +245,7 @@ struct Constants {
     static private let confDirName  = "config"
   }
   struct Sidebar {
+    static let anyPluginID = "..anyPlugin.."
     static let animationDuration: CGFloat = 0.2
 
     // How close the cursor has to be horizontally to the edge of the sidebar in order to trigger its resize:
