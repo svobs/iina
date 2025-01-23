@@ -39,8 +39,11 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-
+    pluginContentContainerView.identifier = .init("PluginContentContainerView")
     pluginContentContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+    pluginTabsViewHeightConstraint.identifier = .init("PluginTabBtns-HeightConstraint")
+    buttonTopConstraint.identifier = .init("PluginTabBtns-VertDownshift-Constraint")
 
     initPluginTabs()
     if pendingSwitchRequest == nil {
@@ -80,12 +83,13 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private func initPluginTabs() {
     let container = NSView()
     container.translatesAutoresizingMaskIntoConstraints = false
+    pluginTabsStackView.identifier = .init("PluginTabBtns-StackView")
     pluginTabsStackView.translatesAutoresizingMaskIntoConstraints = false
     pluginTabsStackView.alignment = .centerY
     container.addSubview(pluginTabsStackView)
+    pluginTabsStackView.identifier = .init("PluginTabBtns-HScrollView")
     pluginTabsScrollView.documentView = container
-    pluginTabsStackView.addConstraintsToFillSuperview()
-//    Utility.quickConstraints(["H:|-8-[v]-8-|", "V:|-0-[v(==36)]-0-|"], ["v": pluginTabsStackView])
+    Utility.quickConstraints(["H:|-8-[v]-8-|", "V:|-0-[v(==36)]-0-|"], ["v": pluginTabsStackView])
     updatePluginTabs()
   }
 
@@ -141,21 +145,23 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     guard isViewLoaded else { return }
     assert(player.windowController.isShowing(sidebarTabGroup: .plugins),
            "switchToTab should not be called when plugins TabGroup is not shown")
-    currentPluginID = tabID
-    updateTabActiveStatus()
 
-    let plugins = player.plugins
-    if currentPluginID == Sidebar.Tab.nullPluginID {
+    if tabID == Sidebar.Tab.nullPluginID {
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
+      addNoPluginsLabel()
     } else {
-      guard let plugin = plugins.first(where: { $0.plugin.identifier == currentPluginID }) else {
-        player.log.error("Cannot switch to tab: failed to find plugin with ID \(currentPluginID)")
+      let plugins = player.plugins
+      guard let plugin = plugins.first(where: { $0.plugin.identifier == tabID }) else {
+        player.log.error("Cannot switch to tab: failed to find plugin with ID \(tabID)")
         return
       }
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
       plugin.sidebarTabView.addConstraintsToFillSuperview()
     }
+
+    currentPluginID = tabID
+    updateTabActiveStatus()
 
     // Update current layout so that new tab can be saved.
     // Put inside task to protect from race
@@ -169,5 +175,20 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     }
     let sidebarTab = currentPluginID == Sidebar.Tab.nullPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
     windowController.didChangeTab(to: sidebarTab)
+  }
+
+  private func addNoPluginsLabel() {
+    let noPluginsLabel = NSTextField(labelWithString: "No plugins are installed.")
+    noPluginsLabel.identifier = .init("NoPluginsLabel")
+    noPluginsLabel.isEditable = false
+    noPluginsLabel.isSelectable = false
+    noPluginsLabel.backgroundColor = .clear
+    noPluginsLabel.setFormattedText(stringValue: "No plugins are installed.",
+                                    textColor: .disabledControlTextColor, italic: true)
+    noPluginsLabel.translatesAutoresizingMaskIntoConstraints = false
+
+    pluginContentContainerView.addSubview(noPluginsLabel)
+    noPluginsLabel.topAnchor.constraint(equalTo: pluginContentContainerView.topAnchor, constant: 8).isActive = true
+    noPluginsLabel.centerXAnchor.constraint(equalTo: pluginContentContainerView.centerXAnchor).isActive = true
   }
 }
