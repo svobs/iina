@@ -404,11 +404,6 @@ extension PlayerWindowController {
       if !transition.isEnteringFullScreen {
         setWindowStyleToNative()
       }
-
-      if transition.isExitingFullScreen {
-        /// Setting `.titled` style will show buttons & title by default, but we don't want to show them until after panel open animation:
-        hideBuiltInTitleBarViews(setAlpha: true)
-      }
     }
 
     if transition.isBottomBarPlacementOrStyleChanging {
@@ -416,10 +411,13 @@ extension PlayerWindowController {
       updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
     }
 
+    // Title bar views
+
     // Allow for showing/hiding each button individually
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
 
     if outputLayout.titleBar == .hidden || transition.isTopBarPlacementChanging || transition.isTogglingFullScreen {
+      /// Even if exiting FS, still don't want to show title & buttons until after panel open animation:
       hideBuiltInTitleBarViews(setAlpha: true)
 
       if let customTitleBar {
@@ -444,6 +442,37 @@ extension PlayerWindowController {
     if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
       fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
     }
+
+    if outputLayout.titleBar.isShowable {
+      if transition.outputLayout.spec.isLegacyStyle {
+
+        // Custom title bar
+        if customTitleBar == nil {
+          let titleBar = CustomTitleBarViewController()
+          titleBar.windowController = self
+          customTitleBar = titleBar
+          titleBar.view.alphaValue = 0  // prep it to fade in later
+        }
+
+        if let customTitleBar {
+          // Update superview based on placement. Cannot always add to contentView due to constraint issues
+          if transition.outputLayout.topBarPlacement == .outsideViewport {
+            customTitleBar.addViewTo(superview: titleBarView)
+          } else {
+            if let contentView = window.contentView {
+              customTitleBar.addViewTo(superview: contentView)
+            }
+          }
+          if !transition.inputLayout.titleBar.isShowable {
+            customTitleBar.view.alphaValue = 0  // prep it to fade in later
+          }
+        }
+      }
+
+      // covers both native & custom variants
+      updateTitleBarUI(from: outputLayout)
+    }
+
 
     if !transition.inputLayout.hasFloatingOSC {
       if transition.isControlBarChanging {
@@ -709,39 +738,6 @@ extension PlayerWindowController {
           self.cropSettingsView = nil
         }
       }
-    }
-
-    // Title bar views
-    if transition.outputLayout.isMusicMode {
-      hideBuiltInTitleBarViews()
-    } else if outputLayout.titleBar.isShowable {
-      if transition.outputLayout.spec.isLegacyStyle {
-
-        // Custom title bar
-        if customTitleBar == nil {
-          let titleBar = CustomTitleBarViewController()
-          titleBar.windowController = self
-          customTitleBar = titleBar
-          titleBar.view.alphaValue = 0  // prep it to fade in later
-        }
-
-        if let customTitleBar {
-          // Update superview based on placement. Cannot always add to contentView due to constraint issues
-          if transition.outputLayout.topBarPlacement == .outsideViewport {
-            customTitleBar.addViewTo(superview: titleBarView)
-          } else {
-            if let contentView = window.contentView {
-              customTitleBar.addViewTo(superview: contentView)
-            }
-          }
-          if !transition.inputLayout.titleBar.isShowable {
-            customTitleBar.view.alphaValue = 0  // prep it to fade in later
-          }
-        }
-      }
-
-      // covers both native & custom variants
-      updateTitleBarUI(from: outputLayout)
     }
 
     // Sidebars
