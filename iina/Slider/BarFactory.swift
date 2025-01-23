@@ -5,33 +5,9 @@
 //  Created by Matt Svoboda on 2024-11-07.
 //
 
-// Constants. All in pts (not scaled).
-// Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
-
-fileprivate let barHeight_Normal: CGFloat = 3.0
-fileprivate let barCornerRadius_Normal: CGFloat = barCornerRadius_Normal * 0.5
-
-fileprivate let barHeight_FocusedCurrChapter: CGFloat = 9.0
-fileprivate let barCornerRadius_FocusedCurrChapter: CGFloat = barHeight_FocusedCurrChapter * 0.5
-
-/// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
-fileprivate let barHeight_FocusedNonCurrChapter: CGFloat = 5.0
-fileprivate let barCornerRadius_FocusedNonCurrChapter: CGFloat = barHeight_FocusedNonCurrChapter * 0.5
-
-fileprivate let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
-fileprivate let barCornerRadius_VolumeAbove100_Left: CGFloat = barHeight_VolumeAbove100_Left * 0.5
-fileprivate let barHeight_VolumeAbove100_Right: CGFloat = barHeight_VolumeAbove100_Left * 0.5
-fileprivate let barCornerRadius_VolumeAbove100_Right: CGFloat = barHeight_VolumeAbove100_Right * 0.5
-
-fileprivate let barHeight_Volume_Focused: CGFloat = 5.0
-fileprivate let barCornerRadius_Volume_Focused: CGFloat = barHeight_Volume_Focused * 0.5
-fileprivate let barHeight_Focused_VolumeAbove100_Left: CGFloat = 7.0
-fileprivate let barCornerRadius_Focused_VolumeAbove100_Left: CGFloat = barHeight_Focused_VolumeAbove100_Left * 0.5
-fileprivate let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
-fileprivate let barCornerRadius_Focused_VolumeAbove100_Right: CGFloat = barHeight_Focused_VolumeAbove100_Right * 0.5
-
+/// In points, not pixels
 fileprivate let barImgPadding: CGFloat = 1.0
-fileprivate let chapterGapWidth: CGFloat = 1.5
+fileprivate let barVerticalPaddingTotal = barImgPadding * 2
 
 fileprivate extension CGColor {
   func exaggerated() -> CGColor {
@@ -62,22 +38,66 @@ class BarFactory {
   var volBar_Normal: VolBarConfScaleSet
   var volBar_Focused: VolBarConfScaleSet
 
-  let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
-  let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right,
-                                  barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
+  let maxPlayBarHeightNeeded: CGFloat
+  let maxVolBarHeightNeeded: CGFloat
 
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
 
   init() {
+    let disableRoundedCorners = !Preference.bool(for: .roundCornersInSliders)
+    func cornerRadius(for barHeight: CGFloat) -> CGFloat {
+      guard disableRoundedCorners else { return 0.0 }
+      return barHeight * 0.5
+    }
+
+    // CONSTANTS: All in points (not pixels).
+    // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
+
+    // - PlaySlider & VolumeSlider both:
+
+    let barHeight_Normal: CGFloat = 3.0
+    let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
+
+    // - PlaySlider:
+
+    let chapterGapWidth: CGFloat = 1.5
+
+    let barHeight_FocusedCurrChapter: CGFloat = 9.0
+    let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
+
+    /// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
+    let barHeight_FocusedNonCurrChapter: CGFloat = 5.0
+    let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
+
+    let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
+    self.maxPlayBarHeightNeeded = maxPlayBarHeightNeeded
+
+    // - VolumeSlider:
+
+    let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
+    let barHeight_VolumeAbove100_Right: CGFloat = barHeight_VolumeAbove100_Left * 0.5
+    let barCornerRadius_VolumeAbove100_Left = cornerRadius(for: barHeight_VolumeAbove100_Left)
+    let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
+
+    let barHeight_Volume_Focused: CGFloat = 5.0
+    let barHeight_Focused_VolumeAbove100_Left: CGFloat = 7.0
+    let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
+    let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)
+    let barCornerRadius_Focused_VolumeAbove100_Left = cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
+    let barCornerRadius_Focused_VolumeAbove100_Right = cornerRadius(for: barHeight_Focused_VolumeAbove100_Right)
+
+    let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right,
+                                    barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
+    self.maxVolBarHeightNeeded = maxVolBarHeightNeeded
+
     let barColorLeft = BarFactory.barColorLeftFromPrefs()
     leftCachedColor = barColorLeft.exaggerated()
 
     let barColorRight = NSColor.mainSliderBarRight.cgColor
     rightCachedColor = barColorRight.exaggerated()
 
-    let verticalPaddingTotal = barImgPadding * 2
-    let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: verticalPaddingTotal + maxPlayBarHeightNeeded,
+    let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxPlayBarHeightNeeded,
                                          barHeight: barHeight_Normal, interPillGapWidth: chapterGapWidth,
                                          fillColor: barColorLeft, pillCornerRadius: barCornerRadius_Normal)
     let playNormalRight = playNormalLeft.cloned(fillColor: barColorRight)
@@ -97,7 +117,7 @@ class BarFactory {
     playBar_Focused =  PlayBarConfScaleSet(currentChapter_Left: focusedCurrChapterLeft, currentChapter_Right: focusedCurrChapterRight,
                                            nonCurrentChapter_Left: nonCurrChapterLeft, nonCurrentChapter_Right: nonCurrChapterRight)
 
-    let volumeBelow100_Left = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: verticalPaddingTotal + maxVolBarHeightNeeded,
+    let volumeBelow100_Left = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxVolBarHeightNeeded,
                                               barHeight: barHeight_Normal, interPillGapWidth: 0.0,
                                               fillColor: barColorLeft, pillCornerRadius: barCornerRadius_Normal)
     let volumeBelow100_Right = volumeBelow100_Left.cloned(fillColor: barColorRight)
@@ -122,11 +142,6 @@ class BarFactory {
                                         volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
   }
 
-  func updateBarStylesFromPrefs() {
-    // Just replace the whole instance:
-    BarFactory.shared = BarFactory()
-  }
-
   private static func barColorLeftFromPrefs() -> CGColor {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
     switch userSetting {
@@ -135,6 +150,11 @@ class BarFactory {
     default:
       return NSColor.controlAccentColor.cgColor
     }
+  }
+
+  func updateBarStylesFromPrefs() {
+    // Just replace the whole instance:
+    BarFactory.shared = BarFactory()
   }
 
   // MARK: - Volume Bar
@@ -421,7 +441,7 @@ class BarFactory {
   }
 
   func heightNeeded(tallestBarHeight: CGFloat) -> CGFloat {
-    return (2 * barImgPadding) + tallestBarHeight
+    return barVerticalPaddingTotal + tallestBarHeight
   }
 
   /// Measured in points, not pixels!

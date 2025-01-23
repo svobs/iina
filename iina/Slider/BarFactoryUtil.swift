@@ -32,7 +32,7 @@ extension BarFactory {
       self.barHeight = barHeight
       self.interPillGapWidth = interPillGapWidth
       self.fillColor = fillColor
-      self.pillCornerRadius = Preference.bool(for: .roundCornersInSliders) ? pillCornerRadius : 0.0
+      self.pillCornerRadius = pillCornerRadius
     }
 
     func rescaled(to newScaleFactor: CGFloat) -> BarConf {

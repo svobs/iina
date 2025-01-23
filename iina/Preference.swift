@@ -1183,7 +1183,7 @@ struct Preference {
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
-    .roundCornersInSliders: false,
+    .roundCornersInSliders: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolIconSize: 18,
