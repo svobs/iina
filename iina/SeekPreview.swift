@@ -213,7 +213,7 @@ extension PlayerWindowController {
         let halfMargin = margins.bottom * 0.5
         let quarterMargin = margins.bottom * 0.25
         // Show thumbnail above seek time, which is above slider
-        if currentLayout.oscPosition == .floating {
+        if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
           timeLabelOriginY = oscOriginInWindowY + oscHeight + quarterMargin
         } else {
           timeLabelOriginY = oscOriginInWindowY + (oscHeight * 0.5) + (player.windowController.playSlider.customCell.knobHeight * 0.5) + quarterMargin

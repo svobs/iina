@@ -19,7 +19,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
   override var enableDrawKnob: Bool {
     guard let wc else { return false }
-    return wc.isScrollingOrDraggingPlaySlider || wc.seekPreview.animationState == .shown
+    return !player.windowController.currentLayout.useSliderFocusEffect || wc.isScrollingOrDraggingPlaySlider || wc.seekPreview.animationState == .shown
   }
   
   // MARK:- Displaying the Cell
