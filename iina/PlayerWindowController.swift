@@ -27,14 +27,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return player.videoView
   }
 
-  // MARK: - Objects, Views
-
   var bestScreen: NSScreen {
     window?.screen ?? NSScreen.main!
   }
 
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
+
+  // MARK: - View Controllers
 
   /** The quick setting sidebar (video, audio, subtitles). */
   let quickSettingView = QuickSettingViewController()
@@ -57,7 +57,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var customTitleBar: CustomTitleBarViewController? = nil
 
 
-  // MARK: - Services
+  // MARK: - Vars: Services
 
   unowned var tabDelegate: TabDelegate?
 
@@ -72,7 +72,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Need to store this for use by `showWindow` when it is called asynchronously
   var pendingVideoGeoUpdateTasks: [IINAAnimation.Task] = []
 
-  // MARK: - Status variables
+  /// For responding to changes to app prefs & other notifications
+  var co: CocoaObserver!
+
+  // MARK: - Vars: State
 
   var isAnimating: Bool {
     return animationPipeline.isRunning
@@ -182,8 +185,55 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var lastRightMouseDownEventID: Int = -1
   var lastRightMouseUpEventID: Int = -1
 
-  /** For force touch action */
+  /// For force touch action
   var isCurrentPressInSecondStage = false
+
+  /// Differentiate between single clicks and double clicks.
+  var singleClickTimer: Timer?
+  var mouseExitEnterCount = 0
+
+  /// Scroll wheel (see `PWin_ScrollWheel.swift`)
+
+  /// The window's virtual scroll wheel which may result in either volume or playback time seeking depending on direction
+  var windowScrollWheel: PWinScrollWheel!
+
+  // - State for PlaySlider, VolumeSlider
+
+  var isDraggingPlaySlider: Bool {
+    playSlider.customCell.isDragging
+  }
+
+  var isScrollingOrDraggingPlaySlider: Bool {
+    if isDraggingPlaySlider {
+      return true
+    }
+    if (playSlider.scrollWheelDelegate?.isScrolling() ?? false) {
+      // Scrolling play slider directly
+      return true
+    }
+    if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? PlaySliderScrollWheel != nil) {
+      // Scrolling play slider via in-window scroll
+      return true
+    }
+    return false
+  }
+
+  var isScrollingOrDraggingVolumeSlider: Bool {
+    if (volumeSlider.cell as! VolumeSliderCell).isDragging  {
+      return true
+    }
+    if (volumeSlider.scrollWheelDelegate?.isScrolling() ?? false) {
+      // Scrolling volume slider directly
+      return true
+    }
+    if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? VolumeSliderScrollWheel != nil) {
+      // Scrolling volume slider via in-window scroll
+      return true
+    }
+    return false
+  }
+
+  var isMouseHoveringOverVolumeSlider = false
 
   /// - Sidebars: See file `Sidebars.swift`
 
@@ -218,7 +268,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var pip: PIPState
 
-  // - Window Layout State
+  // MARK: - Vars: Window Layout State
 
   var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.defaultLayout()) {
     didSet {
@@ -242,7 +292,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @Atomic var screenParamsChangedTicketCounter: Int = 0
   @Atomic var thumbDisplayTicketCounter: Int = 0
 
-  // - Window Geometry
+  var isFullScreen: Bool { currentLayout.isFullScreen }
+
+  var isInMiniPlayer: Bool { currentLayout.isMusicMode }
+
+  var isInInteractiveMode: Bool { currentLayout.isInteractiveMode }
+
+  // MARK: - Vars: Window Geometry
 
   var geo: GeometrySet
 
@@ -314,11 +370,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       Logger.log.verbose("Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)")
     }
   }
-
-  var co: CocoaObserver!
-
-  // Cached user defaults values
-  internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
 
   // MARK: - Outlets
 
@@ -404,7 +455,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var customWindowBorderBox: NSBox!
   @IBOutlet weak var customWindowBorderTopHighlightBox: NSBox!
 
-  // MiniPlayer buttons
+  // MiniPlayer buttons:
   @IBOutlet weak var closeButtonView: NSView!
   // Mini island containing window buttons which hover over album art / video (when video is visible):
   @IBOutlet weak var closeButtonBackgroundViewVE: NSVisualEffectView!
@@ -415,12 +466,45 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var closeButtonBox: NSButton!
   @IBOutlet weak var backButtonBox: NSButton!
 
+  // Title Bar:
+
+  var leadingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
+  var trailingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
   let leadingTitleBarAccessoryView = NSStackView()
   let trailingTitleBarAccessoryView = NSStackView()
   /// "Pin to Top" icon in title bar, if configured to  be shown
   let onTopButton = SymButton()
   let leadingSidebarToggleButton = SymButton()
   let trailingSidebarToggleButton = SymButton()
+
+  var documentIconButton: NSButton? {
+    window?.standardWindowButton(.documentIconButton)
+  }
+
+  var trafficLightButtons: [NSButton] {
+    if let window, window.styleMask.contains(.titled) {
+      return ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).compactMap {
+        window.standardWindowButton($0)
+      }
+    }
+    return customTitleBar?.trafficLightButtons ?? []
+  }
+
+  // Width of the 3 traffic light buttons
+  lazy var trafficLightButtonsWidth: CGFloat = {
+    var maxX: CGFloat = 0
+    for buttonType in [NSWindow.ButtonType.closeButton, NSWindow.ButtonType.miniaturizeButton, NSWindow.ButtonType.zoomButton] {
+      if let button = window!.standardWindowButton(buttonType) {
+        maxX = max(maxX, button.frame.origin.x + button.frame.width)
+      }
+    }
+    return maxX
+  }()
+
+  /** Get the `NSTextField` of widow's title. */
+  var titleTextField: NSTextField? {
+    return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
+  }
 
   /// Panel at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
@@ -429,15 +513,27 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var topBarBottomBorder: NSBox!
   /// Reserves space for the title bar components. Does not contain any child views.
   @IBOutlet weak var titleBarView: ClickThroughView!
-  /// Control bar at top of window, if configured.
+  /// OSC at top of window, if configured.
   @IBOutlet weak var controlBarTop: NSView!
+  /// Arranges controls inside `controlBarTop`.
+  @IBOutlet weak var oscTopMainView: NSStackView!
 
+  /// Floating OSC
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
+  @IBOutlet weak var oscFloatingPlayButtonsContainerView: NSStackView!
+  @IBOutlet weak var oscFloatingUpperView: NSStackView!
+  @IBOutlet weak var oscFloatingLowerView: NSStackView!
+
+  /// Current OSC container view. May be top, bottom, floating, or inside music mode window,
+  /// depending on user pref and current configuration.
+  var currentControlBar: NSView?
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
   var bottomBarView: NSView = NSVisualEffectView()
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
+  /// Arranges controls inside `bottomBarView`.
+  let oscBottomMainView = NSStackView()
 
   let seekPreview = SeekPreview()
 
@@ -457,12 +553,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var additionalInfoTitle: NSTextField!
   @IBOutlet weak var additionalInfoBatteryView: NSView!
   @IBOutlet weak var additionalInfoBattery: NSTextField!
-
-  @IBOutlet weak var oscFloatingPlayButtonsContainerView: NSStackView!
-  @IBOutlet weak var oscFloatingUpperView: NSStackView!
-  @IBOutlet weak var oscFloatingLowerView: NSStackView!
-  let oscBottomMainView = NSStackView()
-  @IBOutlet weak var oscTopMainView: NSStackView!
 
   // OSD
   @IBOutlet weak var osdVisualEffectView: NSVisualEffectView!
@@ -491,60 +581,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let leftArrowButton = SymButton()
   let rightArrowButton = SymButton()
 
-  /// Toolbar
+  /// Toolbar Buttons container
   var fragToolbarView: ClickThroughStackView? = nil
 
+  /// Container for legacy PlaySlider layout which shows time labels on left & right of slider.
   let playPositionContainerView = ClickThroughView()
   let playSlider = PlaySlider()
   let leftTimeLabel = DurationDisplayTextField()
   let rightTimeLabel = DurationDisplayTextField()
-
-  /// Differentiate between single clicks and double clicks.
-  var singleClickTimer: Timer?
-  var mouseExitEnterCount = 0
-
-  /// Scroll wheel (see `PWin_ScrollWheel.swift`)
-
-  /// The window's virtual scroll wheel which may result in either volume or playback time seeking depending on direction
-  var windowScrollWheel: PWinScrollWheel!
-
-  var isDraggingPlaySlider: Bool {
-    playSlider.customCell.isDragging
-  }
-
-  var isScrollingOrDraggingPlaySlider: Bool {
-    if isDraggingPlaySlider {
-      return true
-    }
-    if (playSlider.scrollWheelDelegate?.isScrolling() ?? false) {
-      // Scrolling play slider directly
-      return true
-    }
-    if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? PlaySliderScrollWheel != nil) {
-      // Scrolling play slider via in-window scroll
-      return true
-    }
-    return false
-  }
-
-  var isScrollingOrDraggingVolumeSlider: Bool {
-    if (volumeSlider.cell as! VolumeSliderCell).isDragging  {
-      return true
-    }
-    if (volumeSlider.scrollWheelDelegate?.isScrolling() ?? false) {
-      // Scrolling volume slider directly
-      return true
-    }
-    if windowScrollWheel.isScrolling() && (windowScrollWheel.delegate as? VolumeSliderScrollWheel != nil) {
-      // Scrolling volume slider via in-window scroll
-      return true
-    }
-    return false
-  }
-
-  var isMouseHoveringOverVolumeSlider = false
-
-  // Other state
 
   var symButtons: [SymButton] {
     var buttons = [muteButton, playButton, leftArrowButton, rightArrowButton, leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton]
@@ -557,53 +601,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var mouseActionDisabledViews: [NSView?] {
     return [leadingSidebarView, trailingSidebarView, titleBarView, oscTopMainView, oscBottomMainView, subPopoverView]
   }
-
-  var isFullScreen: Bool {
-    return currentLayout.isFullScreen
-  }
-
-  var isInMiniPlayer: Bool {
-    return currentLayout.isMusicMode
-  }
-
-  var isInInteractiveMode: Bool {
-    return currentLayout.isInteractiveMode
-  }
-
-  var documentIconButton: NSButton? {
-    window?.standardWindowButton(.documentIconButton)
-  }
-
-  var trafficLightButtons: [NSButton] {
-    if let window, window.styleMask.contains(.titled) {
-      return ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).compactMap {
-        window.standardWindowButton($0)
-      }
-    }
-    return customTitleBar?.trafficLightButtons ?? []
-  }
-
-  // Width of the 3 traffic light buttons
-  lazy var trafficLightButtonsWidth: CGFloat = {
-    var maxX: CGFloat = 0
-    for buttonType in [NSWindow.ButtonType.closeButton, NSWindow.ButtonType.miniaturizeButton, NSWindow.ButtonType.zoomButton] {
-      if let button = window!.standardWindowButton(buttonType) {
-        maxX = max(maxX, button.frame.origin.x + button.frame.width)
-      }
-    }
-    return maxX
-  }()
-  
-  /** Get the `NSTextField` of widow's title. */
-  var titleTextField: NSTextField? {
-    return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
-  }
-
-  var leadingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
-  var trailingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
-
-  /** Current OSC view. May be top, bottom, or floating depneding on user pref. */
-  var currentControlBar: NSView?
 
   lazy var pluginOverlayViewContainer: NSView! = {
     guard let window = window, let cv = window.contentView else { return nil }

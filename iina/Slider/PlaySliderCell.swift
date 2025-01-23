@@ -11,7 +11,7 @@ import Cocoa
 class PlaySliderCell: ScrollableSliderCell {
   var drawChapters = Preference.bool(for: .showChapterPos)
 
-  var isPausedBeforeSeeking = false
+  var wasPausedBeforeSeeking = false
 
   var isDarkMode: Bool {
     iinaAppearance?.isDark ?? false
@@ -71,7 +71,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
     player.log.verbose("PlaySlider drag-to-seek began")
-    isPausedBeforeSeeking = player.info.isPaused
+    wasPausedBeforeSeeking = player.info.isPaused
     let result = super.startTracking(at: startPoint, in: controlView)
     if result {
       player.pause()
@@ -84,7 +84,7 @@ class PlaySliderCell: ScrollableSliderCell {
     player.log.verbose("PlaySlider drag-to-seek ended")
     super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
     slider.needsDisplay = true
-    if !isPausedBeforeSeeking {
+    if !wasPausedBeforeSeeking {
       player.resume()
     }
   }
