@@ -23,6 +23,7 @@ extension BarFactory {
 
     var barMinX: CGFloat { imgPadding }
 
+    /// Corner radius will be overridden to `0` if `PK.roundCornersInSliders` is true
     init(scaleFactor: CGFloat, imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
          fillColor: CGColor, pillCornerRadius: CGFloat) {
       self.scaleFactor = scaleFactor
@@ -31,7 +32,7 @@ extension BarFactory {
       self.barHeight = barHeight
       self.interPillGapWidth = interPillGapWidth
       self.fillColor = fillColor
-      self.pillCornerRadius = pillCornerRadius
+      self.pillCornerRadius = Preference.bool(for: .roundCornersInSliders) ? pillCornerRadius : 0.0
     }
 
     func rescaled(to newScaleFactor: CGFloat) -> BarConf {
@@ -136,7 +137,8 @@ extension BarFactory {
 
     init(imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
          fillColor: CGColor, pillCornerRadius: CGFloat) {
-      let x1 = BarConf(scaleFactor: 1.0, imgPadding: imgPadding, imgHeight: imgHeight, barHeight: barHeight, interPillGapWidth: interPillGapWidth, fillColor: fillColor, pillCornerRadius: pillCornerRadius)
+      let x1 = BarConf(scaleFactor: 1.0, imgPadding: imgPadding, imgHeight: imgHeight, barHeight: barHeight,
+                       interPillGapWidth: interPillGapWidth, fillColor: fillColor, pillCornerRadius: pillCornerRadius)
       self.x1 = x1
       self.x2 = x1.rescaled(to: 2.0)
     }

@@ -194,6 +194,7 @@ struct Preference {
     /// If true, highlight the part of the playback slider to the right of the knob
     /// which has already been loaded into the demuxer cache
     static let showCachedRangesInSlider = Key("showCachedRangesInSlider")
+    static let roundCornersInSliders = Key("roundCornersInSliders")
 
     /** Whether auto hiding control bar is enabled. (bool)*/
     static let enableControlBarAutoHide = Key("enableControlBarAutoHide")
@@ -1182,6 +1183,7 @@ struct Preference {
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
+    .roundCornersInSliders: false,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolIconSize: 18,

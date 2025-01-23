@@ -710,6 +710,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(10)) { [self] in
       guard currentTicket == titleBarAndOSCUpdateTicketCounter else { return }
       animationPipeline.submitInstantTask { [self] in
+        BarFactory.shared.updateBarStylesFromPrefs()
+
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec,

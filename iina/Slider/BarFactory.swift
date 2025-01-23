@@ -122,7 +122,7 @@ class BarFactory {
                                         volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
   }
 
-  func updateBarColorsFromPrefs() {
+  func updateBarStylesFromPrefs() {
     // Just replace the whole instance:
     BarFactory.shared = BarFactory()
   }

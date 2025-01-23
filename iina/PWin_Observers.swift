@@ -28,6 +28,7 @@ extension PlayerWindowController {
       .showRemainingTime,
       .maxVolume,
       .showCachedRangesInSlider,
+      .roundCornersInSliders,
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -201,6 +202,8 @@ extension PlayerWindowController {
         .allowVideoToOverlapCameraHousing,
         .useLegacyWindowedMode,
         .arrowButtonAction,
+      // These need calls to BarFactory.shared.updateBarStylesFromPrefs():
+        .roundCornersInSliders,
         .playSliderBarLeftColor:
 
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")

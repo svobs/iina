@@ -600,9 +600,7 @@ extension PlayerWindowController {
       }
     } else {
       // Has OSC, or music mode
-
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
-      BarFactory.shared.updateBarColorsFromPrefs()
       playSlider.cell?.controlView?.needsDisplay = true
       volumeSlider.needsDisplay = true
 
