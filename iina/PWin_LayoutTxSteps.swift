@@ -633,35 +633,38 @@ extension PlayerWindowController {
       volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || (transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear) {
-        // Default alpha for text labels is 0.5. They don't change their text color.
-        let textAlpha: CGFloat = transition.outputLayout.spec.oscBackgroundIsClear ? 0.8 : 0.5
 
         playButton.setColors(from: transition.outputLayout)
         leftArrowButton.setColors(from: transition.outputLayout)
         rightArrowButton.setColors(from: transition.outputLayout)
         muteButton.setColors(from: transition.outputLayout)
 
-        leftTimeLabel.alphaValue = textAlpha
-        rightTimeLabel.alphaValue = textAlpha
+        let textAlpha: CGFloat
+        let timeLabelTextColor: NSColor?
+        if transition.outputLayout.spec.oscBackgroundIsClear {
+          textAlpha = 0.8
+          timeLabelTextColor = .white
 
-        let hasClearBG = transition.outputLayout.spec.oscBackgroundIsClear
-        if hasClearBG {
-          leftTimeLabel.textColor = .white
           leftTimeLabel.addShadow(blurRadiusConstant: 1.0)
-
           rightTimeLabel.addShadow(blurRadiusConstant: 1.0)
-          rightTimeLabel.textColor = .white
 
           KnobFactory.shared.mainKnobColor = NSColor.controlForClearBG
         } else {
-          leftTimeLabel.shadow = nil
-          leftTimeLabel.textColor = nil
+          // Default alpha for text labels is 0.5. They don't change their text color.
+          textAlpha = 0.5
+          timeLabelTextColor = nil
 
+          leftTimeLabel.shadow = nil
           rightTimeLabel.shadow = nil
-          rightTimeLabel.textColor = nil
 
           KnobFactory.shared.mainKnobColor = NSColor.mainSliderKnob
         }
+
+        leftTimeLabel.textColor = timeLabelTextColor
+        rightTimeLabel.textColor = timeLabelTextColor
+        leftTimeLabel.alphaValue = textAlpha
+        rightTimeLabel.alphaValue = textAlpha
+
         // Invalidate all cached knob images so they are rebuilt with new style
         KnobFactory.shared.invalidateCachedKnobs()
       }
@@ -670,6 +673,8 @@ extension PlayerWindowController {
       if transition.outputLayout.isMusicMode {
         // Decrease font size of time labels for more compact display
         timeLabelFont = NSFont.labelFont(ofSize: 9)
+      } else if outputLayout.oscPosition == .floating {
+        timeLabelFont = NSFont.labelFont(ofSize: 11)
       } else {
         timeLabelFont = NSFont.labelFont(ofSize: 13)
       }
