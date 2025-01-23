@@ -8,57 +8,72 @@
 
 import Foundation
 
-/// Encapsulates logic to:
-/// Show/hide fadeable views
-/// Show/hide seek time & thumbnail
-/// Hide mouse cursor
-/// Show/hide default album art
+/// This file encapsulates logic to:
+/// - Show/hide fadeable views
+/// - Hide mouse cursor
+/// - Show/hide default album art
 extension PlayerWindowController {
 
-  // MARK: - Visibility utility functions
+  class FadeableViewsHandler {
 
-  func applyVisibility(_ visibility: VisibilityMode, to view: NSView) {
-    switch visibility {
-    case .hidden:
-      view.alphaValue = 0
-      view.isHidden = true
-      fadeableViews.remove(view)
-      fadeableViewsInTopBar.remove(view)
-    case .showAlways:
-      view.alphaValue = 1
-      view.isHidden = false
-      fadeableViews.remove(view)
-      fadeableViewsInTopBar.remove(view)
-    case .showFadeableTopBar:
-      view.alphaValue = 1
-      view.isHidden = false
-      fadeableViewsInTopBar.insert(view)
-    case .showFadeableNonTopBar:
-      view.alphaValue = 1
-      view.isHidden = false
-      fadeableViews.insert(view)
-    }
-  }
+    /// Views that will show/hide when cursor moving in/out of the window
+    var fadeableViews = Set<NSView>()
+    /// Similar to `fadeableViews`, but may fade in differently depending on configuration of top bar.
+    var fadeableViewsInTopBar = Set<NSView>()
+    var animationState: UIAnimationState = .shown
+    var topBarAnimationState: UIAnimationState = .shown
 
-  func applyVisibility(_ visibility: VisibilityMode, _ views: NSView?...) {
-    for view in views {
-      if let view = view {
-        applyVisibility(visibility, to: view)
+    var isShowingFadeableViewsForSeek = false
+
+    /// For auto hiding UI after a timeout.
+    /// Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
+    let hideTimer = TimeoutTimer(timeout: max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout))))
+
+    func applyVisibility(_ visibility: VisibilityMode, to view: NSView) {
+      switch visibility {
+      case .hidden:
+        view.alphaValue = 0
+        view.isHidden = true
+        fadeableViews.remove(view)
+        fadeableViewsInTopBar.remove(view)
+      case .showAlways:
+        view.alphaValue = 1
+        view.isHidden = false
+        fadeableViews.remove(view)
+        fadeableViewsInTopBar.remove(view)
+      case .showFadeableTopBar:
+        view.alphaValue = 1
+        view.isHidden = false
+        fadeableViewsInTopBar.insert(view)
+      case .showFadeableNonTopBar:
+        view.alphaValue = 1
+        view.isHidden = false
+        fadeableViews.insert(view)
       }
     }
-  }
 
-  func applyOnlyIfHidden(_ visibility: VisibilityMode, to view: NSView, isTopBar: Bool = true) {
-    guard visibility == .hidden else { return }
-    applyVisibility(visibility, view)
-  }
+    func applyVisibility(_ visibility: VisibilityMode, _ views: NSView?...) {
+      for view in views {
+        if let view = view {
+          applyVisibility(visibility, to: view)
+        }
+      }
+    }
 
-  func applyOnlyIfShowable(_ visibility: VisibilityMode, to view: NSView, isTopBar: Bool = true) {
-    guard visibility != .hidden else { return }
-    applyVisibility(visibility, view)
-  }
+    func applyOnlyIfHidden(_ visibility: VisibilityMode, to view: NSView, isTopBar: Bool = true) {
+      guard visibility == .hidden else { return }
+      applyVisibility(visibility, view)
+    }
 
-  // MARK: - UI: Show / Hide Fadeable Views
+    func applyOnlyIfShowable(_ visibility: VisibilityMode, to view: NSView, isTopBar: Bool = true) {
+      guard visibility != .hidden else { return }
+      applyVisibility(visibility, view)
+    }
+
+  }  // end class FadeableViewsHandler
+
+
+  // MARK: - PlayerWindowController
 
   // Shows fadeableViews and titlebar via fade
   func showFadeableViews(thenRestartFadeTimer restartFadeTimer: Bool = true,
@@ -83,11 +98,11 @@ extension PlayerWindowController {
       return tasks
     }
 
-    guard wantsTopBarVisible || fadeableViewsAnimationState == .hidden else {
+    guard wantsTopBarVisible || fadeableViews.animationState == .hidden else {
       if restartFadeTimer {
-        hideFadeableViewsTimer.restart()
+        fadeableViews.hideTimer.restart()
       } else {
-        hideFadeableViewsTimer.cancel()
+        fadeableViews.hideTimer.cancel()
       }
       return tasks
     }
@@ -95,18 +110,18 @@ extension PlayerWindowController {
     let currentLayout = self.currentLayout
 
     tasks.append(IINAAnimation.Task(duration: duration, { [self] in
-      guard fadeableViewsAnimationState == .hidden || fadeableViewsAnimationState == .shown else { return }
-      fadeableViewsAnimationState = .willShow
+      guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
+      fadeableViews.animationState = .willShow
       player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
-      hideFadeableViewsTimer.cancel()
+      fadeableViews.hideTimer.cancel()
 
-      for v in fadeableViews {
+      for v in fadeableViews.fadeableViews {
         v.animator().alphaValue = 1
       }
 
       if wantsTopBarVisible {  // start top bar
-        fadeableTopBarAnimationState = .willShow
-        for v in fadeableViewsInTopBar {
+        fadeableViews.topBarAnimationState = .willShow
+        for v in fadeableViews.fadeableViewsInTopBar {
           v.animator().alphaValue = 1
         }
 
@@ -127,20 +142,20 @@ extension PlayerWindowController {
     // Not animated, but needs to wait until after fade is done
     tasks.append(.instantTask { [self] in
       // if no interrupt then hide animation
-      if fadeableViewsAnimationState == .willShow {
-        fadeableViewsAnimationState = .shown
-        for v in fadeableViews {
+      if fadeableViews.animationState == .willShow {
+        fadeableViews.animationState = .shown
+        for v in fadeableViews.fadeableViews {
           v.isHidden = false
         }
 
         if restartFadeTimer {
-          hideFadeableViewsTimer.restart()
+          fadeableViews.hideTimer.restart()
         }
       }
 
-      if wantsTopBarVisible && fadeableTopBarAnimationState == .willShow {
-        fadeableTopBarAnimationState = .shown
-        for v in fadeableViewsInTopBar {
+      if wantsTopBarVisible && fadeableViews.topBarAnimationState == .willShow {
+        fadeableViews.topBarAnimationState = .shown
+        for v in fadeableViews.fadeableViewsInTopBar {
           v.isHidden = false
         }
 
@@ -162,7 +177,7 @@ extension PlayerWindowController {
 
   @discardableResult
   func hideFadeableViews() -> Bool {
-    guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViewsAnimationState == .shown else {
+    guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViews.animationState == .shown else {
       return false
     }
 
@@ -182,15 +197,15 @@ extension PlayerWindowController {
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
       // Don't hide overlays when in PIP or when they are not actually shown
-      hideFadeableViewsTimer.cancel()
-      fadeableViewsAnimationState = .willHide
-      fadeableTopBarAnimationState = .willHide
+      fadeableViews.hideTimer.cancel()
+      fadeableViews.animationState = .willHide
+      fadeableViews.topBarAnimationState = .willHide
       player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
 
-      for v in fadeableViews {
+      for v in fadeableViews.fadeableViews {
         v.animator().alphaValue = 0
       }
-      for v in fadeableViewsInTopBar {
+      for v in fadeableViews.fadeableViewsInTopBar {
         v.animator().alphaValue = 0
       }
       /// Quirk 1: special handling for `trafficLightButtons`
@@ -215,14 +230,14 @@ extension PlayerWindowController {
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
       // if no interrupt then hide animation
-      guard fadeableViewsAnimationState == .willHide else { return }
+      guard fadeableViews.animationState == .willHide else { return }
 
-      fadeableViewsAnimationState = .hidden
-      fadeableTopBarAnimationState = .hidden
-      for v in fadeableViews {
+      fadeableViews.animationState = .hidden
+      fadeableViews.topBarAnimationState = .hidden
+      for v in fadeableViews.fadeableViews {
         v.isHidden = true
       }
-      for v in fadeableViewsInTopBar {
+      for v in fadeableViews.fadeableViewsInTopBar {
         v.isHidden = true
       }
       /// Quirk 1: need to set `alphaValue` back to `1` so that each button's corresponding menu items still work
@@ -245,7 +260,7 @@ extension PlayerWindowController {
     return true
   }
 
-  /// Executed when `hideFadeableViewsTimer` fires
+  /// Executed when `fadeableViews.hideTimer` fires
   @objc func hideFadeableViewsAndCursor() {
     // don't hide UI when dragging control bar
     if currentDragObject != nil { return }

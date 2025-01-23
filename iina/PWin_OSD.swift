@@ -416,7 +416,7 @@ extension PlayerWindowController {
     osdVisualEffectView.layoutSubtreeIfNeeded()
     osdVisualEffectView.alphaValue = 1
     osdVisualEffectView.isHidden = false
-    fadeableViews.remove(osdVisualEffectView)
+    fadeableViews.fadeableViews.remove(osdVisualEffectView)
   }
 
   @objc

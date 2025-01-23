@@ -122,7 +122,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // - Non-exclusive state bools:
 
   var isOnTop: Bool = false
-  var isShowingFadeableViewsForSeek = false
 
   /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
@@ -245,17 +244,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var sidebarResizeCursor: NSCursor? = nil
 
   // - Fadeable Views
-
-  /// Views that will show/hide when cursor moving in/out of the window
-  var fadeableViews = Set<NSView>()
-  /// Similar to `fadeableViews`, but may fade in differently depending on configuration of top bar.
-  var fadeableViewsInTopBar = Set<NSView>()
-  var fadeableViewsAnimationState: UIAnimationState = .shown
-  var fadeableTopBarAnimationState: UIAnimationState = .shown
-
-  /// For auto hiding UI after a timeout.
-  /// Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
-  let hideFadeableViewsTimer = TimeoutTimer(timeout: max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout))))
+  var fadeableViews = FadeableViewsHandler()
 
   // Other visibility
   var hideCursorTimer: Timer?
@@ -1874,8 +1863,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if currentLayout.hasPermanentControlBar {
       return true
     }
-    let showingFadeableViews = fadeableViewsAnimationState == .shown || fadeableViewsAnimationState == .willShow
-    let showingFadeableTopBar = fadeableTopBarAnimationState == .shown || fadeableViewsAnimationState == .willShow
+    let showingFadeableViews = fadeableViews.animationState == .shown || fadeableViews.animationState == .willShow
+    let showingFadeableTopBar = fadeableViews.topBarAnimationState == .shown || fadeableViews.topBarAnimationState == .willShow
     let showingOSD = osd.animationState == .shown || osd.animationState == .willShow
     return showingFadeableViews || showingFadeableTopBar || showingOSD
   }

@@ -209,8 +209,8 @@ extension PlayerWindowController {
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
       updateTitleBarAndOSC()
     case .controlBarAutoHideTimeout:
-      hideFadeableViewsTimer.timeout = max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout)))
-      hideFadeableViewsTimer.restart()
+      fadeableViews.hideTimer.timeout = max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout)))
+      fadeableViews.hideTimer.restart()
     case .lockViewportToVideoSize:
       if let isLocked = newValue as? Bool, isLocked {
         log.debug("Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space")
@@ -249,9 +249,9 @@ extension PlayerWindowController {
     case .displayTimeAndBatteryInFullScreen:
       if let newValue = newValue as? Bool {
         if newValue {
-          applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
+          fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
         } else {
-          applyVisibility(.hidden, to: additionalInfoView)
+          fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
         }
       }
     case .alwaysShowOnTopIcon:

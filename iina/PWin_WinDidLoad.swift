@@ -25,8 +25,8 @@ extension PlayerWindowController {
     co = buildObservers()
 
     // The fade timer is only used if auto-hide is enabled
-    hideFadeableViewsTimer.startFunction = { return Preference.bool(for: .enableControlBarAutoHide) }
-    hideFadeableViewsTimer.action = hideFadeableViewsAndCursor
+    fadeableViews.hideTimer.startFunction = { return Preference.bool(for: .enableControlBarAutoHide) }
+    fadeableViews.hideTimer.action = hideFadeableViewsAndCursor
 
     denyWindowResizeTimer.startFunction = {
       self.denyWindowResize = true

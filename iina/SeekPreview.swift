@@ -326,9 +326,9 @@ extension PlayerWindowController {
         playSlider.cell?.controlView?.needsDisplay = true
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
         seekPreview.timeLabel.animator().alphaValue = 0
-        if isShowingFadeableViewsForSeek {
-          isShowingFadeableViewsForSeek = false
-          hideFadeableViewsTimer.restart()
+        if fadeableViews.isShowingFadeableViewsForSeek {
+          fadeableViews.isShowingFadeableViewsForSeek = false
+          fadeableViews.hideTimer.restart()
         }
       })
 
@@ -395,16 +395,16 @@ extension PlayerWindowController {
     // Need to ensure OSC is displayed if showing thumbnail preview
     if currentLayout.hasFadeableOSC {
       let hasTopBarFadeableOSC = currentLayout.oscPosition == .top && currentLayout.topBarView == .showFadeableTopBar
-      let isOSCHidden = hasTopBarFadeableOSC ? fadeableTopBarAnimationState == .hidden : fadeableViewsAnimationState == .hidden
+      let isOSCHidden = hasTopBarFadeableOSC ? fadeableViews.topBarAnimationState == .hidden : fadeableViews.animationState == .hidden
 
       if isShowingThumbnailForSeek {
         if isOSCHidden {
           showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
         } else {
-          hideFadeableViewsTimer.cancel()
+          fadeableViews.hideTimer.cancel()
         }
         // Set this to remind ourselves to restart the fade timer when seek is done
-        isShowingFadeableViewsForSeek = true
+        fadeableViews.isShowingFadeableViewsForSeek = true
 
       } else if isOSCHidden {
         // Do not show any preview if OSC is hidden and is not a showable seek

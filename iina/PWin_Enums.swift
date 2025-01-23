@@ -236,7 +236,8 @@ enum PlayerWindowMode: Int {
 }
 
 
-/// Represents a visibility mode for a given component in the player window
+/// Represents a visibility mode for a given component in the player window.
+/// See: `FadeableViewsHandler`, `LayoutState`.
 enum VisibilityMode {
   case hidden
   case showAlways

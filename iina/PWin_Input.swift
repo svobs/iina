@@ -469,7 +469,7 @@ extension PlayerWindowController {
         hideFadeableViews()
       } else {
         // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
-        hideFadeableViewsTimer.restart()
+        fadeableViews.hideTimer.restart()
       }
     case .playSlider:
       hideSeekPreview()
@@ -515,7 +515,7 @@ extension PlayerWindowController {
     }
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
-    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(event) && fadeableTopBarAnimationState == .hidden
+    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(event) && fadeableViews.topBarAnimationState == .hidden
     // Check whether mouse is in OSC
     let shouldRestartFadeTimer = !isMouseEvent(event, inAnyOf: [currentControlBar, titleBarView])
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
