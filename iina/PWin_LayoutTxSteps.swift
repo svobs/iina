@@ -710,7 +710,7 @@ extension PlayerWindowController {
         let cropController = self.cropSettingsView ?? transition.outputLayout.spec.interactiveMode!.viewController()
         cropController.windowController = self
         self.cropSettingsView = cropController
-        bottomBarView.addSubview(cropController.view)
+        bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
         cropController.view.addConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
         let videoSizeRaw = player.videoGeo.videoSizeRaw
