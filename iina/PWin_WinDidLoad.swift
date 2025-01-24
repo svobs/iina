@@ -117,7 +117,8 @@ extension PlayerWindowController {
       initBottomBarView(in: contentView, style: .visualEffectView)
       initSpeedLabel()
       initPlaybackBtnsView()
-      initPlayPositionContainerView()
+      initPlayPositionViews()
+      addSubviewsToPlaySliderAndTimeLabelsView()
       initVolumeView()
       initAlbumArtView()
       playSlider.target = self
@@ -327,6 +328,7 @@ extension PlayerWindowController {
     speedLabel.nextResponder = playButton
   }
 
+  /// Init `fragPlaybackBtnsView` & its subviews
   private func initPlaybackBtnsView() {
     let oscGeo = currentLayout.controlBarGeo
 
@@ -440,12 +442,12 @@ extension PlayerWindowController {
     rightArrowBtnVertOffsetConstraint.isActive = true
   }
 
-  private func initPlayPositionContainerView() {
-    // - Configure playPositionContainerView
-    playPositionContainerView.translatesAutoresizingMaskIntoConstraints = false
-    playPositionContainerView.userInterfaceLayoutDirection = .leftToRight
-    playPositionContainerView.setContentHuggingPriority(.init(249), for: .horizontal)
-    playPositionContainerView.setContentCompressionResistancePriority(.init(249), for: .horizontal)
+  private func initPlayPositionViews() {
+    // - Configure playSliderAndTimeLabelsView
+    playSliderAndTimeLabelsView.translatesAutoresizingMaskIntoConstraints = false
+    playSliderAndTimeLabelsView.userInterfaceLayoutDirection = .leftToRight
+    playSliderAndTimeLabelsView.setContentHuggingPriority(.init(249), for: .horizontal)
+    playSliderAndTimeLabelsView.setContentCompressionResistancePriority(.init(249), for: .horizontal)
 
     // - Configure subviews
 
@@ -477,24 +479,26 @@ extension PlayerWindowController {
     rightTimeLabel.translatesAutoresizingMaskIntoConstraints = false
     rightTimeLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
     rightTimeLabel.setContentCompressionResistancePriority(.init(749), for: .horizontal)
+  }
 
-    playPositionContainerView.addSubview(leftTimeLabel)
-    playPositionContainerView.addSubview(playSlider)
-    playPositionContainerView.addSubview(rightTimeLabel)
+  func addSubviewsToPlaySliderAndTimeLabelsView() {
+    playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
+    playSliderAndTimeLabelsView.addSubview(playSlider)
+    playSliderAndTimeLabelsView.addSubview(rightTimeLabel)
 
     // - Add constraints to subviews
 
-    playPositionContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: 150.0).isActive = true
+    playSliderAndTimeLabelsView.widthAnchor.constraint(greaterThanOrEqualToConstant: 150.0).isActive = true
 
-    leftTimeLabel.leadingAnchor.constraint(equalTo: playPositionContainerView.leadingAnchor).isActive = true
+    leftTimeLabel.leadingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.leadingAnchor).isActive = true
     playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: 4).isActive = true
 
-    playSlider.centerYAnchor.constraint(equalTo: playPositionContainerView.centerYAnchor).isActive = true
+    playSlider.centerYAnchor.constraint(equalTo: playSliderAndTimeLabelsView.centerYAnchor).isActive = true
     playSlider.centerYAnchor.constraint(equalTo: leftTimeLabel.centerYAnchor).isActive = true
     playSlider.centerYAnchor.constraint(equalTo: rightTimeLabel.centerYAnchor).isActive = true
 
     rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: 4).isActive = true
-    rightTimeLabel.trailingAnchor.constraint(equalTo: playPositionContainerView.trailingAnchor).isActive = true
+    rightTimeLabel.trailingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.trailingAnchor).isActive = true
   }
 
   private func initVolumeView() {

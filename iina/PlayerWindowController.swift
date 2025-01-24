@@ -573,7 +573,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fragToolbarView: ClickThroughStackView? = nil
 
   /// Container for legacy PlaySlider layout which shows time labels on left & right of slider.
-  let playPositionContainerView = ClickThroughView()
+  let playSliderAndTimeLabelsView = ClickThroughView()
   let playSlider = PlaySlider()
   let leftTimeLabel = DurationDisplayTextField()
   let rightTimeLabel = DurationDisplayTextField()
@@ -691,6 +691,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       animationPipeline.submitInstantTask { [self] in
         // This only needs to be run once, but doing it here will multiply the work by the number of player windows
         // currently open. Should be ok for now as this is fairly fast...
+        // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
+        // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
         BarFactory.current.updateBarStylesFromPrefs()
 
         let oldLayout = currentLayout

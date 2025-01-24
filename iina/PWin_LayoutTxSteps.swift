@@ -484,7 +484,7 @@ extension PlayerWindowController {
     }
 
     if !outputLayout.hasControlBar || transition.inputLayout.oscPosition != transition.outputLayout.oscPosition {
-      playPositionContainerView.removeFromSuperview()
+      playSliderAndTimeLabelsView.removeFromSuperview()
     }
 
     if !transition.outputLayout.hasBottomOSC {
@@ -517,9 +517,10 @@ extension PlayerWindowController {
         miniPlayer.playlistWrapperView.addSubview(playlistView)
         playlistView.addConstraintsToFillSuperview()
 
-        // move playback position slider
-        miniPlayer.positionSliderWrapperView.addSubview(playPositionContainerView)
-        playPositionContainerView.addConstraintsToFillSuperview()
+        // move playback position slider & time labels
+        addSubviewsToPlaySliderAndTimeLabelsView()
+        miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
+        playSliderAndTimeLabelsView.addConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
         playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
         playSliderHeightConstraint?.isActive = true
@@ -572,7 +573,7 @@ extension PlayerWindowController {
       case .top:
         currentControlBar = controlBarTop
 
-        addControlBarViews(to: oscTopMainView, oscGeo, transition)
+        addControlBarViews(to: oscTopMainView, transition)
 
       case .bottom:
         currentControlBar = bottomBarView
@@ -583,13 +584,13 @@ extension PlayerWindowController {
           oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing, trailing: Constants.Distance.titleBarIconHSpacing)
         }
 
-        addControlBarViews(to: oscBottomMainView, oscGeo, transition)
+        addControlBarViews(to: oscBottomMainView, transition)
 
       case .floating:
-
-        if let toolbarView = rebuildToolbar(transition), !oscFloatingUpperView.views.contains(toolbarView) {
-          oscFloatingUpperView.addView(toolbarView, in: .trailing)
-          oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+        fragToolbarView = rebuildToolbar(transition)
+        if let fragToolbarView, !oscFloatingUpperView.views.contains(fragToolbarView) {
+          oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
+          oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
         }
       }
 
@@ -886,8 +887,9 @@ extension PlayerWindowController {
 
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-        oscFloatingLowerView.addSubview(playPositionContainerView)
-        playPositionContainerView.addConstraintsToFillSuperview()
+        addSubviewsToPlaySliderAndTimeLabelsView()
+        oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
+        playSliderAndTimeLabelsView.addConstraintsToFillSuperview()
 
         controlBarFloating.addMarginConstraints()
       }
@@ -1453,22 +1455,23 @@ extension PlayerWindowController {
   // MARK: - Controller content layout
 
   /// For "bar"-type OSCs: `bottom` and `top` only - not `floating` or music mode.
-  private func addControlBarViews(to containerView: NSStackView,
-                                  _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
+  private func addControlBarViews(to containerView: NSStackView, _ transition: LayoutTransition) {
     let isControlBarChanging = transition.isControlBarChanging
     if isControlBarChanging {
       containerView.addView(fragPlaybackBtnsView, in: .leading)
-      containerView.addView(playPositionContainerView, in: .leading)
+      addSubviewsToPlaySliderAndTimeLabelsView()
+      containerView.addView(playSliderAndTimeLabelsView, in: .leading)
       containerView.addView(fragVolumeView, in: .leading)
 
       containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-      containerView.setVisibilityPriority(.mustHold, for: playPositionContainerView)
+      containerView.setVisibilityPriority(.mustHold, for: playSliderAndTimeLabelsView)
       containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     }
 
-    if let toolbarView = rebuildToolbar(transition), !containerView.views.contains(toolbarView) {
-      containerView.addView(toolbarView, in: .leading)
-      containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+    fragToolbarView = rebuildToolbar(transition)
+    if let fragToolbarView, !containerView.views.contains(fragToolbarView) {
+      containerView.addView(fragToolbarView, in: .leading)
+      containerView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
     }
   }
 
@@ -1491,7 +1494,7 @@ extension PlayerWindowController {
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView? {
+  private func rebuildToolbar(_ transition: LayoutTransition) -> ClickThroughStackView? {
     let oldGeo = transition.inputLayout.controlBarGeo
     let newGeo = transition.outputLayout.controlBarGeo
     let newButtonTypes = newGeo.toolbarItems
@@ -1501,10 +1504,11 @@ extension PlayerWindowController {
     var needsButtonsUpdate = hasSizeChange || hasStyleChange
 
     let isControlBarChanging = transition.isControlBarChanging
+    let toolbarView: ClickThroughStackView
     if isControlBarChanging || !oldGeo.toolbarItemsAreSame(as: newGeo) {
       removeToolBar()
       guard newButtonTypes.count > 0 else { return nil }
-      let toolbarView = ClickThroughStackView()
+      toolbarView = ClickThroughStackView()
 
       log.verbose("[\(transition.name)] Updating OSC toolbarItems to: [\(newButtonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
@@ -1524,27 +1528,29 @@ extension PlayerWindowController {
         toolbarView.addView(button, in: .trailing)
         toolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
       }
-      fragToolbarView = toolbarView
+    } else {
+      guard let fragToolbarView else {
+        return nil
+      }
+      toolbarView = fragToolbarView
     }
 
-    if let fragToolbarView {
-      if needsButtonsUpdate {
-        for btn in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
-          btn.setStyle(using: transition.outputLayout)
-        }
-      }
-
-      if hasSizeChange {
-        // It's not possible to control the icon padding from inside the buttons in all cases.
-        // Instead we can get the same effect with a little more work, by controlling the stack view:
-        let iconSpacing = newGeo.toolIconSpacing
-        fragToolbarView.spacing = 2 * iconSpacing
-        fragToolbarView.edgeInsets = .init(top: iconSpacing, left: max(0, iconSpacing - 4),
-                                           bottom: iconSpacing, right: 0)
-        log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
+    if needsButtonsUpdate {
+      for btn in toolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
+        btn.setStyle(using: transition.outputLayout)
       }
     }
-    return fragToolbarView
+
+    if hasSizeChange {
+      // It's not possible to control the icon padding from inside the buttons in all cases.
+      // Instead we can get the same effect with a little more work, by controlling the stack view:
+      let iconSpacing = newGeo.toolIconSpacing
+      toolbarView.spacing = 2 * iconSpacing
+      toolbarView.edgeInsets = .init(top: iconSpacing, left: max(0, iconSpacing - 4),
+                                         bottom: iconSpacing, right: 0)
+      log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
+    }
+    return toolbarView
   }
 
   // Looks like in some cases, the toolbar doesn't disappear unless all its buttons are also removed
