@@ -61,7 +61,6 @@ extension PlayerWindowController {
     log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) liveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()
-
     if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
       /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
@@ -83,6 +82,8 @@ extension PlayerWindowController {
       log.verbose{"WinWillResize: choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")"}
     }
 
+    let newWindowSize: NSSize
+    let resizeSubviewsTask: IINAAnimation.Task
     let isLiveResizingWidth = isLiveResizingWidth ?? true
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
@@ -97,39 +98,53 @@ extension PlayerWindowController {
 
       let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
                                                   inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
+      newWindowSize = newGeometry.windowFrame.size
 
       if currentLayout.mode == .windowedNormal {
         // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
         player.info.intendedViewportSize = newGeometry.viewportSize
       }
 
-      /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
-      /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
-      /// only exhibits a small noticeable wobble for some limited cases ...
-      resizeWindowSubviews(using: newGeometry)
-
-      log.verbose{"WinWillResize: returning window size=\(newGeometry.windowFrame.size) for \(currentLayout.mode)"}
-      return newGeometry.windowFrame.size
+      resizeSubviewsTask = .instantTask { [self] in
+        /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
+        /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
+        /// only exhibits a small noticeable wobble for some limited cases ...
+        resizeWindowSubviews(using: newGeometry)
+      }
+      // fall through
 
     case .fullScreenNormal, .fullScreenInteractive:
-      if currentLayout.isLegacyFullScreen {
-        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
-        videoView.apply(newGeometry)
-        return newGeometry.windowFrame.size
-      } else {  // is native full screen
-                // This method can be called as a side effect of the animation. If so, ignore.
+      if currentLayout.isNativeFullScreen {
+        // This method can be called as a side effect of the animation. If so, ignore.
         return requestedSize
       }
+
+      let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
+      newWindowSize = newGeometry.windowFrame.size
+      resizeSubviewsTask = .instantTask { [self] in
+        videoView.apply(newGeometry)
+      }
+      // fall through
 
     case .musicMode:
       guard !sessionState.isRestoring else {
         log.error{"WinWillResize was fired while restoring! Returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)"}
         return musicModeGeo.windowFrame.size
       }
-      let newSize = miniPlayer.musicModeWindowWillResize(window, to: requestedSize, isLiveResizingWidth: isLiveResizingWidth)
-      log.verbose{"WinWillResize: returning \(newSize) for \(currentLayout.mode)"}
-      return newSize
+
+      let currentGeo = musicModeGeoForCurrentFrame()
+      let newGeometry = currentGeo.resizingWindow(to: requestedSize, inLiveResize: window.inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
+      newWindowSize = newGeometry.windowFrame.size
+
+      resizeSubviewsTask = .instantTask { [self] in
+        /// This call is needed to update any necessary constraints & resize internal views
+        _ = applyMusicModeGeo(newGeometry, setFrame: false, updateCache: false)
+      }
     }
+
+    IINAAnimation.runAsync(resizeSubviewsTask)
+    log.verbose{"WinWillResize: returning window size=\(newWindowSize) for \(currentLayout.mode)"}
+    return newWindowSize
   }
 
   /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
@@ -150,7 +165,7 @@ extension PlayerWindowController {
     defer {
       CATransaction.commit()
     }
-    
+
     let layout = currentLayout
     let isTransientResize = newGeometry != nil
     let isFullScreen = layout.isFullScreen

@@ -495,7 +495,57 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    // Music mode: enter/exit
+    // Sidebars
+
+    /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
+    if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
+      /// Finish closing (if closing)
+      removeSidebarTabGroupView(group: tabToHide.group)
+    }
+    if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
+      /// Finish closing (if closing).
+      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
+      removeSidebarTabGroupView(group: tabToHide.group)
+    }
+
+    // - Leading Sidebar
+    if transition.isShowingLeadingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
+              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
+              transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
+      // Tab group is already showing, but just need to switch tab
+      switchToTabInTabGroup(tab: tabToShow)
+    }
+
+    // - Trailing Sidebar
+    if transition.isShowingTrailingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
+              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
+              transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
+      // Tab group is already showing, but just need to switch tab
+      switchToTabInTabGroup(tab: tabToShow)
+    }
+
+    if outputLayout.leadingSidebarPlacement == .insideViewport {
+      leadingSidebarView.material = .menu
+    } else {
+      leadingSidebarView.material = .toolTip
+    }
+
+    if outputLayout.trailingSidebarPlacement == .insideViewport {
+      trailingSidebarView.material = .menu
+    } else {
+      trailingSidebarView.material = .toolTip
+    }
+
+    // Music mode
+
     if transition.isTogglingMusicMode {
       playSliderHeightConstraint?.isActive = false
 
@@ -513,7 +563,6 @@ extension PlayerWindowController {
 
         // move playist view
         let playlistView = playlistView.view
-        playlistView.removeFromSuperview()
         miniPlayer.playlistWrapperView.addSubview(playlistView)
         playlistView.addConstraintsToFillSuperview()
 
@@ -542,9 +591,6 @@ extension PlayerWindowController {
         log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
         miniPlayer.view.removeFromSuperview()
 
-        /// Remove `playlistView` from wrapper. It will be added elsewhere if/when it is needed there
-        playlistView.view.removeFromSuperview()
-
         // Make sure to restore video
         miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
         viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
@@ -563,6 +609,8 @@ extension PlayerWindowController {
 
     // Need to call this for initial layout also:
     updateMusicModeButtonsVisibility(using: musicModeGeo)
+
+    // OSC
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
@@ -690,6 +738,7 @@ extension PlayerWindowController {
     }
 
     // Interactive mode
+
     if transition.isTogglingInteractiveMode {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
       if let cropController = self.cropSettingsView {
@@ -744,55 +793,6 @@ extension PlayerWindowController {
           self.cropSettingsView = nil
         }
       }
-    }
-
-    // Sidebars
-
-    /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-    if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
-      /// Finish closing (if closing)
-      removeSidebarTabGroupView(group: tabToHide.group)
-    }
-    if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
-      /// Finish closing (if closing).
-      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-      removeSidebarTabGroupView(group: tabToHide.group)
-    }
-
-    // - Leading Sidebar
-    if transition.isShowingLeadingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
-              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
-              transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
-      // Tab group is already showing, but just need to switch tab
-      switchToTabInTabGroup(tab: tabToShow)
-    }
-
-    // - Trailing Sidebar
-    if transition.isShowingTrailingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                              parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
-              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
-              transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
-      // Tab group is already showing, but just need to switch tab
-      switchToTabInTabGroup(tab: tabToShow)
-    }
-
-    if outputLayout.leadingSidebarPlacement == .insideViewport {
-      leadingSidebarView.material = .menu
-    } else {
-      leadingSidebarView.material = .toolTip
-    }
-
-    if outputLayout.trailingSidebarPlacement == .insideViewport {
-      trailingSidebarView.material = .menu
-    } else {
-      trailingSidebarView.material = .toolTip
     }
 
     updateDepthOrderOfBars(topBar: outputLayout.topBarPlacement, bottomBar: outputLayout.bottomBarPlacement,

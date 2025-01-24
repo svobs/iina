@@ -13,13 +13,13 @@ class IINAAnimation {
 
   // MARK: Durations
 
-  static var DefaultDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationDefault)) }
-  static var VideoReconfigDuration: CGFloat { DefaultDuration * 0.25 }
-  static var InitialVideoReconfigDuration: CGFloat { DefaultDuration }
-  static var FullScreenTransitionDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationFullScreen)) }
+  static var DefaultDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationDefault)) }()
+  static var VideoReconfigDuration: CGFloat = { DefaultDuration * 0.25 }()
+  static var InitialVideoReconfigDuration: CGFloat = { DefaultDuration }()
+  static var FullScreenTransitionDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationFullScreen)) }()
   static var NativeFullScreenTransitionDuration: CGFloat = 0.5
-  static var OSDAnimationDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationOSD)) }
-  static var CropAnimationDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationCrop)) }
+  static var OSDAnimationDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationOSD)) }()
+  static var CropAnimationDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationCrop)) }()
   static var MusicModeShowButtonsDuration: CGFloat = 0.2
 
   // MARK: Misc static stuff

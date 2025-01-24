@@ -320,52 +320,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - Window size & layout
 
-  /// `windowWillResize`, but specfically applied to window while in music mode
-  func musicModeWindowWillResize(_ window: NSWindow, to requestedSize: NSSize, isLiveResizingWidth: Bool) -> NSSize {
-    resetScrollingLabels()
-    let currentGeo = windowController.musicModeGeoForCurrentFrame()
-    var newGeo: MusicModeGeometry
-
-    if window.inLiveResize, currentGeo.isVideoVisible && !currentGeo.isPlaylistVisible {
-      // Special case when scaling only video: need to treat similar to windowed mode
-      let nonViewportAreaSize = currentGeo.windowFrame.size - currentGeo.viewportSize!
-      let requestedViewportSize = requestedSize - nonViewportAreaSize
-
-      let scaledViewportSize: NSSize
-      if isLiveResizingWidth {
-        // Option A: resize height based on requested width
-        scaledViewportSize = NSSize(width: requestedViewportSize.width,
-                                    height: round(requestedViewportSize.width / currentGeo.video.videoAspectCAR))
-      } else {
-        // Option B: resize width based on requested height
-        scaledViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.video.videoAspectCAR),
-                                    height: requestedViewportSize.height)
-      }
-      newGeo = currentGeo.scalingViewport(to: scaledViewportSize)!
-
-    } else {
-      // general case
-      /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
-      /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
-      /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
-      var requestedSize = NSSize(width: requestedSize.width.rounded(), height: requestedSize.height.rounded())
-      if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
-        log.verbose{"WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)"}
-        requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
-      } else if requestedSize.width > MiniPlayerViewController.maxWindowWidth {
-        log.verbose{"WindowWillResize: constraining to max width \(MiniPlayerViewController.maxWindowWidth)"}
-        requestedSize = NSSize(width: MiniPlayerViewController.maxWindowWidth, height: requestedSize.height)
-      }
-
-      let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
-      newGeo = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID)
-    }
-
-    /// This call is needed to update any necessary constraints & resize internal views
-    newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, updateCache: false)
-    return newGeo.windowFrame.size
-  }
-
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
     log.verbose{"Updating viewportViewHeightContraint using visible=\(isVideoVisible.yn)"}
 

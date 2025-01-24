@@ -290,6 +290,47 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return clone(windowFrame: newWindowFrame)
   }
 
+  func resizingWindow(to requestedSize: NSSize, inLiveResize: Bool, isLiveResizingWidth: Bool) -> MusicModeGeometry {
+    var newGeo: MusicModeGeometry
+
+    if inLiveResize, isVideoVisible && !isPlaylistVisible {
+      // Special case when scaling only video: need to treat similar to windowed mode
+      let nonViewportAreaSize = windowFrame.size - viewportSize!
+      let requestedViewportSize = requestedSize - nonViewportAreaSize
+
+      let scaledViewportSize: NSSize
+      if isLiveResizingWidth {
+        // Option A: resize height based on requested width
+        scaledViewportSize = NSSize(width: requestedViewportSize.width,
+                                    height: round(requestedViewportSize.width / video.videoAspectCAR))
+      } else {
+        // Option B: resize width based on requested height
+        scaledViewportSize = NSSize(width: round(requestedViewportSize.height * video.videoAspectCAR),
+                                    height: requestedViewportSize.height)
+      }
+      newGeo = scalingViewport(to: scaledViewportSize)!
+
+    } else {
+      // general case
+      /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
+      /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
+      /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
+      var adjustedSize = NSSize(width: requestedSize.width.rounded(), height: requestedSize.height.rounded())
+      if adjustedSize.width < Constants.Distance.MusicMode.minWindowWidth {
+        log.verbose{"WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)"}
+        adjustedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: adjustedSize.height)
+      } else if adjustedSize.width > MiniPlayerViewController.maxWindowWidth {
+        log.verbose{"WindowWillResize: constraining to max width \(MiniPlayerViewController.maxWindowWidth)"}
+        adjustedSize = NSSize(width: MiniPlayerViewController.maxWindowWidth, height: adjustedSize.height)
+      }
+
+      let newWindowFrame = NSRect(origin: windowFrame.origin, size: adjustedSize)
+      newGeo = clone(windowFrame: newWindowFrame).refitted()
+    }
+
+    return newGeo
+  }
+
   var description: String {
     return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "video=NO") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
   }
