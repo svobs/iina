@@ -40,19 +40,18 @@ extension PlayerWindowController {
     }
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
-    let denyWindowResize = denyWindowResize
+    let denyWindowResize = Date() < lastStartOfDenyWindowResizeInterval + Constants.TimeInterval.denyWindowResizeTimeout
 
     if !currentLayout.isFullScreen && !inLiveResize {
-      guard !didChangeScreen else {
-        didChangeScreen = false
-        log.verbose{"WinWillResize: denying request=\(requestedSize) due to screen change; will stay at \(window.frame.size)"}
+      guard !denyWindowResize else {
+        log.verbose{"WinWillResize: denying request=\(requestedSize) as it was inside denial period; will stay at \(window.frame.size)"}
         return window.frame.size
       }
       // If the window size has been previously set by accessibility APIs or zoom, on the next mouseDown AppKit will snap it back to its
       // previous size. Try to detect this and stop it.
       let leftMouseButtonDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0
-      guard !leftMouseButtonDown && !denyWindowResize else {
-        log.verbose{"WinWillResize: denying request=\(requestedSize): liveResize=\(inLiveResize.yn), leftMouseDown=\(leftMouseButtonDown.yn) denyFlag=\(denyWindowResize.yn); will stay at \(window.frame.size)"}
+      guard !leftMouseButtonDown else {
+        log.verbose{"WinWillResize: denying request=\(requestedSize): left mouse button is down; will stay at \(window.frame.size)"}
         return window.frame.size
       }
     }

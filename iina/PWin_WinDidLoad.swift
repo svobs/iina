@@ -28,12 +28,6 @@ extension PlayerWindowController {
     fadeableViews.hideTimer.startFunction = { return Preference.bool(for: .enableControlBarAutoHide) }
     fadeableViews.hideTimer.action = hideFadeableViewsAndCursor
 
-    denyWindowResizeTimer.startFunction = {
-      self.denyWindowResize = true
-      return true
-    }
-    denyWindowResizeTimer.action = { self.denyWindowResize = false }
-
     /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
     /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems
     /// to cause flickering while animating.
