@@ -418,8 +418,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var osdBottomMarginConstraint: NSLayoutConstraint!
 
   /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
-  @IBOutlet weak var titleBarHeightConstraint: NSLayoutConstraint!
-
+  var titleBarHeightConstraint: NSLayoutConstraint!
 
   var fragPlaybackBtnsWidthConstraint: NSLayoutConstraint!
 
@@ -500,7 +499,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Bottom border of `topBarView`.
   let topBarBottomBorder = NSBox()
   /// Reserves space for the title bar components. Does not contain any child views.
-  @IBOutlet weak var titleBarView: ClickThroughView!
+  let titleBarView = ClickThroughView()
   /// OSC at top of window, if configured.
   let controlBarTop = ClickThroughView()
   /// Arranges controls inside `controlBarTop`.

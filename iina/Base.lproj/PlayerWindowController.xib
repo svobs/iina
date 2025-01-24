@@ -51,8 +51,6 @@
                 <outlet property="osdVStackView" destination="g0j-zS-jKv" id="aoo-Tm-yhj"/>
                 <outlet property="osdVisualEffectView" destination="g0O-v5-RQj" id="V4X-8K-6O1"/>
                 <outlet property="pipOverlayView" destination="Nrz-jZ-Luf" id="EU7-oY-Bwp"/>
-                <outlet property="titleBarHeightConstraint" destination="fcC-MX-fmN" id="3FJ-wZ-oVK"/>
-                <outlet property="titleBarView" destination="WaC-08-utU" id="Ahh-93-k7q"/>
                 <outlet property="topBarLeadingSpaceConstraint" destination="ofB-WP-9dW" id="6hD-K8-P5n"/>
                 <outlet property="topBarTrailingSpaceConstraint" destination="te1-wi-BbH" id="sfe-UH-ki8"/>
                 <outlet property="topBarView" destination="TRx-2V-Gr3" id="4CG-pA-rHP"/>
@@ -395,17 +393,6 @@
                     </visualEffectView>
                     <visualEffectView identifier="TopBarView" wantsLayer="YES" blendingMode="withinWindow" material="titlebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="TRx-2V-Gr3" userLabel="TopBar View">
                         <rect key="frame" x="0.0" y="372" width="640" height="28"/>
-                        <subviews>
-                            <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WaC-08-utU" userLabel="Title-Bar View">
-                                <rect key="frame" x="0.0" y="8" width="640" height="20"/>
-                            </customView>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="WaC-08-utU" firstAttribute="leading" secondItem="TRx-2V-Gr3" secondAttribute="leading" id="A1u-FZ-Pxw"/>
-                            <constraint firstItem="WaC-08-utU" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="top" id="HhT-1Z-HEk"/>
-                            <constraint firstItem="WaC-08-utU" firstAttribute="bottom" secondItem="TRx-2V-Gr3" secondAttribute="top" priority="900" constant="20" identifier="titleBarHeightConstraint" id="fcC-MX-fmN"/>
-                            <constraint firstAttribute="trailing" secondItem="WaC-08-utU" secondAttribute="trailing" id="oz7-qR-Dzc"/>
-                        </constraints>
                     </visualEffectView>
                     <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="88M-Ln-4mc" userLabel="MiniPlayerButtons View">
                         <rect key="frame" x="4" y="362" width="19" height="34"/>

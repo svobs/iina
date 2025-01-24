@@ -290,9 +290,17 @@ extension PlayerWindowController {
     topOSCHeightConstraint.priority = .init(900)
     topOSCHeightConstraint.isActive = true
 
+    titleBarView.translatesAutoresizingMaskIntoConstraints = false
+    topBarView.addSubview(titleBarView)
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     titleBarBottom_ToControlBarTop_Constraint.identifier = .init("titleBarBottom_ToControlBarTop_Constraint")
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
+
+    titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topBarView.topAnchor, constant: 20)
+    topOSCHeightConstraint.identifier = .init("titleBarHeightConstraint")
+    topOSCHeightConstraint.priority = .init(900)
+    topOSCHeightConstraint.isActive = true
   }
 
   func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
