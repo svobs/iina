@@ -236,7 +236,7 @@ extension PlayerWindowController {
   }
 
   func initTopBarView(in contentView: NSView) {
-
+    /// `oscTopMainView`
     oscTopMainView.identifier = .init("oscTopMainView")  // helps with debug logging
     oscTopMainView.spacing = 4
     oscTopMainView.orientation = .horizontal
@@ -260,6 +260,7 @@ extension PlayerWindowController {
     oscTopStackViewBottomConstraint.identifier = .init("oscTopStackViewBottomConstraint")
     oscTopStackViewBottomConstraint.isActive = true
 
+    // Bottom border
     topBarBottomBorder.identifier = .init("TopBar-BottomBorder")
     topBarBottomBorder.boxType = .custom
     topBarBottomBorder.titlePosition = .noTitle
@@ -273,7 +274,7 @@ extension PlayerWindowController {
     topBarBottomBorderTopConstraint.identifier = .init("TopBar-BottomBorder-TopConstraint")
     topBarBottomBorderTopConstraint.isActive = true
 
-
+    /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(controlBarTop)
     let controlBarTop_LeadingConstraint = controlBarTop.leadingAnchor.constraint(equalTo: topBarView.leadingAnchor, constant: 0)
@@ -282,14 +283,16 @@ extension PlayerWindowController {
     let controlBarTop_TrailingConstraint = topBarView.trailingAnchor.constraint(equalTo: controlBarTop.trailingAnchor, constant: 0)
     controlBarTop_TrailingConstraint.identifier = .init("controlBarTop_TrailingConstraint")
     controlBarTop_TrailingConstraint.isActive = true
-    let controlBarTop_TopConstraint = controlBarTop.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: 0)
-    controlBarTop_TopConstraint.identifier = .init("controlBarTop_TopConstraint")
-    controlBarTop_TopConstraint.isActive = true
+    let controlBarTop_BottomConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.bottomAnchor, constant: 0)
+    controlBarTop_BottomConstraint.identifier = .init("controlBarTop_BottomConstraint")
+    controlBarTop_BottomConstraint.isActive = true
+
     topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     topOSCHeightConstraint.identifier = .init("topOSCHeightConstraint")
     topOSCHeightConstraint.priority = .init(900)
     topOSCHeightConstraint.isActive = true
 
+    /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(titleBarView)
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
@@ -297,10 +300,11 @@ extension PlayerWindowController {
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+
     titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topBarView.topAnchor, constant: 20)
-    topOSCHeightConstraint.identifier = .init("titleBarHeightConstraint")
-    topOSCHeightConstraint.priority = .init(900)
-    topOSCHeightConstraint.isActive = true
+    titleBarHeightConstraint.identifier = .init("titleBarHeightConstraint")
+    titleBarHeightConstraint.priority = .init(900)
+    titleBarHeightConstraint.isActive = true
   }
 
   func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
