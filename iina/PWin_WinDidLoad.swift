@@ -256,11 +256,43 @@ extension PlayerWindowController {
     let oscTopStackViewTopConstraint = oscTopMainView.topAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     oscTopStackViewTopConstraint.identifier = .init("oscTopStackViewTopConstraint")
     oscTopStackViewTopConstraint.isActive = true
-
     let oscTopStackViewBottomConstraint = controlBarTop.bottomAnchor.constraint(equalTo: oscTopMainView.bottomAnchor, constant: 0)
     oscTopStackViewBottomConstraint.identifier = .init("oscTopStackViewBottomConstraint")
     oscTopStackViewBottomConstraint.isActive = true
 
+    topBarBottomBorder.identifier = .init("TopBar-BottomBorder")
+    topBarBottomBorder.boxType = .custom
+    topBarBottomBorder.titlePosition = .noTitle
+    topBarBottomBorder.borderWidth = 0
+    topBarBottomBorder.borderColor = .clear
+    topBarBottomBorder.fillColor = .separatorColor
+    topBarBottomBorder.translatesAutoresizingMaskIntoConstraints = false
+    topBarView.addSubview(topBarBottomBorder)
+    topBarBottomBorder.addConstraintsToFillSuperview(bottom: 0, leading: 0, trailing: 0)
+    let topBarBottomBorderTopConstraint = topBarView.bottomAnchor.constraint(equalTo: topBarBottomBorder.topAnchor, constant: 0.5)
+    topBarBottomBorderTopConstraint.identifier = .init("TopBar-BottomBorder-TopConstraint")
+    topBarBottomBorderTopConstraint.isActive = true
+
+
+    controlBarTop.translatesAutoresizingMaskIntoConstraints = false
+    topBarView.addSubview(controlBarTop)
+    let controlBarTop_LeadingConstraint = controlBarTop.leadingAnchor.constraint(equalTo: topBarView.leadingAnchor, constant: 0)
+    controlBarTop_LeadingConstraint.identifier = .init("controlBarTop_LeadingConstraint")
+    controlBarTop_LeadingConstraint.isActive = true
+    let controlBarTop_TrailingConstraint = topBarView.trailingAnchor.constraint(equalTo: controlBarTop.trailingAnchor, constant: 0)
+    controlBarTop_TrailingConstraint.identifier = .init("controlBarTop_TrailingConstraint")
+    controlBarTop_TrailingConstraint.isActive = true
+    let controlBarTop_TopConstraint = controlBarTop.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: 0)
+    controlBarTop_TopConstraint.identifier = .init("controlBarTop_TopConstraint")
+    controlBarTop_TopConstraint.isActive = true
+    topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
+    topOSCHeightConstraint.identifier = .init("topOSCHeightConstraint")
+    topOSCHeightConstraint.priority = .init(900)
+    topOSCHeightConstraint.isActive = true
+
+    let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
+    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("titleBarBottom_ToControlBarTop_Constraint")
+    titleBarBottom_ToControlBarTop_Constraint.isActive = true
   }
 
   func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
@@ -293,7 +325,7 @@ extension PlayerWindowController {
       bottomBarView.wantsLayer = true
       bottomBarView.layer?.backgroundColor = .clear
     }
-    bottomBarView.identifier = .init("bottomBarView")  // helps with debug logging
+    bottomBarView.identifier = .init("BottomBarView")  // helps with debug logging
     bottomBarView.isHidden = true
     bottomBarView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -322,12 +354,12 @@ extension PlayerWindowController {
     oscBottomMainView.wantsLayer = true
     oscBottomMainView.layer?.backgroundColor = .clear
 
-    bottomBarTopBorder.identifier = .init("bottomBarTopBorder")  // helps with debug logging
+    bottomBarTopBorder.identifier = .init("BottomBar-TopBorder")  // helps with debug logging
     bottomBarTopBorder.boxType = .custom
     bottomBarTopBorder.titlePosition = .noTitle
     bottomBarTopBorder.borderWidth = 0
-    bottomBarTopBorder.borderColor = NSColor.clear
-    bottomBarTopBorder.fillColor = NSColor.titleBarBorder
+    bottomBarTopBorder.borderColor = .clear
+    bottomBarTopBorder.fillColor = .titleBarBorder
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)

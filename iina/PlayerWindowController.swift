@@ -433,7 +433,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var playSliderHeightConstraint: NSLayoutConstraint?
 
-  @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
+  var topOSCHeightConstraint: NSLayoutConstraint!
 
   var volumeIconHeightConstraint: NSLayoutConstraint!
   var volumeIconWidthConstraint: NSLayoutConstraint!
@@ -498,11 +498,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// depending on configuration.
   @IBOutlet weak var topBarView: NSVisualEffectView!
   /// Bottom border of `topBarView`.
-  @IBOutlet weak var topBarBottomBorder: NSBox!
+  let topBarBottomBorder = NSBox()
   /// Reserves space for the title bar components. Does not contain any child views.
   @IBOutlet weak var titleBarView: ClickThroughView!
   /// OSC at top of window, if configured.
-  @IBOutlet weak var controlBarTop: NSView!
+  let controlBarTop = ClickThroughView()
   /// Arranges controls inside `controlBarTop`.
   let oscTopMainView = NSStackView()
 

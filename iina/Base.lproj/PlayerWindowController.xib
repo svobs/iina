@@ -4,7 +4,6 @@
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
-        <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -28,7 +27,6 @@
                 <outlet property="closeButtonVE" destination="4bB-aE-jrk" id="IZK-7t-1IL"/>
                 <outlet property="closeButtonView" destination="88M-Ln-4mc" id="Ucp-D3-qpe"/>
                 <outlet property="controlBarFloating" destination="OiF-pA-8Sd" id="7C1-6a-ZK6"/>
-                <outlet property="controlBarTop" destination="pgt-r3-Vbf" id="dqS-nQ-If8"/>
                 <outlet property="customWindowBorderBox" destination="xqX-4W-gdw" id="ut2-mE-M78"/>
                 <outlet property="customWindowBorderTopHighlightBox" destination="IeW-QK-xIO" id="6In-Z5-KJw"/>
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
@@ -55,11 +53,9 @@
                 <outlet property="pipOverlayView" destination="Nrz-jZ-Luf" id="EU7-oY-Bwp"/>
                 <outlet property="titleBarHeightConstraint" destination="fcC-MX-fmN" id="3FJ-wZ-oVK"/>
                 <outlet property="titleBarView" destination="WaC-08-utU" id="Ahh-93-k7q"/>
-                <outlet property="topBarBottomBorder" destination="iA3-pt-6Jm" id="RD4-8v-bHB"/>
                 <outlet property="topBarLeadingSpaceConstraint" destination="ofB-WP-9dW" id="6hD-K8-P5n"/>
                 <outlet property="topBarTrailingSpaceConstraint" destination="te1-wi-BbH" id="sfe-UH-ki8"/>
                 <outlet property="topBarView" destination="TRx-2V-Gr3" id="4CG-pA-rHP"/>
-                <outlet property="topOSCHeightConstraint" destination="wwB-Bd-YpC" id="Xei-hb-Zwh"/>
                 <outlet property="trailingSidebarLeadingBorder" destination="exJ-CB-MoS" id="jY1-pX-sXL"/>
                 <outlet property="trailingSidebarToOSDSpaceConstraint" destination="zbm-D9-epN" id="TdE-wQ-5Me"/>
                 <outlet property="trailingSidebarView" destination="epo-S6-QVB" id="efz-TR-rAa"/>
@@ -400,32 +396,15 @@
                     <visualEffectView identifier="TopBarView" wantsLayer="YES" blendingMode="withinWindow" material="titlebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="TRx-2V-Gr3" userLabel="TopBar View">
                         <rect key="frame" x="0.0" y="372" width="640" height="28"/>
                         <subviews>
-                            <customView wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WaC-08-utU" userLabel="Title-Bar View">
-                                <rect key="frame" x="0.0" y="0.0" width="640" height="28"/>
+                            <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WaC-08-utU" userLabel="Title-Bar View">
+                                <rect key="frame" x="0.0" y="8" width="640" height="20"/>
                             </customView>
-                            <customView identifier="OSC-Top-View" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pgt-r3-Vbf" userLabel="ControlBarTop View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="640" height="0.0"/>
-                            </customView>
-                            <box identifier="TopBarBottomBorder" wantsLayer="YES" boxType="custom" borderType="none" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="iA3-pt-6Jm" userLabel="TopBar-BottomBorder Box">
-                                <rect key="frame" x="0.0" y="0.0" width="640" height="1"/>
-                                <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
-                                <color key="fillColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
-                            </box>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="iA3-pt-6Jm" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-0.5" id="9IT-OD-6nH"/>
                             <constraint firstItem="WaC-08-utU" firstAttribute="leading" secondItem="TRx-2V-Gr3" secondAttribute="leading" id="A1u-FZ-Pxw"/>
-                            <constraint firstItem="WaC-08-utU" firstAttribute="bottom" secondItem="pgt-r3-Vbf" secondAttribute="top" id="GU9-GL-ESy"/>
                             <constraint firstItem="WaC-08-utU" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="top" id="HhT-1Z-HEk"/>
-                            <constraint firstItem="iA3-pt-6Jm" firstAttribute="bottom" secondItem="TRx-2V-Gr3" secondAttribute="bottom" id="NAT-yV-Xdy"/>
-                            <constraint firstItem="pgt-r3-Vbf" firstAttribute="leading" secondItem="TRx-2V-Gr3" secondAttribute="leading" id="OHy-Ue-y7h"/>
-                            <constraint firstAttribute="trailing" secondItem="pgt-r3-Vbf" secondAttribute="trailing" id="UeQ-hc-umE"/>
-                            <constraint firstAttribute="trailing" secondItem="iA3-pt-6Jm" secondAttribute="trailing" id="e9D-au-sdb"/>
                             <constraint firstItem="WaC-08-utU" firstAttribute="bottom" secondItem="TRx-2V-Gr3" secondAttribute="top" priority="900" constant="20" identifier="titleBarHeightConstraint" id="fcC-MX-fmN"/>
-                            <constraint firstItem="iA3-pt-6Jm" firstAttribute="leading" secondItem="TRx-2V-Gr3" secondAttribute="leading" id="jIX-sE-wsj"/>
                             <constraint firstAttribute="trailing" secondItem="WaC-08-utU" secondAttribute="trailing" id="oz7-qR-Dzc"/>
-                            <constraint firstAttribute="bottom" secondItem="pgt-r3-Vbf" secondAttribute="bottom" id="vSX-sI-hHU"/>
-                            <constraint firstAttribute="bottom" secondItem="pgt-r3-Vbf" secondAttribute="top" priority="900" identifier="topOSCHeightConstraint" id="wwB-Bd-YpC"/>
                         </constraints>
                     </visualEffectView>
                     <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="88M-Ln-4mc" userLabel="MiniPlayerButtons View">
