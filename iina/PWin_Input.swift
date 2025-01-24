@@ -131,7 +131,7 @@ extension PlayerWindowController {
 
   func isPoint(_ pointInWindow: NSPoint, inAnyOf views: [NSView?]) -> Bool {
     return views.filter { $0 != nil }.reduce(false, { (result, view) in
-      return result || view!.isMousePoint(view!.convert(pointInWindow, from: nil), in: view!.bounds)
+      return result || !view!.isHidden && view!.isMousePoint(view!.convert(pointInWindow, from: nil), in: view!.bounds)
     })
   }
 
@@ -181,27 +181,12 @@ extension PlayerWindowController {
     lastMouseDownEventID = event.eventNumber
     log.verbose{"PWin MouseDown @ \(event.locationInWindow)"}
 
-    if let clickedView = window?.contentView?.hitTest(event.locationInWindow) {
-      if clickedView as? SymButton != nil {
-        clickedView.mouseDown(with: event)
-        return
-      }
-    }
-    if isMouseEvent(event, inAnyOf: [documentIconButton]) {
-      documentIconButton?.mouseDown(with: event)
+    if isMouseEvent(event, inAnyOf: [controlBarFloating]) {
+      log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
     }
-    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]), !isMouseEvent(event, inAnyOf: symButtons)  else {
-      // Allow these controls to handle the event
-      super.mouseDown(with: event)
-      return
-    }
-    if let controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
-      controlBarFloating.mouseDown(with: event)
-      return
-    }
-    if let cropSettingsView, !cropSettingsView.cropBoxView.isHidden, isMouseEvent(event, inAnyOf: [cropSettingsView.cropBoxView]) {
-      log.verbose("PWin MouseDown: ignoring; should have been handled by CropBoxView")
+    if isMouseEvent(event, inAnyOf: [cropSettingsView?.cropBoxView]) {
+      log.error("PWin MouseDown: ignoring; should be handled by CropBoxView")
       return
     }
 
@@ -315,10 +300,6 @@ extension PlayerWindowController {
       }
     }
 
-    if isMouseEvent(event, inAnyOf: [documentIconButton]) {
-      documentIconButton?.mouseUp(with: event)
-      return
-    }
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
       log.verbose{"PWin MouseUp: click occurred in a disabled view; ignoring"}
       super.mouseUp(with: event)
@@ -385,10 +366,6 @@ extension PlayerWindowController {
       super.rightMouseDown(with: event)
     }
 
-    if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
-      controlBarFloating.rightMouseDown(with: event)
-      return
-    }
     restartHideCursorTimer()
     PluginInputManager.handle(
       input: PluginInputManager.Input.rightMouse, event: .mouseDown,
@@ -482,7 +459,11 @@ extension PlayerWindowController {
   }
 
   override func mouseMoved(with event: NSEvent) {
-    guard !isInInteractiveMode else { return }
+    if isInInteractiveMode {
+      let disableWindowDragging = isMouseEvent(event, inAnyOf: [viewportView])
+      updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
+      return
+    }
 
     /// Set or unset the cursor to `resizeLeftRight` if able to resize the sidebar
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) ||
@@ -492,20 +473,17 @@ extension PlayerWindowController {
         newCursor.push()
         sidebarResizeCursor = newCursor
       }
-      // Kludge to prevent window drag if trying to drag sidebar. This must be false if not dragging the window!
-      updateIsMoveableByWindowBackground(canDragSomethingElse: true)
+      // Kludge to prevent window drag if trying to drag sidebar. Do not drag the window!
+      updateIsMoveableByWindowBackground(disableWindowDrag: true)
     } else {
       if let currentCursor = sidebarResizeCursor {
         currentCursor.pop()
         sidebarResizeCursor = nil
       }
 
-      if let controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
-        // Kludge to prevent window drag if trying to drag floating OSC.
-        updateIsMoveableByWindowBackground(canDragSomethingElse: true)
-      } else {
-        updateIsMoveableByWindowBackground()
-      }
+      // Kludge to prevent window drag if trying to drag floating OSC.
+      let disableWindowDragging = isMouseEvent(event, inAnyOf: [controlBarFloating])
+      updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
@@ -543,8 +521,8 @@ extension PlayerWindowController {
     rotationHandler.handleRotationGesture(recognizer: recognizer)
   }
 
-  func updateIsMoveableByWindowBackground(canDragSomethingElse: Bool = false) {
-    if canDragSomethingElse || currentLayout.isFullScreen {
+  func updateIsMoveableByWindowBackground(disableWindowDrag: Bool = false) {
+    if disableWindowDrag || currentLayout.isFullScreen {
       window?.isMovableByWindowBackground = false
     } else {
       // Enable this so that user can drag from title bar with first mouse

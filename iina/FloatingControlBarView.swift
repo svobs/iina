@@ -45,13 +45,13 @@ class FloatingControlBarView: NSVisualEffectView {
   }
 
   func addMarginConstraints() {
-    guard let wc = playerWindowController, let contentView = wc.window?.contentView else { return }
+    guard let pwc = playerWindowController, let contentView = pwc.window?.contentView else { return }
     if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive {
-      leadingMarginConstraint = self.leadingAnchor.constraint(greaterThanOrEqualTo: wc.leadingSidebarView.trailingAnchor, constant: FloatingControlBarView.margin)
+      leadingMarginConstraint = self.leadingAnchor.constraint(greaterThanOrEqualTo: pwc.leadingSidebarView.trailingAnchor, constant: FloatingControlBarView.margin)
       leadingMarginConstraint.isActive = true
     }
     if trailingMarginConstraint == nil || !trailingMarginConstraint.isActive {
-      trailingMarginConstraint = wc.trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: FloatingControlBarView.margin)
+      trailingMarginConstraint = pwc.trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: FloatingControlBarView.margin)
       trailingMarginConstraint.isActive = true
     }
     if bottomMarginConstraint == nil || !bottomMarginConstraint.isActive {
@@ -124,8 +124,10 @@ class FloatingControlBarView: NSVisualEffectView {
   }
 
   override func mouseDown(with event: NSEvent) {
-    guard let viewportView = playerWindowController?.viewportView else { return }
+    guard let pwc = playerWindowController,
+          let viewportView = pwc.viewportView else { return }
 
+    pwc.log.verbose("FloatingOSC mouseDown")
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
     let originInViewport = viewportView.convert(frame.origin, from: nil)
@@ -135,8 +137,8 @@ class FloatingControlBarView: NSVisualEffectView {
   override func mouseDragged(with event: NSEvent) {
     guard let mousePosRelatedToView,
           let mouseDownLocationInWindow,
-          let playerWindowController,
-          let viewportView = playerWindowController.viewportView else {
+          let pwc = playerWindowController,
+          let viewportView = pwc.viewportView else {
       return
     }
 
@@ -145,15 +147,15 @@ class FloatingControlBarView: NSVisualEffectView {
         return
       }
       if Logger.enabled && Logger.Level.preferred >= .verbose {
-        playerWindowController.log.verbose("FloatingOSC mouseDrag: minimum dragging distance was met")
+        pwc.log.verbose("FloatingOSC mouseDrag: minimum dragging distance was met")
       }
       // drag start
-      playerWindowController.currentDragObject = self
+      pwc.currentDragObject = self
     }
-    guard isDragging else { return }
+    assert(isDragging, "Something's wrong: isDragging should be true here")
 
     let currentLocInViewport = viewportView.convert(event.locationInWindow, from: nil)
-    let geometry = FloatingControlBarGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
+    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: viewportView.frame.size)
 
     let xxx = currentLocInViewport.x - mousePosRelatedToView.x
 
@@ -179,12 +181,18 @@ class FloatingControlBarView: NSVisualEffectView {
   }
 
   override func mouseUp(with event: NSEvent) {
-    guard let playerWindowController, let viewportView = playerWindowController.viewportView else { return }
-    playerWindowController.log.verbose("FloatingOSC mouseUp")
+    guard let pwc = playerWindowController, let viewportView = pwc.viewportView else { return }
+    if isDragging {
+      pwc.log.verbose("FloatingOSC mouseUp: ending drag")
+      pwc.currentDragObject = nil
+    } else {
+      pwc.log.verbose("FloatingOSC mouseUp")
+    }
 
-    let geometry = FloatingControlBarGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
+    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: viewportView.frame.size)
 
     if event.clickCount == 2 {
+      // Double-clicked: center the OSC
       let (xConst, yConst) = geometry.calculateConstraintConstants(centerX: geometry.centerX, originY: frame.origin.y)
 
       // apply position
