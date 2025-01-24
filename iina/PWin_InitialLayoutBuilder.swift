@@ -133,7 +133,7 @@ extension PlayerWindowController {
         volumeSlider.isEnabled = false
       }
 
-      hideSeekPreview()
+      hideSeekPreviewImmediately()
       quickSettingView.reload()
       updateTitle()
       playlistView.scrollPlaylistToCurrentItem()

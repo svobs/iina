@@ -30,6 +30,8 @@ extension PlayerWindowController {
         if animationState == .willHide || animationState == .hidden {
           currentPreviewTimeSec = nil
         }
+        // Trigger redraw of PlaySlider, in case knob needs to be shown or hidden
+        thumbnailPeekView.associatedPlayer?.windowController.playSlider.needsDisplay = true
       }
     }
     var currentPreviewTimeSec: Double? = nil  // only non-nil when shown
@@ -284,7 +286,6 @@ extension PlayerWindowController {
 
       currentPreviewTimeSec = previewTimeSec
       animationState = .shown
-      player.windowController.playSlider.needsDisplay = true
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
       // reliably, so using a timer works well as a failsafe.
       restartHideTimer()
@@ -311,69 +312,59 @@ extension PlayerWindowController {
       seekPreview.restartHideTimer()
       return
     }
-    hideSeekPreview(animated: true)
+    hideSeekPreviewWithAnimation()
   }
 
-  func hideSeekPreview(animated: Bool = false) {
+  /// With animation. For non-animated version, see: `hideSeekPreviewImmediately()`.
+  func hideSeekPreviewWithAnimation() {
+    var tasks: [IINAAnimation.Task] = []
+
+    tasks.append(.init(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
+      seekPreview.animationState = .willHide
+      seekPreview.thumbnailPeekView.animator().alphaValue = 0
+      seekPreview.timeLabel.animator().alphaValue = 0
+      if fadeableViews.isShowingFadeableViewsForSeek {
+        fadeableViews.isShowingFadeableViewsForSeek = false
+        fadeableViews.hideTimer.restart()
+      }
+    })
+
+    tasks.append(.init(duration: 0) { [self] in
+      // if no interrupt then hide animation
+      guard seekPreview.animationState == .willHide else { return }
+      hideSeekPreviewImmediately()
+    })
+
+    animationPipeline.submit(tasks)
+  }
+
+  /// Without animation. For animated version, see: `hideSeekPreviewWithAnimation()`.
+  func hideSeekPreviewImmediately() {
     seekPreview.hideTimer.cancel()
-
-    if animated {
-      var tasks: [IINAAnimation.Task] = []
-
-      tasks.append(.init(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
-        // Don't hide overlays when in PIP or when they are not actually shown
-        seekPreview.animationState = .willHide
-        playSlider.cell?.controlView?.needsDisplay = true
-        seekPreview.thumbnailPeekView.animator().alphaValue = 0
-        seekPreview.timeLabel.animator().alphaValue = 0
-        if fadeableViews.isShowingFadeableViewsForSeek {
-          fadeableViews.isShowingFadeableViewsForSeek = false
-          fadeableViews.hideTimer.restart()
-        }
-      })
-
-      tasks.append(.init(duration: 0) { [self] in
-        // if no interrupt then hide animation
-        guard seekPreview.animationState == .willHide else { return }
-        seekPreview.animationState = .hidden
-        seekPreview.thumbnailPeekView.isHidden = true
-        seekPreview.timeLabel.isHidden = true
-      })
-
-      animationPipeline.submit(tasks)
-    } else {
-      seekPreview.thumbnailPeekView.isHidden = true
-      seekPreview.timeLabel.isHidden = true
-      seekPreview.animationState = .hidden
-      playSlider.cell?.controlView?.needsDisplay = true
-    }
+    seekPreview.animationState = .hidden
+    seekPreview.thumbnailPeekView.isHidden = true
+    seekPreview.timeLabel.isHidden = true
   }
 
   /// Display time label & thumbnail when mouse over slider
   func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint) {
-    thumbDisplayTicketCounter += 1
-    let currentTicket = thumbDisplayTicketCounter
-
-    DispatchQueue.main.async { [self] in
-      guard currentTicket == thumbDisplayTicketCounter else { return }
-
-      guard shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow),
-            let duration = player.info.playbackDurationSec else {
-        hideSeekPreview()
-        return
+    thumbDisplayDebouncer.run { [self] in
+      if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackDurationSec {
+        if showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
+          return
+        }
       }
-      showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration)
+      hideSeekPreviewImmediately()
     }
   }
 
   /// Should only be called by `refreshSeekPreviewAsync`
-  private func showSeekPreview(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
+  private func showSeekPreview(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) -> Bool {
     let notInMusicModeDisabled = !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible)
 
     // First check if both time & thumbnail are disabled
     guard let currentControlBar, notInMusicModeDisabled else {
-      hideSeekPreview()
-      return
+      return false
     }
 
     let centerOfKnobInSliderCoordX = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
@@ -388,8 +379,7 @@ extension PlayerWindowController {
     let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
     if isShowingThumbnailForSeek && (!showThumbnail || !Preference.bool(for: .showThumbnailDuringSliderSeek)) {
       // Do not show any preview if this feature is disabled
-      hideSeekPreview()
-      return
+      return false
     }
 
     // Need to ensure OSC is displayed if showing thumbnail preview
@@ -408,8 +398,7 @@ extension PlayerWindowController {
 
       } else if isOSCHidden {
         // Do not show any preview if OSC is hidden and is not a showable seek
-        hideSeekPreview()
-        return
+        return false
       }
     }
 
@@ -419,6 +408,7 @@ extension PlayerWindowController {
     seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
                             currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
                             isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+    return true
   }
 
 }

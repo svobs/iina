@@ -84,8 +84,8 @@ class PlayerCore: NSObject {
   var isBufferUnderrun = false
   var cachedRanges: [(Double, Double)] = []
 
-  @Atomic var saveTicketCounter: Int = 0
-  @Atomic private var thumbnailReloadTicketCounter: Int = 0
+  let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
+  let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
 
   // Plugins
   var isManagedByPlugin = false
@@ -133,10 +133,7 @@ class PlayerCore: NSObject {
    */
   @Atomic var backgroundQueueTicket = 0
   @Atomic var thumbnailQueueTicket = 0
-
-  // Ticket for sync UI update request
-  @Atomic private var syncUITicketCounter: Int = 0
-
+  
   // Windows
 
   var windowController: PlayerWindowController!
@@ -836,6 +833,7 @@ class PlayerCore: NSObject {
         videoView.stopDisplayLink()
       }
 
+      thumbReloadDebouncer.invalidate()
       // If the user immediately closes the player window it is possible the background task may still
       // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
       $backgroundQueueTicket.withLock { $0 += 1 }
@@ -3265,15 +3263,7 @@ class PlayerCore: NSObject {
   }
 
   @objc func fireSyncUITimer() {
-    syncUITicketCounter += 1
-    let syncUITicket = syncUITicketCounter
-
-    windowController.animationPipeline.submitInstantTask { [self] in
-      guard syncUITicket == syncUITicketCounter else {
-        return
-      }
-      windowController.updateUI()
-    }
+    windowController.updateUI()
   }
 
   private var lastSaveTime = Date().timeIntervalSince1970
@@ -3491,16 +3481,10 @@ class PlayerCore: NSObject {
         return
       }
 
-      let reloadTicket: Int = $thumbnailReloadTicketCounter.withLock {
-        $0 += 1
-        return $0
-      }
-
-      // Run the following in the background at lower priority, so the UI is not slowed down
-      PlayerCore.thumbnailQueue.asyncAfter(deadline: .now() + 0.5) { [self] in
-        guard reloadTicket == thumbnailReloadTicketCounter else { return }
+      /// Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
+      thumbReloadDebouncer.run { [self] in
         guard !isStopping else { return }
-        log.debug{"Reloading thumbnails (tkt \(reloadTicket))"}
+        log.debug{"Reloading thumbnails"}
 
         var queueTicket: Int = 0
         $thumbnailQueueTicket.withLock {

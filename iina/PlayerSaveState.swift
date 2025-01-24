@@ -330,18 +330,9 @@ struct PlayerSaveState: CustomStringConvertible {
   static func save(_ player: PlayerCore) {
     guard UIState.shared.isSaveEnabled else { return }
 
-    let ticket: Int = player.$saveTicketCounter.withLock {
-      $0 += 1
-      return $0
-    }
-
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
-    saveQueue.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.playerStateSaveDelay) {
-      guard ticket == player.saveTicketCounter else {
-        return
-      }
-
+    player.saveUIStateDebouncer.run { [self] in
       guard player.windowController.loaded else {
         player.log.trace{"Skipping player state save: player window is not loaded"}
         return
@@ -374,7 +365,7 @@ struct PlayerSaveState: CustomStringConvertible {
             guard !player.isShuttingDown else { return }
 
             let properties = generatePropDict(from: player, geo)
-            player.log.trace{"Saving player state (tkt \(ticket)): \(properties)"}
+            player.log.trace{"Saving player state: \(properties)"}
             UIState.shared.saveState(forPlayerID: player.label, properties: properties)
           }
         }

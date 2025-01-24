@@ -157,7 +157,7 @@ extension PlayerWindowController {
     log.verbose{"ResizeWindowImmediately: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
 
     // These may no longer be aligned correctly. Just hide them
-    hideSeekPreview()
+    hideSeekPreviewImmediately()
 
     if !layout.isNativeFullScreen {
       let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
@@ -723,7 +723,7 @@ extension PlayerWindowController {
 
       assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
-      hideSeekPreview()
+      hideSeekPreviewImmediately()
       updateDefaultArtVisibility(to: showDefaultArt)
       resetRotationPreview()
     })
@@ -791,7 +791,7 @@ extension PlayerWindowController {
         /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
         closeButtonView.isHidden = true
 
-        hideSeekPreview()
+        hideSeekPreviewImmediately()
       }
       resetRotationPreview()
     })

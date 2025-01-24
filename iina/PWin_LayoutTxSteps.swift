@@ -269,7 +269,7 @@ extension PlayerWindowController {
     }
 
     if transition.isTopBarPlacementChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingVisibilityOfAnySidebar {
-      hideSeekPreview()
+      hideSeekPreviewImmediately()
     }
   }
 
@@ -629,7 +629,7 @@ extension PlayerWindowController {
     if currentControlBar != nil {
       // Has OSC, or music mode
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
-      playSlider.cell?.controlView?.needsDisplay = true
+      playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || (transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear) {
@@ -1220,8 +1220,8 @@ extension PlayerWindowController {
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")
 
     // abort any queued screen updates
-    $screenChangedTicketCounter.withLock { $0 += 1 }
-    $screenParamsChangedTicketCounter.withLock { $0 += 1 }
+    screenChangedDebouncer.invalidate()
+    screenParamsChangedDebouncer.invalidate()
     isAnimatingLayoutTransition = false
 
     player.saveState()
@@ -1619,7 +1619,7 @@ extension PlayerWindowController {
     // needless processing. It must be running while transitioning to/from full screen mode.
     videoView.displayActive()
 
-    hideSeekPreview()
+    hideSeekPreviewImmediately()
   }
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {

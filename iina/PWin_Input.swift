@@ -472,7 +472,7 @@ extension PlayerWindowController {
         fadeableViews.hideTimer.restart()
       }
     case .playSlider:
-      hideSeekPreview()
+      refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     case .volumeSlider:
       isMouseHoveringOverVolumeSlider = false
       player.windowController.volumeSlider.needsDisplay = true
@@ -511,7 +511,7 @@ extension PlayerWindowController {
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
       refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     } else {
-      hideSeekPreview(animated: false)
+      hideSeekPreviewWithAnimation()
     }
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover

@@ -215,6 +215,7 @@ struct Constants {
 
     static let windowDidChangeScreenParametersThrottlingDelay = 0.2
     static let windowDidChangeScreenThrottlingDelay = 0.2
+    static let playerTitleBarAndOSCUpdateThrottlingDelay = 0.05
     static let windowDidMoveProcessingDelay = 0.2
 
     static let historyTableCompleteFileStatusReload = 600.0

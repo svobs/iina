@@ -270,16 +270,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Also used to preserve layout if a new file is dragged & dropped into this window
   var lastWindowedLayoutSpec: LayoutSpec = LayoutSpec.defaultLayout()
 
-  @Atomic var titleBarAndOSCUpdateTicketCounter: Int = 0
-
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
 
+  let titleBarAndOSCUpdateDebouncer = Debouncer(delay: Constants.TimeInterval.playerTitleBarAndOSCUpdateThrottlingDelay)
   /// For throttling `windowDidChangeScreen` notifications. MacOS 14 often sends hundreds in short bursts
-  @Atomic var screenChangedTicketCounter: Int = 0
+  let screenChangedDebouncer = Debouncer(delay: Constants.TimeInterval.windowDidChangeScreenThrottlingDelay)
   /// For throttling `windowDidChangeScreenParameters` notifications. MacOS 14 often sends hundreds in short bursts
-  @Atomic var screenParamsChangedTicketCounter: Int = 0
-  @Atomic var thumbDisplayTicketCounter: Int = 0
+  let screenParamsChangedDebouncer = Debouncer(delay: Constants.TimeInterval.windowDidChangeScreenParametersThrottlingDelay)
+  let thumbDisplayDebouncer = Debouncer()
 
   var isFullScreen: Bool { currentLayout.isFullScreen }
 
@@ -688,13 +687,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// Asynchronous with throttling!
   func updateTitleBarAndOSC() {
-    let currentTicket = $titleBarAndOSCUpdateTicketCounter.withLock {
-      $0 += 1
-      return $0
-    }
-
-    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(10)) { [self] in
-      guard currentTicket == titleBarAndOSCUpdateTicketCounter else { return }
+    titleBarAndOSCUpdateDebouncer.run { [self] in
       animationPipeline.submitInstantTask { [self] in
         BarFactory.current.updateBarStylesFromPrefs()
 
@@ -1215,26 +1208,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
-    guard let window = window, let screen = window.screen else { return }
-
     // Do not allow MacOS to change the window size
     didChangeScreen = true
 
-    let displayId = screen.displayId
-    guard videoView.currentDisplay != displayId else {
-      log.trace{"WindowDidChangeScreen: no work needed; currentDisplayID \(displayId) is unchanged"}
-      return
-    }
-
-    let ticket: Int = $screenChangedTicketCounter.withLock {
-      $0 += 1
-      return $0
-    }
-
-    // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
-    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidChangeScreenThrottlingDelay) { [self] in
-      guard ticket == screenChangedTicketCounter else { return }
+    // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
+    screenChangedDebouncer.run { [self] in
       guard !isClosing else { return }
+      guard let window = window, let screen = window.screen else { return }
+      let displayId = screen.displayId
+      guard videoView.currentDisplay != displayId else {
+        log.trace{"WindowDidChangeScreen: no work needed; currentDisplayID \(displayId) is unchanged"}
+        return
+      }
+
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
@@ -1285,17 +1271,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// • Adding or removing window style mask `.titled`
   /// • Sometimes called hundreds(!) of times while window is closing
   func windowDidChangeScreenParameters() {
-    guard !isClosing else { return }
-
-    let ticket: Int = $screenParamsChangedTicketCounter.withLock {
-      $0 += 1
-      return $0
-    }
-
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
-    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.windowDidChangeScreenParametersThrottlingDelay) { [self] in
-      guard ticket == screenParamsChangedTicketCounter else { return }
-
+    screenParamsChangedDebouncer.run { [self] in
+      guard !isClosing else { return }
       UIState.shared.updateCachedScreens()
       log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
       videoView.refreshAllVideoState()
@@ -2046,7 +2024,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       playSlider.abLoopA.posInSliderPercent = secondsToPercent(a)
       playSlider.abLoopB.isHidden = b == 0
       playSlider.abLoopB.posInSliderPercent = secondsToPercent(b)
-      playSlider.cell?.controlView?.needsDisplay = true
+      playSlider.needsDisplay = true
     }
   }
 
