@@ -689,6 +689,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func updateTitleBarAndOSC() {
     titleBarAndOSCUpdateDebouncer.run { [self] in
       animationPipeline.submitInstantTask { [self] in
+        // This only needs to be run once, but doing it here will multiply the work by the number of player windows
+        // currently open. Should be ok for now as this is fairly fast...
         BarFactory.current.updateBarStylesFromPrefs()
 
         let oldLayout = currentLayout

@@ -13,12 +13,12 @@ struct AppData {
     return "\(UIState.shared.currentLaunchID)c\(playerCoreCounter)"
   }
 
-  /** time interval to sync play pos & other UI */
+  /// Time interval to sync play slider position, time labels, volume indicator & other UI.
   struct SyncTimerConfig {
     let interval: TimeInterval
     let tolerance: TimeInterval
   }
-  static let syncTimerConfig = SyncTimerConfig(interval: 0.1, tolerance: 0.02)
+  static let syncTimerConfig = SyncTimerConfig(interval: 0.05, tolerance: 0.02)
 //  static let syncTimerPreciseConfig = SyncTimerConfig(interval: 0.04, tolerance: 0.01)
 
   /** speed values when clicking left / right arrow button */
