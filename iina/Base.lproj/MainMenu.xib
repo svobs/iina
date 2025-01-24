@@ -365,9 +365,6 @@ CA
                             <menuItem title="Normal Size" id="1UK-8n-QPP">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Normal Size (Retina)" hidden="YES" alternate="YES" keyEquivalent="1" id="c1x-bx-69F">
-                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
-                            </menuItem>
                             <menuItem title="Double Size" id="Hal-18-Tnf">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
@@ -759,7 +756,6 @@ CA
                 <outlet property="nextFrame" destination="XDC-Pc-rS1" id="PGo-Nr-JQg"/>
                 <outlet property="nextMedia" destination="GR6-4V-lRT" id="6sO-cD-UeT"/>
                 <outlet property="normalSize" destination="1UK-8n-QPP" id="rpd-7S-IYd"/>
-                <outlet property="normalSizeRetina" destination="c1x-bx-69F" id="S22-F3-Ks9"/>
                 <outlet property="onlineSubSourceMenu" destination="i0H-bE-bH8" id="u9W-1Y-Jhk"/>
                 <outlet property="open" destination="IAo-SY-fd9" id="fW9-2A-V4F"/>
                 <outlet property="openAlternative" destination="z9W-ga-j3b" id="RRI-7o-x9o"/>

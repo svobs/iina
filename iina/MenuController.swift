@@ -131,7 +131,6 @@ class MenuController: NSObject, NSMenuDelegate {
   @IBOutlet weak var videoTrackMenu: NSMenu!
   @IBOutlet weak var halfSize: NSMenuItem!
   @IBOutlet weak var normalSize: NSMenuItem!
-  @IBOutlet weak var normalSizeRetina: NSMenuItem!
   @IBOutlet weak var doubleSize: NSMenuItem!
   @IBOutlet weak var biggerSize: NSMenuItem!
   @IBOutlet weak var smallerSize: NSMenuItem!
@@ -277,8 +276,13 @@ class MenuController: NSObject, NSMenuDelegate {
     videoTrackMenu.delegate = self
 
     // -- window size
-    (halfSize.tag, normalSize.tag, normalSizeRetina.tag, doubleSize.tag, fitToScreen.tag, biggerSize.tag, smallerSize.tag) = (0, 1, -1, 2, 3, 11, 10)
-    for item in [halfSize, normalSize, normalSizeRetina, doubleSize, fitToScreen, biggerSize, smallerSize] {
+    halfSize.tag = 0
+    normalSize.tag = 1
+    doubleSize.tag = 2
+    fitToScreen.tag = 3
+    smallerSize.tag = 10
+    biggerSize.tag = 11
+    for item in [halfSize, normalSize, doubleSize, fitToScreen, biggerSize, smallerSize] {
       item?.action = #selector(PlayerWindowController.menuChangeWindowSize(_:))
     }
 
