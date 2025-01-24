@@ -37,7 +37,6 @@
                 <outlet property="oscFloatingLowerView" destination="hb6-oe-rHm" id="ZKe-zm-evE"/>
                 <outlet property="oscFloatingPlayButtonsContainerView" destination="hDm-KI-3o4" id="ITm-fa-cWL"/>
                 <outlet property="oscFloatingUpperView" destination="Unr-Y6-JoM" id="URb-3v-Gzc"/>
-                <outlet property="oscTopMainView" destination="fDY-vk-Ylv" id="phs-Yu-dGn"/>
                 <outlet property="osdAccessoryProgress" destination="i10-rt-9cb" id="ZdR-ZV-uoQ"/>
                 <outlet property="osdAccessoryText" destination="lb1-5R-hR3" id="A7o-3l-NYe"/>
                 <outlet property="osdBottomMarginConstraint" destination="8zf-O4-vae" id="p15-L7-fXn"/>
@@ -85,7 +84,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -401,22 +400,11 @@
                     <visualEffectView identifier="TopBarView" wantsLayer="YES" blendingMode="withinWindow" material="titlebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="TRx-2V-Gr3" userLabel="TopBar View">
                         <rect key="frame" x="0.0" y="372" width="640" height="28"/>
                         <subviews>
-                            <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WaC-08-utU" userLabel="Title-Bar View">
+                            <customView wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WaC-08-utU" userLabel="Title-Bar View">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="28"/>
                             </customView>
-                            <customView identifier="OSC-Top-View" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pgt-r3-Vbf" userLabel="ControlBarTop View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
+                            <customView identifier="OSC-Top-View" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pgt-r3-Vbf" userLabel="ControlBarTop View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="0.0"/>
-                                <subviews>
-                                    <stackView identifier="OSC-Top-Stack-View" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fDY-vk-Ylv" userLabel="OSC-Top Horizontal Stack View" customClass="ClickThroughStackView" customModule="IINA" customModuleProvider="target">
-                                        <rect key="frame" x="6" y="0.0" width="628" height="0.0"/>
-                                    </stackView>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstAttribute="bottom" secondItem="fDY-vk-Ylv" secondAttribute="bottom" id="XcG-Qs-KDA"/>
-                                    <constraint firstAttribute="trailing" secondItem="fDY-vk-Ylv" secondAttribute="trailing" constant="6" identifier="oscTopStackViewTrailingConstraint" id="fUQ-Rf-uYa"/>
-                                    <constraint firstItem="fDY-vk-Ylv" firstAttribute="leading" secondItem="pgt-r3-Vbf" secondAttribute="leading" constant="6" identifier="oscTopStackViewLeadingConstraint" id="tfY-Gh-Uv1"/>
-                                    <constraint firstItem="fDY-vk-Ylv" firstAttribute="top" secondItem="pgt-r3-Vbf" secondAttribute="top" id="xOA-fC-WYr"/>
-                                </constraints>
                             </customView>
                             <box identifier="TopBarBottomBorder" wantsLayer="YES" boxType="custom" borderType="none" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="iA3-pt-6Jm" userLabel="TopBar-BottomBorder Box">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="1"/>

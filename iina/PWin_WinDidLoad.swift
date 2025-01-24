@@ -114,6 +114,7 @@ extension PlayerWindowController {
 
       initSeekPreview(in: contentView)
       initTitleBar()
+      initTopBarView(in: contentView)
       initBottomBarView(in: contentView, style: .visualEffectView)
       initSpeedLabel()
       initPlaybackBtnsView()
@@ -232,6 +233,34 @@ extension PlayerWindowController {
     trailingTB.addArrangedSubview(onTopButton)
 
     addTitleBarAccessoryViews()
+  }
+
+  func initTopBarView(in contentView: NSView) {
+
+    oscTopMainView.identifier = .init("oscTopMainView")  // helps with debug logging
+    oscTopMainView.spacing = 4
+    oscTopMainView.orientation = .horizontal
+    oscTopMainView.alignment = .centerY
+    oscTopMainView.distribution = .gravityAreas
+    oscTopMainView.translatesAutoresizingMaskIntoConstraints = false
+    oscTopMainView.wantsLayer = true
+    oscTopMainView.layer?.backgroundColor = .clear
+    controlBarTop.addSubview(oscTopMainView)
+
+    let oscTopStackViewLeadingConstraint = oscTopMainView.leadingAnchor.constraint(equalTo: controlBarTop.leadingAnchor, constant: 6)
+    oscTopStackViewLeadingConstraint.identifier = .init("oscTopStackViewLeadingConstraint")
+    oscTopStackViewLeadingConstraint.isActive = true
+    let oscTopStackViewTrailingConstraint = controlBarTop.trailingAnchor.constraint(equalTo: oscTopMainView.trailingAnchor, constant: 6)
+    oscTopStackViewTrailingConstraint.identifier = .init("oscTopStackViewTrailingConstraint")
+    oscTopStackViewTrailingConstraint.isActive = true
+    let oscTopStackViewTopConstraint = oscTopMainView.topAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
+    oscTopStackViewTopConstraint.identifier = .init("oscTopStackViewTopConstraint")
+    oscTopStackViewTopConstraint.isActive = true
+
+    let oscTopStackViewBottomConstraint = controlBarTop.bottomAnchor.constraint(equalTo: oscTopMainView.bottomAnchor, constant: 0)
+    oscTopStackViewBottomConstraint.identifier = .init("oscTopStackViewBottomConstraint")
+    oscTopStackViewBottomConstraint.isActive = true
+
   }
 
   func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {

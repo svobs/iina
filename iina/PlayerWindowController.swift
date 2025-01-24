@@ -504,7 +504,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// OSC at top of window, if configured.
   @IBOutlet weak var controlBarTop: NSView!
   /// Arranges controls inside `controlBarTop`.
-  @IBOutlet weak var oscTopMainView: NSStackView!
+  let oscTopMainView = NSStackView()
 
   /// Floating OSC
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
@@ -587,7 +587,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var mouseActionDisabledViews: [NSView?] {
-    return [leadingSidebarView, trailingSidebarView, titleBarView, oscTopMainView, oscBottomMainView, subPopoverView]
+    return [leadingSidebarView, trailingSidebarView, titleBarView, currentControlBar, subPopoverView]
   }
 
   lazy var pluginOverlayViewContainer: NSView! = {
