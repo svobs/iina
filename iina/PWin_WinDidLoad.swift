@@ -102,6 +102,7 @@ extension PlayerWindowController {
     }
 
       initSeekPreview(in: contentView)
+      initOSCViews()
       initTitleBar()
       initTopBarView(in: contentView)
       initBottomBarView(in: contentView, style: .visualEffectView)
@@ -146,6 +147,18 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow windowDidLoad done")
       player.events.emit(.windowLoaded)
     }
+  }
+
+  private func initOSCViews() {
+    /// `oscSingleLineView`
+    oscSingleLineView.identifier = .init("oscSingleLineView")  // helps with debug logging
+    oscSingleLineView.spacing = 4
+    oscSingleLineView.orientation = .horizontal
+    oscSingleLineView.alignment = .centerY
+    oscSingleLineView.distribution = .gravityAreas
+    oscSingleLineView.translatesAutoresizingMaskIntoConstraints = false
+    oscSingleLineView.wantsLayer = true
+    oscSingleLineView.layer?.backgroundColor = .clear
   }
 
   private func initSeekPreview(in contentView: NSView) {
@@ -227,30 +240,6 @@ extension PlayerWindowController {
   func initTopBarView(in contentView: NSView) {
     // Top bar: other init
     topBarView.clipsToBounds = true
-
-    /// `oscTopMainView`
-    oscTopMainView.identifier = .init("oscTopMainView")  // helps with debug logging
-    oscTopMainView.spacing = 4
-    oscTopMainView.orientation = .horizontal
-    oscTopMainView.alignment = .centerY
-    oscTopMainView.distribution = .gravityAreas
-    oscTopMainView.translatesAutoresizingMaskIntoConstraints = false
-    oscTopMainView.wantsLayer = true
-    oscTopMainView.layer?.backgroundColor = .clear
-    controlBarTop.addSubview(oscTopMainView)
-
-    let oscTopStackViewLeadingConstraint = oscTopMainView.leadingAnchor.constraint(equalTo: controlBarTop.leadingAnchor, constant: 6)
-    oscTopStackViewLeadingConstraint.identifier = .init("oscTopStackViewLeadingConstraint")
-    oscTopStackViewLeadingConstraint.isActive = true
-    let oscTopStackViewTrailingConstraint = controlBarTop.trailingAnchor.constraint(equalTo: oscTopMainView.trailingAnchor, constant: 6)
-    oscTopStackViewTrailingConstraint.identifier = .init("oscTopStackViewTrailingConstraint")
-    oscTopStackViewTrailingConstraint.isActive = true
-    let oscTopStackViewTopConstraint = oscTopMainView.topAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    oscTopStackViewTopConstraint.identifier = .init("oscTopStackViewTopConstraint")
-    oscTopStackViewTopConstraint.isActive = true
-    let oscTopStackViewBottomConstraint = controlBarTop.bottomAnchor.constraint(equalTo: oscTopMainView.bottomAnchor, constant: 0)
-    oscTopStackViewBottomConstraint.identifier = .init("oscTopStackViewBottomConstraint")
-    oscTopStackViewBottomConstraint.isActive = true
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
@@ -349,15 +338,6 @@ extension PlayerWindowController {
     bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
     bottomBarTrailingSpaceConstraint.isActive = true
     bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
-
-    oscBottomMainView.identifier = .init("oscBottomMainView")  // helps with debug logging
-    oscBottomMainView.spacing = 4
-    oscBottomMainView.orientation = .horizontal
-    oscBottomMainView.alignment = .centerY
-    oscBottomMainView.distribution = .gravityAreas
-    oscBottomMainView.translatesAutoresizingMaskIntoConstraints = false
-    oscBottomMainView.wantsLayer = true
-    oscBottomMainView.layer?.backgroundColor = .clear
 
     bottomBarTopBorder.identifier = .init("BottomBar-TopBorder")  // helps with debug logging
     bottomBarTopBorder.boxType = .custom

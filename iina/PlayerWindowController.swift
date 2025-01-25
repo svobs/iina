@@ -500,8 +500,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let titleBarView = ClickThroughView()
   /// OSC at top of window, if configured.
   let controlBarTop = ClickThroughView()
-  /// Arranges controls inside `controlBarTop`.
-  let oscTopMainView = NSStackView()
 
   /// Floating OSC
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
@@ -514,11 +512,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var currentControlBar: NSView?
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
+  /// Used to hold other views in music mode & interactive mode
   var bottomBarView: NSView = NSVisualEffectView()
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
-  /// Arranges controls inside `bottomBarView`.
-  let oscBottomMainView = NSStackView()
+
+
+  /// Arranges controls inside `currentControlBar`.
+  let oscSingleLineView = NSStackView()
 
   let seekPreview = SeekPreview()
 
