@@ -46,9 +46,9 @@ class BarFactory {
   private var rightCachedColor: CGColor
 
   init() {
-    let disableRoundedCorners = !Preference.bool(for: .roundCornersInSliders)
+    let enableRoundedCorners = Preference.bool(for: .roundCornersInSliders)
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
-      guard disableRoundedCorners else { return 0.0 }
+      guard enableRoundedCorners else { return 0.0 }
       return barHeight * 0.5
     }
 
