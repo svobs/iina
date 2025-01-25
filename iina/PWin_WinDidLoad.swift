@@ -274,7 +274,7 @@ extension PlayerWindowController {
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(titleBarView)
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("titleBarBottom_ToControlBarTop_Constraint")
+    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("TitleBar-Bottom_ToControlBarTop_Constraint")
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
@@ -285,7 +285,7 @@ extension PlayerWindowController {
     titleBarHeightConstraint.isActive = true
 
     // Bottom border
-    topBarBottomBorder.identifier = .init("TopBar-BottomBorder")
+    topBarBottomBorder.identifier = .init("TopBarBottomBorder")
     topBarBottomBorder.boxType = .custom
     topBarBottomBorder.titlePosition = .noTitle
     topBarBottomBorder.borderWidth = 0
@@ -294,9 +294,9 @@ extension PlayerWindowController {
     topBarBottomBorder.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(topBarBottomBorder)
     topBarBottomBorder.addConstraintsToFillSuperview(bottom: 0, leading: 0, trailing: 0)
-    let topBarBottomBorderTopConstraint = topBarView.bottomAnchor.constraint(equalTo: topBarBottomBorder.topAnchor, constant: 1.0)
-    topBarBottomBorderTopConstraint.identifier = .init("TopBar-BottomBorder-TopConstraint")
-    topBarBottomBorderTopConstraint.isActive = true
+    let topBarBottomBorder_HeightConstraint = topBarView.bottomAnchor.constraint(equalTo: topBarBottomBorder.topAnchor, constant: 0.5)
+    topBarBottomBorder_HeightConstraint.identifier = .init("TopBarBottomBorder-HeightConstraint")
+    topBarBottomBorder_HeightConstraint.isActive = true
 
   }
 

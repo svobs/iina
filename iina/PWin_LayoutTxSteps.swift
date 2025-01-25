@@ -1509,6 +1509,7 @@ extension PlayerWindowController {
       removeToolBar()
       guard newButtonTypes.count > 0 else { return nil }
       toolbarView = ClickThroughStackView()
+      toolbarView.translatesAutoresizingMaskIntoConstraints = false
 
       log.verbose("[\(transition.name)] Updating OSC toolbarItems to: [\(newButtonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
@@ -1546,8 +1547,8 @@ extension PlayerWindowController {
       // Instead we can get the same effect with a little more work, by controlling the stack view:
       let iconSpacing = newGeo.toolIconSpacing
       toolbarView.spacing = 2 * iconSpacing
-      toolbarView.edgeInsets = .init(top: iconSpacing, left: max(0, iconSpacing - 4),
-                                         bottom: iconSpacing, right: 0)
+      let sideInset = (iconSpacing * 0.5).rounded()
+      toolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset, bottom: iconSpacing, right: sideInset)
       log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
     }
     return toolbarView
