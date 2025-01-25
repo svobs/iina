@@ -85,7 +85,6 @@ class PlayerWindow: NSWindow {
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
     if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
-      let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
       if keyCode == "ESC" || keyCode == "ENTER" {
         cropController.handleKeyDown(mpvKeyCode: keyCode)
         return
@@ -174,8 +173,7 @@ class PlayerWindow: NSWindow {
       log.verbose("KEY EQUIV: \(normalizedKeyCode.quoted)")
       return pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode)
     }
-    let didHandle = super.performKeyEquivalent(with: event)
-    return didHandle
+    return super.performKeyEquivalent(with: event)
   }
 
   private func shouldFavorArrowKeyNavigation(for responder: NSResponder) -> Bool {

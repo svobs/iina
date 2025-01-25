@@ -161,7 +161,10 @@ extension PlayerWindowController {
       }
     case .showCachedRangesInSlider:
       if let newValue = newValue as? Bool, !newValue {
-        player.cachedRanges = []
+        player.info.cachedRanges = []
+        if let osc = currentControlBar, !osc.isHidden {
+          playSlider.needsDisplay = true
+        }
       }
     case .maxVolume:
       if let newValue = newValue as? Int {

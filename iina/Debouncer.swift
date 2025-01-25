@@ -11,9 +11,9 @@ class Debouncer {
   private let delay: TimeInterval
   private let queue: DispatchQueue
 #if DEBUG
-  // Measuring the number of cancels indicates the amount of work saved, so is helpful in quantifying the
+  // Measuring the number of dropped tasks indicates the amount of work saved, so is helpful in quantifying the
   // usefulness of a given debouncer.
-  var cancels: Int = 0
+  var droppedCount: Int = 0
 #endif
 
   init(delay: TimeInterval = 0.0, queue: DispatchQueue = .main) {
@@ -30,7 +30,7 @@ class Debouncer {
     queue.asyncAfter(deadline: .now() + delay) { [self] in
       guard currentTicket == ticketCount else {
 #if DEBUG
-        cancels += 1;
+        droppedCount += 1;
 #endif
         return
       }

@@ -21,6 +21,7 @@ extension BarFactory {
     let fillColor: CGColor
     let pillCornerRadius: CGFloat
 
+    var barMinY: CGFloat { (imgHeight - barHeight) * 0.5 }
     var barMinX: CGFloat { imgPadding }
 
     /// Corner radius will be overridden to `0` if `PK.roundCornersInSliders` is true
@@ -102,8 +103,8 @@ extension BarFactory {
       case .noBorderingPill:
         break
       }
-      let y = (CGFloat(cgc.height) - self.barHeight) * 0.5
-      let segment = CGRect(x: adjMinX, y: y,
+      let barMinY = barMinY
+      let segment = CGRect(x: adjMinX, y: barMinY,
                            width: adjMaxX - adjMinX, height: self.barHeight)
       let path: CGPath
       if self.pillCornerRadius > 0.0 {
@@ -207,6 +208,10 @@ extension BarFactory {
     var imgPadding: CGFloat { currentChapter_Left.imgPadding }
     var imgHeight: CGFloat { imgSize.height }
     var imgWidth: CGFloat { imgSize.width }
+
+    var maxBarHeightNeeded: CGFloat {
+      max(currentChapter_Left.barHeight, currentChapter_Right.barHeight,
+          nonCurrentChapter_Left.barHeight, nonCurrentChapter_Right.barHeight) }
   }
 
   struct VolBarConfScaleSet {

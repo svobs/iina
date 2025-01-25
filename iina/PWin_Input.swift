@@ -46,14 +46,14 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
 
     if let menuItem = keyBinding.menuItem, let action = menuItem.action {
-      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually")
+      log.verbose{"Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually"}
       // Send to nil to allow for greatest search scope
       NSApp.sendAction(action, to: nil, from: menuItem)
       return true
     }
 
     guard let rawAction = keyBinding.rawAction, let action = keyBinding.action else {
-      log.error("Expected key binding to have an mpv action, aborting: \(keyBinding)")
+      log.error{"Expected key binding to have an mpv action, aborting: \(keyBinding)"}
       return false
     }
 
@@ -68,7 +68,7 @@ extension PlayerWindowController {
         executeIINACommand(iinaCommand)
         return true
       } else {
-        log.error("Unrecognized IINA command: \(rawAction.quoted)")
+        log.error{"Unrecognized IINA command: \(rawAction.quoted)"}
         return false
       }
     }
@@ -114,13 +114,13 @@ extension PlayerWindowController {
       }
       let waitResult = dispatchGroup.wait(timeout: .now() + Constants.TimeInterval.keyDownHandlingTimeout)
       if waitResult == .timedOut {
-        log.debug("Command timed out: \(rawAction.quoted)")
+        log.debug{"Command timed out: \(rawAction.quoted)"}
         return false
       }
     }
 
     guard returnValue == 0 else {
-      log.error("Return value \(returnValue) when executing key command \(rawAction)")
+      log.error{"Return value \(returnValue) when executing key command \(rawAction.quoted)"}
       return false
     }
     return true
@@ -243,14 +243,11 @@ extension PlayerWindowController {
     // Else: could be dragging window.
     mouseDownLocationInWindow = event.locationInWindow
     restartHideCursorTimer()
-//
-//    PluginInputManager.handle(
-//      input: PluginInputManager.Input.mouse, event: .mouseDown,
-//      player: player, arguments: mouseEventArgs(event),
-//      defaultHandler: {
-//        self.mouseDragged(with: event)
-//      }
-//    )
+
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.mouse, event: .mouseDown,
+      player: player, arguments: mouseEventArgs(event)
+    )
     // we don't call super here because before adding the plugin system,
     // PlayerWindowController didn't call super at all
   }

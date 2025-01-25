@@ -144,6 +144,9 @@ class PlaybackInfo {
     }
   }
 
+  var isBufferUnderrun = false
+  var cachedRanges: [(Double, Double)] = []
+
   var playlist: [MPVPlaylistItem] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 

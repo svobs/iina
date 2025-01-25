@@ -267,16 +267,16 @@ class BarFactory {
     // - Set up calculations
     let scaleFactor = screen.backingScaleFactor
 
-    let confSet = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
+    let imgConf = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
     let currentHoverX: CGFloat?
     if let currentPreviewTimeSec {
-      currentHoverX = currentPreviewTimeSec / durationSec * confSet.barWidth
+      currentHoverX = currentPreviewTimeSec / durationSec * imgConf.barWidth
     } else {
       currentHoverX = nil
     }
 
-    let currentValuePointX = (confSet.imgPadding + (currentValueRatio * confSet.barWidth)).rounded()
+    let currentValuePointX = (imgConf.imgPadding + (currentValueRatio * imgConf.barWidth)).rounded()
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
@@ -291,34 +291,34 @@ class BarFactory {
       rightClipMinX = currentValuePointX
     }
 
-    let hasLeft = leftClipMaxX - confSet.imgPadding > 0.0
-    let hasRight = rightClipMinX + confSet.imgPadding < confSet.imgWidth
+    let hasLeft = leftClipMaxX - imgConf.imgPadding > 0.0
+    let hasRight = rightClipMinX + imgConf.imgPadding < imgConf.imgWidth
 
     let leftClipRect = CGRect(x: 0, y: 0,
                               width: leftClipMaxX,
-                              height: confSet.imgHeight)
+                              height: imgConf.imgHeight)
 
     let rightClipRect = CGRect(x: rightClipMinX, y: 0,
-                               width: confSet.imgWidth - rightClipMinX,
-                               height: confSet.imgHeight)
+                               width: imgConf.imgWidth - rightClipMinX,
+                               height: imgConf.imgHeight)
 
-    let barImg = CGImage.buildBitmapImage(width: Int(confSet.imgWidth), height: Int(confSet.imgHeight)) { cgc in
+    let barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
 
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
       var segsMaxX: [Double]
       if chapters.count > 0, durationSec > 0 {
-        segsMaxX = chapters[1...].map{ $0.startTime / durationSec * confSet.barWidth }
+        segsMaxX = chapters[1...].map{ $0.startTime / durationSec * imgConf.barWidth }
       } else {
         segsMaxX = []
       }
 
       // Add right end of bar (don't forget to subtract left & right padding from img)
-      let lastSegMaxX = confSet.imgWidth - (confSet.imgPadding * 2)
+      let lastSegMaxX = imgConf.imgWidth - (imgConf.imgPadding * 2)
       segsMaxX.append(lastSegMaxX)
 
       var segIndex = 0
-      var segMinX = confSet.imgPadding
+      var segMinX = imgConf.imgPadding
 
       var leftEdge: BarConf.PillEdgeType = .noBorderingPill
       var rightEdge: BarConf.PillEdgeType = .bordersAnotherPill
@@ -334,9 +334,9 @@ class BarFactory {
           let conf: BarConf
           if let currentHoverX, segsMaxX.count > 1, currentHoverX > segMinX && currentHoverX < segMaxX {
             // Is hovering in chapter
-            conf = confSet.currentChapter_Left
+            conf = imgConf.currentChapter_Left
           } else {
-            conf = confSet.nonCurrentChapter_Left
+            conf = imgConf.nonCurrentChapter_Left
           }
 
           if segIndex == segsMaxX.count - 1 {
@@ -378,9 +378,9 @@ class BarFactory {
 
           let conf: BarConf
           if let currentHoverX, segsMaxX.count > 1, currentHoverX > segMinX && currentHoverX < segMaxX {
-            conf = confSet.currentChapter_Right
+            conf = imgConf.currentChapter_Right
           } else {
-            conf = confSet.nonCurrentChapter_Right
+            conf = imgConf.nonCurrentChapter_Right
           }
 
           if segIndex == segsMaxX.count - 1 {
@@ -403,33 +403,38 @@ class BarFactory {
 
     guard !cachedRanges.isEmpty else { return barImg }
 
-    // Show cached ranges (if enabled)
+    // Show cached ranges (if enabled).
     // Not sure how efficient this is...
 
-    let cacheImg = CGImage.buildBitmapImage(width: Int(confSet.imgWidth), height: Int(confSet.imgHeight)) { cgc in
+    // First build overlay image which colors all the cached regions
+    let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
       if hasSpaceForKnob {
         // Apply clip (pixel whitelist) to avoid drawing over the knob
         cgc.clip(to: [leftClipRect, rightClipRect])
       }
 
+      // First, just color the cached regions as crude rects which are at least as large as barImg…
+      let maxBarHeightNeeded = imgConf.maxBarHeightNeeded
+      let minY: CGFloat = (imgConf.imgHeight - maxBarHeightNeeded) * 0.5
+
       var rectsLeft: [NSRect] = []
       var rectsRight: [NSRect] = []
-      for cachedRange in cachedRanges.sorted(by: { $0.0 < $1.0 }) {
-        let startX: CGFloat = cachedRange.0 / durationSec * confSet.barWidth
-        let endX: CGFloat = cachedRange.1 / durationSec * confSet.barWidth
+      for cachedRange in cachedRanges {
+        let startX: CGFloat = cachedRange.0 / durationSec * imgConf.barWidth
+        let endX: CGFloat = cachedRange.1 / durationSec * imgConf.barWidth
         if startX > leftClipMaxX {
-          rectsRight.append(CGRect(x: startX, y: confSet.imgPadding,
-                                   width: endX - startX, height: confSet.currentChapter_Left.barHeight))
+          rectsRight.append(CGRect(x: startX, y: minY,
+                                   width: endX - startX, height: maxBarHeightNeeded))
         } else if endX > leftClipMaxX {
-          rectsLeft.append(CGRect(x: startX, y: confSet.imgPadding,
-                                  width: leftClipMaxX - startX, height: confSet.currentChapter_Left.barHeight))
+          rectsLeft.append(CGRect(x: startX, y: minY,
+                                  width: leftClipMaxX - startX, height: maxBarHeightNeeded))
 
           let start2ndX = leftClipMaxX
-          rectsRight.append(CGRect(x: start2ndX, y: confSet.imgPadding,
-                                   width: endX - start2ndX, height: confSet.currentChapter_Right.barHeight))
+          rectsRight.append(CGRect(x: start2ndX, y: minY,
+                                   width: endX - start2ndX, height: maxBarHeightNeeded))
         } else {
-          rectsLeft.append(CGRect(x: startX, y: confSet.imgPadding,
-                                  width: endX - startX, height: confSet.currentChapter_Right.barHeight))
+          rectsLeft.append(CGRect(x: startX, y: minY,
+                                  width: endX - startX, height: maxBarHeightNeeded))
         }
       }
 
@@ -438,10 +443,12 @@ class BarFactory {
       cgc.setFillColor(rightCachedColor)
       cgc.fill(rectsRight)
 
+      // Now use barImg as a mask, so that crude rects above are trimmed to match its silhoulette:
       cgc.setBlendMode(.destinationIn)
-      cgc.draw(barImg, in: CGRect(origin: .zero, size: confSet.imgSize))
+      cgc.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
     }
 
+    // Now paste cacheImg into barImg and return the result:
     return CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
   }
 

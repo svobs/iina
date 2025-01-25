@@ -81,9 +81,6 @@ class PlayerCore: NSObject {
   /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
   var openedWindowsSetIndex: Int = 0
 
-  var isBufferUnderrun = false
-  var cachedRanges: [(Double, Double)] = []
-
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
 
@@ -3271,7 +3268,7 @@ class PlayerCore: NSObject {
       log.verbose("syncUITime: not syncing")
       return
     }
-
+    
     let isNetworkStream = info.isNetworkResource
     if isNetworkStream {
       info.playbackDurationSec = mpv.getDouble(MPVProperty.duration)
@@ -3293,6 +3290,7 @@ class PlayerCore: NSObject {
     if isNetworkStream || Preference.bool(for: .showCachedRangesInSlider) {
       updateCacheInfo()
     } else {
+      // info.cachedRanges will be cleared by pref observer
       info.cacheTime = 0
     }
 
@@ -3311,13 +3309,13 @@ class PlayerCore: NSObject {
     info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
     if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
       if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
-        if !isBufferUnderrun {
+        if !info.isBufferUnderrun {
           log.verbose("Dexumer now reports buffer underrun")
-          isBufferUnderrun = true
+          info.isBufferUnderrun = true
         }
-      } else if isBufferUnderrun {
+      } else if info.isBufferUnderrun {
         log.verbose("Dexumer buffer underrun cleared")
-        isBufferUnderrun = false
+        info.isBufferUnderrun = false
       }
       if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
         for seekableRange in seekableRanges {
@@ -3329,9 +3327,19 @@ class PlayerCore: NSObject {
       if let cacheUsed = demuxerCacheState["fw-bytes"] as? Int {
         info.cacheUsed = cacheUsed
       }
-      self.cachedRanges = cachedRanges
+      // Not guaranteed to be sorted. Sort them
+      cachedRanges = cachedRanges.sorted(by: { $0.0 < $1.0 })
+      let oldRanges = info.cachedRanges
+      let rangesDidChange = oldRanges.count != cachedRanges.count || zip(cachedRanges, oldRanges).contains(where: { $0.0 != $1.0 || $0.1 != $1.1 })
+      if rangesDidChange {
+        //    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
+        info.cachedRanges = cachedRanges
+        // Redraw PlaySlider to reflect change:
+        if let osc = windowController.currentControlBar, !osc.isHidden {
+          windowController.playSlider.needsDisplay = true
+        }
+      }
     }
-//    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
     info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
     info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
     info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)

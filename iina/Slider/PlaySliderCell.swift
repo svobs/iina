@@ -49,7 +49,7 @@ class PlaySliderCell: ScrollableSliderCell {
     let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
 
     let chapters = drawChapters ? player.info.chapters : []
-    let cachedRanges = player.cachedRanges
+    let cachedRanges = player.info.cachedRanges
     let durationSec = player.info.playbackDurationSec ?? 0.0
 
     let progressRatio = slider.progressRatio
