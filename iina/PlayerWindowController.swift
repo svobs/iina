@@ -518,8 +518,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let bottomBarTopBorder = NSBox()
 
 
-  /// Arranges controls inside `currentControlBar`.
+  /// Layout options for how to layout controls inside `currentControlBar`.
   let oscSingleLineView = NSStackView()
+  let oscFullSizeSliderView = ClickThroughView()
 
   let seekPreview = SeekPreview()
 

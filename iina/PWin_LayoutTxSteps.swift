@@ -1316,62 +1316,6 @@ extension PlayerWindowController {
     }
   }
 
-  /// After bars are shown or hidden, or their placement changes, this ensures that their shadows appear in the correct places.
-  /// • Outside bars never cast shadows or have shadows cast on them.
-  /// • Inside sidebars cast shadows over inside top bar & inside bottom bar, and over `viewportView`.
-  /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
-  private func updateDepthOrderOfBars(topBar: Preference.PanelPlacement, bottomBar: Preference.PanelPlacement,
-                                      leadingSidebar: Preference.PanelPlacement, trailingSidebar: Preference.PanelPlacement) {
-    guard let window = window, let contentView = window.contentView else { return }
-
-    // If a sidebar is "outsideViewport", need to put it behind the video because:
-    // (1) Don't want sidebar to cast a shadow on the video
-    // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
-    if leadingSidebar == .outsideViewport {
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: viewportView)
-    }
-    if trailingSidebar == .outsideViewport {
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: viewportView)
-    }
-
-    contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
-    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
-
-    if leadingSidebar == .insideViewport {
-      contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
-
-      if bottomBar == .insideViewport {
-        contentView.addSubview(bottomBarView, positioned: .below, relativeTo: leadingSidebarView)
-      }
-    }
-
-    if trailingSidebar == .insideViewport {
-      contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
-
-      if bottomBar == .insideViewport {
-        contentView.addSubview(bottomBarView, positioned: .below, relativeTo: trailingSidebarView)
-      }
-    }
-
-    contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: bottomBarView)
-  }
-
-  /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
-  /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
-  /// the other one, otherwise it will be briefly seen popping out on top of the other one.
-  private func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
-    guard transition.isTogglingVisibilityOfAnySidebar,
-          transition.outputLayout.leadingSidebar.placement == .outsideViewport,
-          transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
-    guard let contentView = window?.contentView else { return }
-
-    if transition.isShowingLeadingSidebar || transition.isHidingLeadingSidebar {
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
-    } else if transition.isShowingTrailingSidebar || transition.isHidingTrailingSidebar {
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
-    }
-  }
-
   // MARK: - Title bar items
 
   func addTitleBarAccessoryViews() {
@@ -1636,6 +1580,62 @@ extension PlayerWindowController {
     videoView.displayActive()
 
     hideSeekPreviewImmediately()
+  }
+
+  /// After bars are shown or hidden, or their placement changes, this ensures that their shadows appear in the correct places.
+  /// • Outside bars never cast shadows or have shadows cast on them.
+  /// • Inside sidebars cast shadows over inside top bar & inside bottom bar, and over `viewportView`.
+  /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
+  private func updateDepthOrderOfBars(topBar: Preference.PanelPlacement, bottomBar: Preference.PanelPlacement,
+                                      leadingSidebar: Preference.PanelPlacement, trailingSidebar: Preference.PanelPlacement) {
+    guard let window = window, let contentView = window.contentView else { return }
+
+    // If a sidebar is "outsideViewport", need to put it behind the video because:
+    // (1) Don't want sidebar to cast a shadow on the video
+    // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
+    if leadingSidebar == .outsideViewport {
+      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: viewportView)
+    }
+    if trailingSidebar == .outsideViewport {
+      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: viewportView)
+    }
+
+    contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
+    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+
+    if leadingSidebar == .insideViewport {
+      contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
+
+      if bottomBar == .insideViewport {
+        contentView.addSubview(bottomBarView, positioned: .below, relativeTo: leadingSidebarView)
+      }
+    }
+
+    if trailingSidebar == .insideViewport {
+      contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
+
+      if bottomBar == .insideViewport {
+        contentView.addSubview(bottomBarView, positioned: .below, relativeTo: trailingSidebarView)
+      }
+    }
+
+    contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: bottomBarView)
+  }
+
+  /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
+  /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
+  /// the other one, otherwise it will be briefly seen popping out on top of the other one.
+  private func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
+    guard transition.isTogglingVisibilityOfAnySidebar,
+          transition.outputLayout.leadingSidebar.placement == .outsideViewport,
+          transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
+    guard let contentView = window?.contentView else { return }
+
+    if transition.isShowingLeadingSidebar || transition.isHidingLeadingSidebar {
+      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
+    } else if transition.isShowingTrailingSidebar || transition.isHidingTrailingSidebar {
+      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
+    }
   }
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {

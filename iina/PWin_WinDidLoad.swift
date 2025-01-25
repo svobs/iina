@@ -149,18 +149,6 @@ extension PlayerWindowController {
     }
   }
 
-  private func initOSCViews() {
-    /// `oscSingleLineView`
-    oscSingleLineView.identifier = .init("oscSingleLineView")  // helps with debug logging
-    oscSingleLineView.spacing = 4
-    oscSingleLineView.orientation = .horizontal
-    oscSingleLineView.alignment = .centerY
-    oscSingleLineView.distribution = .gravityAreas
-    oscSingleLineView.translatesAutoresizingMaskIntoConstraints = false
-    oscSingleLineView.wantsLayer = true
-    oscSingleLineView.layer?.backgroundColor = .clear
-  }
-
   private func initSeekPreview(in contentView: NSView) {
     contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
     contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
@@ -351,29 +339,6 @@ extension PlayerWindowController {
     bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 1).isActive = true
   }
 
-  private func initSpeedLabel() {
-    speedLabel.identifier = .init("speedLabel")  // helps with debug logging
-    speedLabel.translatesAutoresizingMaskIntoConstraints = false
-    speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
-    speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-    speedLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-    speedLabel.setContentHuggingPriority(.required, for: .horizontal)
-    speedLabel.setContentHuggingPriority(.required, for: .vertical)
-    speedLabel.font = NSFont.messageFont(ofSize: 10)
-    speedLabel.textColor = .textColor
-    speedLabel.alphaValue = 0.75
-    speedLabel.isBordered = false
-    speedLabel.drawsBackground = false
-    speedLabel.isBezeled = false
-    speedLabel.isEditable = false
-    speedLabel.isSelectable = false
-    speedLabel.isEnabled = true
-    speedLabel.refusesFirstResponder = true
-    speedLabel.alignment = .center
-
-    speedLabel.nextResponder = playButton
-  }
-
   /// Init `fragPlaybackBtnsView` & its subviews
   private func initPlaybackBtnsView() {
     let oscGeo = currentLayout.controlBarGeo
@@ -488,6 +453,29 @@ extension PlayerWindowController {
     rightArrowBtnVertOffsetConstraint.isActive = true
   }
 
+  private func initSpeedLabel() {
+    speedLabel.identifier = .init("speedLabel")  // helps with debug logging
+    speedLabel.translatesAutoresizingMaskIntoConstraints = false
+    speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
+    speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+    speedLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+    speedLabel.setContentHuggingPriority(.required, for: .horizontal)
+    speedLabel.setContentHuggingPriority(.required, for: .vertical)
+    speedLabel.font = NSFont.messageFont(ofSize: 10)
+    speedLabel.textColor = .textColor
+    speedLabel.alphaValue = 0.75
+    speedLabel.isBordered = false
+    speedLabel.drawsBackground = false
+    speedLabel.isBezeled = false
+    speedLabel.isEditable = false
+    speedLabel.isSelectable = false
+    speedLabel.isEnabled = true
+    speedLabel.refusesFirstResponder = true
+    speedLabel.alignment = .center
+
+    speedLabel.nextResponder = playButton
+  }
+
   private func initPlayPositionViews() {
     // - Configure playSliderAndTimeLabelsView
     playSliderAndTimeLabelsView.translatesAutoresizingMaskIntoConstraints = false
@@ -545,6 +533,24 @@ extension PlayerWindowController {
 
     rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: 4).isActive = true
     rightTimeLabel.trailingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.trailingAnchor).isActive = true
+  }
+
+  private func initOSCViews() {
+    /// `oscSingleLineView`
+    oscSingleLineView.identifier = .init("OSC-SingleLine-View")  // helps with debug logging
+    oscSingleLineView.spacing = 4
+    oscSingleLineView.orientation = .horizontal
+    oscSingleLineView.alignment = .centerY
+    oscSingleLineView.distribution = .gravityAreas
+    oscSingleLineView.translatesAutoresizingMaskIntoConstraints = false
+    oscSingleLineView.wantsLayer = true
+    oscSingleLineView.layer?.backgroundColor = .clear
+
+    /// `oscFullSizeSliderView`
+    oscFullSizeSliderView.identifier = .init("OSC-FullSizeSlider-View")
+    oscFullSizeSliderView.translatesAutoresizingMaskIntoConstraints = false
+    oscFullSizeSliderView.wantsLayer = true
+    oscFullSizeSliderView.layer?.backgroundColor = .clear
   }
 
   private func initVolumeView() {
