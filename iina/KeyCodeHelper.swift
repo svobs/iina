@@ -315,14 +315,12 @@ class KeyCodeHelper {
       }
     } else {
       // Is probably an unprintable char such as KP_ENTER.
-      // Is probably an unprintable char such as KP_ENTER.
       guard let keyName = KeyCodeHelper.keyMap[keyCode] else {
         AppInputConfig.log.warn("Undefined key code: \"\(keyCode)\"")
         return ""
       }
       keyChar = keyName.0
     }
-    /// Modifiers: use the same order as `KeyCodeHelper.modifiersInOrder`
     /// Modifiers: use the same order as `KeyCodeHelper.modifiersInOrder`
     if modifiers.contains(.control) {
       keyString += "\(CTRL_KEY)+"
@@ -349,7 +347,8 @@ class KeyCodeHelper {
   // Finds and returns the end index of the next key in the string
   private static func getNextEndIndex(_ unparsedRemainder: Substring) -> String.Index? {
     if let dashIndex = unparsedRemainder.firstIndex(of: "-"),
-     let indexBeyondDash = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.index(before: unparsedRemainder.endIndex)) { // There is a '-' somewhere, and there is at least 1 char after it
+     let indexBeyondDash = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.index(before: unparsedRemainder.endIndex)) {
+      // There is a '-' somewhere, and there is at least 1 char after it
       if dashIndex == unparsedRemainder.startIndex {
         guard unparsedRemainder[indexBeyondDash] == "-" else {
           return nil

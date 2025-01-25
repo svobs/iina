@@ -80,7 +80,7 @@ class PlayerWindow: NSWindow {
     if !event.isARepeat {
       keyDownCount += 1
     }
-    log.verbose("KEYDOWN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)")
+    log.verbose{"KEYDOWN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)"}
 
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 

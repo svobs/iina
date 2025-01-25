@@ -166,6 +166,8 @@ struct Constants {
     /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue.
     static let minLoopPointTime = 0.000001
 
+    static let keyDownHandlingTimeout = 1.0
+
     /// Time in seconds to wait before regenerating thumbnails.
     /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
     /// This should help cut down on unnecessary requests.

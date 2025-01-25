@@ -23,20 +23,7 @@ extension PlayerWindowController {
             log.verbose("Binding is ignored for key: \(normalizedMpvKey.quoted)")
             return true
           } else {
-            var didSucceed = false
-            let dispatchGroup = DispatchGroup()
-            dispatchGroup.enter()
-
-            player.mpv.queue.async { [self] in
-              didSucceed = handleKeyBinding(keyBinding)
-              dispatchGroup.leave()
-            }
-            let waitResult = dispatchGroup.wait(timeout: .now() + 1.0)
-            if waitResult == .timedOut {
-              log.verbose("KeyDown handling timed out for key: \(normalizedMpvKey.quoted)")
-              return false
-            }
-            return didSucceed
+            return handleKeyBinding(keyBinding)
           }
         }
         return false
@@ -56,14 +43,12 @@ extension PlayerWindowController {
   /// Returns true if handled
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
-    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     if let menuItem = keyBinding.menuItem, let action = menuItem.action {
       log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually")
-      DispatchQueue.main.async {
-        // Send to nil to allow for greatest search scope
-        NSApp.sendAction(action, to: nil, from: menuItem)
-      }
+      // Send to nil to allow for greatest search scope
+      NSApp.sendAction(action, to: nil, from: menuItem)
       return true
     }
 
@@ -75,16 +60,12 @@ extension PlayerWindowController {
     // Some script bindings will draw to the video area. We don't know which will, but
     // if the DisplayLink is not active the updates will not be displayed.
     // So start the DisplayLink temporily if not already running:
-    DispatchQueue.main.async { [self] in
-      forceDraw()
-    }
+    forceDraw()
 
     if keyBinding.isIINACommand {
       // - IINA command
       if let iinaCommand = IINACommand(rawValue: rawAction) {
-        DispatchQueue.main.async { [self] in
-          executeIINACommand(iinaCommand)
-        }
+        executeIINACommand(iinaCommand)
         return true
       } else {
         log.error("Unrecognized IINA command: \(rawAction.quoted)")
@@ -93,7 +74,7 @@ extension PlayerWindowController {
     }
 
     // - mpv command
-    let returnValue: Int32
+    var returnValue: Int32
     // execute the command
     switch action.first! {
 
@@ -117,10 +98,25 @@ extension PlayerWindowController {
 
     case MPVCommand.screenshot.rawValue,
       MPVCommand.screenshotRaw.rawValue:
-      return player.screenshot(fromKeyBinding: keyBinding)
+      player.mpv.queue.async { [self] in
+        player.screenshot(fromKeyBinding: keyBinding)
+      }
+      return true
 
     default:
-      returnValue = player.mpv.command(rawString: rawAction)
+      let dispatchGroup = DispatchGroup()
+      dispatchGroup.enter()
+
+      returnValue = 0
+      player.mpv.queue.async { [self] in
+        returnValue = player.mpv.command(rawString: rawAction)
+        dispatchGroup.leave()
+      }
+      let waitResult = dispatchGroup.wait(timeout: .now() + Constants.TimeInterval.keyDownHandlingTimeout)
+      if waitResult == .timedOut {
+        log.debug("Command timed out: \(rawAction.quoted)")
+        return false
+      }
     }
 
     guard returnValue == 0 else {

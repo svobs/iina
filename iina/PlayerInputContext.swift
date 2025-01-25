@@ -157,12 +157,12 @@ class PlayerInputContext {
         keySequence = "\(prevKey)-\(keySequence)"
       }
 
-      log.verbose("Checking keySeq: \(keySequence.quoted)")
+      log.verbose{"Checking keySeq: \(keySequence.quoted)"}
 
       if let binding = appBindings.resolverDict[keySequence] {
         if keyPressHistory.count > 1 && (binding.origin != .confFile && binding.origin != .libmpv) {
           // Make extra sure we don't resolve plugin bindings here
-          log.error("Sequence \(keySequence.quoted) resolved to a non-mpv binding and will be ignored (source=\(binding.origin))! This indicates a bug which should be fixed")
+          log.error{"Sequence \(keySequence.quoted) resolved to a non-mpv binding and will be ignored (source=\(binding.origin))! This indicates a bug which should be fixed"}
           appBindings.logEnabledBindings()
           return nil
         }
@@ -171,7 +171,7 @@ class PlayerInputContext {
           log.verbose("Ignoring \(keyMapping.normalizedMpvKey.quoted) (from: \(binding.srcSectionName.quoted))")
           hasPartialValidSequence = true
         } else {
-          log.debug("Found matching binding: \(keyMapping.normalizedMpvKey.quoted) → \(keyMapping.actionDescription().quoted) (from: \(binding.srcSectionName.quoted))")
+          log.debug{"Found matching binding: \(keyMapping.normalizedMpvKey.quoted) → \(keyMapping.actionDescription().quoted) (from: \(binding.srcSectionName.quoted))"}
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
           return keyMapping
@@ -181,11 +181,11 @@ class PlayerInputContext {
 
     if hasPartialValidSequence {
       // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
-      log.verbose("Contains partial sequence, ignoring: \(keySequence.quoted)")
+      log.verbose{"Contains partial sequence; ignoring: \(keySequence.quoted)"}
       return KeyMapping(rawKey: keySequence, rawAction: MPVCommand.ignore.rawValue, comment: nil)
     } else {
       // Not even part of a valid sequence = invalid keystroke
-      log.debug("No active binding for keystroke \(lastKeyStroke.quoted)")
+      log.debug{"No active binding for keystroke \(lastKeyStroke.quoted)"}
       appBindings.logEnabledBindings()
       return nil
     }
