@@ -74,6 +74,7 @@ class PlayerWindow: NSWindow {
   // MARK: - Key event handling
 
   override func keyDown(with event: NSEvent) {
+    assert(DispatchQueue.isExecutingIn(.main))
     let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
     if !event.isARepeat {
@@ -100,24 +101,12 @@ class PlayerWindow: NSWindow {
     /// Forward all other key events which the window receives to its controller.
     /// This allows `ESC` & `TAB` key bindings to work, instead of getting swallowed by
     /// MacOS keyboard focus navigation (which PlayerWindow doesn't use).
-    PluginInputManager.handle(
-      input: normalizedKeyCode, event: .keyDown, player: pwc.player,
-      arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = pwc.player.keyBindingContext.matchActiveKeyBinding(endingWith: event) {
-
-          guard !keyBinding.isIgnored else {
-            // if "ignore", just swallow the event. Do not forward; do not beep
-            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
-            return true
-          }
-
-          return pwc.handleKeyBinding(keyBinding)
-        }
-        return false
-      }, defaultHandler: {
-        // invalid key: beep if cmd failed
-        super.keyDown(with: event)
-      })
+    if !pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
+      /// Invalid key: beep if cmd failed
+      /// NOTE: send to PlayerWindowController instead of PlayerWindow!
+      /// Otherwise it may get sent to `performKeyEquivalent` multiple times
+      pwc.keyDown(with: event)
+    }
   }
 
   override func keyUp(with event: NSEvent) {
@@ -140,18 +129,11 @@ class PlayerWindow: NSWindow {
 
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyUp, player: pwc.player,
-      arguments: keyEventArgs(event), defaultHandler: {
+      arguments: pwc.keyEventArgs(event), defaultHandler: {
         // invalid key
         super.keyUp(with: event)
+        return true
       })
-  }
-
-  private func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
-    return [[
-      "x": event.locationInWindow.x,
-      "y": event.locationInWindow.y,
-      "isRepeat": event.isARepeat
-    ] as [String : Any]]
   }
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
@@ -167,7 +149,6 @@ class PlayerWindow: NSWindow {
     /// (although for some reason it is the opposite for `ESC`, `TAB`, `ENTER` or `RETURN`).
     /// Need to add an explicit check here for arrow keys to ensure that they always work when desired.
     if let responder = firstResponder, shouldFavorArrowKeyNavigation(for: responder) {
-
       let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
       let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
 
@@ -188,19 +169,10 @@ class PlayerWindow: NSWindow {
     /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
     /// before the menu.
     if let pwc, !event.modifierFlags.contains(.command) {
-      // FIXME: this doesn't go through PluginInputManager because it doesn't return synchronously. Need to refactor that!
       let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
       let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-      log.verbose("KEYDOWN (via keyEquiv): \(normalizedKeyCode.quoted)")
-      if let keyBinding = pwc.player.keyBindingContext.matchActiveKeyBinding(endingWith: event) {
-        guard !keyBinding.isIgnored else {
-          // if "ignore", just swallow the event. Do not forward; do not beep
-          log.verbose("Binding is ignored for key: \(keyCode.quoted)")
-          return true
-        }
-
-        return pwc.handleKeyBinding(keyBinding)
-      }
+      log.verbose("KEY EQUIV: \(normalizedKeyCode.quoted)")
+      return pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode)
     }
     let didHandle = super.performKeyEquivalent(with: event)
     return didHandle

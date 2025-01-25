@@ -138,17 +138,8 @@ class PlayerInputContext {
    - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
      in a key sequence.
    */
-  func matchActiveKeyBinding(endingWith keyEvent: NSEvent) -> KeyMapping? {
-    assert (keyEvent.type == NSEvent.EventType.keyDown || keyEvent.type == NSEvent.EventType.keyUp, 
-            "Expected a KeyDown or KeyUp event but got: \(keyEvent)")
-
-    let keySequence: String = KeyCodeHelper.mpvKeyCode(from: keyEvent)
-    if keySequence == "" {
-      log.debug("Event could not be translated; ignoring: \(keyEvent)")
-      return nil
-    }
-    let normalizedKeySequence = KeyCodeHelper.normalizeMpv(keySequence)
-    return matchShortestKeySequence(endingWith: normalizedKeySequence)
+  func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String) -> KeyMapping? {
+    return matchShortestKeySequence(endingWith: normalizedMpvKeyCode)
   }
 
   // Try to match key sequences, up to 4 keystrokes. shortest match wins

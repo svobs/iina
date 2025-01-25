@@ -985,7 +985,8 @@ class PlayerCore: NSObject {
   /// `Preference.Key.screenshotIncludeSubtitle` to decide between `subtitles` or `video`.
   @discardableResult
   func screenshot(fromKeyBinding keyBinding: KeyMapping? = nil) -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return false }
 
     /// `screenshot-raw`? (i.e. not `screenshot`)
     var isRaw: Bool = false
@@ -1049,13 +1050,10 @@ class PlayerCore: NSObject {
       commandFlags.append(includeSubtitles ? "subtitles" : "video")
     }
 
-    mpv.queue.async { [self] in
-      guard isActive else { return }
-      if isRaw {
-        mpv.asyncCommand(.screenshotRaw, args: commandFlags, replyUserdata: MPVController.UserData.screenshotRaw)
-      } else {
-        mpv.asyncCommand(.screenshot, args: commandFlags, replyUserdata: MPVController.UserData.screenshot)
-      }
+    if isRaw {
+      mpv.asyncCommand(.screenshotRaw, args: commandFlags, replyUserdata: MPVController.UserData.screenshotRaw)
+    } else {
+      mpv.asyncCommand(.screenshot, args: commandFlags, replyUserdata: MPVController.UserData.screenshot)
     }
     return true
   }

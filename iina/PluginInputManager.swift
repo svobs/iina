@@ -85,7 +85,8 @@ class PluginInputManager: NSObject {
   ///   - arguments: arguments to be passed to user-installed listeners
   ///   - handler: the normal handler for this event in IINA
   ///   - defaultHandler: the fallback handler for this event if it's not handled by the normal handler
-  static func handle(input: String, event: PluginInputManager.Event, player: PlayerCore, arguments: [Any], handler: (() -> Bool)? = nil, defaultHandler: (() -> Void)? = nil) {
+  @discardableResult
+  static func handle(input: String, event: PluginInputManager.Event, player: PlayerCore, arguments: [Any], handler: (() -> Bool)? = nil, defaultHandler: (() -> Bool)? = nil) -> Bool {
     let plugins = player.plugins
     let listeners = plugins.compactMap {
       $0.input.listener(forInput: input, event: event)
@@ -95,7 +96,7 @@ class PluginInputManager: NSObject {
     for listener in listeners.filter({ $0.priority >= .high }) {
       let stopPropagation = listener.call(withArgs: arguments)
       if stopPropagation?.toBool() ?? false {
-        return
+        return false
       }
     }
     
@@ -106,13 +107,14 @@ class PluginInputManager: NSObject {
     for listener in listeners.filter({ $0.priority < .high }) {
       let stopPropagation = listener.call(withArgs: arguments)
       if stopPropagation?.toBool() ?? false {
-        return
+        return false
       }
     }
     
-    if !eventHandled {
-      defaultHandler?()
+    if !eventHandled, let defaultHandler {
+      return defaultHandler()
     }
+    return eventHandled
   }
   
 }

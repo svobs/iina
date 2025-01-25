@@ -14,13 +14,56 @@ extension PlayerWindowController {
 
   // MARK: - Keyboard event handling
 
+  func handleKeyDown(event: NSEvent, normalizedMpvKey: String) -> Bool {
+    let wasHandled = PluginInputManager.handle(
+      input: normalizedMpvKey, event: .keyDown, player: player, arguments: keyEventArgs(event), handler: { [self] in
+        if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
+          if keyBinding.isIgnored {
+            // if "ignore", just swallow the event. Do not forward; do not beep
+            log.verbose("Binding is ignored for key: \(normalizedMpvKey.quoted)")
+            return true
+          } else {
+            var didSucceed = false
+            let dispatchGroup = DispatchGroup()
+            dispatchGroup.enter()
+
+            player.mpv.queue.async { [self] in
+              didSucceed = handleKeyBinding(keyBinding)
+              dispatchGroup.leave()
+            }
+            let waitResult = dispatchGroup.wait(timeout: .now() + 1.0)
+            if waitResult == .timedOut {
+              log.verbose("KeyDown handling timed out for key: \(normalizedMpvKey.quoted)")
+              return false
+            }
+            return didSucceed
+          }
+        }
+        return false
+      })
+
+    return wasHandled
+  }
+
+  func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
+    return [[
+      "x": event.locationInWindow.x,
+      "y": event.locationInWindow.y,
+      "isRepeat": event.isARepeat
+    ] as [String : Any]]
+  }
+
   /// Returns true if handled
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+
     if let menuItem = keyBinding.menuItem, let action = menuItem.action {
       log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually")
-      // Send to nil to allow for greatest search scope
-      NSApp.sendAction(action, to: nil, from: menuItem)
+      DispatchQueue.main.async {
+        // Send to nil to allow for greatest search scope
+        NSApp.sendAction(action, to: nil, from: menuItem)
+      }
       return true
     }
 
@@ -32,12 +75,16 @@ extension PlayerWindowController {
     // Some script bindings will draw to the video area. We don't know which will, but
     // if the DisplayLink is not active the updates will not be displayed.
     // So start the DisplayLink temporily if not already running:
-    forceDraw()
+    DispatchQueue.main.async { [self] in
+      forceDraw()
+    }
 
     if keyBinding.isIINACommand {
       // - IINA command
       if let iinaCommand = IINACommand(rawValue: rawAction) {
-        executeIINACommand(iinaCommand)
+        DispatchQueue.main.async { [self] in
+          executeIINACommand(iinaCommand)
+        }
         return true
       } else {
         log.error("Unrecognized IINA command: \(rawAction.quoted)")
@@ -84,6 +131,8 @@ extension PlayerWindowController {
   }
 
   private func executeIINACommand(_ cmd: IINACommand) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     switch cmd {
     case .openFile:
       AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
@@ -198,14 +247,14 @@ extension PlayerWindowController {
     // Else: could be dragging window.
     mouseDownLocationInWindow = event.locationInWindow
     restartHideCursorTimer()
-
-    PluginInputManager.handle(
-      input: PluginInputManager.Input.mouse, event: .mouseDown,
-      player: player, arguments: mouseEventArgs(event),
-      defaultHandler: {
-        self.mouseDragged(with: event)
-      }
-    )
+//
+//    PluginInputManager.handle(
+//      input: PluginInputManager.Input.mouse, event: .mouseDown,
+//      player: player, arguments: mouseEventArgs(event),
+//      defaultHandler: {
+//        self.mouseDragged(with: event)
+//      }
+//    )
     // we don't call super here because before adding the plugin system,
     // PlayerWindowController didn't call super at all
   }
@@ -325,6 +374,7 @@ extension PlayerWindowController {
           }
           performMouseAction(doubleClickAction)
         }
+        return true
       })
   }
 
@@ -346,6 +396,7 @@ extension PlayerWindowController {
         } else {
           super.otherMouseUp(with: event)
         }
+        return true
       })
   }
 
@@ -384,6 +435,7 @@ extension PlayerWindowController {
       input: PluginInputManager.Input.rightMouse, event: .mouseUp, player: player,
       arguments: mouseEventArgs(event), defaultHandler: {
         self.performMouseAction(Preference.enum(for: .rightClickAction))
+        return true
       })
   }
 

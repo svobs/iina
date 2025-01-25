@@ -122,7 +122,9 @@ extension PlayerWindowController {
   }
 
   @objc func menuSnapshot(_ sender: NSMenuItem) {
-    player.screenshot()
+    player.mpv.queue.async { [self] in
+      player.screenshot()
+    }
   }
 
   @objc func menuABLoop(_ sender: NSMenuItem) {

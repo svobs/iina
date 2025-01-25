@@ -2334,7 +2334,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .subTrack:
       quickSettingView.showSubChooseMenu(forView: sender, showLoadedSubs: true)
     case .screenshot:
-      player.screenshot()
+      player.mpv.queue.async { [self] in
+        player.screenshot()
+      }
     case .plugins:
       showSidebar(forTabGroup: .plugins)
     }
