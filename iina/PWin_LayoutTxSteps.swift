@@ -171,7 +171,7 @@ extension PlayerWindowController {
 
     // Title bar & title bar accessories:
 
-    let needToHideTopBar = (transition.inputLayout.topBarPlacement == .insideViewport && transition.isTopBarPlacementOrStyleChanging) || transition.isTogglingLegacyStyle
+    let needToHideTopBar = transition.isTopBarPlacementOrStyleChanging || transition.isTogglingLegacyStyle
 
     // Hide all title bar items if top bar placement is changing
     if needToHideTopBar || outputLayout.titleIconAndText == .hidden {
@@ -547,6 +547,8 @@ extension PlayerWindowController {
 
     if transition.isTogglingMusicMode {
       playSliderHeightConstraint?.isActive = false
+//      osc_SingleLineView.removeFromSuperview()
+//      osc_MultiLineView.removeFromSuperview()
 
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
@@ -563,12 +565,12 @@ extension PlayerWindowController {
         // move playist view
         let playlistView = playlistView.view
         miniPlayer.playlistWrapperView.addSubview(playlistView)
-        playlistView.addConstraintsToFillSuperview()
+        playlistView.addAllConstraintsToFillSuperview()
 
         // move playback position slider & time labels
         addSubviewsToPlaySliderAndTimeLabelsView()
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
-        playSliderAndTimeLabelsView.addConstraintsToFillSuperview()
+        playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
         playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
         playSliderHeightConstraint?.identifier = .init("PlaySlider-HeightConstraint")
@@ -785,7 +787,7 @@ extension PlayerWindowController {
         cropController.windowController = self
         self.cropSettingsView = cropController
         bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
-        cropController.view.addConstraintsToFillSuperview()
+        cropController.view.addAllConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
         let videoSizeRaw = player.videoGeo.videoSizeRaw
         if let cropController = cropSettingsView {
@@ -914,7 +916,7 @@ extension PlayerWindowController {
 
         addSubviewsToPlaySliderAndTimeLabelsView()
         oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
-        playSliderAndTimeLabelsView.addConstraintsToFillSuperview()
+        playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 
         controlBarFloating.addMarginConstraints()
       }
@@ -1451,7 +1453,6 @@ extension PlayerWindowController {
     let sectionHSpacing = Constants.Distance.oscSectionHSpacing
     let leadingMargin: CGFloat = 8
     let trailingMargin: CGFloat = 8
-    let bottomMargin: CGFloat = Constants.Distance.multiLineOSC_BottomMargin
 
     mainView.removeAllSubviews()
 
@@ -1479,14 +1480,14 @@ extension PlayerWindowController {
 
     mainView.addSubview(leadingStackView)
 
-    leadingStackView.addConstraintsToFillSuperview(bottom: bottomMargin, leading: leadingMargin)
-    leadingStackView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: 0).isActive = true
+    leadingStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin)
+    leadingStackView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -8).isActive = true
 
     if let fragToolbarView {
       mainView.addSubview(fragToolbarView)
 
-      fragToolbarView.addConstraintsToFillSuperview(bottom: bottomMargin, trailing: trailingMargin)
-      fragToolbarView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: 0).isActive = true
+      fragToolbarView.addConstraintsToFillSuperview(bottom: 0, trailing: trailingMargin)
+      fragToolbarView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -8).isActive = true
       fragToolbarView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
     } else {
       mainView.trailingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
@@ -1599,7 +1600,7 @@ extension PlayerWindowController {
 
     if !videoView.subviews.contains(cropController.cropBoxView) {
       videoView.addSubview(cropController.cropBoxView)
-      cropController.cropBoxView.addConstraintsToFillSuperview()
+      cropController.cropBoxView.addAllConstraintsToFillSuperview()
     }
 
     cropController.cropBoxView.actualSize = rawVideoSize

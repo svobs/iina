@@ -332,6 +332,6 @@ struct ControlBarGeometry {
 
   static func canUseMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
     guard position == .bottom else { return false }
-    return barHeight >= Constants.Distance.fullWidthOSC_minBarHeight
+    return barHeight >= Constants.Distance.multiLineOSC_minBarHeight
   }
 }

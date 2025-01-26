@@ -2063,9 +2063,15 @@ extension NSView {
     }
   }
 
+  func addAllConstraintsToFillSuperview() {
+    addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
+  }
+
   func addConstraintsToFillSuperview(top: CGFloat? = nil, bottom: CGFloat? = nil,
                                      leading: CGFloat? = nil, trailing: CGFloat? = nil) {
     guard let superview else { return }
+    assert(!(top == nil && bottom == nil && leading == nil && trailing == nil),
+           "addConstraintsToFillSuperview should never be called with no args! Try addAllConstraintsToFillSuperview instead")
 
     if let top = top {
       let topConstraint = topAnchor.constraint(equalTo: superview.topAnchor, constant: top)

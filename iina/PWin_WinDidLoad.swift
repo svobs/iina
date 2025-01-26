@@ -480,6 +480,7 @@ extension PlayerWindowController {
     playSliderAndTimeLabelsView.userInterfaceLayoutDirection = .leftToRight
     playSliderAndTimeLabelsView.setContentHuggingPriority(.init(249), for: .horizontal)
     playSliderAndTimeLabelsView.setContentCompressionResistancePriority(.init(249), for: .horizontal)
+    playSliderAndTimeLabelsView.widthAnchor.constraint(greaterThanOrEqualToConstant: 150.0).isActive = true
 
     // - Configure subviews
 
@@ -514,13 +515,12 @@ extension PlayerWindowController {
   }
 
   func addSubviewsToPlaySliderAndTimeLabelsView() {
+    playSliderAndTimeLabelsView.removeAllSubviews()
     playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
     playSliderAndTimeLabelsView.addSubview(playSlider)
     playSliderAndTimeLabelsView.addSubview(rightTimeLabel)
 
     // - Add constraints to subviews
-
-    playSliderAndTimeLabelsView.widthAnchor.constraint(greaterThanOrEqualToConstant: 150.0).isActive = true
 
     leftTimeLabel.leadingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.leadingAnchor).isActive = true
     playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: 4).isActive = true

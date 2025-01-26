@@ -157,7 +157,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       }
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
-      plugin.sidebarTabView.addConstraintsToFillSuperview()
+      plugin.sidebarTabView.addAllConstraintsToFillSuperview()
     }
 
     currentPluginID = tabID
