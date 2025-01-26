@@ -226,6 +226,8 @@ extension PlayerWindowController {
     lastMouseDownEventID = event.eventNumber
     log.verbose{"PWin MouseDown @ \(event.locationInWindow)"}
 
+    wasKeyWindowAtMouseDown = lastKeyWindowStatus
+
     if isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
@@ -354,6 +356,11 @@ extension PlayerWindowController {
         // default handler
         if isSingleClick {
           let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
+          if singleClickAction == .hideOSC && !wasKeyWindowAtMouseDown {
+            // Don't hide OSC
+            log.verbose{"Window was not key at mouseDown; skipping mouseAction: \(singleClickAction)"}
+            return false
+          }
           if doubleClickAction == .none {
             performMouseAction(singleClickAction)
           } else {

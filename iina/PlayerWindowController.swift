@@ -182,6 +182,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var lastRightMouseDownEventID: Int = -1
   var lastRightMouseUpEventID: Int = -1
 
+  /// Special state needed to prevent hideOSC from happening on first mouse
+  var wasKeyWindowAtMouseDown = false
+  var lastKeyWindowStatus = false
+
   /// For force touch action
   var isCurrentPressInSecondStage = false
 
@@ -1396,6 +1400,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       guard !isClosing else { return }
 
       let isKey = window.isKeyWindow
+      lastKeyWindowStatus = isKey
       log.verbose{"Window isKey=\(isKey.yesno)"}
       updateColorsForKeyWindowStatus(isKey: isKey)
 
