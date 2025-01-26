@@ -86,13 +86,14 @@ extension PlayerWindowController {
     func showPreview(withThumbnail showThumbnail: Bool, forTime previewTimeSec: Double,
                      posInWindowX: CGFloat, _ player: PlayerCore,
                      _ currentLayout: LayoutState, currentControlBar: NSView,
-                     _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) {
+                     _ currentGeo: PWinGeometry, isRightToLeft: Bool) {
 
       let log = player.log
       let margins = SeekPreview.minThumbMargins
       let timeLabelHeight = timeLabel.fittingSize.height
       let thumbStore = player.info.currentPlayback?.thumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
+      let viewportSize = currentGeo.viewportSize
 
       var showThumbnail = showThumbnail
       var thumbWidth: Double
@@ -119,9 +120,9 @@ extension PlayerWindowController {
       let adjustedMarginTotalHeight = margins.totalHeight * 0.75
 
       /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
-      let availableHeight = viewportSize.height - currentLayout.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelHeight
-      /// `availableWidth`: viewport width, minus extra space
-      let availableWidth = viewportSize.width - margins.totalWidth
+      let availableHeight = viewportSize.height - currentGeo.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelHeight
+      /// `availableWidth`: entire window width, minus extra space
+      let availableWidth = currentGeo.windowFrame.width - margins.totalWidth
       let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
       let oscHeight = currentControlBar.frame.size.height
 
@@ -131,7 +132,7 @@ extension PlayerWindowController {
         // The aspect ratio of some videos is different at display time. May need to resize these videos
         // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
         // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
-        let videoAspectCAR = videoGeo.videoAspectCAR
+        let videoAspectCAR = currentGeo.video.videoAspectCAR
         if thumbAspect != videoAspectCAR {
           thumbHeight = (thumbWidth / videoAspectCAR).rounded()
           /// Recalculate this for later use (will use it and `thumbHeight`, and derive width)
@@ -180,13 +181,13 @@ extension PlayerWindowController {
         case .floating:
           // Need to check available space in viewport above & below OSC
           let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelHeight
-          let availableHeightBelow = max(0, oscOriginInWindowY - currentLayout.insideBottomBarHeight - totalExtraVerticalSpace)
+          let availableHeightBelow = max(0, oscOriginInWindowY - currentGeo.insideBars.bottom - totalExtraVerticalSpace)
           if availableHeightBelow > thumbHeight {
             // Show below by default, if there is space for the desired size
             showAbove = false
           } else {
             // If not enough space to show the full-size thumb below, then show above if it has more space
-            let availableHeightAbove = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalExtraVerticalSpace + currentLayout.insideTopBarHeight))
+            let availableHeightAbove = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalExtraVerticalSpace + currentGeo.insideBars.top))
             showAbove = availableHeightAbove > availableHeightBelow
             if showThumbnail, showAbove, thumbHeight > availableHeightAbove {
               // Scale down thumbnail so it doesn't get clipped by the side of the window
@@ -225,8 +226,9 @@ extension PlayerWindowController {
         timeLabelOriginY = oscOriginInWindowY - (player.windowController.playSlider.customCell.knobHeight * 0.5) - timeLabelHeight
         thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
-      // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
-      let minX = isRightToLeft ? currentLayout.outsideTrailingBarWidth + margins.trailing : currentLayout.outsideLeadingBarWidth + margins.leading
+
+      // Constrain X origin so that it stays entirely inside the window and doesn't spill off the sides
+      let minX = isRightToLeft ? margins.trailing : margins.leading
       let maxX = minX + availableWidth
       let halfThumbWidth = thumbWidth / 2
       let thumbOriginX = min(max(minX, round(posInWindowX - halfThumbWidth)), maxX - thumbWidth)
@@ -256,8 +258,8 @@ extension PlayerWindowController {
           // Apply crop first. Then aspect
           let croppedImage: CGImage
           let rotatedImage = ffThumbnail.image
-          if let normalizedCropRect = videoGeo.cropRectNormalized {
-            if videoGeo.userRotation != 0 {
+          if let normalizedCropRect = currentGeo.video.cropRectNormalized {
+            if currentGeo.video.userRotation != 0 {
               // FIXME: Need to rotate crop box coordinates to match image rotation
               log.warn{"Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead"}
               croppedImage = rotatedImage
@@ -403,8 +405,12 @@ extension PlayerWindowController {
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
     let previewTimeSec = mediaDuration * playbackPositionRatio
 
+    let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
+    let currentGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
+                                                   screenID: winGeoUpdated.screenID,
+                                                   video: geo.video)
     seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
-                            currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
+                            currentControlBar: currentControlBar, currentGeo,
                             isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
     return true
   }
