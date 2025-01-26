@@ -472,7 +472,7 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
   func showSettings(for preset: FilterPreset) {
     currentPreset = preset
     currentBindings.removeAll()
-    scrollContentView.subviews.forEach { $0.removeFromSuperview() }
+    scrollContentView.removeAllSubviews()
     addButton.isEnabled = true
 
     let stackView = NSStackView()

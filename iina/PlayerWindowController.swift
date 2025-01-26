@@ -486,7 +486,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return maxX
   }()
 
-  /** Get the `NSTextField` of widow's title. */
+  /// Get the `NSTextField` of widow's title.
   var titleTextField: NSTextField? {
     return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
   }
@@ -496,7 +496,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var topBarView: NSVisualEffectView!
   /// Bottom border of `topBarView`.
   let topBarBottomBorder = NSBox()
-  /// Reserves space for the title bar components. Does not contain any child views.
+  /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
+  /// windowed mode & topBarPlacement==.insideViewport
   let titleBarView = ClickThroughView()
   /// OSC at top of window, if configured.
   let controlBarTop = ClickThroughView()
@@ -519,8 +520,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
 
   /// Layout options for how to layout controls inside `currentControlBar`.
-  let oscSingleLineView = NSStackView()
-  let oscFullSizeSliderView = ClickThroughView()
+  let osc_SingleLineView = NSStackView()
+  let osc_MultiLineView = ClickThroughView()
 
   let seekPreview = SeekPreview()
 

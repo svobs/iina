@@ -49,9 +49,9 @@ extension PlayerWindowController {
     }
 
     var needsFadeOutOldViews: Bool {
-      return isTogglingLegacyStyle || isTopBarPlacementChanging
+      return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
-      || (inputLayout.bottomBarPlacement == .insideViewport && outputLayout.bottomBarPlacement == .outsideViewport)
+      || (inputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade OUT
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
       || (inputLayout.leadingSidebarToggleButton.isShowable && !outputLayout.leadingSidebarToggleButton.isShowable)
@@ -60,9 +60,9 @@ extension PlayerWindowController {
 
     var needsFadeInNewViews: Bool {
       if isTogglingFullScreen { return false }
-      return isTogglingLegacyStyle || isTopBarPlacementChanging
+      return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
-      || (inputLayout.bottomBarPlacement == .outsideViewport && outputLayout.bottomBarPlacement == .insideViewport)
+      || (outputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade IN
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (outputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
       || (!inputLayout.leadingSidebarToggleButton.isShowable && outputLayout.leadingSidebarToggleButton.isShowable)
@@ -74,7 +74,8 @@ extension PlayerWindowController {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }
-      return isHidingLeadingSidebar || isHidingTrailingSidebar || isTopBarPlacementChanging || isBottomBarPlacementOrStyleChanging
+      return isHidingLeadingSidebar || isHidingTrailingSidebar
+      || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
@@ -84,7 +85,8 @@ extension PlayerWindowController {
     // Always need to execute this step. But may not need to use an animation
     var needsAnimationForOpenFinalPanels: Bool {
       return (inputGeometry.topMarginHeight != outputGeometry.topMarginHeight)
-      || isShowingLeadingSidebar || isShowingTrailingSidebar || isTopBarPlacementChanging || isBottomBarPlacementOrStyleChanging
+      || isShowingLeadingSidebar || isShowingTrailingSidebar
+      || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.topBarHeight != outputLayout.topBarHeight)
@@ -162,16 +164,26 @@ extension PlayerWindowController {
       return isEnteringInteractiveMode || isExitingInteractiveMode
     }
 
-    var isTopBarPlacementChanging: Bool {
+    private var isTopBarPlacementChanging: Bool {
       return inputLayout.topBarPlacement != outputLayout.topBarPlacement
     }
 
-    var isBottomBarPlacementChanging: Bool {
+    private var isOSCStyleChanging: Bool {
+      inputLayout.oscOverlayStyle != outputLayout.oscOverlayStyle || inputLayout.controlBarGeo.canUseMultiLineOSC != outputLayout.controlBarGeo.canUseMultiLineOSC
+    }
+
+    var isTopBarPlacementOrStyleChanging: Bool {
+      // assume that if a style change is happening, it affects active panel
+      return isTopBarPlacementChanging || (outputLayout.hasTopOSC && isOSCStyleChanging)
+    }
+
+    private var isBottomBarPlacementChanging: Bool {
       return inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
     }
 
     var isBottomBarPlacementOrStyleChanging: Bool {
-      return isBottomBarPlacementChanging || inputLayout.oscOverlayStyle != outputLayout.oscOverlayStyle
+      // assume that if a style change is happening, it affects active panel
+      return isBottomBarPlacementChanging || (outputLayout.hasBottomOSC && isOSCStyleChanging)
     }
 
     var isLeadingSidebarPlacementChanging: Bool {
@@ -255,7 +267,7 @@ extension PlayerWindowController {
     }
 
     var isControlBarChanging: Bool {
-      return inputLayout.enableOSC != outputLayout.enableOSC || inputLayout.oscPosition != outputLayout.oscPosition || inputLayout.isMusicMode != outputLayout.isMusicMode
+      return inputLayout.enableOSC != outputLayout.enableOSC || inputLayout.oscPosition != outputLayout.oscPosition || inputLayout.isMusicMode != outputLayout.isMusicMode || isOSCStyleChanging
     }
   }
   

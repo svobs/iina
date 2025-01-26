@@ -69,9 +69,7 @@ extension PlayerWindowController {
     }
 
     func addShadow() {
-      // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
-      // (with no bar gradient or shading).
-      timeLabel.addShadow(blurRadiusConstant: 2.0)
+      timeLabel.addShadow(blurRadiusConstant: Constants.Distance.seekPreviewTimeLabel_ShadowRadiusConstant)
     }
 
     /// This is expected to be called at first layout

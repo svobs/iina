@@ -44,6 +44,7 @@ class CustomTitleBarViewController: NSViewController {
   /// Use `loadView` instead of `viewDidLoad` because controller is not using storyboard
   override func loadView() {
     view = NSView()
+    view.identifier = .init("CustomTitleBarView")
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.Distance.titleBarIconHSpacing
 

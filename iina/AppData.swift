@@ -300,7 +300,11 @@ struct Constants {
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
 
-    static let floatingOSCPlaySliderKnobHeight: CGFloat = 15
+    /// May be overridden
+    static let slider_DefaultKnobHeight: CGFloat = 15
+    static let slider_DefaultKnobWidth: CGFloat = 3
+
+    static let minPlaySliderHeight: CGFloat = 20
 
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 200
@@ -310,10 +314,19 @@ struct Constants {
 
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
+    static let fullWidthOSC_minBarHeight: CGFloat = 40
+
+    static let multiLineOSC_BottomMargin: CGFloat = 8
 
     /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
     /// their images)
     static let titleBarIconHSpacing: CGFloat = 6
+
+    static let oscSectionHSpacing: CGFloat = 4
+
+    // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
+    // (with no bar gradient or shading).
+    static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 2
 
     /**
      `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
@@ -351,7 +364,7 @@ struct Constants {
       // Hide playlist if its height is too small to display at least 3 items:
       static let minPlaylistHeight: CGFloat = 138
 
-      static let playSliderKnobHeight: CGFloat = 12
+      static let playslider_DefaultKnobHeight: CGFloat = 12
     }
   }  /// end `struct Distance`
      ///

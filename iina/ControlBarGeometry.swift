@@ -45,6 +45,9 @@ struct ControlBarGeometry {
   /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
   let barHeight: CGFloat
 
+  /// Needed if using "multiLine" style OSC; otherwise same as `barHeight`
+  let fullIconHeight: CGFloat
+
   let playIconSizeTicks: Int
   let playIconSpacingTicks: Int
   let toolIconSizeTicks: Int
@@ -97,8 +100,11 @@ struct ControlBarGeometry {
 
     let barHeight: CGFloat
     let playIconSize: CGFloat
+    let fullIconHeight: CGFloat
     if mode == .musicMode {
       barHeight = musicModeBarHeight
+      fullIconHeight = barHeight
+      self.playSliderHeight = barHeight
       playIconSize = musicModePlayIconSize
       self.toolIconSize = musicModeToolbarIconSize
       self.toolIconSpacing = musicModeToolbarIconSpacing
@@ -106,6 +112,8 @@ struct ControlBarGeometry {
 
     } else if oscPosition == .floating {
       barHeight = 67  // not really useful here anyway
+      fullIconHeight = barHeight
+      self.playSliderHeight = barHeight
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
       playIconSize = floatingPlayIconSize
@@ -116,17 +124,26 @@ struct ControlBarGeometry {
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
+      if ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
+        let playSliderHeight = Constants.Distance.minPlaySliderHeight
+        self.playSliderHeight = playSliderHeight
+        fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_BottomMargin
+      } else {
+        self.playSliderHeight = barHeight
+        fullIconHeight = barHeight
+      }
+
       let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
-                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSize))
+                                                            fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSize))
       let desiredToolbarIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks,
-                                                                         barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSpacing))
+                                                                         fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSpacing))
       let desiredPlayIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks,
-                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSize))
+                                                            fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSize))
       let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
-                                                                      barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSpacing))
+                                                                      fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSpacing))
 
       // Reduce max button size so they don't touch edges or (if .top) icons above
-      let maxBtnHeight = barHeight - (oscPosition == .top ? 4 : 2)
+      let maxBtnHeight = fullIconHeight - (oscPosition == .top ? 4 : 2)
 
       self.toolIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...maxBtnHeight)
       self.toolIconSpacing = max(0, desiredToolbarIconSpacing)
@@ -135,6 +152,7 @@ struct ControlBarGeometry {
     }
 
     self.barHeight = barHeight
+    self.fullIconHeight = fullIconHeight
     self.playIconSize = playIconSize
     self.position = oscPosition
 
@@ -184,6 +202,10 @@ struct ControlBarGeometry {
     return true
   }
 
+  var canUseMultiLineOSC: Bool { ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
+
+  var playSliderHeight: CGFloat
+
   var volumeIconHeight: CGFloat {
     if position == .floating {
       return floatingVolumeIconSize
@@ -200,7 +222,7 @@ struct ControlBarGeometry {
 
   var speedLabelFontSize: CGFloat {
     let idealSize = playIconSize * 0.25
-    let freeHeight = barHeight - playIconSize
+    let freeHeight = fullIconHeight - playIconSize
     let deficit: CGFloat = max(0.0, idealSize - freeHeight)
     let compromise = idealSize - (0.5 * deficit)
     return compromise.clamped(to: 8...32)
@@ -260,29 +282,29 @@ struct ControlBarGeometry {
   }
 
   /// Prefs UI ticks → CGFloat
-  private static func iconSize(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
+  private static func iconSize(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    let baseHeight = barHeight * iconSizeBaseMultiplier
-    let adjustableHeight = barHeight - baseHeight
+    let baseHeight = fullHeight * iconSizeBaseMultiplier
+    let adjustableHeight = fullHeight - baseHeight
 
     let height = baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
     return height.rounded()
   }
 
   /// Prefs UI ticks → CGFloat
-  private static func playIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
+  private static func playIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    let spacing = barHeight * (((CGFloat(ticks) / maxTicks) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
+    let spacing = fullHeight * (((CGFloat(ticks) / maxTicks) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
     return spacing.rounded()
   }
 
   /// Prefs UI ticks → CGFloat
-  private static func toolIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
+  private static func toolIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    let spacing = barHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
+    let spacing = fullHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
     return spacing.rounded()
   }
 
@@ -306,5 +328,10 @@ struct ControlBarGeometry {
     case .seek:
       return Images.stepForward10
     }
+  }
+
+  static func canUseMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
+    guard position == .bottom else { return false }
+    return barHeight >= Constants.Distance.fullWidthOSC_minBarHeight
   }
 }

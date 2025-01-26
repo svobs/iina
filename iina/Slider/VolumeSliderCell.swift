@@ -22,9 +22,6 @@ class VolumeSliderCell: ScrollableSliderCell {
   override func awakeFromNib() {
     minValue = 0
     maxValue = Double(Preference.integer(for: .maxVolume))
-
-    knobWidth = 3
-    knobHeight = 15
   }
 
   override func barRect(flipped: Bool) -> NSRect {

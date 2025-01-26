@@ -171,7 +171,7 @@ extension PlayerWindowController {
 
     // Title bar & title bar accessories:
 
-    let needToHideTopBar = transition.isTopBarPlacementChanging || transition.isTogglingLegacyStyle
+    let needToHideTopBar = (transition.inputLayout.topBarPlacement == .insideViewport && transition.isTopBarPlacementOrStyleChanging) || transition.isTogglingLegacyStyle
 
     // Hide all title bar items if top bar placement is changing
     if needToHideTopBar || outputLayout.titleIconAndText == .hidden {
@@ -268,7 +268,7 @@ extension PlayerWindowController {
       cropController.cropBoxView.alphaValue = 0
     }
 
-    if transition.isTopBarPlacementChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingVisibilityOfAnySidebar {
+    if transition.isTopBarPlacementOrStyleChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingVisibilityOfAnySidebar {
       hideSeekPreviewImmediately()
     }
   }
@@ -416,7 +416,7 @@ extension PlayerWindowController {
     // Allow for showing/hiding each button individually
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
 
-    if outputLayout.titleBar == .hidden || transition.isTopBarPlacementChanging || transition.isTogglingFullScreen {
+    if outputLayout.titleBar == .hidden || transition.isTopBarPlacementOrStyleChanging || transition.isTogglingFullScreen {
       /// Even if exiting FS, still don't want to show title & buttons until after panel open animation:
       hideBuiltInTitleBarViews(setAlpha: true)
 
@@ -479,7 +479,6 @@ extension PlayerWindowController {
         for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
           view?.removeFromSuperview()
         }
-        removeToolBar()
       }
     }
 
@@ -488,7 +487,7 @@ extension PlayerWindowController {
     }
 
     if !transition.outputLayout.enableOSC {
-      oscSingleLineView.removeFromSuperview()
+      osc_SingleLineView.removeFromSuperview()
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -572,8 +571,9 @@ extension PlayerWindowController {
         playSliderAndTimeLabelsView.addConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
         playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
+        playSliderHeightConstraint?.identifier = .init("PlaySlider-HeightConstraint")
         playSliderHeightConstraint?.isActive = true
-        playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
+        playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playslider_DefaultKnobHeight
 
         // move playback buttons
         if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
@@ -617,53 +617,70 @@ extension PlayerWindowController {
       let oscGeo = outputLayout.controlBarGeo
       log.verbose("[\(transition.name)] Setting up control bar=\(outputLayout.oscPosition) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
 
+      fragToolbarView = rebuildOSCToolbar(transition)
+      playSliderHeightConstraint?.isActive = false
+
       switch outputLayout.oscPosition {
       case .top:
         currentControlBar = controlBarTop
 
-        if !controlBarTop.subviews.contains(oscSingleLineView) {
-          controlBarTop.addSubview(oscSingleLineView, positioned: .below, relativeTo: topBarBottomBorder)
-          // Match leading/trailing spacing of title bar icons above
-          oscSingleLineView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
-                                                          trailing: Constants.Distance.titleBarIconHSpacing)
+
+        let oscContainerView: NSView
+        if oscGeo.canUseMultiLineOSC {
+          oscContainerView = osc_MultiLineView
+          addSubviewsToOSC_MultiLineView(transition)
+        } else {
+          oscContainerView = osc_SingleLineView
+          addSubviewsToOSC_SingleLineView(transition)
         }
 
-        addSubviewsToOSCSingleLineView(transition)
+        if !controlBarTop.subviews.contains(oscContainerView) {
+          controlBarTop.addSubview(oscContainerView, positioned: .below, relativeTo: topBarBottomBorder)
+          // Match leading/trailing spacing of title bar icons above
+          oscContainerView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
+                                                         trailing: Constants.Distance.titleBarIconHSpacing)
+        }
 
       case .bottom:
         currentControlBar = bottomBarView
 
-        if !bottomBarView.subviews.contains(oscSingleLineView) {
-          bottomBarView.addSubview(oscSingleLineView, positioned: .below, relativeTo: bottomBarTopBorder)
-          // Match leading/trailing spacing of title bar icons above
-          oscSingleLineView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
-                                                          trailing: Constants.Distance.titleBarIconHSpacing)
+        let oscContainerView: NSView
+        if oscGeo.canUseMultiLineOSC {
+          oscContainerView = osc_MultiLineView
+          addSubviewsToOSC_MultiLineView(transition)
+        } else {
+          oscContainerView = osc_SingleLineView
+          addSubviewsToOSC_SingleLineView(transition)
         }
 
-        addSubviewsToOSCSingleLineView(transition)
+        if !bottomBarView.subviews.contains(oscContainerView) {
+          bottomBarView.addSubview(oscContainerView, positioned: .below, relativeTo: bottomBarTopBorder)
+          // Match leading/trailing spacing of title bar icons above
+          oscContainerView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
+                                                         trailing: Constants.Distance.titleBarIconHSpacing)
+        }
 
       case .floating:
-        fragToolbarView = rebuildOSCToolbar(transition)
         if let fragToolbarView, !oscFloatingUpperView.views.contains(fragToolbarView) {
           oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
         }
       }
 
-      playSliderHeightConstraint?.isActive = false
-
       let timeLabelFontSize: CGFloat
       switch outputLayout.oscPosition {
       case .top, .bottom:
-        let barHeight = oscGeo.barHeight
-
         // Expand slider bounds to entire bar so it's easier to hover and/or click on it
-        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)
+        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: oscGeo.playSliderHeight)
+        playSliderHeightConstraint?.identifier = .init("PlaySlider-HeightConstraint")
+        if oscGeo.canUseMultiLineOSC {
+          playSliderHeightConstraint?.priority = .init(900)
+        }
         playSliderHeightConstraint?.isActive = true
 
         // Knob height > 24 is not supported
         //        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
-        if barHeight >= 36, #available(macOS 11.0, *) {
+        if oscGeo.barHeight >= 36, #available(macOS 11.0, *) {
           timeLabelFontSize = NSFont.systemFontSize(for: .large)
         } else {
           timeLabelFontSize = NSFont.systemFontSize(for: .regular)
@@ -1407,25 +1424,82 @@ extension PlayerWindowController {
   // MARK: - Controller content layout
 
   /// For "bar"-type OSCs: `bottom` and `top` only - not `floating` or music mode.
-  private func addSubviewsToOSCSingleLineView(_ transition: LayoutTransition) {
-    let oscSingleLineView = oscSingleLineView
-    let isControlBarChanging = transition.isControlBarChanging
-    if isControlBarChanging {
-      oscSingleLineView.addView(fragPlaybackBtnsView, in: .leading)
+  private func addSubviewsToOSC_SingleLineView(_ transition: LayoutTransition) {
+    let mainView = osc_SingleLineView
+
+    if transition.isControlBarChanging {
+      mainView.addView(fragPlaybackBtnsView, in: .leading)
       addSubviewsToPlaySliderAndTimeLabelsView()
-      oscSingleLineView.addView(playSliderAndTimeLabelsView, in: .leading)
-      oscSingleLineView.addView(fragVolumeView, in: .leading)
+      mainView.addView(playSliderAndTimeLabelsView, in: .leading)
+      mainView.addView(fragVolumeView, in: .leading)
 
-      oscSingleLineView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-      oscSingleLineView.setVisibilityPriority(.mustHold, for: playSliderAndTimeLabelsView)
-      oscSingleLineView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+      mainView.setClippingResistancePriority(.defaultLow, for: .horizontal)
+      mainView.setVisibilityPriority(.mustHold, for: playSliderAndTimeLabelsView)
+      mainView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     }
 
-    fragToolbarView = rebuildOSCToolbar(transition)
-    if let fragToolbarView, !oscSingleLineView.views.contains(fragToolbarView) {
-      oscSingleLineView.addView(fragToolbarView, in: .leading)
-      oscSingleLineView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
+    if let fragToolbarView, !mainView.views.contains(fragToolbarView) {
+      mainView.addView(fragToolbarView, in: .leading)
+      mainView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
     }
+  }
+
+  private func addSubviewsToOSC_MultiLineView(_ transition: LayoutTransition) {
+    guard transition.isControlBarChanging else { return }
+
+    let mainView = osc_MultiLineView
+    let sectionHSpacing = Constants.Distance.oscSectionHSpacing
+    let leadingMargin: CGFloat = 8
+    let trailingMargin: CGFloat = 8
+    let bottomMargin: CGFloat = Constants.Distance.multiLineOSC_BottomMargin
+
+    mainView.removeAllSubviews()
+
+    mainView.addSubview(playSlider)
+    playSlider.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
+
+    let leadingStackView = ClickThroughStackView()
+    leadingStackView.identifier = .init("osc_MultiLineView-LeadingStackView")
+    leadingStackView.orientation = .horizontal
+    leadingStackView.alignment = .centerY
+    leadingStackView.detachesHiddenViews = true
+    leadingStackView.spacing = sectionHSpacing
+    leadingStackView.translatesAutoresizingMaskIntoConstraints = false
+
+    leadingStackView.setHuggingPriority(.init(500), for: .vertical)
+    leadingStackView.setHuggingPriority(.init(500), for: .horizontal)
+
+    leadingStackView.addView(fragPlaybackBtnsView, in: .leading)
+    leadingStackView.addView(leftTimeLabel, in: .leading)
+    leadingStackView.addView(rightTimeLabel, in: .leading)
+    leadingStackView.addView(fragVolumeView, in: .leading)
+    leadingStackView.setVisibilityPriority(.mustHold, for: leftTimeLabel)
+    leadingStackView.setVisibilityPriority(.mustHold, for: rightTimeLabel)
+    leadingStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+
+    mainView.addSubview(leadingStackView)
+
+    leadingStackView.addConstraintsToFillSuperview(bottom: bottomMargin, leading: leadingMargin)
+    leadingStackView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: 0).isActive = true
+
+    if let fragToolbarView {
+      mainView.addSubview(fragToolbarView)
+
+      fragToolbarView.addConstraintsToFillSuperview(bottom: bottomMargin, trailing: trailingMargin)
+      fragToolbarView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: 0).isActive = true
+      fragToolbarView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
+    } else {
+      mainView.trailingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
+    }
+
+//#if DEBUG
+//    playSlider.wantsLayer = true
+//    playSlider.layer?.backgroundColor = NSColor.blue.cgColor
+//    leadingStackView.wantsLayer = true
+//    leadingStackView.layer?.backgroundColor = NSColor.red.cgColor
+//    fragToolbarView?.wantsLayer = true
+//    fragToolbarView?.layer?.backgroundColor = NSColor.green.cgColor
+//#endif
   }
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
@@ -1459,7 +1533,7 @@ extension PlayerWindowController {
     let isControlBarChanging = transition.isControlBarChanging
     let toolbarView: ClickThroughStackView
     if isControlBarChanging || !oldGeo.toolbarItemsAreSame(as: newGeo) {
-      removeToolBar()
+      removeOSCToolBar()
       guard newButtonTypes.count > 0 else { return nil }
       toolbarView = ClickThroughStackView()
       toolbarView.translatesAutoresizingMaskIntoConstraints = false
@@ -1508,7 +1582,7 @@ extension PlayerWindowController {
   }
 
   // Looks like in some cases, the toolbar doesn't disappear unless all its buttons are also removed
-  private func removeToolBar() {
+  private func removeOSCToolBar() {
     guard let toolBarStackView = fragToolbarView else { return }
 
     toolBarStackView.views.forEach { toolBarStackView.removeView($0) }

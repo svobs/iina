@@ -344,7 +344,7 @@ class PreferenceWindowController: IINAWindowController {
     if index != tableView.selectedRow {
       tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
     }
-    prefSectionsStackView.subviews.forEach { $0.removeFromSuperview() }
+    prefSectionsStackView.removeAllSubviews()
     guard let vc = viewControllers[at: index] else { return nil }
     prefSectionsStackView.addSubview(vc.view)
     Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": vc.view])

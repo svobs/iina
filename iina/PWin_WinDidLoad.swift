@@ -231,25 +231,27 @@ extension PlayerWindowController {
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
+    controlBarTop.identifier = .init("ControlBarTopView")
     topBarView.addSubview(controlBarTop)
     let controlBarTop_LeadingConstraint = controlBarTop.leadingAnchor.constraint(equalTo: topBarView.leadingAnchor, constant: 0)
-    controlBarTop_LeadingConstraint.identifier = .init("controlBarTop_LeadingConstraint")
+    controlBarTop_LeadingConstraint.identifier = .init("ControlBarTop_LeadingConstraint")
     controlBarTop_LeadingConstraint.isActive = true
     let controlBarTop_TrailingConstraint = topBarView.trailingAnchor.constraint(equalTo: controlBarTop.trailingAnchor, constant: 0)
-    controlBarTop_TrailingConstraint.identifier = .init("controlBarTop_TrailingConstraint")
+    controlBarTop_TrailingConstraint.identifier = .init("ControlBarTop_TrailingConstraint")
     controlBarTop_TrailingConstraint.isActive = true
     let controlBarTop_BottomConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.bottomAnchor, constant: 0)
-    controlBarTop_BottomConstraint.identifier = .init("controlBarTop_BottomConstraint")
+    controlBarTop_BottomConstraint.identifier = .init("ControlBarTop_BottomConstraint")
     controlBarTop_BottomConstraint.isActive = true
 
     topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    topOSCHeightConstraint.identifier = .init("topOSCHeightConstraint")
+    topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
     topOSCHeightConstraint.priority = .init(900)
     topOSCHeightConstraint.isActive = true
 
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(titleBarView)
+    titleBarView.identifier = .init("TitleBarView")
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     titleBarBottom_ToControlBarTop_Constraint.identifier = .init("TitleBar-Bottom_ToControlBarTop_Constraint")
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
@@ -257,7 +259,7 @@ extension PlayerWindowController {
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
     titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topBarView.topAnchor, constant: 20)
-    titleBarHeightConstraint.identifier = .init("titleBarHeightConstraint")
+    titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
     titleBarHeightConstraint.priority = .init(900)
     titleBarHeightConstraint.isActive = true
 
@@ -303,9 +305,6 @@ extension PlayerWindowController {
       bottomBarView.blendingMode = .withinWindow
       bottomBarView.material = .sidebar
       bottomBarView.state = .active
-    } else {
-      bottomBarView.wantsLayer = true
-      bottomBarView.layer?.backgroundColor = .clear
     }
     bottomBarView.identifier = .init("BottomBarView")  // helps with debug logging
     bottomBarView.isHidden = true
@@ -364,7 +363,6 @@ extension PlayerWindowController {
     playbackBtnsVStackView.orientation = .vertical
     playbackBtnsVStackView.alignment = .centerX
     playbackBtnsVStackView.detachesHiddenViews = true
-    playbackBtnsVStackView.layer?.backgroundColor = .clear
     playbackBtnsVStackView.spacing = 0
     playbackBtnsVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     playbackBtnsVStackView.addView(speedLabel, in: .center)
@@ -378,7 +376,7 @@ extension PlayerWindowController {
     leftArrowButton.image = oscGeo.leftArrowImage
     leftArrowButton.target = self
     leftArrowButton.action = #selector(leftArrowButtonAction(_:))
-    leftArrowButton.identifier = .init("leftArrowButton")
+    leftArrowButton.identifier = .init("LeftArrowButton")
     leftArrowButton.refusesFirstResponder = true
     leftArrowButton.enableAcceleration = enableAcceleration
     leftArrowButton.bounceOnClick = true
@@ -387,7 +385,7 @@ extension PlayerWindowController {
     rightArrowButton.image = oscGeo.rightArrowImage
     rightArrowButton.target = self
     rightArrowButton.action = #selector(rightArrowButtonAction(_:))
-    rightArrowButton.identifier = .init("rightArrowButton")
+    rightArrowButton.identifier = .init("RightArrowButton")
     rightArrowButton.refusesFirstResponder = true
     rightArrowButton.enableAcceleration = enableAcceleration
     rightArrowButton.bounceOnClick = true
@@ -405,11 +403,11 @@ extension PlayerWindowController {
     // Try to make sure the buttons' bounding boxes reach the full height, for activation
     // (their images will be limited by the width constraint & will stop scaling before this)
     let leftArrowHeightConstraint = leftArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
-    leftArrowHeightConstraint.identifier = .init("leftArrowHeightConstraint")
+    leftArrowHeightConstraint.identifier = .init("leftArrow-HeightConstraint")
     leftArrowHeightConstraint.priority = .defaultHigh
     leftArrowHeightConstraint.isActive = true
     let rightArrowHeightConstraint = rightArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
-    rightArrowHeightConstraint.identifier = .init("rightArrowHeightConstraint")
+    rightArrowHeightConstraint.identifier = .init("rightArrow-HeightConstraint")
     rightArrowHeightConstraint.priority = .defaultHigh
     rightArrowHeightConstraint.isActive = true
 
@@ -425,16 +423,16 @@ extension PlayerWindowController {
     speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor).isActive = true
 
     fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
-    fragPlaybackBtnsWidthConstraint.identifier = .init("fragPlaybackBtnsWidthConstraint")
+    fragPlaybackBtnsWidthConstraint.identifier = .init("fragPlaybackBtns-WidthConstraint")
     fragPlaybackBtnsWidthConstraint.isActive = true
 
     leftArrowBtnHorizOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
                                                                                  constant: oscGeo.leftArrowOffsetX)
-    leftArrowBtnHorizOffsetConstraint.identifier = .init("leftArrowBtnHorizOffsetConstraint")
+    leftArrowBtnHorizOffsetConstraint.identifier = .init("leftArrowBtn-HorizOffsetConstraint")
     leftArrowBtnHorizOffsetConstraint.isActive = true
 
     arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconWidth)
-    arrowBtnWidthConstraint.identifier = .init("arrowBtnWidthConstraint")
+    arrowBtnWidthConstraint.identifier = .init("arrowBtn-WidthConstraint")
     arrowBtnWidthConstraint.isActive = true
 
     rightArrowBtnHorizOffsetConstraint = rightArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
@@ -536,21 +534,21 @@ extension PlayerWindowController {
   }
 
   private func initOSCViews() {
-    /// `oscSingleLineView`
-    oscSingleLineView.identifier = .init("OSC-SingleLine-View")  // helps with debug logging
-    oscSingleLineView.spacing = 4
-    oscSingleLineView.orientation = .horizontal
-    oscSingleLineView.alignment = .centerY
-    oscSingleLineView.distribution = .gravityAreas
-    oscSingleLineView.translatesAutoresizingMaskIntoConstraints = false
-    oscSingleLineView.wantsLayer = true
-    oscSingleLineView.layer?.backgroundColor = .clear
+    /// `osc_SingleLineView`
+    osc_SingleLineView.identifier = .init("OSC-SingleLine-View")
+    osc_SingleLineView.spacing = Constants.Distance.oscSectionHSpacing
+    osc_SingleLineView.orientation = .horizontal
+    osc_SingleLineView.alignment = .centerY
+    osc_SingleLineView.distribution = .gravityAreas
+    osc_SingleLineView.translatesAutoresizingMaskIntoConstraints = false
+    osc_SingleLineView.wantsLayer = true
+    osc_SingleLineView.layer?.backgroundColor = .clear
 
-    /// `oscFullSizeSliderView`
-    oscFullSizeSliderView.identifier = .init("OSC-FullSizeSlider-View")
-    oscFullSizeSliderView.translatesAutoresizingMaskIntoConstraints = false
-    oscFullSizeSliderView.wantsLayer = true
-    oscFullSizeSliderView.layer?.backgroundColor = .clear
+    /// `osc_MultiLineView`
+    osc_MultiLineView.identifier = .init("OSC-FullSizeSlider-View")
+    osc_MultiLineView.translatesAutoresizingMaskIntoConstraints = false
+    osc_MultiLineView.wantsLayer = true
+    osc_MultiLineView.layer?.backgroundColor = .clear
   }
 
   private func initVolumeView() {
@@ -583,11 +581,11 @@ extension PlayerWindowController {
     // Volume slider
     fragVolumeView.addSubview(volumeSlider)
     volumeSlider.cell = VolumeSliderCell()
-    volumeSlider.identifier = .init("volumeSlider")
+    volumeSlider.identifier = .init("VolumeSlider")
     volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
     let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
-    volumeSliderWidthConstraint.identifier = .init("volumeSliderWidthConstraint")
+    volumeSliderWidthConstraint.identifier = .init("VolumeSlider-WidthConstraint")
     volumeSliderWidthConstraint.isActive = true
     volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true
     volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: 4).isActive = true
@@ -597,7 +595,7 @@ extension PlayerWindowController {
   }
 
   private func initAlbumArtView() {
-    defaultAlbumArtView.identifier = .init("defaultAlbumArtView")
+    defaultAlbumArtView.identifier = .init("DefaultAlbumArtView")
     defaultAlbumArtView.wantsLayer = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
     defaultAlbumArtView.isHidden = true

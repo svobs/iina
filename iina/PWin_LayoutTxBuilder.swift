@@ -405,7 +405,7 @@ extension PlayerWindowController {
     // TOP
     let insideTopBarHeight: CGFloat
     let outsideTopBarHeight: CGFloat
-    if !transition.isWindowInitialLayout && transition.isTopBarPlacementChanging {
+    if !transition.isWindowInitialLayout && transition.isTopBarPlacementOrStyleChanging {
       insideTopBarHeight = 0  // close completely. will animate reopening if needed later
       outsideTopBarHeight = 0
     } else if transition.outputLayout.topBarHeight < transition.inputLayout.topBarHeight {

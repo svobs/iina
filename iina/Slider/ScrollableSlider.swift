@@ -148,8 +148,8 @@ class ScrollableSliderCell: NSSliderCell {
     return knobWidth
   }
 
-  var knobWidth: CGFloat = 3
-  var knobHeight: CGFloat = 15
+  var knobWidth: CGFloat = Constants.Distance.slider_DefaultKnobWidth
+  var knobHeight: CGFloat = Constants.Distance.slider_DefaultKnobHeight
 
   var currentKnobType: KnobFactory.KnobType {
     isHighlighted ? .mainKnobSelected : .mainKnob

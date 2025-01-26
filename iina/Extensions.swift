@@ -2057,48 +2057,31 @@ extension NSView {
   }
 #endif
 
-  func addConstraintsToFillSuperview(v: Bool = true, h: Bool = true, priority: NSLayoutConstraint.Priority = .required) {
-    guard let superview else { return }
-
-    if h {
-      let leadingConstraint = leadingAnchor.constraint(equalTo: superview.leadingAnchor)
-      leadingConstraint.priority = priority
-      leadingConstraint.isActive = true
-      let trailingConstraint = trailingAnchor.constraint(equalTo: superview.trailingAnchor)
-      trailingConstraint.priority = priority
-      trailingConstraint.isActive = true
-    }
-    if v {
-      let topConstraint = topAnchor.constraint(equalTo: superview.topAnchor)
-      topConstraint.priority = priority
-      topConstraint.isActive = true
-      let bottomConstraint = bottomAnchor.constraint(equalTo: superview.bottomAnchor)
-      bottomConstraint.priority = priority
-      bottomConstraint.isActive = true
+  func removeAllSubviews() {
+    for subview in subviews {
+      subview.removeFromSuperview()
     }
   }
 
-  func addConstraintsToFillSuperview(top: CGFloat? = nil, bottom: CGFloat? = nil, leading: CGFloat? = nil, trailing: CGFloat? = nil) {
+  func addConstraintsToFillSuperview(top: CGFloat? = nil, bottom: CGFloat? = nil,
+                                     leading: CGFloat? = nil, trailing: CGFloat? = nil) {
     guard let superview else { return }
 
     if let top = top {
       let topConstraint = topAnchor.constraint(equalTo: superview.topAnchor, constant: top)
-//      topConstraint.priority = priority
       topConstraint.isActive = true
     }
     if let leading = leading {
       let leadingConstraint = leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: leading)
-//      leadingConstraint.priority = priority
       leadingConstraint.isActive = true
     }
     if let trailing = trailing {
       let trailingConstraint = superview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: trailing)
-//      trailingConstraint.priority = priority
       trailingConstraint.isActive = true
     }
     if let bottom = bottom {
-      let bottomConstraint = superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: bottom)
-//      bottomConstraint.priority = priority
+      // Y origin is at bottom, but (+) offset goes UP from superview bottom
+      let bottomConstraint = bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: bottom)
       bottomConstraint.isActive = true
     }
   }
