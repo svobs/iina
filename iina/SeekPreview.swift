@@ -230,13 +230,15 @@ extension PlayerWindowController {
       // Constrain X origin so that it stays entirely inside the window and doesn't spill off the sides
       let minX = isRightToLeft ? margins.trailing : margins.leading
       let maxX = minX + availableWidth
-      let halfThumbWidth = thumbWidth / 2
-      let thumbOriginX = min(max(minX, round(posInWindowX - halfThumbWidth)), maxX - thumbWidth)
-      // Keep timeLabel centered with thumbnail center. If thumb is not visible, halfThumbWidth will be 0.
-      let timeLabelCenterX = round(thumbOriginX + halfThumbWidth)
 
+      let thumbWidth_Halved = thumbWidth / 2
+      let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
       let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
 
+      // Keep timeLabel centered with seek time location, which should usually match center of thumbnailPeekView.
+      // But keep text fully inside window.
+      let timeLabelWidth_Halved = timeLabel.attributedStringValue.size().width * 0.5
+      let timeLabelCenterX = round(posInWindowX).clamped(to: (minX + timeLabelWidth_Halved)...(maxX - timeLabelWidth_Halved))
       log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
       timeLabelHorizontalCenterConstraint.constant = timeLabelCenterX
       timeLabelVerticalSpaceConstraint.constant = timeLabelOriginY
