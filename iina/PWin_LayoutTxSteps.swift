@@ -306,12 +306,12 @@ extension PlayerWindowController {
         fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
       }
 
-      if leftArrowBtnHorizOffsetConstraint.constant > oscGeo.leftArrowOffsetX {
-        leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
+      if leftArrowBtn_CenterXOffsetConstraint.constant > oscGeo.leftArrowCenterXOffset {
+        leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
       }
 
-      if rightArrowBtnHorizOffsetConstraint.constant > oscGeo.rightArrowOffsetX {
-        rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
+      if rightArrowBtn_CenterXOffsetConstraint.constant > oscGeo.rightArrowCenterXOffset {
+        rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
       }
     }
 
@@ -864,8 +864,8 @@ extension PlayerWindowController {
       arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
       playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
       fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
-      leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
-      rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
+      leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
+      rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
     }
 
 
@@ -1435,8 +1435,8 @@ extension PlayerWindowController {
 
     let mainView = osc_MultiLineView
     let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
-    let leadingMargin: CGFloat = 0
-    let trailingMargin: CGFloat = 0
+    let leadingMargin: CGFloat = 4
+    let trailingMargin: CGFloat = 4
     let offsetBetweenLines: CGFloat = -8.0  // negative == overlap
 
     mainView.removeAllSubviews()
@@ -1445,7 +1445,7 @@ extension PlayerWindowController {
     playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
 
     let leadingStackView = ClickThroughStackView()
-    leadingStackView.identifier = .init("osc_MultiLineView-LeadingStackView")
+    leadingStackView.identifier = .init("OSC_MultiLineView-LeadingStackView")
     leadingStackView.orientation = .horizontal
     leadingStackView.alignment = .centerY
     leadingStackView.detachesHiddenViews = true
@@ -1474,14 +1474,6 @@ extension PlayerWindowController {
       mainView.trailingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
     }
 
-//#if DEBUG
-//    playSlider.wantsLayer = true
-//    playSlider.layer?.backgroundColor = NSColor.blue.cgColor
-//    leadingStackView.wantsLayer = true
-//    leadingStackView.layer?.backgroundColor = NSColor.red.cgColor
-//    fragToolbarView?.wantsLayer = true
-//    fragToolbarView?.layer?.backgroundColor = NSColor.green.cgColor
-//#endif
   }
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
@@ -1489,8 +1481,8 @@ extension PlayerWindowController {
     rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage, effect: .offUp)
     arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
     fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
-    leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
-    rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
+    leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
+    rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
   }
 
   func addSpeedLabelToControlBar(_ transition: LayoutTransition) {

@@ -30,7 +30,7 @@ fileprivate let musicModeToolbarIconSpacing: CGFloat = 12
 
 
 fileprivate let stepIconScaleFactor: CGFloat = 0.85
-fileprivate let systemArrowSymbolScaleFactor: CGFloat = 0.65
+fileprivate let systemArrowSymbolScaleFactor: CGFloat = 0.85
 
 // TODO: reimplement OSC title bar feature
 
@@ -81,6 +81,7 @@ struct ControlBarGeometry {
        toolbarItems: [Preference.ToolBarButton]? = nil,
        arrowButtonAction: Preference.ArrowButtonAction? = nil,
        barHeight desiredBarHeight: CGFloat? = nil,
+       forceSingleLine: Bool = false,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
@@ -125,7 +126,7 @@ struct ControlBarGeometry {
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
       let maxBtnHeight: CGFloat
-      if ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
+      if !forceSingleLine && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
         let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
         fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_BottomMargin
@@ -231,23 +232,21 @@ struct ControlBarGeometry {
     return compromise.clamped(to: 8...32)
   }
 
-  /// Width of left, right, play btns + their spacing
+  /// Width of left, right, play btns + their spacing.
+  /// Items will have `playIconSpacing` between each item, and `playIconSpacing * 0.5` for each of left margin & right margin.
   var totalPlayControlsWidth: CGFloat {
     let itemSizes = self.arrowButtonAction == .unused ? [playIconSize] : [arrowIconWidth, playIconSize, arrowIconWidth]
     let totalIconSpace = itemSizes.reduce(0, +)
-    if itemSizes.count <= 1 {
-      return totalIconSpace + playIconSpacing
-    }
-    let totalInterIconSpace = playIconSpacing * CGFloat(itemSizes.count + 1)
+    let totalInterIconSpace = playIconSpacing * CGFloat(itemSizes.count)
     return totalIconSpace + totalInterIconSpace
   }
 
-  var leftArrowOffsetX: CGFloat {
-    -rightArrowOffsetX
+  var leftArrowCenterXOffset: CGFloat {
+    -rightArrowCenterXOffset
   }
 
-  var rightArrowOffsetX: CGFloat {
-    (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing
+  var rightArrowCenterXOffset: CGFloat {
+     (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing
   }
   
   var totalToolbarWidth: CGFloat {
@@ -335,6 +334,6 @@ struct ControlBarGeometry {
 
   static func canUseMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
     guard position == .bottom else { return false }
-    return barHeight >= Constants.Distance.multiLineOSC_minBarHeight
+    return barHeight >= Constants.Distance.multiLineOSC_minBarHeightThreshold
   }
 }

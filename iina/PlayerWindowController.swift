@@ -429,8 +429,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Size of each side of square buttons `leftArrowButton` & `rightArrowButton`
   var arrowBtnWidthConstraint: NSLayoutConstraint!
 
-  var leftArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
-  var rightArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
+  var leftArrowBtn_CenterXOffsetConstraint: NSLayoutConstraint!
+  var rightArrowBtn_CenterXOffsetConstraint: NSLayoutConstraint!
 
   var playSliderHeightConstraint: NSLayoutConstraint!
 

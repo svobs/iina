@@ -426,19 +426,19 @@ extension PlayerWindowController {
     fragPlaybackBtnsWidthConstraint.identifier = .init("fragPlaybackBtns-WidthConstraint")
     fragPlaybackBtnsWidthConstraint.isActive = true
 
-    leftArrowBtnHorizOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
-                                                                                 constant: oscGeo.leftArrowOffsetX)
-    leftArrowBtnHorizOffsetConstraint.identifier = .init("leftArrowBtn-HorizOffsetConstraint")
-    leftArrowBtnHorizOffsetConstraint.isActive = true
+    leftArrowBtn_CenterXOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
+                                                                                    constant: oscGeo.leftArrowCenterXOffset)
+    leftArrowBtn_CenterXOffsetConstraint.identifier = .init("leftArrowBtn-HorizOffsetConstraint")
+    leftArrowBtn_CenterXOffsetConstraint.isActive = true
 
     arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconWidth)
     arrowBtnWidthConstraint.identifier = .init("arrowBtn-WidthConstraint")
     arrowBtnWidthConstraint.isActive = true
 
-    rightArrowBtnHorizOffsetConstraint = rightArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
-                                                                                   constant: oscGeo.rightArrowOffsetX)
-    rightArrowBtnHorizOffsetConstraint.identifier = .init("rightArrowBtnHorizOffsetConstraint")
-    rightArrowBtnHorizOffsetConstraint.isActive = true
+    rightArrowBtn_CenterXOffsetConstraint = rightArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
+                                                                                      constant: oscGeo.rightArrowCenterXOffset)
+    rightArrowBtn_CenterXOffsetConstraint.identifier = .init("rightArrowBtn_CenterXOffsetConstraint")
+    rightArrowBtn_CenterXOffsetConstraint.isActive = true
 
     // Left & Right arrow buttons are always same size
     let arrowBtnsEqualWidthConstraint = leftArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.widthAnchor, multiplier: 1)

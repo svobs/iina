@@ -315,7 +315,8 @@ struct Constants {
 
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
-    static let multiLineOSC_minBarHeight: CGFloat = 60
+    /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
+    static let multiLineOSC_minBarHeightThreshold: CGFloat = 40
 
     static let multiLineOSC_BottomMargin: CGFloat = 8
 

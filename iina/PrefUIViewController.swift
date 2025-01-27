@@ -16,13 +16,11 @@ fileprivate let SideLeftTag = 0
 fileprivate let SideRightTag = 1
 fileprivate let SideTopTag = 0
 fileprivate let SideBottomTag = 1
-fileprivate let maxToolbarPreviewBarHeight: CGFloat = 50
-fileprivate let maxToolbarIconSize: CGFloat = 34
-fileprivate let maxToolbarIconSpacing: CGFloat = 10
+fileprivate let maxToolbarPreviewBarHeight: CGFloat = 43
 
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
-  var lastAppliedGeo = ControlBarGeometry(mode: .windowedNormal) {
+  private var lastAppliedGeo = ControlBarGeometry(mode: .windowedNormal) {
     didSet {
       Logger.log.verbose("PrefUIViewController.lastAppliedGeo was updated")
     }
@@ -158,13 +156,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     configureObservers()
 
-    let previewBarHeight = min(maxToolbarPreviewBarHeight, lastAppliedGeo.barHeight)
-    let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: previewBarHeight)
+    // Init with dummy values for now
+    let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: maxToolbarPreviewBarHeight)
     hConstraint.priority = .defaultHigh  // avoid conflicting constraints
     hConstraint.isActive = true
     oscToolbarStackViewHeightConstraint = hConstraint
 
-    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: lastAppliedGeo.totalToolbarWidth)
+    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: 0)
     wConstraint.priority = .defaultHigh  // avoid conflicting constraints
     wConstraint.isActive = true
     oscToolbarStackViewWidthConstraint = wConstraint
@@ -485,11 +483,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Constrain sizes for prefs preview
     let previewBarHeight = newGeo.position == .floating ? 24 : min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
+                                        forceSingleLine: true,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth
 
-    Logger.log.verbose{"Updating OSC toolbar preview geometry: barHeight=\(newGeo.barHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
+    Logger.log.verbose{"Updating OSC toolbar preview geometry: origBarHeight=\(newGeo.barHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
 
     // Prevent constraint violations by lowering these briefly...
     oscToolbarStackViewHeightConstraint?.priority = .defaultHigh
