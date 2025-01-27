@@ -64,7 +64,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   fileprivate var isPlayingTextColor: NSColor = .textColor
   fileprivate var isPlayingPrefixTextColor: NSColor = .secondaryLabelColor
-  fileprivate var cachedEffectiveAppearanceName: String? = nil
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PlaylistViewController")
@@ -75,26 +74,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   var playlistChangeObserver: NSObjectProtocol?
   var fileHistoryUpdateObserver: NSObjectProtocol?
 
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-    guard let keyPath = keyPath else { return }
-
-    switch keyPath {
-    case #keyPath(view.effectiveAppearance):
-      /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
-      /// For that, we follow `appleColorPreferencesChangedNotification`
-      if cachedEffectiveAppearanceName == view.effectiveAppearance.name.rawValue {
-        return
-      }
-      cachedEffectiveAppearanceName = view.effectiveAppearance.name.rawValue
-      updateTableColors()
-    default:
-      return
-    }
-  }
-
-  fileprivate func updateTableColors() {
+  func updateTableColors() {
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
-    view.effectiveAppearance.applyAppearanceFor {
+    let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
+    effectiveAppearance.applyAppearanceFor {
       if #available(macOS 10.14, *) {
         isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
         isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
@@ -138,6 +121,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     removeBtn.toolTip = NSLocalizedString("mini_player.remove", comment: "remove")
 
     hideTotalLength()
+    updateTableColors()
 
     // colors
     withAllTableViews { $0.backgroundColor = NSColor.sidebarTableBackground }
@@ -152,8 +136,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     updateVerticalConstraints()
-
-    addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
     distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.systemColorSettingsDidChange))
 
@@ -214,7 +196,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       DistributedNotificationCenter.default().removeObserver(observer)
     }
     distObservers = []
-    UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
     if let playlistChangeObserver {
       NotificationCenter.default.removeObserver(playlistChangeObserver)
     }

@@ -34,6 +34,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
 
+  var cachedEffectiveAppearanceName: String? = nil
+
   // MARK: - View Controllers
 
   /** The quick setting sidebar (video, audio, subtitles). */
@@ -697,7 +699,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // currently open. Should be ok for now as this is fairly fast...
         // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
         // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
-        BarFactory.current.updateBarStylesFromPrefs()
+        guard let window else { return }
+        window.effectiveAppearance.applyAppearanceFor{
+          BarFactory.current.updateBarStylesFromPrefs()
+        }
 
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
@@ -820,7 +825,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateBufferIndicatorView()
     updateOSDPosition()
 
-    co.addAllObservers()
+    addAllObservers()
 
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in
@@ -902,7 +907,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.events.emit(.windowWillClose)
     }
 
-    co.removeAllObservers()
+    removeAllObservers()
 
     // Close PIP
     if pip.status == .inPIP {

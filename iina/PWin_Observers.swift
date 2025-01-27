@@ -131,6 +131,16 @@ extension PlayerWindowController {
     return CocoaObserver(player.log, prefDidChange: prefDidChange, observedPrefKeys, ncList)
   }
 
+  func addAllObservers() {
+    co.addAllObservers()
+    addObserver(self, forKeyPath: #keyPath(window.effectiveAppearance), options: [.old, .new], context: nil)
+  }
+
+  func removeAllObservers() {
+    UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
+    co.removeAllObservers()
+  }
+
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     guard isOpen else { return }  // do not want to respond to some things like blackOutOtherMonitors while closed!
@@ -293,6 +303,29 @@ extension PlayerWindowController {
       }
     case .aspectRatioPanelPresets, .cropPanelPresets:
       quickSettingView.updateSegmentLabels()
+    default:
+      return
+    }
+  }
+
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    guard let keyPath = keyPath else { return }
+
+    switch keyPath {
+    case #keyPath(window.effectiveAppearance):
+      /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
+      /// For that, we follow `appleColorPreferencesChangedNotification`
+      guard let window else { return }
+      if cachedEffectiveAppearanceName == window.effectiveAppearance.name.rawValue {
+        return
+      }
+      cachedEffectiveAppearanceName = window.effectiveAppearance.name.rawValue
+
+      if playlistView.isViewLoaded {
+        playlistView.updateTableColors()
+      }
+      // Need to regenerate colors in BarFactory & redraw slider:
+      updateTitleBarAndOSC()
     default:
       return
     }
