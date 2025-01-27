@@ -90,7 +90,6 @@ extension PlayerWindowController {
 
       let log = player.log
       let margins = SeekPreview.minThumbMargins
-      let timeLabelHeight = timeLabel.fittingSize.height
       let thumbStore = player.info.currentPlayback?.thumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
       let viewportSize = currentGeo.viewportSize
@@ -114,13 +113,17 @@ extension PlayerWindowController {
       let stringRepresentation = VideoTime.string(from: previewTimeSec)
       if timeLabel.stringValue != stringRepresentation {
         timeLabel.stringValue = stringRepresentation
+        timeLabel.sizeToFit()
       }
+
+      // Get size *after* stringValue is set:
+      let timeLabelSize = timeLabel.attributedStringValue.size()
 
       // Subtract some height for less margin before time label
       let adjustedMarginTotalHeight = margins.totalHeight * 0.75
 
       /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
-      let availableHeight = viewportSize.height - currentGeo.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelHeight
+      let availableHeight = viewportSize.height - currentGeo.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelSize.height
       /// `availableWidth`: entire window width, minus extra space
       let availableWidth = currentGeo.windowFrame.width - margins.totalWidth
       let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
@@ -180,7 +183,7 @@ extension PlayerWindowController {
           showAbove = true
         case .floating:
           // Need to check available space in viewport above & below OSC
-          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelHeight
+          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height
           let availableHeightBelow = max(0, oscOriginInWindowY - currentGeo.insideBars.bottom - totalExtraVerticalSpace)
           if availableHeightBelow > thumbHeight {
             // Show below by default, if there is space for the desired size
@@ -210,20 +213,32 @@ extension PlayerWindowController {
       // Y offset calculation
       let timeLabelOriginY: CGFloat
       let thumbOriginY: CGFloat
+
       if showAbove {
         let halfMargin = margins.bottom * 0.5
-        let quarterMargin = margins.bottom * 0.25
         // Show thumbnail above seek time, which is above slider
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
+          let quarterMargin = margins.bottom * 0.25
           timeLabelOriginY = oscOriginInWindowY + oscHeight + quarterMargin
         } else {
-          timeLabelOriginY = oscOriginInWindowY + (oscHeight * 0.5) + (player.windowController.playSlider.customCell.knobHeight * 0.5) + quarterMargin
+          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
+          let barHeight = BarFactory.current.maxPlayBarHeightNeeded
+          // Not sure why this is a bit off. Just fudge it for now...
+          let yOffsetFromSlider = (sliderFrameInWindowCoords.height + barHeight) * 0.5
+          timeLabelOriginY = sliderFrameInWindowCoords.origin.y + yOffsetFromSlider
         }
-        thumbOriginY = timeLabelOriginY + timeLabelHeight + halfMargin
-      } else {
+        thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
+      } else {  // Show below
+        let quarterMargin = margins.top * 0.25
         let halfMargin = margins.top * 0.5
-        // Show thumbnail below slider
-        timeLabelOriginY = oscOriginInWindowY - (player.windowController.playSlider.customCell.knobHeight * 0.5) - timeLabelHeight
+        if currentLayout.oscPosition == .floating {
+          timeLabelOriginY = oscOriginInWindowY - quarterMargin - timeLabelSize.height
+        } else {
+          // Show thumbnail below slider
+          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
+          let yOffsetFromSlider = (sliderFrameInWindowCoords.height - player.windowController.playSlider.customCell.knobHeight) * 0.5
+          timeLabelOriginY = sliderFrameInWindowCoords.origin.y + yOffsetFromSlider - halfMargin - timeLabelSize.height
+        }
         thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
 
@@ -237,7 +252,7 @@ extension PlayerWindowController {
 
       // Keep timeLabel centered with seek time location, which should usually match center of thumbnailPeekView.
       // But keep text fully inside window.
-      let timeLabelWidth_Halved = timeLabel.attributedStringValue.size().width * 0.5
+      let timeLabelWidth_Halved = timeLabelSize.width * 0.5
       let timeLabelCenterX = round(posInWindowX).clamped(to: (minX + timeLabelWidth_Halved)...(maxX - timeLabelWidth_Halved))
       log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
       timeLabelHorizontalCenterConstraint.constant = timeLabelCenterX

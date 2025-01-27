@@ -2010,6 +2010,10 @@ extension NSView {
     return (window?.windowController as? PlayerWindowController)?.player
   }
 
+  var frameInWindowCoords: NSRect {
+    return convert(frame, to: nil)
+  }
+
   var idString: String {
     get {
       return self.identifier?.rawValue ?? ""
