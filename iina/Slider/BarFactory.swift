@@ -11,14 +11,16 @@ fileprivate let barVerticalPaddingTotal = barImgPadding * 2
 
 fileprivate extension CGColor {
   func exaggerated() -> CGColor {
-    var leftCacheComps: [CGFloat] = []
+    var colorsComps: [CGFloat] = []
     let numComponents = min(self.numberOfComponents, 3)
     for i in 0..<numComponents {
-      leftCacheComps.append(min(1.0, self.components![i] * 1.8))
+      colorsComps.append((self.components![i] * 1.5).clamped(to: 0.0...1.0))
     }
-    leftCacheComps.append(1.0)
+    // alpha
+    colorsComps.append((self.components![3] * 1.5).clamped(to: 0.0..<0.9))
+
     let colorSpace = self.colorSpace ?? CGColorSpaceCreateDeviceRGB()
-    return CGColor(colorSpace: colorSpace, components: leftCacheComps)!
+    return CGColor(colorSpace: colorSpace, components: colorsComps)!
   }
 }
 

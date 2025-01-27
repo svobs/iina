@@ -2014,7 +2014,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     </button>
                                                     <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="3CT-UI-QMi">
                                                         <rect key="frame" x="-2" y="-1" width="418" height="18"/>
-                                                        <buttonCell key="cell" type="check" title="Show loaded time ranges when playing remote files" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="TMa-kW-zoR">
+                                                        <buttonCell key="cell" type="check" title="Highlight pieces which have loaded (remote files only)" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="TMa-kW-zoR">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>

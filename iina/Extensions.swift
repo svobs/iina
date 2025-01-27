@@ -788,6 +788,7 @@ extension CGSize: @retroactive CustomStringConvertible {
 }
 
 extension FloatingPoint {
+  // TODO: replace with "bounded"
   func clamped(to range: Range<Self>) -> Self {
     if self < range.lowerBound {
       return range.lowerBound
