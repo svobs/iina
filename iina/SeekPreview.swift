@@ -225,7 +225,8 @@ extension PlayerWindowController {
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
-          // Not sure why this is a bit off. Just fudge it for now...
+          // If clear background, align the label consistently close to the slider bar.
+          // Else if using gray panel, try to align the label either wholly inside or outside the panel.
           if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY + timeLabelSize.height >= oscTopY {
             timeLabelOriginY = oscTopY + halfMargin
           } else {

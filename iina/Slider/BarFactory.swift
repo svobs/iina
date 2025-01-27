@@ -164,100 +164,6 @@ class BarFactory {
     BarFactory.current = BarFactory()
   }
 
-  // MARK: - Volume Bar
-
-  func buildVolumeBarImage(darkMode: Bool, clearBG: Bool, useFocusEffect: Bool,
-                           barWidth: CGFloat,
-                           screen: NSScreen,
-                           knobMinX: CGFloat, knobWidth: CGFloat,
-                           currentValue: Double, maxValue: Double,
-                           currentPreviewValue: CGFloat? = nil) -> CGImage {
-
-    // - Set up calculations
-    let scaleFactor = screen.backingScaleFactor
-    let conf = (useFocusEffect ? volBar_Focused : volBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
-
-    let currentValueRatio = currentValue / maxValue
-    let currentValuePointX = (conf.imgPadding + (currentValueRatio * conf.barWidth)).rounded()
-
-    // Determine clipping rects (pixel whitelists)
-    let leftClipMaxX: CGFloat
-    let rightClipMinX: CGFloat
-    if clearBG || knobWidth < 1.0 {
-      leftClipMaxX = currentValuePointX
-      rightClipMinX = currentValuePointX
-    } else {
-      // - Will clip out the knob
-      leftClipMaxX = (knobMinX - 1) * scaleFactor
-      rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
-    }
-
-    let hasLeft = leftClipMaxX - conf.imgPadding > 0.0
-    let hasRight = rightClipMinX + conf.imgPadding < conf.imgWidth
-
-    // If volume can exceed 100%, let's draw the part of the bar which is >100% differently
-    let vol100PercentPointX = (conf.imgPadding + ((100.0 / maxValue) * conf.barWidth)).rounded()
-    let barMaxX = conf.barMaxX
-
-    let barImg = CGImage.buildBitmapImage(width: Int(conf.imgWidth), height: Int(conf.imgHeight)) { cgc in
-
-      func drawEntireBar(_ barConf: BarConf, clipMinX: CGFloat, clipMaxX: CGFloat) {
-        cgc.resetClip()
-        cgc.clip(to: CGRect(x: clipMinX, y: 0,
-                            width: clipMaxX - clipMinX,
-                            height: barConf.imgHeight))
-
-        barConf.addPillPath(cgc, minX: barConf.barMinX,
-                            maxX: barMaxX,
-                            leftEdge: .noBorderingPill,
-                            rightEdge: .noBorderingPill)
-        cgc.clip()
-
-        barConf.drawPill(cgc,
-                         minX: barConf.barMinX,
-                         maxX: barMaxX,
-                         leftEdge: .noBorderingPill,
-                         rightEdge: .noBorderingPill)
-      }
-
-      var barConf = conf.below100_Left
-
-      if hasLeft {  // Left of knob (i.e. "completed" section of bar)
-        var minX = 0.0
-
-        if vol100PercentPointX < leftClipMaxX {
-          // Current volume > 100%. Finish drawing (< 100%) first.
-          drawEntireBar(barConf, clipMinX: minX, clipMaxX: vol100PercentPointX)
-          // Update for next segment:
-          minX = vol100PercentPointX
-          barConf = conf.above100_Left
-        }
-
-        drawEntireBar(barConf, clipMinX: minX, clipMaxX: leftClipMaxX)
-      }
-
-      if hasRight {  // Right of knob
-        var minX = rightClipMinX
-        if vol100PercentPointX <= rightClipMinX {
-          barConf = conf.above100_Right
-        } else {
-          barConf = conf.below100_Right
-
-          if vol100PercentPointX > rightClipMinX && vol100PercentPointX < conf.imgWidth {
-            drawEntireBar(barConf, clipMinX: minX, clipMaxX: vol100PercentPointX)
-            // Update for next segment:
-            minX = vol100PercentPointX
-            barConf = conf.above100_Right
-          }
-        }
-
-        drawEntireBar(barConf, clipMinX: minX, clipMaxX: conf.imgWidth)
-      }
-    }
-    
-    return barImg
-  }  // end func buildVolumeBarImage
-
   // MARK: - Play Bar
 
   /// `barWidth` does not include added leading or trailing margin
@@ -453,6 +359,100 @@ class BarFactory {
     // Now paste cacheImg into barImg and return the result:
     return CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
   }
+
+  // MARK: - Volume Bar
+
+  func buildVolumeBarImage(darkMode: Bool, clearBG: Bool, useFocusEffect: Bool,
+                           barWidth: CGFloat,
+                           screen: NSScreen,
+                           knobMinX: CGFloat, knobWidth: CGFloat,
+                           currentValue: Double, maxValue: Double,
+                           currentPreviewValue: CGFloat? = nil) -> CGImage {
+
+    // - Set up calculations
+    let scaleFactor = screen.backingScaleFactor
+    let conf = (useFocusEffect ? volBar_Focused : volBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
+
+    let currentValueRatio = currentValue / maxValue
+    let currentValuePointX = (conf.imgPadding + (currentValueRatio * conf.barWidth)).rounded()
+
+    // Determine clipping rects (pixel whitelists)
+    let leftClipMaxX: CGFloat
+    let rightClipMinX: CGFloat
+    if clearBG || knobWidth < 1.0 {
+      leftClipMaxX = currentValuePointX
+      rightClipMinX = currentValuePointX
+    } else {
+      // - Will clip out the knob
+      leftClipMaxX = (knobMinX - 1) * scaleFactor
+      rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+    }
+
+    let hasLeft = leftClipMaxX - conf.imgPadding > 0.0
+    let hasRight = rightClipMinX + conf.imgPadding < conf.imgWidth
+
+    // If volume can exceed 100%, let's draw the part of the bar which is >100% differently
+    let vol100PercentPointX = (conf.imgPadding + ((100.0 / maxValue) * conf.barWidth)).rounded()
+    let barMaxX = conf.barMaxX
+
+    let barImg = CGImage.buildBitmapImage(width: Int(conf.imgWidth), height: Int(conf.imgHeight)) { cgc in
+
+      func drawEntireBar(_ barConf: BarConf, clipMinX: CGFloat, clipMaxX: CGFloat) {
+        cgc.resetClip()
+        cgc.clip(to: CGRect(x: clipMinX, y: 0,
+                            width: clipMaxX - clipMinX,
+                            height: barConf.imgHeight))
+
+        barConf.addPillPath(cgc, minX: barConf.barMinX,
+                            maxX: barMaxX,
+                            leftEdge: .noBorderingPill,
+                            rightEdge: .noBorderingPill)
+        cgc.clip()
+
+        barConf.drawPill(cgc,
+                         minX: barConf.barMinX,
+                         maxX: barMaxX,
+                         leftEdge: .noBorderingPill,
+                         rightEdge: .noBorderingPill)
+      }
+
+      var barConf = conf.below100_Left
+
+      if hasLeft {  // Left of knob (i.e. "completed" section of bar)
+        var minX = 0.0
+
+        if vol100PercentPointX < leftClipMaxX {
+          // Current volume > 100%. Finish drawing (< 100%) first.
+          drawEntireBar(barConf, clipMinX: minX, clipMaxX: vol100PercentPointX)
+          // Update for next segment:
+          minX = vol100PercentPointX
+          barConf = conf.above100_Left
+        }
+
+        drawEntireBar(barConf, clipMinX: minX, clipMaxX: leftClipMaxX)
+      }
+
+      if hasRight {  // Right of knob
+        var minX = rightClipMinX
+        if vol100PercentPointX <= rightClipMinX {
+          barConf = conf.above100_Right
+        } else {
+          barConf = conf.below100_Right
+
+          if vol100PercentPointX > rightClipMinX && vol100PercentPointX < conf.imgWidth {
+            drawEntireBar(barConf, clipMinX: minX, clipMaxX: vol100PercentPointX)
+            // Update for next segment:
+            minX = vol100PercentPointX
+            barConf = conf.above100_Right
+          }
+        }
+
+        drawEntireBar(barConf, clipMinX: minX, clipMaxX: conf.imgWidth)
+      }
+    }
+
+    return barImg
+  }  // end func buildVolumeBarImage
 
   // MARK: - Other API functions
 
