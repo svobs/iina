@@ -124,13 +124,19 @@ struct ControlBarGeometry {
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
+      let maxBtnHeight: CGFloat
       if ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
-        let playSliderHeight = Constants.Distance.minPlaySliderHeight
+        let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
         fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_BottomMargin
+
+        maxBtnHeight = fullIconHeight
       } else {
         self.playSliderHeight = barHeight
         fullIconHeight = barHeight
+
+        // Reduce max button size so they don't touch edges or (if .top) icons above
+        maxBtnHeight = fullIconHeight - (oscPosition == .top ? 4 : 2)
       }
 
       let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
@@ -141,9 +147,6 @@ struct ControlBarGeometry {
                                                             fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSize))
       let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
                                                                       fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSpacing))
-
-      // Reduce max button size so they don't touch edges or (if .top) icons above
-      let maxBtnHeight = fullIconHeight - (oscPosition == .top ? 4 : 2)
 
       self.toolIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...maxBtnHeight)
       self.toolIconSpacing = max(0, desiredToolbarIconSpacing)

@@ -1541,7 +1541,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="20" y="495" width="430" height="21"/>
                             <subviews>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xbl-vr-NaJ">
-                                    <rect key="frame" x="-2" y="3" width="70" height="16"/>
+                                    <rect key="frame" x="-2" y="3" width="78" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Bar height:" id="5BF-Xi-M9u">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1549,11 +1549,11 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <slider translatesAutoresizingMaskIntoConstraints="NO" id="dsQ-QF-qYK" userLabel="OSC-Height Horizontal Slider">
-                                    <rect key="frame" x="72" y="-2" width="320" height="25"/>
+                                    <rect key="frame" x="80" y="-2" width="312" height="25"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" constant="316" id="EyV-vj-7Y7"/>
+                                        <constraint firstAttribute="width" constant="308" id="EyV-vj-7Y7"/>
                                     </constraints>
-                                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="24" maxValue="200" doubleValue="44" tickMarkPosition="below" numberOfTickMarks="45" allowsTickMarkValuesOnly="YES" sliderType="linear" id="8b9-rY-Ke5"/>
+                                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="24" maxValue="120" doubleValue="44" tickMarkPosition="below" numberOfTickMarks="25" allowsTickMarkValuesOnly="YES" sliderType="linear" id="8b9-rY-Ke5"/>
                                     <connections>
                                         <action selector="oscBarHeightAction:" target="-2" id="iWm-b9-yfN"/>
                                         <binding destination="lH7-Vv-0M1" name="value" keyPath="values.oscBarHeight" id="Bwl-jr-dnr">

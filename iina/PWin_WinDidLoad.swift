@@ -500,8 +500,10 @@ extension PlayerWindowController {
     playSlider.isContinuous = true
     playSlider.refusesFirstResponder = true
     playSlider.translatesAutoresizingMaskIntoConstraints = false
-    playSlider.setContentHuggingPriority(.init(249), for: .horizontal)
-    playSlider.setContentCompressionResistancePriority(.init(249), for: .horizontal)
+    playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: 20)
+    playSliderHeightConstraint.identifier = .init("PlaySlider-HeightConstraint")
+    playSliderHeightConstraint.priority = .init(900)
+    playSliderHeightConstraint.isActive = true
 
     rightTimeLabel.identifier = .init("PlayPosition-RightTimeLabel")
     rightTimeLabel.alignment = .left
@@ -522,21 +524,24 @@ extension PlayerWindowController {
 
     // - Add constraints to subviews
 
+    let spacing = Constants.Distance.playSliderAndTimeLabelsViewHSpacing
     leftTimeLabel.leadingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.leadingAnchor).isActive = true
-    playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: 4).isActive = true
+    playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: spacing).isActive = true
 
-    playSlider.centerYAnchor.constraint(equalTo: playSliderAndTimeLabelsView.centerYAnchor).isActive = true
+    // See also: playSliderHeightConstraint
+    playSlider.addConstraintsToFillSuperview(top: 0, bottom: 0)
+
     playSlider.centerYAnchor.constraint(equalTo: leftTimeLabel.centerYAnchor).isActive = true
     playSlider.centerYAnchor.constraint(equalTo: rightTimeLabel.centerYAnchor).isActive = true
 
-    rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: 4).isActive = true
+    rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: spacing).isActive = true
     rightTimeLabel.trailingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.trailingAnchor).isActive = true
   }
 
   private func initOSCViews() {
     /// `osc_SingleLineView`
     osc_SingleLineView.identifier = .init("OSC-SingleLine-View")
-    osc_SingleLineView.spacing = Constants.Distance.oscSectionHSpacing
+    osc_SingleLineView.spacing = Constants.Distance.oscSectionHSpacing_SingleLine
     osc_SingleLineView.orientation = .horizontal
     osc_SingleLineView.alignment = .centerY
     osc_SingleLineView.distribution = .gravityAreas

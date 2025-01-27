@@ -432,7 +432,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var leftArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
   var rightArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
 
-  var playSliderHeightConstraint: NSLayoutConstraint?
+  var playSliderHeightConstraint: NSLayoutConstraint!
 
   var topOSCHeightConstraint: NSLayoutConstraint!
 

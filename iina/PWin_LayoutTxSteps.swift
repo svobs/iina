@@ -473,21 +473,17 @@ extension PlayerWindowController {
       updateTitleBarUI(from: outputLayout)
     }
 
+    if !outputLayout.hasControlBar || transition.isControlBarChanging {
+      playSliderAndTimeLabelsView.removeFromSuperview()
 
-    if !transition.inputLayout.hasFloatingOSC {
-      if transition.isControlBarChanging {
+      osc_SingleLineView.removeFromSuperview()
+      osc_MultiLineView.removeFromSuperview()
+
+      if !transition.inputLayout.hasFloatingOSC {
         for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
           view?.removeFromSuperview()
         }
       }
-    }
-
-    if !outputLayout.hasControlBar || transition.inputLayout.oscPosition != transition.outputLayout.oscPosition {
-      playSliderAndTimeLabelsView.removeFromSuperview()
-    }
-
-    if !transition.outputLayout.enableOSC {
-      osc_SingleLineView.removeFromSuperview()
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -546,10 +542,6 @@ extension PlayerWindowController {
     // Music mode
 
     if transition.isTogglingMusicMode {
-      playSliderHeightConstraint?.isActive = false
-//      osc_SingleLineView.removeFromSuperview()
-//      osc_MultiLineView.removeFromSuperview()
-
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
 
@@ -572,9 +564,7 @@ extension PlayerWindowController {
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
-        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
-        playSliderHeightConstraint?.identifier = .init("PlaySlider-HeightConstraint")
-        playSliderHeightConstraint?.isActive = true
+        playSliderHeightConstraint.animateToConstant(miniPlayer.positionSliderWrapperView.frame.height - 4)
         playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playslider_DefaultKnobHeight
 
         // move playback buttons
@@ -620,7 +610,6 @@ extension PlayerWindowController {
       log.verbose("[\(transition.name)] Setting up control bar=\(outputLayout.oscPosition) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
 
       fragToolbarView = rebuildOSCToolbar(transition)
-      playSliderHeightConstraint?.isActive = false
 
       switch outputLayout.oscPosition {
       case .top:
@@ -673,12 +662,7 @@ extension PlayerWindowController {
       switch outputLayout.oscPosition {
       case .top, .bottom:
         // Expand slider bounds to entire bar so it's easier to hover and/or click on it
-        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: oscGeo.playSliderHeight)
-        playSliderHeightConstraint?.identifier = .init("PlaySlider-HeightConstraint")
-        if oscGeo.canUseMultiLineOSC {
-          playSliderHeightConstraint?.priority = .init(900)
-        }
-        playSliderHeightConstraint?.isActive = true
+        playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
 
         // Knob height > 24 is not supported
         //        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
@@ -1450,14 +1434,15 @@ extension PlayerWindowController {
     guard transition.isControlBarChanging else { return }
 
     let mainView = osc_MultiLineView
-    let sectionHSpacing = Constants.Distance.oscSectionHSpacing
-    let leadingMargin: CGFloat = 8
-    let trailingMargin: CGFloat = 8
+    let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
+    let leadingMargin: CGFloat = 0
+    let trailingMargin: CGFloat = 0
+    let offsetBetweenLines: CGFloat = -8.0  // negative == overlap
 
     mainView.removeAllSubviews()
 
-    mainView.addSubview(playSlider)
-    playSlider.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
+    mainView.addSubview(playSliderAndTimeLabelsView)
+    playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
 
     let leadingStackView = ClickThroughStackView()
     leadingStackView.identifier = .init("osc_MultiLineView-LeadingStackView")
@@ -1471,23 +1456,19 @@ extension PlayerWindowController {
     leadingStackView.setHuggingPriority(.init(500), for: .horizontal)
 
     leadingStackView.addView(fragPlaybackBtnsView, in: .leading)
-    leadingStackView.addView(leftTimeLabel, in: .leading)
-    leadingStackView.addView(rightTimeLabel, in: .leading)
     leadingStackView.addView(fragVolumeView, in: .leading)
-    leadingStackView.setVisibilityPriority(.mustHold, for: leftTimeLabel)
-    leadingStackView.setVisibilityPriority(.mustHold, for: rightTimeLabel)
     leadingStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
 
     mainView.addSubview(leadingStackView)
 
     leadingStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin)
-    leadingStackView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -8).isActive = true
+    leadingStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: offsetBetweenLines).isActive = true
 
     if let fragToolbarView {
       mainView.addSubview(fragToolbarView)
 
       fragToolbarView.addConstraintsToFillSuperview(bottom: 0, trailing: trailingMargin)
-      fragToolbarView.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -8).isActive = true
+      fragToolbarView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: offsetBetweenLines).isActive = true
       fragToolbarView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
     } else {
       mainView.trailingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true

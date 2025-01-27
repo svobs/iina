@@ -253,7 +253,7 @@ extension PlayerWindowController {
     // we don't call super here because before adding the plugin system,
     // PlayerWindowController didn't call super at all
   }
-
+  
   override func mouseDragged(with event: NSEvent) {
     log.trace{"PWin MouseDragged @ \(event.locationInWindow)"}
 
@@ -319,7 +319,7 @@ extension PlayerWindowController {
     /// Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
     /// but we will only count it as a drag if `isDragging==true`
     if isSingleClick && !isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView, subPopoverView,
-                                                               topBarView, bottomBarView]) {
+                                                       topBarView, bottomBarView]) {
       if hideSidebarsOnClick() {
         log.verbose("PWin MouseUp: hiding sidebars")
         return

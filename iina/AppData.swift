@@ -305,16 +305,17 @@ struct Constants {
     static let slider_DefaultKnobWidth: CGFloat = 3
 
     static let minPlaySliderHeight: CGFloat = 20
+    static let playSliderAndTimeLabelsViewHSpacing: CGFloat = 6
 
     static let minOSCBarHeight: CGFloat = 24
-    static let maxOSCBarHeight: CGFloat = 200
+    static let maxOSCBarHeight: CGFloat = 120
 
     // When opening multiple windows simultaneously & no other layout is applied, how much to offset one window from the one before
     static let multiWindowOpenOffsetIncrement = 20.0
 
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
-    static let multiLineOSC_minBarHeight: CGFloat = 40
+    static let multiLineOSC_minBarHeight: CGFloat = 60
 
     static let multiLineOSC_BottomMargin: CGFloat = 8
 
@@ -322,7 +323,8 @@ struct Constants {
     /// their images)
     static let titleBarIconHSpacing: CGFloat = 6
 
-    static let oscSectionHSpacing: CGFloat = 4
+    static let oscSectionHSpacing_SingleLine: CGFloat = 4
+    static let oscSectionHSpacing_MultiLine: CGFloat = 12
 
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).
