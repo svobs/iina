@@ -616,39 +616,39 @@ extension PlayerWindowController {
         currentControlBar = controlBarTop
 
 
-        let oscContainerView: NSView
-        if oscGeo.canUseMultiLineOSC {
-          oscContainerView = osc_MultiLineView
+        let oscContentView: NSView
+        if oscGeo.isMultiLineOSC {
+          oscContentView = osc_MultiLineView
           addSubviewsToOSC_MultiLineView(transition)
         } else {
-          oscContainerView = osc_SingleLineView
+          oscContentView = osc_SingleLineView
           addSubviewsToOSC_SingleLineView(transition)
         }
 
-        if !controlBarTop.subviews.contains(oscContainerView) {
-          controlBarTop.addSubview(oscContainerView, positioned: .below, relativeTo: topBarBottomBorder)
+        if !controlBarTop.subviews.contains(oscContentView) {
+          controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarBottomBorder)
           // Match leading/trailing spacing of title bar icons above
-          oscContainerView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
-                                                         trailing: Constants.Distance.titleBarIconHSpacing)
+          oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
+                                                       trailing: Constants.Distance.titleBarIconHSpacing)
         }
 
       case .bottom:
         currentControlBar = bottomBarView
 
-        let oscContainerView: NSView
-        if oscGeo.canUseMultiLineOSC {
-          oscContainerView = osc_MultiLineView
+        let oscContentView: NSView
+        if oscGeo.isMultiLineOSC {
+          oscContentView = osc_MultiLineView
           addSubviewsToOSC_MultiLineView(transition)
         } else {
-          oscContainerView = osc_SingleLineView
+          oscContentView = osc_SingleLineView
           addSubviewsToOSC_SingleLineView(transition)
         }
 
-        if !bottomBarView.subviews.contains(oscContainerView) {
-          bottomBarView.addSubview(oscContainerView, positioned: .below, relativeTo: bottomBarTopBorder)
+        if !bottomBarView.subviews.contains(oscContentView) {
+          bottomBarView.addSubview(oscContentView, positioned: .below, relativeTo: bottomBarTopBorder)
           // Match leading/trailing spacing of title bar icons above
-          oscContainerView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
-                                                         trailing: Constants.Distance.titleBarIconHSpacing)
+          oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
+                                                       trailing: Constants.Distance.titleBarIconHSpacing)
         }
 
       case .floating:
@@ -741,11 +741,11 @@ extension PlayerWindowController {
 
       leftTimeLabel.font = timeLabelFont
       rightTimeLabel.font = timeLabelFont
-    }
 
-    // Not floating OSC!
-    if !transition.outputLayout.hasFloatingOSC {
-      addSpeedLabelToControlBar(transition)
+      // Not floating OSC!
+      if !transition.outputLayout.hasFloatingOSC {
+        addSpeedLabelToControlBar(transition)
+      }
     }
 
     // Interactive mode
@@ -1437,41 +1437,38 @@ extension PlayerWindowController {
     let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
     let leadingMargin: CGFloat = 4
     let trailingMargin: CGFloat = 4
-    let offsetBetweenLines: CGFloat = -8.0  // negative == overlap
+    let verticalOffsetBetweenLines: CGFloat = -8.0  // negative == overlap
 
     mainView.removeAllSubviews()
 
     mainView.addSubview(playSliderAndTimeLabelsView)
     playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
 
-    let leadingStackView = ClickThroughStackView()
-    leadingStackView.identifier = .init("OSC_MultiLineView-LeadingStackView")
-    leadingStackView.orientation = .horizontal
-    leadingStackView.alignment = .centerY
-    leadingStackView.detachesHiddenViews = true
-    leadingStackView.spacing = sectionHSpacing
-    leadingStackView.translatesAutoresizingMaskIntoConstraints = false
+    let btmStackView = ClickThroughStackView()
+    btmStackView.identifier = .init("OSC_MultiLineView-BtmHStackView")
+    btmStackView.orientation = .horizontal
+    btmStackView.alignment = .centerY
+    btmStackView.spacing = sectionHSpacing
+//    btmStackView.distribution = .gravityAreas
+    btmStackView.translatesAutoresizingMaskIntoConstraints = false
+    btmStackView.detachesHiddenViews = true
+    btmStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-    leadingStackView.setHuggingPriority(.init(500), for: .vertical)
-    leadingStackView.setHuggingPriority(.init(500), for: .horizontal)
+    mainView.addSubview(btmStackView)
 
-    leadingStackView.addView(fragPlaybackBtnsView, in: .leading)
-    leadingStackView.addView(fragVolumeView, in: .leading)
-    leadingStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+    btmStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin, trailing: trailingMargin)
+    btmStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: verticalOffsetBetweenLines).isActive = true
 
-    mainView.addSubview(leadingStackView)
+    btmStackView.addView(fragPlaybackBtnsView, in: .leading)
+    let spacer = SpacerView.buildNew(id: "OSC_MultiLineView-CentralSpacerView")
+    btmStackView.addView(spacer, in: .leading)
 
-    leadingStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin)
-    leadingStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: offsetBetweenLines).isActive = true
+    btmStackView.addView(fragVolumeView, in: .leading)
+    btmStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
 
     if let fragToolbarView {
-      mainView.addSubview(fragToolbarView)
-
-      fragToolbarView.addConstraintsToFillSuperview(bottom: 0, trailing: trailingMargin)
-      fragToolbarView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: offsetBetweenLines).isActive = true
-      fragToolbarView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
-    } else {
-      mainView.trailingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor, constant: sectionHSpacing).isActive = true
+      btmStackView.addView(fragToolbarView, in: .leading)
+      btmStackView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
     }
 
   }

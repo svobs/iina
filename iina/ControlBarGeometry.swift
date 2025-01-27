@@ -41,8 +41,12 @@ struct ControlBarGeometry {
   let position: Preference.OSCPosition
 
   let arrowButtonAction: Preference.ArrowButtonAction
+  /// If true, always use single-line style OSC, even if qualifying for multi-line OSC.
+  ///
+  /// (Only applies to top & bottom OSCs).
+  let forceSingleLine: Bool
 
-  /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
+  /// Preferred height for "full-width" OSCs (i.e. top or bottom, not floating or music mode)
   let barHeight: CGFloat
 
   /// Needed if using "multiLine" style OSC; otherwise same as `barHeight`
@@ -86,6 +90,7 @@ struct ControlBarGeometry {
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
+    self.forceSingleLine = forceSingleLine
 
     // Actual cardinal sizes should be downstream from tick values
     let playIconSizeTicks = playIconSizeTicks ?? Preference.integer(for: .oscBarPlayIconSizeTicks)
@@ -206,7 +211,7 @@ struct ControlBarGeometry {
     return true
   }
 
-  var canUseMultiLineOSC: Bool { ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
+  var isMultiLineOSC: Bool { !forceSingleLine && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
 
   var playSliderHeight: CGFloat
 
