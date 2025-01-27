@@ -39,6 +39,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
+  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1)
+
   @IBOutlet weak var playlistTableView: EditableTableView!
   @IBOutlet weak var chapterTableView: EditableTableView!
   @IBOutlet weak var playlistBtn: NSButton!
@@ -212,13 +214,15 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func reloadData(playlist: Bool, chapters: Bool) {
-    player.log.verbose("Reloading sidebar tables: playlist=\(playlist.yn) chapters=\(chapters.yn)")
     guard player.isActive else { return }
     if playlist {
-      player.log.verbose("Reloading playlist table for \(player.info.playlist.count) entries")
-      playlistTableView.reloadData()
+      playlistTableReloadDebouncer.run { [self] in
+        player.log.verbose{"Reloading playlist table with \(player.info.playlist.count) entries"}
+        playlistTableView.reloadData()
+      }
     }
     if chapters {
+      player.log.verbose{"Reloading chapters table for \(player.info.chapters.count) entries"}
       chapterTableView.reloadData()
     }
 
