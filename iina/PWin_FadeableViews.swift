@@ -250,6 +250,7 @@ extension PlayerWindowController {
       }
 
       if mustHideSeekPreview, seekPreview.animationState == .willHide {
+        log.verbose("Hiding SeekPReview from fadeable views!")
         seekPreview.animationState = .hidden
         seekPreview.thumbnailPeekView.isHidden = true
         seekPreview.timeLabel.isHidden = true

@@ -176,7 +176,7 @@ extension PlayerWindowController {
 
   func isPoint(_ pointInWindow: NSPoint, inAnyOf views: [NSView?]) -> Bool {
     return views.filter { $0 != nil }.reduce(false, { (result, view) in
-      return result || !view!.isHidden && view!.isMousePoint(view!.convert(pointInWindow, from: nil), in: view!.bounds)
+      return result || view!.isMousePoint(view!.convert(pointInWindow, from: nil), in: view!.bounds)
     })
   }
 
@@ -232,7 +232,7 @@ extension PlayerWindowController {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
     }
-    if isMouseEvent(event, inAnyOf: [cropSettingsView?.cropBoxView]) {
+    if let cbView = cropSettingsView?.cropBoxView, !cbView.isHidden && isMouseEvent(event, inAnyOf: [cbView]) {
       log.error("PWin MouseDown: ignoring; should be handled by CropBoxView")
       return
     }
@@ -538,11 +538,7 @@ extension PlayerWindowController {
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
-    if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
-      refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
-    } else {
-      hideSeekPreviewWithAnimation()
-    }
+    refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(event) && fadeableViews.topBarAnimationState == .hidden

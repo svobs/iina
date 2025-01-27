@@ -21,7 +21,7 @@ class TimeoutTimer {
   }
 
   func restart() {
-    scheduledTimer?.invalidate()
+    cancel()
 
     if let startFunction {
       let canProceed = startFunction()

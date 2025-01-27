@@ -215,29 +215,36 @@ extension PlayerWindowController {
       let thumbOriginY: CGFloat
 
       if showAbove {
+        let oscTopY = oscOriginInWindowY + oscHeight
         let halfMargin = margins.bottom * 0.5
         // Show thumbnail above seek time, which is above slider
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
-          let quarterMargin = margins.bottom * 0.25
-          timeLabelOriginY = oscOriginInWindowY + oscHeight + quarterMargin
+          timeLabelOriginY = oscTopY + halfMargin
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
-          let barHeight = BarFactory.current.maxPlayBarHeightNeeded
+          let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
           // Not sure why this is a bit off. Just fudge it for now...
-          let yOffsetFromSlider = (sliderFrameInWindowCoords.height + barHeight) * 0.5
-          timeLabelOriginY = sliderFrameInWindowCoords.origin.y + yOffsetFromSlider
+          if sliderCenterY + timeLabelSize.height > oscTopY {
+            timeLabelOriginY = oscTopY + halfMargin
+          } else {
+            let quarterMargin = margins.bottom * 0.25
+            timeLabelOriginY = sliderCenterY + (player.windowController.playSlider.customCell.knobHeight * 0.5) + quarterMargin
+          }
         }
         thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
-      } else {  // Show below
+      } else {  // Show below PlaySlider
         let quarterMargin = margins.top * 0.25
         let halfMargin = margins.top * 0.5
         if currentLayout.oscPosition == .floating {
           timeLabelOriginY = oscOriginInWindowY - quarterMargin - timeLabelSize.height
         } else {
-          // Show thumbnail below slider
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
-          let yOffsetFromSlider = (sliderFrameInWindowCoords.height - player.windowController.playSlider.customCell.knobHeight) * 0.5
-          timeLabelOriginY = sliderFrameInWindowCoords.origin.y + yOffsetFromSlider - halfMargin - timeLabelSize.height
+          let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
+          if sliderCenterY - timeLabelSize.height < oscOriginInWindowY {
+            timeLabelOriginY = oscOriginInWindowY + halfMargin - timeLabelSize.height
+          } else {
+            timeLabelOriginY = sliderCenterY - (player.windowController.playSlider.customCell.knobHeight * 0.5) - halfMargin - timeLabelSize.height
+          }
         }
         thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
@@ -325,18 +332,15 @@ extension PlayerWindowController {
   /// Called by `seekPreview.hideTimer`.
   func seekPreviewTimeout() {
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-    guard !shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow) else {
-      seekPreview.restartHideTimer()
-      return
-    }
-    hideSeekPreviewWithAnimation()
+    log.trace{"SeekPreview timed out: current mouseLoc=\(pointInWindow)"}
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: true)
   }
 
   /// With animation. For non-animated version, see: `hideSeekPreviewImmediately()`.
   func hideSeekPreviewWithAnimation() {
     var tasks: [IINAAnimation.Task] = []
 
-    tasks.append(.init(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
+    tasks.append(.init(duration: IINAAnimation.HideSeekPreviewDuration) { [self] in
       seekPreview.animationState = .willHide
       seekPreview.thumbnailPeekView.animator().alphaValue = 0
       seekPreview.timeLabel.animator().alphaValue = 0
@@ -348,7 +352,6 @@ extension PlayerWindowController {
 
     tasks.append(.init(duration: 0) { [self] in
       // if no interrupt then hide animation
-      guard seekPreview.animationState == .willHide else { return }
       hideSeekPreviewImmediately()
     })
 
@@ -357,6 +360,7 @@ extension PlayerWindowController {
 
   /// Without animation. For animated version, see: `hideSeekPreviewWithAnimation()`.
   func hideSeekPreviewImmediately() {
+    guard seekPreview.animationState == .shown || seekPreview.animationState == .willHide else { return }
     seekPreview.hideTimer.cancel()
     seekPreview.animationState = .hidden
     seekPreview.thumbnailPeekView.isHidden = true
@@ -364,14 +368,18 @@ extension PlayerWindowController {
   }
 
   /// Display time label & thumbnail when mouse over slider
-  func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint) {
+  func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint, animateHide: Bool = false) {
     thumbDisplayDebouncer.run { [self] in
       if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackDurationSec {
         if showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
           return
         }
       }
-      hideSeekPreviewImmediately()
+      if animateHide {
+        hideSeekPreviewWithAnimation()
+      } else {
+        hideSeekPreviewImmediately()
+      }
     }
   }
 

@@ -21,6 +21,7 @@ class IINAAnimation {
   static var OSDAnimationDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationOSD)) }()
   static var CropAnimationDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationCrop)) }()
   static var MusicModeShowButtonsDuration: CGFloat = 0.2
+  static var HideSeekPreviewDuration: CGFloat = OSDAnimationDuration * 0.5
 
   // MARK: Misc static stuff
 

@@ -2314,8 +2314,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Update player.info & UI proactively
     player.info.playbackPositionSec = absoluteSecond
     updatePlaybackTimeUI()
-    // Make fake point in window to pass to seek time & thumbnail
-    let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: 0)
+    // Make fake point in window to position seek time & thumbnail
+    let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: playSlider.frameInWindowCoords.midY)
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
 
     let option: Preference.SeekOption = forceExactSeek ? .exact : Preference.enum(for: .useExactSeek)
