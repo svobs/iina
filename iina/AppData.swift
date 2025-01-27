@@ -308,7 +308,7 @@ struct Constants {
     static let playSliderAndTimeLabelsViewHSpacing: CGFloat = 6
 
     static let minOSCBarHeight: CGFloat = 24
-    static let maxOSCBarHeight: CGFloat = 120
+    static let maxOSCBarHeight: CGFloat = 100
 
     // When opening multiple windows simultaneously & no other layout is applied, how much to offset one window from the one before
     static let multiWindowOpenOffsetIncrement = 20.0
@@ -316,7 +316,7 @@ struct Constants {
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
     /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
-    static let multiLineOSC_minBarHeightThreshold: CGFloat = 40
+    static let multiLineOSC_minBarHeightThreshold: CGFloat = minOSCBarHeight + minPlaySliderHeight
 
     static let multiLineOSC_BottomMargin: CGFloat = 8
 
