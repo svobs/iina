@@ -84,15 +84,15 @@ extension PlayerWindowController {
     // TODO: Investigate using CoreAnimation!
     // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CoreAnimation_guide/CoreAnimationBasics/CoreAnimationBasics.html
     func showPreview(withThumbnail showThumbnail: Bool, forTime previewTimeSec: Double,
-                     posInWindowX: CGFloat, _ player: PlayerCore,
-                     _ currentLayout: LayoutState, currentControlBar: NSView,
-                     _ currentGeo: PWinGeometry, isRightToLeft: Bool) {
+                     posInWindowX: CGFloat, _ player: PlayerCore, currentControlBar: NSView,
+                     _ currentGeo: PWinGeometry) {
 
       let log = player.log
       let margins = SeekPreview.minThumbMargins
       let thumbStore = player.info.currentPlayback?.thumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
       let viewportSize = currentGeo.viewportSize
+      let currentLayout = player.windowController.currentLayout
 
       var showThumbnail = showThumbnail
       var thumbWidth: Double
@@ -115,6 +115,7 @@ extension PlayerWindowController {
         timeLabel.stringValue = stringRepresentation
         timeLabel.sizeToFit()
       }
+      currentPreviewTimeSec = previewTimeSec
 
       // Get size *after* stringValue is set:
       let timeLabelSize = timeLabel.attributedStringValue.size()
@@ -206,14 +207,15 @@ extension PlayerWindowController {
         }
       }
 
-      // Need integers below.
-      thumbWidth = round(thumbWidth)
-      thumbHeight = round(thumbHeight)
+      // Constrain X origin so that it stays entirely inside the window and doesn't spill off the sides
+      let isRightToLeft = player.videoView.userInterfaceLayoutDirection == .rightToLeft
+      let minX = isRightToLeft ? margins.trailing : margins.leading
+      let maxX = minX + availableWidth
 
+
+      let halfMargin = margins.top * 0.5
       // Y offset calculation
       let timeLabelOriginY: CGFloat
-      let thumbOriginY: CGFloat
-
       if showAbove {
         let oscTopY = oscOriginInWindowY + oscHeight
         let halfMargin = margins.bottom * 0.5
@@ -224,53 +226,64 @@ extension PlayerWindowController {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
           // Not sure why this is a bit off. Just fudge it for now...
-          if sliderCenterY + timeLabelSize.height > oscTopY {
+          if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY + timeLabelSize.height >= oscTopY {
             timeLabelOriginY = oscTopY + halfMargin
           } else {
             let quarterMargin = margins.bottom * 0.25
             timeLabelOriginY = sliderCenterY + (player.windowController.playSlider.customCell.knobHeight * 0.5) + quarterMargin
           }
         }
-        thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
       } else {  // Show below PlaySlider
         let quarterMargin = margins.top * 0.25
-        let halfMargin = margins.top * 0.5
         if currentLayout.oscPosition == .floating {
           timeLabelOriginY = oscOriginInWindowY - quarterMargin - timeLabelSize.height
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
-          if sliderCenterY - timeLabelSize.height < oscOriginInWindowY {
+          if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY - timeLabelSize.height <= oscOriginInWindowY {
             timeLabelOriginY = oscOriginInWindowY + halfMargin - timeLabelSize.height
           } else {
             timeLabelOriginY = sliderCenterY - (player.windowController.playSlider.customCell.knobHeight * 0.5) - halfMargin - timeLabelSize.height
           }
         }
-        thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
       }
-
-      // Constrain X origin so that it stays entirely inside the window and doesn't spill off the sides
-      let minX = isRightToLeft ? margins.trailing : margins.leading
-      let maxX = minX + availableWidth
-
-      let thumbWidth_Halved = thumbWidth / 2
-      let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
-      let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
+      timeLabelVerticalSpaceConstraint.constant = timeLabelOriginY
 
       // Keep timeLabel centered with seek time location, which should usually match center of thumbnailPeekView.
       // But keep text fully inside window.
       let timeLabelWidth_Halved = timeLabelSize.width * 0.5
       let timeLabelCenterX = round(posInWindowX).clamped(to: (minX + timeLabelWidth_Halved)...(maxX - timeLabelWidth_Halved))
-      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY); thumbFrame=\(thumbFrame)"}
       timeLabelHorizontalCenterConstraint.constant = timeLabelCenterX
-      timeLabelVerticalSpaceConstraint.constant = timeLabelOriginY
 
-      if showThumbnail && (thumbWidth < Constants.Distance.Thumbnail.minHeight || thumbHeight < Constants.Distance.Thumbnail.minHeight) {
-        log.verbose("Not enough space to display thumbnail")
-        showThumbnail = false
+      timeLabel.alphaValue = 1.0
+      timeLabel.isHidden = false
+
+      // Done with timeLabel.
+      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY)"}
+
+      // Need integers below.
+      if showThumbnail {
+        thumbWidth = round(thumbWidth)
+        thumbHeight = round(thumbHeight)
+
+        if thumbWidth < Constants.Distance.Thumbnail.minHeight || thumbHeight < Constants.Distance.Thumbnail.minHeight {
+          log.verbose("Not enough space to display thumbnail")
+          showThumbnail = false
+        }
       }
 
       if showThumbnail {
+        let thumbOriginY: CGFloat
+        if showAbove {
+          thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
+        } else {
+          thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
+        }
+
+        let thumbWidth_Halved = thumbWidth / 2
+        let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
+        let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
+
         // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
         let ffThumbnail = ffThumbnail!
         let somethingChanged = thumbStore!.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
@@ -304,11 +317,8 @@ extension PlayerWindowController {
         thumbnailPeekView.alphaValue = 1.0
       }
 
-      timeLabel.alphaValue = 1.0
-      timeLabel.isHidden = false
       thumbnailPeekView.isHidden = !showThumbnail
 
-      currentPreviewTimeSec = previewTimeSec
       animationState = .shown
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
       // reliably, so using a timer works well as a failsafe.
@@ -358,13 +368,14 @@ extension PlayerWindowController {
     animationPipeline.submit(tasks)
   }
 
-  /// Without animation. For animated version, see: `hideSeekPreviewWithAnimation()`.
+  /// Without animation. For animated version, see `hideSeekPreviewWithAnimation()`, which will call this func (DRY).
   func hideSeekPreviewImmediately() {
     guard seekPreview.animationState == .shown || seekPreview.animationState == .willHide else { return }
     seekPreview.hideTimer.cancel()
     seekPreview.animationState = .hidden
     seekPreview.thumbnailPeekView.isHidden = true
     seekPreview.timeLabel.isHidden = true
+    seekPreview.currentPreviewTimeSec = nil
   }
 
   /// Display time label & thumbnail when mouse over slider
@@ -432,11 +443,10 @@ extension PlayerWindowController {
 
     let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
     let currentGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
-                                                   screenID: winGeoUpdated.screenID,
-                                                   video: geo.video)
-    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player, currentLayout,
-                            currentControlBar: currentControlBar, currentGeo,
-                            isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+                                                 screenID: winGeoUpdated.screenID,
+                                                 video: geo.video)
+    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player,
+                            currentControlBar: currentControlBar, currentGeo)
     return true
   }
 
