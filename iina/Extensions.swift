@@ -1313,7 +1313,7 @@ extension CGImage {
       bitsPerPixel: 0)
   }
 
-  static func buildCompositeBarImg(barImg: CGImage, highlightOverlayImg: CGImage) -> CGImage {
+  static func buildCompositeBarImg(barImg: CGImage, highlightOverlayImg: CGImage, _ drawingCalls: ((CGContext) -> Void)? = nil) -> CGImage {
     let compositeImg = CGImage.buildBitmapImage(width: barImg.width, height: barImg.height) { cgc in
       let bounds = CGRect(origin: .zero, size: barImg.size())
 
@@ -1322,6 +1322,11 @@ extension CGImage {
 
       cgc.setBlendMode(.overlay)
       cgc.draw(highlightOverlayImg, in: bounds)
+
+      if let drawingCalls {
+        cgc.setBlendMode(.normal)
+        drawingCalls(cgc)
+      }
     }
     return compositeImg
   }

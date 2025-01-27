@@ -177,13 +177,6 @@ class BarFactory {
 
     let imgConf = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
-    let currentHoverX: CGFloat?
-    if let currentPreviewTimeSec {
-      currentHoverX = currentPreviewTimeSec / durationSec * imgConf.barWidth
-    } else {
-      currentHoverX = nil
-    }
-
     let currentValuePointX = (imgConf.imgPadding + (currentValueRatio * imgConf.barWidth)).rounded()
 
     // Determine clipping rects (pixel whitelists)
@@ -210,7 +203,34 @@ class BarFactory {
                                width: imgConf.imgWidth - rightClipMinX,
                                height: imgConf.imgHeight)
 
-    let barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
+    // X coord of hover is needed to determine chapter hover effect.
+    let currentHoverX: CGFloat?
+    // Hover indicator needs to be drawn at the very end, possibly after compositing cached ranges
+    let drawHoverIndicator: ((CGContext) -> Void)?
+    if let currentPreviewTimeSec {
+      let hoverX = (currentPreviewTimeSec / durationSec * imgConf.barWidth).rounded()
+      currentHoverX = hoverX
+      if hoverX >= leftClipMaxX && hoverX <= rightClipMinX {
+        drawHoverIndicator = nil
+      } else {
+        // Hover indicator
+        drawHoverIndicator = { ctx in
+          ctx.beginPath()
+          // Use entire img height for now. In the future, would be better to make taller than the main knob.
+          // Need to investigate drawing directly to CGLayers
+          let indicatorRect = NSRect(x: hoverX, y: 0, width: scaleFactor, height: imgConf.imgHeight)
+          ctx.addPath(CGPath(rect: indicatorRect, transform: nil))
+          ctx.setFillColor(KnobFactory.shared.loopKnobColor.cgColor)
+          ctx.fillPath()
+        }
+
+      }
+    } else {
+      currentHoverX = nil
+      drawHoverIndicator = nil
+    }
+
+    var barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
 
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
@@ -307,57 +327,62 @@ class BarFactory {
         }
       }
 
+      let drawingIsDone = cachedRanges.isEmpty
+      if let drawHoverIndicator, drawingIsDone {
+        drawHoverIndicator(cgc)
+      }
     }  // end first img
 
-    guard !cachedRanges.isEmpty else { return barImg }
+    if !cachedRanges.isEmpty {
+      // Show cached ranges (if enabled).
+      // Not sure how efficient this is...
 
-    // Show cached ranges (if enabled).
-    // Not sure how efficient this is...
-
-    // First build overlay image which colors all the cached regions
-    let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
-      if hasSpaceForKnob {
-        // Apply clip (pixel whitelist) to avoid drawing over the knob
-        cgc.clip(to: [leftClipRect, rightClipRect])
-      }
-
-      // First, just color the cached regions as crude rects which are at least as large as barImg…
-      let maxBarHeightNeeded = imgConf.maxBarHeightNeeded
-      let minY: CGFloat = (imgConf.imgHeight - maxBarHeightNeeded) * 0.5
-
-      var rectsLeft: [NSRect] = []
-      var rectsRight: [NSRect] = []
-      for cachedRange in cachedRanges {
-        let startX: CGFloat = cachedRange.0 / durationSec * imgConf.barWidth
-        let endX: CGFloat = cachedRange.1 / durationSec * imgConf.barWidth
-        if startX > leftClipMaxX {
-          rectsRight.append(CGRect(x: startX, y: minY,
-                                   width: endX - startX, height: maxBarHeightNeeded))
-        } else if endX > leftClipMaxX {
-          rectsLeft.append(CGRect(x: startX, y: minY,
-                                  width: leftClipMaxX - startX, height: maxBarHeightNeeded))
-
-          let start2ndX = leftClipMaxX
-          rectsRight.append(CGRect(x: start2ndX, y: minY,
-                                   width: endX - start2ndX, height: maxBarHeightNeeded))
-        } else {
-          rectsLeft.append(CGRect(x: startX, y: minY,
-                                  width: endX - startX, height: maxBarHeightNeeded))
+      // First build overlay image which colors all the cached regions
+      let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
+        if hasSpaceForKnob {
+          // Apply clip (pixel whitelist) to avoid drawing over the knob
+          cgc.clip(to: [leftClipRect, rightClipRect])
         }
+
+        // First, just color the cached regions as crude rects which are at least as large as barImg…
+        let maxBarHeightNeeded = imgConf.maxBarHeightNeeded
+        let minY: CGFloat = (imgConf.imgHeight - maxBarHeightNeeded) * 0.5
+
+        var rectsLeft: [NSRect] = []
+        var rectsRight: [NSRect] = []
+        for cachedRange in cachedRanges {
+          let startX: CGFloat = cachedRange.0 / durationSec * imgConf.barWidth
+          let endX: CGFloat = cachedRange.1 / durationSec * imgConf.barWidth
+          if startX > leftClipMaxX {
+            rectsRight.append(CGRect(x: startX, y: minY,
+                                     width: endX - startX, height: maxBarHeightNeeded))
+          } else if endX > leftClipMaxX {
+            rectsLeft.append(CGRect(x: startX, y: minY,
+                                    width: leftClipMaxX - startX, height: maxBarHeightNeeded))
+
+            let start2ndX = leftClipMaxX
+            rectsRight.append(CGRect(x: start2ndX, y: minY,
+                                     width: endX - start2ndX, height: maxBarHeightNeeded))
+          } else {
+            rectsLeft.append(CGRect(x: startX, y: minY,
+                                    width: endX - startX, height: maxBarHeightNeeded))
+          }
+        }
+
+        cgc.setFillColor(leftCachedColor)
+        cgc.fill(rectsLeft)
+        cgc.setFillColor(rightCachedColor)
+        cgc.fill(rectsRight)
+
+        // Now use barImg as a mask, so that crude rects above are trimmed to match its silhoulette:
+        cgc.setBlendMode(.destinationIn)
+        cgc.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
       }
-
-      cgc.setFillColor(leftCachedColor)
-      cgc.fill(rectsLeft)
-      cgc.setFillColor(rightCachedColor)
-      cgc.fill(rectsRight)
-
-      // Now use barImg as a mask, so that crude rects above are trimmed to match its silhoulette:
-      cgc.setBlendMode(.destinationIn)
-      cgc.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
+      // Now paste cacheImg into barImg:
+      barImg = CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg, drawHoverIndicator)
     }
 
-    // Now paste cacheImg into barImg and return the result:
-    return CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg)
+    return barImg
   }
 
   // MARK: - Volume Bar
