@@ -100,6 +100,8 @@ class BarFactory {
                                     barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
     self.maxVolBarHeightNeeded = maxVolBarHeightNeeded
 
+    // FIXME: clear colors
+
     // - PlaySlider config sets
 
     let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxPlayBarHeightNeeded,
@@ -329,6 +331,7 @@ class BarFactory {
 
       let drawingIsDone = cachedRanges.isEmpty
       if let drawHoverIndicator, drawingIsDone {
+        cgc.resetClip()
         drawHoverIndicator(cgc)
       }
     }  // end first img

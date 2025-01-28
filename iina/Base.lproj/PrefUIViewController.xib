@@ -1932,7 +1932,7 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0Ih-pL-Y4o" userLabel="Playback-Slider VStack View">
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0Ih-pL-Y4o" userLabel="Playback-Slider VStack View" propertyAccessControl="all">
                             <rect key="frame" x="0.0" y="0.0" width="450" height="132"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="1k5-iK-kYc">
@@ -1950,8 +1950,8 @@ For smoothest results, also enable custom full screen.</string>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="LEh-GE-dwB">
-                                                <rect key="frame" x="183" y="83" width="120" height="16"/>
-                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Progress bar color:" id="gy7-1T-NnW">
+                                                <rect key="frame" x="244" y="83" width="59" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Fill color:" id="gy7-1T-NnW">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1989,8 +1989,18 @@ For smoothest results, also enable custom full screen.</string>
                                                             <binding destination="lH7-Vv-0M1" name="value" keyPath="values.roundCornersInSliders" id="Lad-2h-2qG"/>
                                                         </connections>
                                                     </button>
-                                                    <button horizontalHuggingPriority="249" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="OMM-mG-Uts">
+                                                    <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="3CT-UI-QMi">
                                                         <rect key="frame" x="-2" y="47" width="418" height="18"/>
+                                                        <buttonCell key="cell" type="check" title="Highlight pieces which have loaded (applies only to remote files)" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="TMa-kW-zoR">
+                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                        <connections>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.showCachedRangesInSlider" id="7ve-9h-Zkb"/>
+                                                        </connections>
+                                                    </button>
+                                                    <button horizontalHuggingPriority="249" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="OMM-mG-Uts">
+                                                        <rect key="frame" x="-2" y="23" width="418" height="18"/>
                                                         <buttonCell key="cell" type="check" title="Show chapter position in progress bar" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BVV-Z3-LHR">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
@@ -2003,23 +2013,13 @@ For smoothest results, also enable custom full screen.</string>
                                                         </connections>
                                                     </button>
                                                     <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="rft-T0-lds">
-                                                        <rect key="frame" x="-2" y="23" width="418" height="18"/>
+                                                        <rect key="frame" x="-2" y="-1" width="418" height="18"/>
                                                         <buttonCell key="cell" type="check" title="Show remaining time instead of total duration" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="EAa-gN-8dL">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
                                                         <connections>
                                                             <binding destination="lH7-Vv-0M1" name="value" keyPath="values.showRemainingTime" id="B4f-6q-2no"/>
-                                                        </connections>
-                                                    </button>
-                                                    <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="3CT-UI-QMi">
-                                                        <rect key="frame" x="-2" y="-1" width="418" height="18"/>
-                                                        <buttonCell key="cell" type="check" title="Highlight pieces which have loaded (remote files only)" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="TMa-kW-zoR">
-                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                            <font key="font" metaFont="system"/>
-                                                        </buttonCell>
-                                                        <connections>
-                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.showCachedRangesInSlider" id="7ve-9h-Zkb"/>
                                                         </connections>
                                                     </button>
                                                 </subviews>
