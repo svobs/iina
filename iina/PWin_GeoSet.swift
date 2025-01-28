@@ -43,8 +43,16 @@ extension PlayerWindowController {
       return nil
     }
     // Need to check state of current playback to avoid race conditions
-    guard loaded, !sessionState.isRestoring, player.isActive, player.info.isFileLoaded,
+    guard loaded, player.isActive, player.info.isFileLoaded,
           let window, window.isOpen else {
+      return nil
+    }
+    guard !sessionState.isRestoring else {
+      // Log this. It can sometimes indicate a bug during launch
+      log.debug("Still restoring; will use cached window frame & screenID")
+      if !Preference.bool(for: .isRestoreInProgress) {
+        log.error("Window still has sessionState==restoring, but isRestoreInProgress==NO. This is a bug!")
+      }
       return nil
     }
     return (window.frame, bestScreen.screenID)

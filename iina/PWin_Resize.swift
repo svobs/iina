@@ -305,7 +305,13 @@ extension PlayerWindowController {
             /// These tasks should not execute until *after* `super.showWindow` is called.
             var videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: initialLayout, cxt, musicModeTransform)
             videoGeoUpdateTasks.append(doAfterTask)
-            pendingVideoGeoUpdateTasks = videoGeoUpdateTasks
+            if cxt.sessionState.isRestoring, UIState.shared.windowsMinimized.contains(window!.savedStateName) {
+              // If restoring a minimized window, we can't expect showWindow() to be called. But we aren't hiding anyway. Just run end task now.
+              log.verbose{"[applyVideoGeo \(transformName)] Window to restore is minimized; will run tasks immediately instead of queueing"}
+              imminentTasks.append(contentsOf: videoGeoUpdateTasks)
+            } else {
+              pendingVideoGeoUpdateTasks = videoGeoUpdateTasks
+            }
           } else {
             let videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: currentLayout, cxt, musicModeTransform)
             imminentTasks.append(contentsOf: videoGeoUpdateTasks)
@@ -322,6 +328,7 @@ extension PlayerWindowController {
   /// Cleanup, update `sessionState` & UI.
   private func buildEndTask(_ cxt: GeometryTransform.Context, newVidGeo: VideoGeometry, onSuccess: (() -> Void)? = nil) -> IINAAnimation.Task {
     IINAAnimation.Task.instantTask{ [self] in
+      log.verbose{"[applyVideoGeo \(cxt.name)] Running endTask; sessionState=\(cxt.sessionState)"}
       if cxt.sessionState.isChangingVideoTrack {
         // Set to prevent future duplicate calls from continuing
         cxt.currentPlayback.vidTrackLastSized = cxt.vidTrackID
