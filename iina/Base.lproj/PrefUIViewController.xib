@@ -2006,7 +2006,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     </button>
                                                     <button horizontalHuggingPriority="249" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="OMM-mG-Uts">
                                                         <rect key="frame" x="-2" y="23" width="418" height="18"/>
-                                                        <buttonCell key="cell" type="check" title="Show chapter position in progress bar" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BVV-Z3-LHR">
+                                                        <buttonCell key="cell" type="check" title="Show chapter positions in progress bar" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BVV-Z3-LHR">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>

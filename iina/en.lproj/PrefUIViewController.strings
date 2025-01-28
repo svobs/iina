@@ -44,8 +44,8 @@
 /* Class = "NSMenuItem"; title = "Width:"; ObjectID = "B1c-oO-fIs"; */
 "B1c-oO-fIs.title" = "Width:";
 
-/* Class = "NSButtonCell"; title = "Show chapter position in progress bar"; ObjectID = "BVV-Z3-LHR"; */
-"BVV-Z3-LHR.title" = "Show chapter position in progress bar";
+/* Class = "NSButtonCell"; title = "Show chapter positions in progress bar"; ObjectID = "BVV-Z3-LHR"; */
+"BVV-Z3-LHR.title" = "Show chapter positions in progress bar";
 
 /* Class = "NSButtonCell"; title = "Only when media is opened manually"; ObjectID = "CJE-ap-IH8"; */
 "CJE-ap-IH8.title" = "Only when media is opened manually";
