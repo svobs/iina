@@ -480,7 +480,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Constrain sizes for prefs preview
     let previewBarHeight = newGeo.position == .floating ? 24 : min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
-                                        forceSingleLine: true,
+                                        forceSingleLineStyle: true,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth

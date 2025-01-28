@@ -24,7 +24,7 @@ extension BarFactory {
     var barMinY: CGFloat { (imgHeight - barHeight) * 0.5 }
     var barMinX: CGFloat { imgPadding }
 
-    /// Corner radius will be overridden to `0` if `PK.roundCornersInSliders` is true
+    /// Corner radius will be overridden to `0` if `PK.roundRectSliderBars` is true
     init(scaleFactor: CGFloat, imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
          fillColor: CGColor, pillCornerRadius: CGFloat) {
       self.scaleFactor = scaleFactor

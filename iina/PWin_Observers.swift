@@ -28,7 +28,7 @@ extension PlayerWindowController {
       .showRemainingTime,
       .maxVolume,
       .showCachedRangesInSlider,
-      .roundCornersInSliders,
+      .roundRectSliderBars,
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -60,7 +60,7 @@ extension PlayerWindowController {
       .thumbnailBorderStyle,
       .showChapterPos,
       .arrowButtonAction,
-      .playSliderBarLeftColor,
+      .sliderDoneColor,
       .blackOutMonitor,
       .useLegacyFullScreen,
       .displayTimeAndBatteryInFullScreen,
@@ -216,8 +216,8 @@ extension PlayerWindowController {
         .useLegacyWindowedMode,
         .arrowButtonAction,
       // These need calls to BarFactory.current.updateBarStylesFromPrefs():
-        .roundCornersInSliders,
-        .playSliderBarLeftColor:
+        .roundRectSliderBars,
+        .sliderDoneColor:
 
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
       updateTitleBarAndOSC()

@@ -48,7 +48,7 @@ class BarFactory {
   private var rightCachedColor: CGColor
 
   init() {
-    let enableRoundedCorners = Preference.bool(for: .roundCornersInSliders)
+    let enableRoundedCorners = Preference.bool(for: .roundRectSliderBars)
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
       guard enableRoundedCorners else { return 0.0 }
       return barHeight * 0.5
@@ -152,7 +152,7 @@ class BarFactory {
   }
 
   private static func barColorLeftFromPrefs() -> CGColor {
-    let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
+    let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderDoneColor)
     switch userSetting {
     case .gray:
       return NSColor.mainSliderBarLeft.cgColor

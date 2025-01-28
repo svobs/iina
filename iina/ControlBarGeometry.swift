@@ -44,7 +44,7 @@ struct ControlBarGeometry {
   /// If true, always use single-line style OSC, even if qualifying for multi-line OSC.
   ///
   /// (Only applies to top & bottom OSCs).
-  let forceSingleLine: Bool
+  let forceSingleLineStyle: Bool
 
   /// Preferred height for "full-width" OSCs (i.e. top or bottom, not floating or music mode)
   let barHeight: CGFloat
@@ -85,12 +85,12 @@ struct ControlBarGeometry {
        toolbarItems: [Preference.ToolBarButton]? = nil,
        arrowButtonAction: Preference.ArrowButtonAction? = nil,
        barHeight desiredBarHeight: CGFloat? = nil,
-       forceSingleLine: Bool = false,
+       forceSingleLineStyle: Bool = false,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
-    self.forceSingleLine = forceSingleLine
+    self.forceSingleLineStyle = forceSingleLineStyle
 
     // Actual cardinal sizes should be downstream from tick values
     let playIconSizeTicks = playIconSizeTicks ?? Preference.integer(for: .oscBarPlayIconSizeTicks)
@@ -131,7 +131,7 @@ struct ControlBarGeometry {
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
       let maxBtnHeight: CGFloat
-      if !forceSingleLine && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
+      if !forceSingleLineStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
         let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
         fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_BottomMargin
@@ -211,7 +211,7 @@ struct ControlBarGeometry {
     return true
   }
 
-  var isMultiLineOSC: Bool { !forceSingleLine && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
+  var isMultiLineOSC: Bool { !forceSingleLineStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
 
   var playSliderHeight: CGFloat
 

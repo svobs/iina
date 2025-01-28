@@ -1978,7 +1978,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     <constraint firstAttribute="height" constant="20" id="5o6-5r-a1e"/>
                                                 </constraints>
                                                 <connections>
-                                                    <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.playSliderBarLeftColor" id="vzW-PQ-E3P"/>
+                                                    <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.sliderDoneColor" id="vzW-PQ-E3P"/>
                                                 </connections>
                                             </popUpButton>
                                             <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6hb-cI-xdu" userLabel="Playback-Slider-Box VStack View">
@@ -1991,7 +1991,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
                                                         <connections>
-                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.roundCornersInSliders" id="Lad-2h-2qG"/>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.roundRectSliderBars" id="Lad-2h-2qG"/>
                                                         </connections>
                                                     </button>
                                                     <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="3CT-UI-QMi">

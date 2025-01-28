@@ -130,9 +130,6 @@ struct Preference {
     static let autoRepeat = Key("autoRepeat")
     static let defaultRepeatMode = Key("defaultRepeatMode")
 
-    /** Show chapter pos in progress bar (bool) */
-    static let showChapterPos = Key("showChapterPos")
-
     static let screenshotSaveToFile = Key("screenshotSaveToFile")
     static let screenshotCopyToClipboard = Key("screenshotCopyToClipboard")
     static let screenshotFolder = Key("screenShotFolder")
@@ -152,18 +149,27 @@ struct Preference {
 
     static let cursorAutoHideTimeout = Key("cursorAutoHideTimeout")
 
-    /// Title bar and OSC
+    // - Title bar & OSC
+
     static let showTopBarTrigger = Key("showTopBarTrigger")
+    /// Inside or outside viewport?
     static let topBarPlacement = Key("topBarPlacement")
     static let bottomBarPlacement = Key("bottomBarPlacement")
-    static let enableOSC = Key("enableOSC")
-    static let oscPosition = Key("oscPosition")
-    static let oscOverlayStyle = Key("oscOverlayStyle")
-    static let hideFadeableViewsWhenOutsideWindow = Key("hideFadeableViewsWhenOutsideWindow")
-    static let playSliderBarLeftColor = Key("playSliderBarLeftColor")
 
-    // The following apply only to "bar"-type OSCs (i.e. not floating or title bar):
+    static let enableOSC = Key("enableOSC")
+    /// Top, bottom, or floating
+    static let oscPosition = Key("oscPosition")
+    /// Blended gray, or clear-black gradient. Only applies to top & bottom OSCs which are `.insideViewport`
+    static let oscOverlayStyle = Key("oscOverlayStyle")
+
+    /// Which buttons to display in the OSC, stored as `Array` of `Integer`s
+    static let controlBarToolbarButtons = Key("controlBarToolbarButtons")
+
+    // - Top & Bottom OSCs
+
+    /// Total height of the OSC container.
     static let oscBarHeight = Key("oscBarHeight")
+
     static let oscBarPlayIconSize = Key("oscBarPlayIconSize")
     static let oscBarPlayIconSpacing = Key("oscBarPlayIconSpacing")
     /// Size of one side of a (square) OSC toolbar button
@@ -176,35 +182,43 @@ struct Preference {
     static let oscBarToolIconSizeTicks = Key("oscBarToolIconSizeTicks")
     static let oscBarToolIconSpacingTicks = Key("oscBarToolIconSpacingTicks")
 
-    /// OSC toolbar
+    // - Floating OSC
+
     /// How close the floating OSC is allowed to get to the edges of its available space, in pixels
     static let floatingControlBarMargin = Key("floatingControlBarMargin")
-    /** Horizontal position of floating control bar. (float, 0 - 1) */
+    /// Horizontal position of floating control bar. (float, 0 - 1)
     static let controlBarPositionHorizontal = Key("controlBarPositionHorizontal")
-
-    /** Horizontal position of floating control bar. In percentage from bottom. (float, 0 - 1) */
+    /// Horizontal position of floating control bar. In percentage from bottom. (float, 0 - 1)
     static let controlBarPositionVertical = Key("controlBarPositionVertical")
 
-    /** Whether control bar stick to center when dragging. (bool) */
+    /// Whether floating OSC can snap to center when dragging close to it.
     static let controlBarStickToCenter = Key("controlBarStickToCenter")
 
-    /** Timeout for auto hiding control bar (float) */
-    static let controlBarAutoHideTimeout = Key("controlBarAutoHideTimeout")
+    // - Play Slider & Volume Slider
 
     /// If true, highlight the part of the playback slider to the right of the knob
-    /// which has already been loaded into the demuxer cache
+    /// which has already been loaded into the demuxer cache.
+    ///
+    /// Applies to remote files only. This is always enabled for streaming media.
     static let showCachedRangesInSlider = Key("showCachedRangesInSlider")
-    static let roundCornersInSliders = Key("roundCornersInSliders")
+    static let roundRectSliderBars = Key("roundRectSliderBars")
+    static let sliderDoneColor = Key("sliderDoneColor")
+    // If true, break up the PlaySlider bar into chapter segments. (bool)
+    static let showChapterPos = Key("showChapterPos")
 
-    /** Whether auto hiding control bar is enabled. (bool)*/
+    // - Fadeable ("Inside") Views
+
+    /// Whether auto hiding `.insideViewport` views is enabled. (bool).
     static let enableControlBarAutoHide = Key("enableControlBarAutoHide")
+    /// Timeout for auto hiding OSC (if it is `.insideViewport`) & other overlays (float).
+    static let controlBarAutoHideTimeout = Key("controlBarAutoHideTimeout")
+    static let hideFadeableViewsWhenOutsideWindow = Key("hideFadeableViewsWhenOutsideWindow")
 
-    /// Which buttons to display in the OSC, stored as `Array` of `Integer`s
-    static let controlBarToolbarButtons = Key("controlBarToolbarButtons")
+    // - OSD
 
-    /// OSD
+    /// Enable/disable OSD
     static let enableOSD = Key("enableOSD")
-    /// Only valid if `enableOSD` is `true`:
+    /// Only valid if `enableOSD` is `true`.
     static let enableOSDInMusicMode = Key("enableOSDInMusicMode")
 
     static let osdPosition = Key("osdPosition")
@@ -216,14 +230,16 @@ struct Preference {
     static let osdAutoHideTimeout = Key("osdAutoHideTimeout")
     static let osdTextSize = Key("osdTextSize")
 
-    /// Window geometry
+    // - Window Geometry
+
     static let usePhysicalResolution = Key("usePhysicalResolution")
     static let initialWindowSizePosition = Key("initialWindowSizePosition")
     static let resizeWindowScheme = Key("resizeWindowScheme")
     static let resizeWindowTiming = Key("resizeWindowTiming")
     static let resizeWindowOption = Key("resizeWindowOption")
 
-    /// Sidebars
+    // - Sidebars
+
     static let leadingSidebarPlacement = Key("leadingSidebarPlacement")
     static let trailingSidebarPlacement = Key("trailingSidebarPlacement")
     static let showLeadingSidebarToggleButton = Key("showLeadingSidebarToggleButton")
@@ -240,7 +256,8 @@ struct Preference {
     static let playlistWidth = Key("playlistWidth")
     static let prefetchPlaylistVideoDuration = Key("prefetchPlaylistVideoDuration")
 
-    /// Thumbnail preview
+    // - Thumbnail
+
     static let enableThumbnailPreview = Key("enableThumbnailPreview")
     static let enableThumbnailForRemoteFiles = Key("enableThumbnailForRemoteFiles")
     static let enableThumbnailForMusicMode = Key("enableThumbnailForMusicMode")
@@ -257,10 +274,13 @@ struct Preference {
     static let thumbnailDisplayedSizePercentage = Key("thumbnailDisplayedSizePercentage")
     static let maxThumbnailPreviewCacheSize = Key("maxThumbnailPreviewCacheSize")
 
+    // - Seek Preview
+
     static let showDeltaInSliderSeekHover = Key("showDeltaInSeekTimeHover")
     static let showChapterInSliderSeekHover = Key("showChapterInSliderSeekHover")
 
-    /// Music mode
+    // - Music mode
+
     static let autoSwitchToMusicMode = Key("autoSwitchToMusicMode")
     static let musicModeShowPlaylist = Key("musicModeShowPlaylist")
     static let musicModeShowAlbumArt = Key("musicModeShowAlbumArt")
@@ -269,7 +289,8 @@ struct Preference {
 
     static let displayTimeAndBatteryInFullScreen = Key("displayTimeAndBatteryInFullScreen")
 
-    /// Picture-in-Picture (PiP)
+    // - Picture-in-Picture (PiP)
+
     static let windowBehaviorWhenPip = Key("windowBehaviorWhenPip")
     static let pauseWhenPip = Key("pauseWhenPip")
     static let togglePipByMinimizingWindow = Key("togglePipByMinimizingWindow")
@@ -1183,7 +1204,7 @@ struct Preference {
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
-    .roundCornersInSliders: true,
+    .roundRectSliderBars: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolIconSize: 18,
@@ -1202,7 +1223,7 @@ struct Preference {
     .oscPosition: OSCPosition.floating.rawValue,
     .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .hideFadeableViewsWhenOutsideWindow: true,
-    .playSliderBarLeftColor: SliderBarLeftColor.defaultValue.rawValue,
+    .sliderDoneColor: SliderBarLeftColor.defaultValue.rawValue,
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,
     .playlistTabGroupLocation: SidebarLocation.trailingSidebar.rawValue,
