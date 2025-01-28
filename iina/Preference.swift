@@ -276,8 +276,8 @@ struct Preference {
 
     // - Seek Preview
 
-    static let showDeltaInSliderSeekHover = Key("showDeltaInSeekTimeHover")
-    static let showChapterInSliderSeekHover = Key("showChapterInSliderSeekHover")
+    static let showTimeDeltaInSeekPreview = Key("showTimeDeltaInSeekPreview")
+    static let showChapterInSeekPreview = Key("showChapterInSeekPreview")
 
     // - Music mode
 
@@ -605,8 +605,10 @@ struct Preference {
 
   enum Theme: Int, InitializingFromKey {
     case dark = 0
+    /// Obsolete
     case ultraDark // 1
     case light // 2
+    /// Obsolete
     case mediumLight // 3
     case system // 4
 
@@ -1299,10 +1301,10 @@ struct Preference {
     .thumbnailDisplayedSizePercentage: 25,
     .maxThumbnailPreviewCacheSize: 500,
 
-      .showDeltaInSliderSeekHover: true,
-    .showChapterInSliderSeekHover: true,
+      .showTimeDeltaInSeekPreview: true,
+    .showChapterInSeekPreview: true,
 
-    .autoSwitchToMusicMode: true,
+      .autoSwitchToMusicMode: true,
     .musicModeShowPlaylist: false,
     .musicModePlaylistHeight: 300,
     .musicModeShowAlbumArt: true,

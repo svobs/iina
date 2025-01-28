@@ -7,10 +7,12 @@
 
 import Foundation
 
+fileprivate let minTicks: Int = 0
+fileprivate let maxTicks: Int = 4
+
 fileprivate let iconSizeBaseMultiplier: CGFloat = 0.5
 fileprivate let playIconSpacingScaleMultiplier: CGFloat = 2.0
 fileprivate let playIconSpacingMinScaleMultiplier: CGFloat = 0.1
-fileprivate let maxTicks: CGFloat = 4
 fileprivate let toolSpacingScaleMultiplier: CGFloat = 2.0
 
 fileprivate let minToolBtnHeight: CGFloat = 8
@@ -163,6 +165,7 @@ struct ControlBarGeometry {
     self.barHeight = barHeight
     self.fullIconHeight = fullIconHeight
     self.playIconSize = playIconSize
+
     self.position = oscPosition
 
     // Compute size of arrow buttons
@@ -199,15 +202,14 @@ struct ControlBarGeometry {
   }
 
   var isValid: Bool {
-    let maxTicks = Int(maxTicks)
     let playIconSizeTicks = playIconSizeTicks
-    guard playIconSizeTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    guard playIconSizeTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
     let playIconSpacingTicks = playIconSpacingTicks
-    guard playIconSpacingTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    guard playIconSpacingTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
     let toolIconSizeTicks = toolIconSizeTicks
-    guard toolIconSizeTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    guard toolIconSizeTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
     let toolIconSpacingTicks = toolIconSpacingTicks
-    guard toolIconSpacingTicks.isBetweenInclusive(0, and: maxTicks) else { return false }
+    guard toolIconSpacingTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
     return true
   }
 
@@ -295,7 +297,7 @@ struct ControlBarGeometry {
     let baseHeight = fullHeight * iconSizeBaseMultiplier
     let adjustableHeight = fullHeight - baseHeight
 
-    let height = baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
+    let height = baseHeight + (adjustableHeight * (CGFloat(ticks) / CGFloat(maxTicks)))
     return height.rounded()
   }
 
@@ -303,7 +305,7 @@ struct ControlBarGeometry {
   private static func playIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    let spacing = fullHeight * (((CGFloat(ticks) / maxTicks) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
+    let spacing = fullHeight * (((CGFloat(ticks) / CGFloat(maxTicks)) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
     return spacing.rounded()
   }
 
@@ -311,7 +313,7 @@ struct ControlBarGeometry {
   private static func toolIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    let spacing = fullHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
+    let spacing = fullHeight * CGFloat(ticks) / CGFloat(maxTicks) / toolSpacingScaleMultiplier
     return spacing.rounded()
   }
 

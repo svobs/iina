@@ -167,17 +167,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     wConstraint.isActive = true
     oscToolbarStackViewWidthConstraint = wConstraint
 
-    let removeThemeMenuItemWithTag = { (tag: Int) in
-      if let item = self.themeMenu.item(withTag: tag) {
-        self.themeMenu.removeItem(item)
-      }
-    }
-    removeThemeMenuItemWithTag(Preference.Theme.mediumLight.rawValue)
-    removeThemeMenuItemWithTag(Preference.Theme.ultraDark.rawValue)
-
     IINAAnimation.disableAnimation {
       // Initial update: do now to prevent unexpected animations during restore
-      updateAllSections()
+      updateAllSectionsFromPrefs()
     }
   }
 
@@ -189,23 +181,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
     animationPipeline.submitInstantTask{ [self] in
-      updateAllSections()
+      updateAllSectionsFromPrefs()
     }
-  }
-
-  private func updateAllSections() {
-    // Update sliders from prefs:
-    let geo = ControlBarGeometry(mode: .windowedNormal)
-    updateOSCSliders(from: geo)
-
-    updateSidebarSection()
-    refreshTitleBarAndOSCSection()
-    _updateWindowGeometrySection()
-    updatePictureInPictureSection()
-
-    updateThumbnailCacheStat()
-    updateAspectControlsFromPrefs()
-    updateCropControlsFromPrefs()
   }
 
   override func viewWillDisappear() {
@@ -262,10 +239,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       // Use animation where possible to make the transition less jarring
       animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
-        updateWindowGeometrySection()
+        updateWindowGeometrySectionFromPrefs()
       }
     case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation, PK.pluginsTabGroupLocation:
-      updateSidebarSection()
+      updateSidebarSectionFromPrefs()
     case PK.oscBarHeight,
       PK.controlBarToolbarButtons,
       PK.oscBarPlayIconSizeTicks,
@@ -297,9 +274,24 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
+  private func updateAllSectionsFromPrefs() {
+    // Update sliders from prefs:
+    let geo = ControlBarGeometry(mode: .windowedNormal)
+    updateOSCSliders(from: geo)
+
+    updateSidebarSectionFromPrefs()
+    refreshTitleBarAndOSCSection(from: geo)
+    _updateWindowGeometrySectionFromPrefs()
+    updatePictureInPictureSection()
+
+    updateThumbnailCacheStat()
+    updateAspectControlsFromPrefs()
+    updateCropControlsFromPrefs()
+  }
+
   // MARK: - Sidebars
 
-  private func updateSidebarSection() {
+  private func updateSidebarSectionFromPrefs() {
     let settingsTabGroup: Preference.SidebarLocation = Preference.enum(for: .settingsTabGroupLocation)
     let playlistTabGroup: Preference.SidebarLocation = Preference.enum(for: .playlistTabGroupLocation)
     let pluginTabGroup: Preference.SidebarLocation = Preference.enum(for: .pluginsTabGroupLocation)
@@ -465,6 +457,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   private func updateOSCSliders(from newGeo: ControlBarGeometry) {
+    guard newGeo.isValid else {
+      Logger.log.error{"Cannot update Settings UI; OSC geometry is invalid: \(newGeo)"}
+      return
+    }
     toolIconSizeSlider.intValue = Int32(newGeo.toolIconSizeTicks)
     toolIconSpacingSlider.intValue = Int32(newGeo.toolIconSpacingTicks)
     playIconSizeSlider.intValue = Int32(newGeo.playIconSizeTicks)
@@ -646,7 +642,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       return
     }
     Preference.set(scheme.rawValue, for: .resizeWindowScheme)
-    updateWindowGeometrySection()
+    updateWindowGeometrySectionFromPrefs()
   }
 
   // Called by a UI control. Updates prefs + any dependent UI controls
@@ -699,7 +695,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       Preference.set(geometry, for: .initialWindowSizePosition)
     }
 
-    updateWindowGeometrySection()
+    updateWindowGeometrySectionFromPrefs()
   }
 
   private func normalizeSignedInteger(_ string: String) -> String {
@@ -713,13 +709,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   // Updates UI from prefs. Uses a nice fade or sliding animation depending on the panel.
-  private func updateWindowGeometrySection() {
+  private func updateWindowGeometrySectionFromPrefs() {
     animationPipeline.submitTask { [self] in
-      _updateWindowGeometrySection()
+      _updateWindowGeometrySectionFromPrefs()
     }
   }
 
-  private func _updateWindowGeometrySection() {
+  private func _updateWindowGeometrySectionFromPrefs() {
     let resizeOption = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     let scheme: Preference.ResizeWindowScheme = Preference.enum(for: .resizeWindowScheme)
 
