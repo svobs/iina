@@ -11,9 +11,9 @@ fileprivate let minTicks: Int = 0
 fileprivate let maxTicks: Int = 4
 
 fileprivate let iconSizeBaseMultiplier: CGFloat = 0.5
-fileprivate let playIconSpacingScaleMultiplier: CGFloat = 2.0
+fileprivate let playIconSpacingScaleMultiplier: CGFloat = 0.5
 fileprivate let playIconSpacingMinScaleMultiplier: CGFloat = 0.1
-fileprivate let toolSpacingScaleMultiplier: CGFloat = 2.0
+fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.5
 
 fileprivate let minToolBtnHeight: CGFloat = 8
 fileprivate let minPlayBtnHeight: CGFloat = 8
@@ -87,11 +87,12 @@ struct ControlBarGeometry {
        toolbarItems: [Preference.ToolBarButton]? = nil,
        arrowButtonAction: Preference.ArrowButtonAction? = nil,
        barHeight desiredBarHeight: CGFloat? = nil,
-       forceSingleLineStyle: Bool = false,
+       forceSingleLineStyle: Bool? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
+    let forceSingleLineStyle = forceSingleLineStyle ?? Preference.bool(for: .oscForceSingleLine)
     self.forceSingleLineStyle = forceSingleLineStyle
 
     // Actual cardinal sizes should be downstream from tick values
@@ -304,16 +305,18 @@ struct ControlBarGeometry {
   /// Prefs UI ticks → CGFloat
   private static func playIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
-
-    let spacing = fullHeight * (((CGFloat(ticks) / CGFloat(maxTicks)) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
-    return spacing.rounded()
+    let baseHeight = fullHeight * playIconSpacingMinScaleMultiplier
+    let adjustableHeight = fullHeight - baseHeight
+    let adjustableHeight_Adjusted = adjustableHeight * CGFloat(ticks) / CGFloat(maxTicks) * playIconSpacingScaleMultiplier
+    let spacing: CGFloat = (baseHeight + adjustableHeight_Adjusted).rounded()
+    return spacing
   }
 
   /// Prefs UI ticks → CGFloat
   private static func toolIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    let spacing = fullHeight * CGFloat(ticks) / CGFloat(maxTicks) / toolSpacingScaleMultiplier
+    let spacing = fullHeight * CGFloat(ticks) / CGFloat(maxTicks) * toolSpacingScaleMultiplier
     return spacing.rounded()
   }
 

@@ -86,7 +86,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscSnapToCenterContainerView: NSView!
   @IBOutlet weak var oscHeightStackView: NSStackView!
   @IBOutlet weak var oscBarHeightTextField: NSTextField!
-  @IBOutlet weak var playbackButtonsStackView: NSStackView!
+  @IBOutlet weak var playbackBtnDimensionsHStackView: NSStackView!
   @IBOutlet weak var toolbarSectionVStackView: NSStackView!
   @IBOutlet weak var toolbarIconDimensionsHStackView: NSStackView!
   @IBOutlet weak var oscToolbarStackView: NSStackView!
@@ -399,6 +399,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     /// Each entry contains a ref to a view & intended `isHidden` state:
     var viewHidePairs: [(NSView, Bool)] = []
 
+//    let canHaveMultiLineOSC = hasBarOSC && !newGeo.forceSingleLineStyle  // TODO: 
     if toolbarIconDimensionsHStackView.isHidden != !hasBarOSC {
       viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
     }
@@ -413,7 +414,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
-    viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
+    viewHidePairs.append((playbackBtnDimensionsHStackView, !hasBarOSC))
 
     let hasTopBar = ib.hasTopBar
     if topBarPositionContainerView.isHidden != !hasTopBar {

@@ -161,6 +161,7 @@ struct Preference {
     static let oscPosition = Key("oscPosition")
     /// Blended gray, or clear-black gradient. Only applies to top & bottom OSCs which are `.insideViewport`
     static let oscOverlayStyle = Key("oscOverlayStyle")
+    static let oscForceSingleLine = Key("oscForceSingleLine")
 
     /// Which buttons to display in the OSC, stored as `Array` of `Integer`s
     static let controlBarToolbarButtons = Key("controlBarToolbarButtons")
@@ -1224,6 +1225,7 @@ struct Preference {
     .oscBarToolIconSpacingTicks: 1,
     .oscPosition: OSCPosition.floating.rawValue,
     .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
+    .oscForceSingleLine: false,
     .hideFadeableViewsWhenOutsideWindow: true,
     .sliderDoneColor: SliderBarLeftColor.defaultValue.rawValue,
     .playlistWidth: 270,

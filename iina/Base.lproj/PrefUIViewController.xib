@@ -37,7 +37,7 @@
                 <outlet property="pipMinimizeWindow" destination="YWw-1J-3Gr" id="5eN-rl-utd"/>
                 <outlet property="playIconSizeSlider" destination="s3w-bP-YzK" id="Skq-Yz-277"/>
                 <outlet property="playIconSpacingSlider" destination="Cpf-8F-Wfh" id="bNu-tZ-FGg"/>
-                <outlet property="playbackButtonsStackView" destination="TyG-b1-RQd" id="NWa-as-Aej"/>
+                <outlet property="playbackBtnDimensionsHStackView" destination="TyG-b1-RQd" id="NWa-as-Aej"/>
                 <outlet property="resetAspectPresetsButton" destination="sUa-JE-D3L" id="4Zk-lk-klu"/>
                 <outlet property="resetCropPresetsButton" destination="U4e-Vm-2gO" id="Zup-nM-5C4"/>
                 <outlet property="resizeWindowTimingPopUpButton" destination="HBJ-ip-LD2" id="l4w-Bz-faM"/>
@@ -1757,10 +1757,10 @@ For smoothest results, also enable custom full screen.</string>
                                         <rect key="frame" x="4" y="5" width="448" height="97"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
-                                            <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KsI-0g-GS1" userLabel="Playback-Buttons-Box Internal VStack View">
+                                            <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KsI-0g-GS1" userLabel="Playback-Btns-Box Internal VStack View">
                                                 <rect key="frame" x="16" y="11" width="416" height="75"/>
                                                 <subviews>
-                                                    <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TyG-b1-RQd" userLabel="Playback-Buttons HStack View">
+                                                    <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TyG-b1-RQd" userLabel="Playback-Btn-Dimensions HStack View">
                                                         <rect key="frame" x="0.0" y="54" width="416" height="21"/>
                                                         <subviews>
                                                             <textField focusRingType="none" horizontalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sAH-9N-W5W">
@@ -2940,7 +2940,7 @@ For smoothest results, also enable custom full screen.</string>
                                             <segmentedControl key="contentView" horizontalHuggingPriority="500" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" translatesAutoresizingMaskIntoConstraints="NO" id="KIu-aG-mHw" userLabel="Leading-Sidebar-Placement Segmented Control">
                                                 <rect key="frame" x="217" y="48" width="107" height="24"/>
                                                 <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="sME-na-jHH">
-                                                    <font key="font" metaFont="system" size="12"/>
+                                                    <font key="font" metaFont="cellTitle"/>
                                                     <segments>
                                                         <segment label="Inside" imageScaling="proportionallyUpOrDown" selected="YES" tag="1"/>
                                                         <segment label="Outside" tag="2"/>
@@ -2955,7 +2955,7 @@ For smoothest results, also enable custom full screen.</string>
                                             <segmentedControl key="contentView" horizontalHuggingPriority="500" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" translatesAutoresizingMaskIntoConstraints="NO" id="9fG-Qe-ZAx" userLabel="Trailing-Sidebar-Placement Segmented Control">
                                                 <rect key="frame" x="324" y="48" width="107" height="24"/>
                                                 <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="0MZ-00-6fG">
-                                                    <font key="font" metaFont="system" size="12"/>
+                                                    <font key="font" metaFont="cellTitle"/>
                                                     <segments>
                                                         <segment label="Inside" imageScaling="proportionallyUpOrDown" selected="YES" tag="1"/>
                                                         <segment label="Outside" tag="2"/>
