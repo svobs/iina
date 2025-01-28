@@ -550,7 +550,7 @@ extension PlayerWindowController {
     osc_SingleLineView.layer?.backgroundColor = .clear
 
     /// `osc_MultiLineView`
-    osc_MultiLineView.identifier = .init("OSC-FullSizeSlider-View")
+    osc_MultiLineView.identifier = .init("OSC-MultiLine-View")
     osc_MultiLineView.translatesAutoresizingMaskIntoConstraints = false
     osc_MultiLineView.wantsLayer = true
     osc_MultiLineView.layer?.backgroundColor = .clear

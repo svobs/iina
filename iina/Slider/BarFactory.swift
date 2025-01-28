@@ -262,7 +262,7 @@ class BarFactory {
         while !doneWithLeft && segIndex < segsMaxX.count {
           let segMaxX = segsMaxX[segIndex]
           let conf: BarConf
-          if let currentHoverX, segsMaxX.count > 1, currentHoverX > segMinX && currentHoverX < segMaxX {
+          if let currentHoverX, segsMaxX.count > 1, currentHoverX >= segMinX && currentHoverX <= segMaxX {
             // Is hovering in chapter
             conf = imgConf.currentChapter_Left
           } else {
