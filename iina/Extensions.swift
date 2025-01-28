@@ -1118,6 +1118,7 @@ extension NSTextField {
     }
     self.attributedStringValue = attrString
   }
+  
 
 }
 

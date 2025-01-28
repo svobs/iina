@@ -178,13 +178,14 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   }
 
   private func addNoPluginsLabel() {
-    let noPluginsLabel = NSTextField()
+    let attrString = NSMutableAttributedString(string: "No plugins are enabled.")
+    attrString.addItalic(using: .systemFont(ofSize: 13))
+    let noPluginsLabel = NSTextField(labelWithAttributedString: attrString)
     noPluginsLabel.identifier = .init("NoPluginsLabel")
     noPluginsLabel.isEditable = false
     noPluginsLabel.isSelectable = false
     noPluginsLabel.backgroundColor = .clear
-    noPluginsLabel.setFormattedText(stringValue: "No plugins are enabled.",
-                                    textColor: .disabledControlTextColor, italic: true)
+    noPluginsLabel.textColor = .disabledControlTextColor
     noPluginsLabel.translatesAutoresizingMaskIntoConstraints = false
 
     pluginContentContainerView.addSubview(noPluginsLabel)

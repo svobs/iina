@@ -30,7 +30,6 @@ fileprivate let musicModePlayIconSpacing: CGFloat = 16
 fileprivate let musicModeToolbarIconSize: CGFloat = 14
 fileprivate let musicModeToolbarIconSpacing: CGFloat = 12
 
-
 fileprivate let stepIconScaleFactor: CGFloat = 0.85
 fileprivate let systemArrowSymbolScaleFactor: CGFloat = 0.85
 
@@ -108,13 +107,12 @@ struct ControlBarGeometry {
     let oscPosition = oscPosition ?? Preference.enum(for: .oscPosition)
 
     let barHeight: CGFloat
-    let playIconSize: CGFloat
     let fullIconHeight: CGFloat
     if mode == .musicMode {
       barHeight = musicModeBarHeight
       fullIconHeight = barHeight
       self.playSliderHeight = barHeight
-      playIconSize = musicModePlayIconSize
+      self.playIconSize = musicModePlayIconSize
       self.toolIconSize = musicModeToolbarIconSize
       self.toolIconSpacing = musicModeToolbarIconSpacing
       self.playIconSpacing = musicModePlayIconSpacing
@@ -125,7 +123,7 @@ struct ControlBarGeometry {
       self.playSliderHeight = barHeight
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
-      playIconSize = floatingPlayIconSize
+      self.playIconSize = floatingPlayIconSize
       self.playIconSpacing = floatingPlayIconSpacing
 
     } else {
@@ -133,39 +131,35 @@ struct ControlBarGeometry {
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
-      let maxBtnHeight: CGFloat
       if !forceSingleLineStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
+        // Is multi-line OSC
         let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
         fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_BottomMargin
-
-        maxBtnHeight = fullIconHeight
       } else {
+        // Is single-line OSC
         self.playSliderHeight = barHeight
-        fullIconHeight = barHeight
-
         // Reduce max button size so they don't touch edges or (if .top) icons above
-        maxBtnHeight = fullIconHeight - (oscPosition == .top ? 4 : 2)
+        fullIconHeight = barHeight - (oscPosition == .top ? 8 : 4)
       }
 
-      let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
-                                                            fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSize))
-      let desiredToolbarIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks,
-                                                                         fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSpacing))
-      let desiredPlayIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks,
-                                                            fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSize))
-      let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
-                                                                      fullHeight: fullIconHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSpacing))
+      if forceSingleLineStyle || oscPosition == .top {
+        // Single-line configuration: icon sizes & spacing are adjustable
+        self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
+        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
+        self.playIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks, fullHeight: fullIconHeight)
+        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks, fullHeight: fullIconHeight)
 
-      self.toolIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...maxBtnHeight)
-      self.toolIconSpacing = max(0, desiredToolbarIconSpacing)
-      self.playIconSpacing = max(0, desiredPlayIconSpacing)
-      playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
+      } else {
+        self.playIconSize = fullIconHeight
+        self.toolIconSize = fullIconHeight
+        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: 2, fullHeight: fullIconHeight)
+        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: 2, fullHeight: fullIconHeight)
+      }
     }
 
     self.barHeight = barHeight
     self.fullIconHeight = fullIconHeight
-    self.playIconSize = playIconSize
 
     self.position = oscPosition
 
@@ -292,9 +286,7 @@ struct ControlBarGeometry {
   }
 
   /// Prefs UI ticks → CGFloat
-  private static func iconSize(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
-    guard let ticks else { return nil }
-
+  private static func iconSize(fromTicks ticks: Int, fullHeight: CGFloat) -> CGFloat {
     let baseHeight = fullHeight * iconSizeBaseMultiplier
     let adjustableHeight = fullHeight - baseHeight
 
@@ -303,8 +295,7 @@ struct ControlBarGeometry {
   }
 
   /// Prefs UI ticks → CGFloat
-  private static func playIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
-    guard let ticks else { return nil }
+  private static func playIconSpacing(fromTicks ticks: Int, fullHeight: CGFloat) -> CGFloat {
     let baseHeight = fullHeight * playIconSpacingMinScaleMultiplier
     let adjustableHeight = fullHeight - baseHeight
     let adjustableHeight_Adjusted = adjustableHeight * CGFloat(ticks) / CGFloat(maxTicks) * playIconSpacingScaleMultiplier
@@ -313,9 +304,7 @@ struct ControlBarGeometry {
   }
 
   /// Prefs UI ticks → CGFloat
-  private static func toolIconSpacing(fromTicks ticks: Int?, fullHeight: CGFloat) -> CGFloat? {
-    guard let ticks else { return nil }
-
+  private static func toolIconSpacing(fromTicks ticks: Int, fullHeight: CGFloat) -> CGFloat {
     let spacing = fullHeight * CGFloat(ticks) / CGFloat(maxTicks) * toolSpacingScaleMultiplier
     return spacing.rounded()
   }

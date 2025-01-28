@@ -384,6 +384,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
     let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
     let hasBarOSC = oscIsBottom || oscIsTop
+    let hasSingleLineOSCConfig = oscIsTop || (oscIsBottom && newGeo.forceSingleLineStyle)
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
 
     // Update enablement, various state (except isHidden state)
@@ -399,10 +400,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     /// Each entry contains a ref to a view & intended `isHidden` state:
     var viewHidePairs: [(NSView, Bool)] = []
 
-//    let canHaveMultiLineOSC = hasBarOSC && !newGeo.forceSingleLineStyle  // TODO: 
-    if toolbarIconDimensionsHStackView.isHidden != !hasBarOSC {
-      viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
-    }
+    viewHidePairs.append((toolbarIconDimensionsHStackView, !hasSingleLineOSCConfig))
 
     if oscSnapToCenterContainerView.isHidden != !oscIsFloating {
       viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
@@ -414,7 +412,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
-    viewHidePairs.append((playbackBtnDimensionsHStackView, !hasBarOSC))
+    viewHidePairs.append((playbackBtnDimensionsHStackView, !hasSingleLineOSCConfig))
 
     let hasTopBar = ib.hasTopBar
     if topBarPositionContainerView.isHidden != !hasTopBar {
@@ -477,7 +475,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Constrain sizes for prefs preview
     let previewBarHeight = newGeo.position == .floating ? 24 : min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
-                                        forceSingleLineStyle: true,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth
