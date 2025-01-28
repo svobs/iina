@@ -335,7 +335,7 @@ extension PlayerWindowController {
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 1).isActive = true
+    bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5).isActive = true
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
@@ -574,7 +574,7 @@ extension PlayerWindowController {
     muteButton.toolTip = "Toggle mute"
     fragVolumeView.addSubview(muteButton)
     muteButton.translatesAutoresizingMaskIntoConstraints = false
-    muteButton.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    muteButton.addConstraintsToFillSuperview(bottom: 0, leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
     volumeIconHeightConstraint.priority = .init(900)

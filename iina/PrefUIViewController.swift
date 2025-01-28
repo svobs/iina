@@ -403,16 +403,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Update if invalid value was entered in text field:
     oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
 
-    // Disable this instead of hiding. Too tired to keep dealing with animating this garbage
-    for subview in toolbarIconDimensionsHStackView.subviews {
-      if let control = subview as? NSControl {
-        control.isEnabled = hasBarOSC
-      }
-    }
-
     // Build list of views which need a change to their visible state.
     /// Each entry contains a ref to a view & intended `isHidden` state:
     var viewHidePairs: [(NSView, Bool)] = []
+
+    if toolbarIconDimensionsHStackView.isHidden != !hasBarOSC {
+      viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
+    }
 
     if oscSnapToCenterContainerView.isHidden != !oscIsFloating {
       viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))

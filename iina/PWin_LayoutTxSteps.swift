@@ -487,7 +487,7 @@ extension PlayerWindowController {
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
+    let showBottomBarTopBorder = !outputLayout.isMusicMode && (outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.spec.oscBackgroundIsClear))
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     // Sidebars
@@ -619,9 +619,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if oscGeo.isMultiLineOSC {
           oscContentView = osc_MultiLineView
+          log.verbose{"Adding subviews to osc_MultiLineView for top bar"}
           addSubviewsToOSC_MultiLineView(transition)
         } else {
           oscContentView = osc_SingleLineView
+          log.verbose{"Adding subviews to osc_SingleLineView for top bar"}
           addSubviewsToOSC_SingleLineView(transition)
         }
 
@@ -638,9 +640,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if oscGeo.isMultiLineOSC {
           oscContentView = osc_MultiLineView
+          log.verbose{"Adding subviews to osc_MultiLineView for bottom bar"}
           addSubviewsToOSC_MultiLineView(transition)
         } else {
           oscContentView = osc_SingleLineView
+          log.verbose{"Adding subviews to osc_SingleLineView for bottom bar"}
           addSubviewsToOSC_SingleLineView(transition)
         }
 
@@ -1414,6 +1418,7 @@ extension PlayerWindowController {
     let mainView = osc_SingleLineView
 
     if transition.isControlBarChanging {
+      mainView.removeAllSubviews()
       mainView.addView(fragPlaybackBtnsView, in: .leading)
       addSubviewsToPlaySliderAndTimeLabelsView()
       mainView.addView(playSliderAndTimeLabelsView, in: .leading)
