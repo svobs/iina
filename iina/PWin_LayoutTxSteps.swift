@@ -281,20 +281,33 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)"}
 
-    if outputLayout.hasControlBar {
-      // Reduce size of icons if they are smaller
+    // TODO: incorporate this into middleGeometry for cleaner code
+    if transition.inputLayout.hasControlBar && transition.isControlBarChanging {
+      // Shrink all the buttons to create cool animated effect
+      if let fragToolbarView {
+        for toolbarItem in fragToolbarView.views {
+          (toolbarItem as! OSCToolbarButton).setStyle(iconSize: 0)
+        }
+      }
+
+      // Volume icon
+      volumeIconHeightConstraint.animateToConstant(0)
+      // Play & arrow buttons
+      playBtnWidthConstraint.animateToConstant(0)
+      arrowBtnWidthConstraint.animateToConstant(0)
+    } else if outputLayout.hasControlBar {
+      // Reduce size of icons if they are smaller. This is needed to look pleasant when panels are also shrinking.
       let oscGeo = outputLayout.controlBarGeo
 
       if volumeIconHeightConstraint.constant > oscGeo.volumeIconHeight {
         volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
-        if let img = muteButton.image {
-          volumeIconWidthConstraint.isActive = false
-          volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
-          volumeIconWidthConstraint.priority = .init(900)
-          volumeIconWidthConstraint.isActive = true
-        }
       }
-
+      if let img = muteButton.image {
+        volumeIconAspectConstraint.isActive = false
+        volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
+        volumeIconAspectConstraint.priority = .init(900)
+        volumeIconAspectConstraint.isActive = true
+      }
       if arrowBtnWidthConstraint.constant > oscGeo.arrowIconHeight {
         arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
       }
@@ -315,13 +328,18 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.inputLayout.titleBarHeight > 0 && outputLayout.titleBarHeight == 0 {
-      titleBarHeightConstraint.animateToConstant(0)
+    if transition.inputLayout.titleBarHeight > outputLayout.titleBarHeight {
+      titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
     }
-    if transition.inputLayout.topOSCHeight > 0 && outputLayout.topOSCHeight == 0 {
-      topOSCHeightConstraint.animateToConstant(0)
+
+    if transition.inputLayout.topOSCHeight > outputLayout.topOSCHeight {
+      topOSCHeightConstraint.animateToConstant(outputLayout.topOSCHeight)
     }
-    
+
+    if transition.inputLayout.controlBarGeo.playSliderHeight > outputLayout.controlBarGeo.playSliderHeight {
+      playSliderHeightConstraint.animateToConstant(outputLayout.controlBarGeo.playSliderHeight)
+    }
+
     if transition.isEnteringInteractiveMode {
       // Animate the close of viewport margins:
       videoView.apply(transition.outputGeometry)
@@ -564,7 +582,7 @@ extension PlayerWindowController {
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
-        playSliderHeightConstraint.animateToConstant(miniPlayer.positionSliderWrapperView.frame.height - 4)
+        playSliderHeightConstraint.animateToConstant(transition.outputLayout.controlBarGeo.playSliderHeight)
         playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playslider_DefaultKnobHeight
 
         // move playback buttons
@@ -851,10 +869,10 @@ extension PlayerWindowController {
 
       volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
       if let img = muteButton.image {
-        volumeIconWidthConstraint.isActive = false
-        volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
-        volumeIconWidthConstraint.priority = .init(900)
-        volumeIconWidthConstraint.isActive = true
+        volumeIconAspectConstraint.isActive = false
+        volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
+        volumeIconAspectConstraint.priority = .init(900)
+        volumeIconAspectConstraint.isActive = true
       }
 
       arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
@@ -1519,7 +1537,7 @@ extension PlayerWindowController {
 
       toolbarView.identifier = .init("OSC-ToolBarView")
       toolbarView.orientation = .horizontal
-      toolbarView.distribution = .gravityAreas
+      toolbarView.distribution = .equalCentering
       for button in toolbarButtons {
         toolbarView.addView(button, in: .trailing)
         toolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)

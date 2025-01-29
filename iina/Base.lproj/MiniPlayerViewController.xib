@@ -129,6 +129,9 @@
                         </customView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
                             <rect key="frame" x="10" y="0.0" width="240" height="32"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="32" id="olE-cm-nVe"/>
+                            </constraints>
                         </customView>
                     </subviews>
                     <constraints>
@@ -141,7 +144,6 @@
                         <constraint firstItem="Cef-Fd-eDH" firstAttribute="leading" secondItem="Wxl-Ex-FWV" secondAttribute="leading" id="e7Y-Rx-6ZK"/>
                         <constraint firstItem="e1r-vi-5HY" firstAttribute="leading" secondItem="Cef-Fd-eDH" secondAttribute="leading" id="foP-4g-0tA"/>
                         <constraint firstItem="Cef-Fd-eDH" firstAttribute="trailing" secondItem="Wxl-Ex-FWV" secondAttribute="trailing" id="gzB-24-b08"/>
-                        <constraint firstItem="e1r-vi-5HY" firstAttribute="top" secondItem="Q6R-eL-qkW" secondAttribute="top" constant="40" id="h01-z4-G52"/>
                         <constraint firstAttribute="bottom" secondItem="e1r-vi-5HY" secondAttribute="bottom" id="yds-qi-gcy"/>
                     </constraints>
                 </visualEffectView>

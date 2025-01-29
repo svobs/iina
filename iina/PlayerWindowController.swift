@@ -440,7 +440,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var topOSCHeightConstraint: NSLayoutConstraint!
 
   var volumeIconHeightConstraint: NSLayoutConstraint!
-  var volumeIconWidthConstraint: NSLayoutConstraint!
+  var volumeIconAspectConstraint: NSLayoutConstraint!
 
   // - Outlets: Views
 
@@ -1947,10 +1947,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
       let task = IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration, { [self] in
-        volumeIconWidthConstraint.isActive = false
-        volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
-        volumeIconWidthConstraint.priority = .init(900)
-        volumeIconWidthConstraint.isActive = true
+        volumeIconAspectConstraint.isActive = false
+        volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
+        volumeIconAspectConstraint.priority = .init(900)
+        volumeIconAspectConstraint.isActive = true
       })
       IINAAnimation.runAsync(task, then: { [self] in
         muteButton.image = volumeImage

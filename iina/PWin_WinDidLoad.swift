@@ -579,9 +579,9 @@ extension PlayerWindowController {
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
     volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
-    volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
-    volumeIconWidthConstraint.priority = .init(900)
-    volumeIconWidthConstraint.isActive = true
+    volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
+    volumeIconAspectConstraint.priority = .init(900)
+    volumeIconAspectConstraint.isActive = true
 
     // Volume slider
     fragVolumeView.addSubview(volumeSlider)

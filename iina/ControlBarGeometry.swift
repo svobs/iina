@@ -111,7 +111,7 @@ struct ControlBarGeometry {
     if mode == .musicMode {
       barHeight = musicModeBarHeight
       fullIconHeight = barHeight
-      self.playSliderHeight = barHeight
+      self.playSliderHeight = Constants.Distance.MusicMode.positionSliderWrapperViewHeight - 4
       self.playIconSize = musicModePlayIconSize
       self.toolIconSize = musicModeToolbarIconSize
       self.toolIconSpacing = musicModeToolbarIconSpacing
@@ -239,10 +239,8 @@ struct ControlBarGeometry {
     switch position {
     case .floating:
       return 11
-    case .top:
-      return 13
-    case .bottom:
-      return max(13, playSliderHeight * 0.5).rounded()
+    case .top, .bottom:
+      return (playSliderHeight * 0.5).rounded().clamped(to: 13...24)
     }
   }
 

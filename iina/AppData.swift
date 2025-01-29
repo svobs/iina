@@ -362,6 +362,7 @@ struct Constants {
 
     struct MusicMode {
       static let oscHeight: CGFloat = 72
+      static let positionSliderWrapperViewHeight: CGFloat = 32
       static let minWindowWidth: CGFloat = Constants.WindowedMode.minViewportSize.width
       static let defaultWindowWidth: CGFloat = minWindowWidth
       // Hide playlist if its height is too small to display at least 3 items:
