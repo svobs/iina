@@ -145,7 +145,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
   // Very kludgey, but nothing better discovered yet.
-  var lastStartOfDenyWindowResizeInterval = Date()
+  var denyWindowResizeIntervalStartTime = Date()
 
   var isClosing: Bool {
     return player.state.isAtLeast(.stopping)
@@ -1199,14 +1199,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size
-    lastStartOfDenyWindowResizeInterval = Date()
+    denyWindowResizeIntervalStartTime = Date()
   }
 
   func windowDidChangeScreenProfile(_ notification: Notification) {
     log.verbose("WindowDidChangeScreenProfile received")
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size
-    lastStartOfDenyWindowResizeInterval = Date()
+    denyWindowResizeIntervalStartTime = Date()
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -1223,7 +1223,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
     // Do not allow MacOS to change the window size
-    lastStartOfDenyWindowResizeInterval = Date()
+    denyWindowResizeIntervalStartTime = Date()
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
     screenChangedDebouncer.run { [self] in

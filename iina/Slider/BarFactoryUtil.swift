@@ -76,10 +76,10 @@ extension BarFactory {
     }
 
     /// Adds a pill shape to the given `CGContext`.
-    func addPillPath(_ cgc: CGContext, minX: CGFloat, maxX: CGFloat,
+    func addPillPath(_ ctx: CGContext, minX: CGFloat, maxX: CGFloat,
                      leftEdge: PillEdgeType, rightEdge: PillEdgeType) {
 
-      cgc.beginPath()
+      ctx.beginPath()
       var adjMinX: CGFloat = minX
       switch leftEdge {
       case .squareClip:
@@ -112,16 +112,16 @@ extension BarFactory {
       } else {
         path = CGPath(rect: segment, transform: nil)
       }
-      cgc.addPath(path)
+      ctx.addPath(path)
     }
 
     /// Draws a single bar segment as rounded rect (pill), using specified gap between pills. Each gap is divided into 2 halves,
     /// with the leading half stealing its width from the pill before it, and the trailing half subtracting width from the pill after it.
-    func drawPill(_ cgc: CGContext, minX: CGFloat, maxX: CGFloat,
+    func drawPill(_ ctx: CGContext, minX: CGFloat, maxX: CGFloat,
                   leftEdge: PillEdgeType, rightEdge: PillEdgeType) {
-      addPillPath(cgc, minX: minX, maxX: maxX, leftEdge: leftEdge, rightEdge: rightEdge)
-      cgc.setFillColor(fillColor)
-      cgc.fillPath()
+      addPillPath(ctx, minX: minX, maxX: maxX, leftEdge: leftEdge, rightEdge: rightEdge)
+      ctx.setFillColor(fillColor)
+      ctx.fillPath()
     }
 
   }  /// end `struct BarConf`

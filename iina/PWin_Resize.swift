@@ -40,7 +40,7 @@ extension PlayerWindowController {
     }
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
-    let denyWindowResize = Date() < lastStartOfDenyWindowResizeInterval + Constants.TimeInterval.denyWindowResizeTimeout
+    let denyWindowResize = Date() < denyWindowResizeIntervalStartTime + Constants.TimeInterval.denyWindowResizeTimeout
 
     if !currentLayout.isFullScreen && !inLiveResize {
       guard !denyWindowResize else {

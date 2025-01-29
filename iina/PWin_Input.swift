@@ -304,6 +304,8 @@ extension PlayerWindowController {
       // if it's a mouseup after dragging window
       log.verbose("PWin MouseUp: finished drag of window")
       isDragging = false
+      // In case WindowDidChangeScreen already timed out
+      denyWindowResizeIntervalStartTime = Date()
       return
     }
 

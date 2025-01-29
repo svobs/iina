@@ -1561,6 +1561,7 @@ extension PlayerWindowController {
     if needsButtonsUpdate {
       for btn in toolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         btn.setStyle(using: transition.outputLayout)
+        btn.setColors(from: transition.outputLayout)
       }
     }
 

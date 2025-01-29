@@ -239,7 +239,7 @@ class BarFactory {
       drawHoverIndicator = nil
     }
 
-    var barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
+    var barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
 
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
@@ -262,8 +262,8 @@ class BarFactory {
 
       if hasLeft {
         // Left of knob
-        cgc.resetClip()
-        cgc.clip(to: leftClipRect)
+        ctx.resetClip()
+        ctx.clip(to: leftClipRect)
 
         var doneWithLeft = false
         while !doneWithLeft && segIndex < segsMaxX.count {
@@ -282,15 +282,15 @@ class BarFactory {
             doneWithLeft = true
           } else if segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
             // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
-            conf.addPillPath(cgc, minX: segMinX,
+            conf.addPillPath(ctx, minX: segMinX,
                              maxX: segMaxX,
                              leftEdge: leftEdge,
                              rightEdge: rightEdge)
-            cgc.clip()
+            ctx.clip()
             doneWithLeft = true
           }
 
-          conf.drawPill(cgc, minX: segMinX, maxX: segMaxX,
+          conf.drawPill(ctx, minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge)
 
@@ -307,8 +307,8 @@ class BarFactory {
 
       if hasRight {
         // Right of knob (or just unfinished progress, if no knob)
-        cgc.resetClip()
-        cgc.clip(to: rightClipRect)
+        ctx.resetClip()
+        ctx.clip(to: rightClipRect)
 
         while segIndex < segsMaxX.count {
           let segMaxX = segsMaxX[segIndex]
@@ -324,7 +324,7 @@ class BarFactory {
             rightEdge = .noBorderingPill
           }
 
-          conf.drawPill(cgc,
+          conf.drawPill(ctx,
                         minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge)
@@ -338,8 +338,8 @@ class BarFactory {
 
       let drawingIsDone = cachedRanges.isEmpty
       if let drawHoverIndicator, drawingIsDone {
-        cgc.resetClip()
-        drawHoverIndicator(cgc)
+        ctx.resetClip()
+        drawHoverIndicator(ctx)
       }
     }  // end first img
 
@@ -348,10 +348,10 @@ class BarFactory {
       // Not sure how efficient this is...
 
       // First build overlay image which colors all the cached regions
-      let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { cgc in
+      let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
         if hasSpaceForKnob {
           // Apply clip (pixel whitelist) to avoid drawing over the knob
-          cgc.clip(to: [leftClipRect, rightClipRect])
+          ctx.clip(to: [leftClipRect, rightClipRect])
         }
 
         // First, just color the cached regions as crude rects which are at least as large as barImg…
@@ -379,14 +379,14 @@ class BarFactory {
           }
         }
 
-        cgc.setFillColor(leftCachedColor)
-        cgc.fill(rectsLeft)
-        cgc.setFillColor(rightCachedColor)
-        cgc.fill(rectsRight)
+        ctx.setFillColor(leftCachedColor)
+        ctx.fill(rectsLeft)
+        ctx.setFillColor(rightCachedColor)
+        ctx.fill(rectsRight)
 
         // Now use barImg as a mask, so that crude rects above are trimmed to match its silhoulette:
-        cgc.setBlendMode(.destinationIn)
-        cgc.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
+        ctx.setBlendMode(.destinationIn)
+        ctx.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
       }
       // Now paste cacheImg into barImg:
       barImg = CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg, drawHoverIndicator)
@@ -430,21 +430,21 @@ class BarFactory {
     let vol100PercentPointX = (conf.imgPadding + ((100.0 / maxValue) * conf.barWidth)).rounded()
     let barMaxX = conf.barMaxX
 
-    let barImg = CGImage.buildBitmapImage(width: Int(conf.imgWidth), height: Int(conf.imgHeight)) { cgc in
+    let barImg = CGImage.buildBitmapImage(width: Int(conf.imgWidth), height: Int(conf.imgHeight)) { ctx in
 
       func drawEntireBar(_ barConf: BarConf, clipMinX: CGFloat, clipMaxX: CGFloat) {
-        cgc.resetClip()
-        cgc.clip(to: CGRect(x: clipMinX, y: 0,
+        ctx.resetClip()
+        ctx.clip(to: CGRect(x: clipMinX, y: 0,
                             width: clipMaxX - clipMinX,
                             height: barConf.imgHeight))
 
-        barConf.addPillPath(cgc, minX: barConf.barMinX,
+        barConf.addPillPath(ctx, minX: barConf.barMinX,
                             maxX: barMaxX,
                             leftEdge: .noBorderingPill,
                             rightEdge: .noBorderingPill)
-        cgc.clip()
+        ctx.clip()
 
-        barConf.drawPill(cgc,
+        barConf.drawPill(ctx,
                          minX: barConf.barMinX,
                          maxX: barMaxX,
                          leftEdge: .noBorderingPill,
