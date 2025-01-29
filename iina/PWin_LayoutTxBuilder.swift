@@ -408,18 +408,24 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout && transition.isTopBarPlacementOrStyleChanging {
       insideTopBarHeight = 0  // close completely. will animate reopening if needed later
       outsideTopBarHeight = 0
+    } else if transition.outputGeometry.outsideBars.top < transition.inputGeometry.outsideBars.bottom {
+      insideTopBarHeight = 0
+      outsideTopBarHeight = transition.outputGeometry.outsideBars.top
+    } else if transition.outputGeometry.insideBars.top < transition.inputGeometry.insideBars.top {
+      insideTopBarHeight = transition.outputGeometry.insideBars.top
+      outsideTopBarHeight = 0
     } else if transition.outputLayout.topBarHeight < transition.inputLayout.topBarHeight {
       insideTopBarHeight = 0
       outsideTopBarHeight = transition.outputLayout.topBarHeight
     } else {
-      insideTopBarHeight = transition.inputLayout.insideTopBarHeight  // leave the same
-      outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight
+      insideTopBarHeight = transition.inputGeometry.insideBars.top  // leave the same
+      outsideTopBarHeight = transition.inputGeometry.outsideBars.top
     }
 
     // BOTTOM
     let insideBottomBarHeight: CGFloat
     let outsideBottomBarHeight: CGFloat
-    if !transition.isWindowInitialLayout && transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingMusicMode {
+    if !transition.isWindowInitialLayout && transition.isBottomBarPlacementOrStyleChanging {
       // close completely. will animate reopening if needed later
       insideBottomBarHeight = 0
       outsideBottomBarHeight = 0

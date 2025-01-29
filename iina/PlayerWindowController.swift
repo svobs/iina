@@ -1572,8 +1572,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.trace{"Updating window title to: \(debugTitle.pii.quoted)"}
     window.title = debugTitle
     filename = false
+    customTitleBar?.updateTitle(to: debugTitle)
 #else
     window.title = titleText
+    customTitleBar?.updateTitle(to: titleText)
 #endif
 
     /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.
@@ -1582,7 +1584,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     NSApplication.shared.addWindowsItem(window, title: titleText, filename: filename)
     NSApplication.shared.changeWindowsItem(window, title: titleText, filename: filename)
 
-    customTitleBar?.updateTitle(to: titleText)
   }
 
   // MARK: - UI: Interactive mode
