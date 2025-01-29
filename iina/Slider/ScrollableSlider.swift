@@ -132,7 +132,10 @@ class ScrollableSliderCell: NSSliderCell {
   var slider: ScrollableSlider { controlView as! ScrollableSlider }
 
   var iinaAppearance: NSAppearance? {
-    controlView?.window?.contentView?.iinaAppearance
+    if isClearBG {
+      return NSAppearance(iinaTheme: .dark)
+    }
+    return controlView?.window?.contentView?.iinaAppearance
   }
 
   var isDragging = false
@@ -157,7 +160,7 @@ class ScrollableSliderCell: NSSliderCell {
 
   override func drawKnob(_ knobRect: NSRect) {
     guard enableDrawKnob else { return }
-    guard let screen = controlView?.window?.screen, let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
+    guard let screen = controlView?.window?.screen, let appearance = iinaAppearance else { return }
     appearance.applyAppearanceFor {
       KnobFactory.shared.drawKnob(currentKnobType, in: knobRect,
                                   darkMode: appearance.isDark,

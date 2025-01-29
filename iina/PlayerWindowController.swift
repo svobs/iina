@@ -34,6 +34,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
 
+  /// See `PWin_Observers.swift`.
   var cachedEffectiveAppearanceName: String? = nil
 
   // MARK: - View Controllers
@@ -675,17 +676,20 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  /** Set material for OSC and title bar */
+  /// Set material & theme (light or dark mode) for OSC and title bar.
   func applyThemeMaterial() {
     guard let window else { return }
-
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    let newAppearance = NSAppearance(iinaTheme: theme)
+    // Can be nil, which means dynamic system appearance:
+    let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
     window.appearance = newAppearance
+    // Either dark or light, never nil:
+    let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
+    BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance)
 
     // Change to appearance above does not take effect until this task completes. Enqueue a new task to run after this one.
     DispatchQueue.main.async { [self] in
-      (newAppearance ?? window.effectiveAppearance).applyAppearanceFor {
+      effectiveAppearance.applyAppearanceFor {
         seekPreview.thumbnailPeekView.updateColors()
       }
     }
@@ -699,15 +703,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // currently open. Should be ok for now as this is fairly fast...
         // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
         // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
-        guard let window else { return }
-        window.effectiveAppearance.applyAppearanceFor{
-          BarFactory.current.updateBarStylesFromPrefs()
-        }
+        guard let window, let contentView = window.contentView else { return }
+        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: contentView.iinaAppearance)
 
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-        buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec,
-                              thenRun: true)
+        buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }
     }
   }

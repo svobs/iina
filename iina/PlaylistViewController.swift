@@ -139,8 +139,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     updateVerticalConstraints()
 
-    distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.systemColorSettingsDidChange))
-
     // notifications
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
       self.playlistTotalLengthIsReady = false
@@ -181,11 +179,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
-  }
-
-  @objc func systemColorSettingsDidChange(notification: Notification) {
-    player.log.verbose("Detected change to user accent color pref reloading tables")
-    updateTableColors()
   }
 
   override func viewDidAppear() {

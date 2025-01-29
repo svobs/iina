@@ -126,6 +126,17 @@ extension PlayerWindowController {
           }
         }
       ],
+
+      DistributedNotificationCenter.default(): [
+        .init(.appleColorPreferencesChangedNotification) { [self] _ in
+          player.log.verbose("Detected change to user accent color pref: reloading colors")
+          if playlistView.isViewLoaded {
+            playlistView.updateTableColors()
+          }
+          // Need to regenerate colors in BarFactory & redraw slider:
+          updateTitleBarAndOSC()
+        }
+      ]
     ]
 
     return CocoaObserver(player.log, prefDidChange: prefDidChange, observedPrefKeys, ncList)
@@ -316,10 +327,12 @@ extension PlayerWindowController {
       /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
       /// For that, we follow `appleColorPreferencesChangedNotification`
       guard let window else { return }
-      if cachedEffectiveAppearanceName == window.effectiveAppearance.name.rawValue {
-        return
-      }
-      cachedEffectiveAppearanceName = window.effectiveAppearance.name.rawValue
+      let effectiveAppearanceName = window.effectiveAppearance.name.rawValue
+      guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
+      log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
+      cachedEffectiveAppearanceName = effectiveAppearanceName
+
+      applyThemeMaterial()
 
       if playlistView.isViewLoaded {
         playlistView.updateTableColors()

@@ -40,7 +40,7 @@ class PlaySliderCell: ScrollableSliderCell {
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : iinaAppearance,
+    guard let appearance = iinaAppearance,
           let screen = controlView?.window?.screen else { return }
 
     /// The position of the knob, rounded for cleaner drawing
@@ -58,7 +58,7 @@ class PlaySliderCell: ScrollableSliderCell {
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
       let playBarImg = bf.buildPlayBarImage(barWidth: barRect.width,
-                                            screen: screen, darkMode: appearance.isDark, useFocusEffect: useFocusEffect,
+                                            screen: screen, useFocusEffect: useFocusEffect,
                                             knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
                                             durationSec: durationSec, chapters, cachedRanges: cachedRanges,
                                             currentPreviewTimeSec: currentPreviewTimeSec)

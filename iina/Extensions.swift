@@ -2112,11 +2112,13 @@ extension NSView {
     return NSImage(cgImage: imageRepresentation.cgImage!, size: bounds.size)
   }
 
+  /// Returns the current NSAppearance using IINA & MacOS settings.
+  /// Expected to always return either light or dark. (Not guaranteed though?)
   var iinaAppearance: NSAppearance {
     if #available(macOS 10.14, *) {
       var theme: Preference.Theme = Preference.enum(for: .themeMaterial)
       if theme == .system {
-        if self.effectiveAppearance.isDark {
+        if effectiveAppearance.isDark {
           // For some reason, "system" dark does not result in the same colors as "dark".
           // Just override it with "dark" to keep it consistent.
           theme = .dark
@@ -2128,7 +2130,7 @@ extension NSView {
         return themeAppearance
       }
     }
-    return self.effectiveAppearance
+    return effectiveAppearance
   }
 
 }

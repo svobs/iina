@@ -78,12 +78,5 @@ class ViewportView: NSView {
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
     return player.openFromPasteboard(sender)
   }
-
-  // This is a little bit of a kludge, but could not find a more direct solution.
-  // Need to use an NSView to notify the window when the system theme has changed
-  override func viewDidChangeEffectiveAppearance() {
-    super.viewDidChangeEffectiveAppearance()
-    player?.windowController.applyThemeMaterial()
-  }
 }
 

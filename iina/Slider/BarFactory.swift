@@ -17,7 +17,7 @@ fileprivate extension CGColor {
       colorsComps.append((self.components![i] * 1.5).clamped(to: 0.0...1.0))
     }
     // alpha
-    colorsComps.append((self.components![3] * 1.5).clamped(to: 0.0..<0.9))
+    colorsComps.append((self.components![3] + 0.4).clamped(to: 0.0..<0.9))
 
     let colorSpace = self.colorSpace ?? CGColorSpaceCreateDeviceRGB()
     return CGColor(colorSpace: colorSpace, components: colorsComps)!
@@ -31,7 +31,8 @@ fileprivate extension CGColor {
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class BarFactory {
   /// The current configuration for drawing bars, based on prefs.
-  static var current = BarFactory()
+  /// Default to dark. But we will override soon
+  static var current = BarFactory(effectiveAppearance: NSAppearance(iinaTheme: .dark)!)
 
   // MARK: - Init / Config
 
@@ -46,8 +47,14 @@ class BarFactory {
 
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
+  private var effectiveAppearance: NSAppearance
 
-  init() {
+  init(effectiveAppearance: NSAppearance) {
+    self.effectiveAppearance = effectiveAppearance
+    let barAppearance = LayoutSpec.oscBackgroundIsClear ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
+      return (BarFactory.barColorLeftFromPrefs(), NSColor.mainSliderBarRight.cgColor)
+    }
     let enableRoundedCorners = Preference.bool(for: .roundRectSliderBars)
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
       guard enableRoundedCorners else { return 0.0 }
@@ -62,10 +69,7 @@ class BarFactory {
     let barHeight_Normal: CGFloat = 3.0
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
-    let barColorLeft = BarFactory.barColorLeftFromPrefs()
     leftCachedColor = barColorLeft.exaggerated()
-
-    let barColorRight = NSColor.mainSliderBarRight.cgColor
     rightCachedColor = barColorRight.exaggerated()
 
     // - PlaySlider:
@@ -161,16 +165,16 @@ class BarFactory {
     }
   }
 
-  func updateBarStylesFromPrefs() {
+  static func updateBarStylesFromPrefs(effectiveAppearance: NSAppearance) {
     // Just replace the whole instance:
-    BarFactory.current = BarFactory()
+    BarFactory.current = BarFactory(effectiveAppearance: effectiveAppearance)
   }
 
   // MARK: - Play Bar
 
   /// `barWidth` does not include added leading or trailing margin
   func buildPlayBarImage(barWidth: CGFloat,
-                         screen: NSScreen, darkMode: Bool, useFocusEffect: Bool,
+                         screen: NSScreen, useFocusEffect: Bool,
                          knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
                          durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
                          currentPreviewTimeSec: Double?) -> CGImage {
@@ -390,7 +394,7 @@ class BarFactory {
 
   // MARK: - Volume Bar
 
-  func buildVolumeBarImage(darkMode: Bool, clearBG: Bool, useFocusEffect: Bool,
+  func buildVolumeBarImage(clearBG: Bool, useFocusEffect: Bool,
                            barWidth: CGFloat,
                            screen: NSScreen,
                            knobMinX: CGFloat, knobWidth: CGFloat,

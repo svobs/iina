@@ -40,7 +40,7 @@ class VolumeSliderCell: ScrollableSliderCell {
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    guard let appearance = isClearBG ? NSAppearance(iinaTheme: .dark) : iinaAppearance,
+    guard let appearance = iinaAppearance,
           let screen = controlView?.window?.screen else { return }
 
     let enableDrawKnob = enableDrawKnob
@@ -50,7 +50,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
-      let volBarImg = bf.buildVolumeBarImage(darkMode: appearance.isDark, clearBG: isClearBG, useFocusEffect: useFocusEffect,
+      let volBarImg = bf.buildVolumeBarImage(clearBG: isClearBG, useFocusEffect: useFocusEffect,
                                              barWidth: barRect.width,
                                              screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
                                              currentValue: doubleValue, maxValue: maxValue,

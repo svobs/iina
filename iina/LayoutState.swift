@@ -142,6 +142,10 @@ struct LayoutSpec {
                       moreSidebarState: oldSpec.moreSidebarState)
   }
 
+  static var oscBackgroundIsClear: Bool {
+    Preference.bool(for: .enableOSC) && Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom && Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport && Preference.enum(for: .oscOverlayStyle) == Preference.OSCOverlayStyle.clearGradient
+  }
+
   // Specify any properties to override; if nil, will use self's property values.
   func clone(leadingSidebar: Sidebar? = nil,
              trailingSidebar: Sidebar? = nil,
