@@ -228,7 +228,7 @@ struct ControlBarGeometry {
 
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
-    NSFont.labelFont(ofSize: timeLabelFontSize)
+    NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .medium)
   }
 
   var timeLabelFontSize: CGFloat {
