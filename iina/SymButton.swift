@@ -7,6 +7,15 @@
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView, NSAccessibilityButton {
+  var pwc: PlayerWindowController? {
+    window?.windowController as? PlayerWindowController
+  }
+
+  var bounceOnClick: Bool = false
+
+  var regularColor: NSColor? = nil
+  var highlightColor: NSColor? = .controlTextColor
+
   var enableAcceleration: Bool = false
   var pressureStage: Int = 0 {
     willSet {
@@ -15,11 +24,6 @@ class SymButton: NSImageView, NSAccessibilityButton {
       }
     }
   }
-
-  var bounceOnClick: Bool = false
-
-  var regularColor: NSColor? = nil
-  var highlightColor: NSColor? = .controlTextColor
 
   enum ReplacementEffect {
     case downUp
@@ -53,9 +57,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
     useDefaultColors()
   }
 
-  var pwc: PlayerWindowController? {
-    window?.windowController as? PlayerWindowController
-  }
+  // MARK: - Mouse Input
 
   override var acceptsFirstResponder: Bool { true }
 
@@ -96,7 +98,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
       pressureStage = 0
       pwc?.currentDragObject = nil
 
-      if #available(macOS 14.0, *), bounceOnClick {
+      if #available(macOS 14.0, *), bounceOnClick, IINAAnimation.isAnimationEnabled {
         addSymbolEffect(.bounce.down.wholeSymbol, options:
             .speed(Constants.symButtonImageTransitionSpeed)
             .nonRepeating,
@@ -121,18 +123,15 @@ class SymButton: NSImageView, NSAccessibilityButton {
     true
   }
 
-  override func accessibilityLabel() -> String? {
-    return toolTip
-  }
-
   override func accessibilityPerformPress() -> Bool {
     sendAction(action, to: target)
   }
 
-  private func isInsideBounds(_ event: NSEvent) -> Bool {
-    guard let pwc else { return false }
-    return pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
+  override func accessibilityLabel() -> String? {
+    return toolTip
   }
+
+  // MARK: - Highlight & Shadow
 
   @discardableResult
   private func updateHighlight(from event: NSEvent) -> Bool {
@@ -166,26 +165,6 @@ class SymButton: NSImageView, NSAccessibilityButton {
     updateHighlight(isInsideBounds: false)
   }
 
-  func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect? = nil) {
-    guard let newImage, newImage != image else { return }
-    if #available(macOS 15.0, *), let effect {
-      let nativeEffect: ReplaceSymbolEffect
-      switch effect {
-      case .downUp:
-        nativeEffect = .replace.downUp
-      case .upUp:
-        nativeEffect = .replace.upUp
-      case .offUp:
-        nativeEffect = .replace.offUp
-      }
-      setSymbolImage(newImage, contentTransition: nativeEffect, options:
-          .speed(Constants.symButtonImageTransitionSpeed)
-          .nonRepeating)
-    } else {
-      image = newImage
-    }
-  }
-
   /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
   func setColors(from layoutState: LayoutState) {
     if layoutState.spec.oscBackgroundIsClear {
@@ -201,6 +180,35 @@ class SymButton: NSImageView, NSAccessibilityButton {
       addShadow(blurRadiusConstant: 0.5, xOffsetConstant: 0, yOffsetConstant: 0, color: .controlAccentColor)
     } else {
       shadow = nil
+    }
+  }
+
+  // MARK: - Misc.
+
+  private func isInsideBounds(_ event: NSEvent) -> Bool {
+    guard let pwc else { return false }
+    return pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
+  }
+
+  /// Updates this button's image with the given image. Will use the given animation effect if the user's
+  /// version of MacOS supports it & motion reduction is not enabled.
+  func replaceSymbolImage(with newImage: NSImage?, effect: ReplacementEffect? = nil) {
+    guard let newImage, newImage != image else { return }
+    if #available(macOS 15.0, *), let effect, IINAAnimation.isAnimationEnabled {
+      let nativeEffect: ReplaceSymbolEffect
+      switch effect {
+      case .downUp:
+        nativeEffect = .replace.downUp
+      case .upUp:
+        nativeEffect = .replace.upUp
+      case .offUp:
+        nativeEffect = .replace.offUp
+      }
+      setSymbolImage(newImage, contentTransition: nativeEffect, options:
+          .speed(Constants.symButtonImageTransitionSpeed)
+          .nonRepeating)
+    } else {
+      image = newImage
     }
   }
 

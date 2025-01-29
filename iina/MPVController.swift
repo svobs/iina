@@ -850,7 +850,7 @@ class MPVController: NSObject {
 
   private func makeCArgs(_ command: MPVCommand, _ args: [String?]) -> [String?] {
     if args.count > 0 && args.last == nil {
-      Logger.fatal("Command do not need a nil suffix")
+      Logger.fatal("Cmd does not need a nil suffix")
     }
     var strArgs = args
     strArgs.insert(command.rawValue, at: 0)
@@ -867,7 +867,7 @@ class MPVController: NSObject {
         _ = Logger.getOrCreatePII(for: filename)
       }
     }
-    log.log("Run command: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
+    log.log("Run cmd: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
     var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
     defer {
       for ptr in cargs {
@@ -877,7 +877,7 @@ class MPVController: NSObject {
       }
     }
     guard let mpv else {
-      log.debug("Aborting command: mpv is nil! Returning error")
+      log.debug("Aborting cmd: mpv is nil! Returning error")
       return -20 // mpv_error.MPV_ERROR_GENERIC
     }
     let returnValue = mpv_command(mpv, &cargs)
@@ -888,14 +888,14 @@ class MPVController: NSObject {
   }
 
   func command(rawString: String, level: Logger.Level = .debug) -> Int32 {
-    log.log("Run command: \(rawString)", level: level)
+    log.log("Run cmd: \(rawString)", level: level)
     return mpv_command_string(mpv, rawString)
   }
 
   func asyncCommand(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
                     replyUserdata: UInt64, level: Logger.Level = .debug) {
     guard mpv != nil else { return }
-    log.log("Asynchronously run command: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))",
+    log.log("Run async cmd: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))",
             level: level)
     var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
     defer {

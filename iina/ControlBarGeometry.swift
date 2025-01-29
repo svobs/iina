@@ -238,7 +238,7 @@ struct ControlBarGeometry {
     }
     switch position {
     case .floating:
-      return 11
+      return 10
     case .top, .bottom:
       return (playSliderHeight * 0.5).rounded().clamped(to: 13...24)
     }
