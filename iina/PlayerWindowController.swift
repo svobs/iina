@@ -2017,7 +2017,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-      playButton.replaceSymbolImage(with: playPauseImage, effect: .downUp)
+      var effect: SymButton.ReplacementEffect = .downUp
+      if playButton.image == Images.replay, playPauseImage != Images.replay {
+        // looks less bad
+        effect = .offUp
+      }
+      playButton.replaceSymbolImage(with: playPauseImage, effect: effect)
 
       speedLabel.isHidden = !showSpeedLabel
 

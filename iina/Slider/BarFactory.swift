@@ -17,7 +17,7 @@ fileprivate extension CGColor {
       colorsComps.append((self.components![i] * 1.5).clamped(to: 0.0...1.0))
     }
     // alpha
-    colorsComps.append((self.components![3] + 0.4).clamped(to: 0.0..<0.9))
+    colorsComps.append((self.components![3] + 0.4).clamped(to: 0.0...1.0))
 
     let colorSpace = self.colorSpace ?? CGColorSpaceCreateDeviceRGB()
     return CGColor(colorSpace: colorSpace, components: colorsComps)!
@@ -51,9 +51,22 @@ class BarFactory {
 
   init(effectiveAppearance: NSAppearance) {
     self.effectiveAppearance = effectiveAppearance
-    let barAppearance = LayoutSpec.oscBackgroundIsClear ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
+    let isClearBG = LayoutSpec.oscBackgroundIsClear
+    let barAppearance = isClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+
     let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
-      return (BarFactory.barColorLeftFromPrefs(), NSColor.mainSliderBarRight.cgColor)
+      let barColorLeft: CGColor
+      let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderDoneColor)
+      switch userSetting {
+      case .gray:
+        barColorLeft = (isClearBG ? NSColor.mainSliderBarLeftClearBG : NSColor.mainSliderBarLeft).cgColor
+      default:
+        barColorLeft = NSColor.controlAccentColor.cgColor
+      }
+
+      let barColorRight = (isClearBG ? NSColor.mainSliderBarRightClearBG : NSColor.mainSliderBarRight).cgColor
+      return (barColorLeft, barColorRight)
     }
     let enableRoundedCorners = Preference.bool(for: .roundRectSliderBars)
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
@@ -153,16 +166,6 @@ class BarFactory {
                                         volumeBelow100_Right: volumeBelow100_Right.cloned(barHeight: barHeight_Volume_Focused, pillCornerRadius: barCornerRadius_Volume_Focused),
                                         volumeAbove100_Left: volumeAbove100_Left.cloned(barHeight: barHeight_Focused_VolumeAbove100_Left, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Left),
                                         volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
-  }
-
-  private static func barColorLeftFromPrefs() -> CGColor {
-    let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderDoneColor)
-    switch userSetting {
-    case .gray:
-      return NSColor.mainSliderBarLeft.cgColor
-    default:
-      return NSColor.controlAccentColor.cgColor
-    }
   }
 
   static func updateBarStylesFromPrefs(effectiveAppearance: NSAppearance) {

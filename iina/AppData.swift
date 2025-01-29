@@ -491,16 +491,16 @@ struct Images {
     return NSImage(named: name)!
   }
 
-  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", weight: .regular, scale: .large)
-  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", weight: .bold, scale: .large)
-  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning", weight: .black, scale: .large)
+  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", weight: .light, scale: .medium)
+  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", weight: .semibold, scale: .medium)
+  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning", weight: .black, scale: .small)
 
   static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s", weight: .medium , scale: .small)
   static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s", weight: .medium, scale: .small)
-  static let rewind: NSImage = makeSymbol(named: "backward.fill", fallbackName: "speedl", desc: "Rewind", scale: .small)
-  static let fastForward: NSImage = makeSymbol(named: "forward.fill", fallbackName: "speed", desc: "Fast Forward", scale: .small)
-  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track", scale: .small)
-  static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track", scale: .small)
+  static let rewind: NSImage = makeSymbol(named: "backward.fill", fallbackName: "speedl", desc: "Rewind", weight: .ultraLight, scale: .small)
+  static let fastForward: NSImage = makeSymbol(named: "forward.fill", fallbackName: "speed", desc: "Fast Forward", weight: .ultraLight, scale: .small)
+  static let prevTrack: NSImage = makeSymbol(named: "backward.end.fill", fallbackName: "nextl", desc: "Prev Track", weight: .ultraLight, scale: .small)
+  static let nextTrack: NSImage = makeSymbol(named: "forward.end.fill", fallbackName: "nextr", desc: "Next Track", weight: .ultraLight, scale: .small)
 
   static let toggleAlbumArt: NSImage = makeSymbol(named: "photo", fallbackName: "toggle-album-art", desc: "Toggle Album Art", weight: .medium)
 
