@@ -692,11 +692,12 @@ extension PlayerWindowController {
 
     if currentControlBar != nil {
       // Has OSC, or music mode
-      updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
+      let oscGeo = outputLayout.controlBarGeo
+      updateArrowButtons(oscGeo: oscGeo)
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
 
-      if transition.isWindowInitialLayout || (transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear) {
+      if transition.isWindowInitialLayout || transition.isOSCStyleChanging {
 
         playButton.setColors(from: transition.outputLayout)
         leftArrowButton.setColors(from: transition.outputLayout)
@@ -733,16 +734,7 @@ extension PlayerWindowController {
         KnobFactory.shared.invalidateCachedKnobs()
       }
 
-      let timeLabelFont: NSFont
-      if transition.outputLayout.isMusicMode {
-        // Decrease font size of time labels for more compact display
-        timeLabelFont = NSFont.labelFont(ofSize: 9)
-      } else if outputLayout.oscPosition == .floating {
-        timeLabelFont = NSFont.labelFont(ofSize: 11)
-      } else {
-        timeLabelFont = NSFont.labelFont(ofSize: 13)
-      }
-
+      let timeLabelFont: NSFont = oscGeo.timeLabelFont
       leftTimeLabel.font = timeLabelFont
       rightTimeLabel.font = timeLabelFont
 

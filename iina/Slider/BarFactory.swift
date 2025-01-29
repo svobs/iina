@@ -87,7 +87,7 @@ class BarFactory {
 
     // - PlaySlider:
 
-    let chapterGapWidth: CGFloat = 1.5
+    let chapterGapWidth: CGFloat = 1.0
 
     let barHeight_FocusedCurrChapter: CGFloat = 9.0
     let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
@@ -102,11 +102,11 @@ class BarFactory {
     // - VolumeSlider:
 
     let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
-    let barHeight_VolumeAbove100_Right: CGFloat = barHeight_VolumeAbove100_Left * 0.5
+    let barHeight_VolumeAbove100_Right: CGFloat = (barHeight_VolumeAbove100_Left * 0.5).rounded()
     let barCornerRadius_VolumeAbove100_Left = cornerRadius(for: barHeight_VolumeAbove100_Left)
     let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
 
-    let barHeight_Volume_Focused: CGFloat = 5.0
+    let barHeight_Volume_Focused: CGFloat = barHeight_FocusedNonCurrChapter
     let barHeight_Focused_VolumeAbove100_Left: CGFloat = 7.0
     let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
     let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)

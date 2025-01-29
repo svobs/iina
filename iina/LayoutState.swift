@@ -509,6 +509,10 @@ class LayoutState {
     return spec.controlBarGeo
   }
 
+  var hasTopOrBottomOSC: Bool {
+    return enableOSC && (oscPosition == .top || oscPosition == .bottom)
+  }
+
   func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {
     switch id {
     case .leadingSidebar:

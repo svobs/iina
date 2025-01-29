@@ -226,6 +226,26 @@ struct ControlBarGeometry {
 
   // MARK: Computed props: Playback Controls
 
+  /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
+  var timeLabelFont: NSFont {
+    NSFont.labelFont(ofSize: timeLabelFontSize)
+  }
+
+  var timeLabelFontSize: CGFloat {
+    if mode == .musicMode {
+      // Decrease font size of time labels for more compact display
+      return 9
+    }
+    switch position {
+    case .floating:
+      return 11
+    case .top:
+      return 13
+    case .bottom:
+      return max(13, playSliderHeight * 0.5).rounded()
+    }
+  }
+
   var speedLabelFontSize: CGFloat {
     let idealSize = playIconSize * 0.25
     let freeHeight = fullIconHeight - playIconSize

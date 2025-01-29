@@ -168,8 +168,9 @@ extension PlayerWindowController {
       return inputLayout.topBarPlacement != outputLayout.topBarPlacement
     }
 
-    private var isOSCStyleChanging: Bool {
-      inputLayout.oscOverlayStyle != outputLayout.oscOverlayStyle || inputLayout.controlBarGeo.isMultiLineOSC != outputLayout.controlBarGeo.isMultiLineOSC
+    var isOSCStyleChanging: Bool {
+      return (inputLayout.oscOverlayStyle != outputLayout.oscOverlayStyle ||
+       inputLayout.controlBarGeo.isMultiLineOSC != outputLayout.controlBarGeo.isMultiLineOSC)
     }
 
     var isTopBarPlacementOrStyleChanging: Bool {
