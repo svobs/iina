@@ -1553,7 +1553,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           guard let window else { return }
           // Local file: facilitate document icon
           window.representedURL = currentURL
-          setWindowTitle(title, isFilename: true)
+          setWindowTitle(title, isFilename: false)
           window.setTitleWithRepresentedFilename(currentURL.path)
         }
       }
