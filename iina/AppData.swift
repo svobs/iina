@@ -318,7 +318,8 @@ struct Constants {
     /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
     static let multiLineOSC_minBarHeightThreshold: CGFloat = minOSCBarHeight + minPlaySliderHeight
 
-    static let multiLineOSC_BottomMargin: CGFloat = 8
+    /// Negative == overlap
+    static let multiLineOSC_SpaceBetweenLines: CGFloat = -8
 
     /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
     /// their images)

@@ -87,7 +87,7 @@ class BarFactory {
 
     // - PlaySlider:
 
-    let chapterGapWidth: CGFloat = 1.0
+    let chapterGapWidth: CGFloat = 2.0
 
     let barHeight_FocusedCurrChapter: CGFloat = 9.0
     let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)

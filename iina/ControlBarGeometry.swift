@@ -135,7 +135,8 @@ struct ControlBarGeometry {
         // Is multi-line OSC
         let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
-        fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_BottomMargin
+        // FIXME: here, `16` is duct tape. These icon calculations are all sorts of wrong
+        fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_SpaceBetweenLines - 16
       } else {
         // Is single-line OSC
         self.playSliderHeight = barHeight

@@ -145,10 +145,11 @@ extension PlayerWindowController {
   func addAllObservers() {
     co.addAllObservers()
     addObserver(self, forKeyPath: #keyPath(window.effectiveAppearance), options: [.old, .new], context: nil)
+    log.verbose("Done adding all observers")
   }
 
   func removeAllObservers() {
-    UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
+    removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
     co.removeAllObservers()
   }
 

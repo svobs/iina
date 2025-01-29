@@ -282,7 +282,7 @@ extension PlayerWindowController {
     log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)"}
 
     // TODO: incorporate this into middleGeometry for cleaner code
-    if transition.inputLayout.hasControlBar && transition.isControlBarChanging {
+    if transition.isClosingThenReopeningOSC {
       // Shrink all the buttons to create cool animated effect
       if let fragToolbarView {
         for toolbarItem in fragToolbarView.views {
@@ -880,6 +880,14 @@ extension PlayerWindowController {
       fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
       leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
       rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
+
+      if let fragToolbarView, transition.isClosingThenReopeningOSC {
+        // Animate toolbar icons to full size now
+        let iconSize = transition.outputLayout.controlBarGeo.toolIconSize
+        for toolbarItem in fragToolbarView.views {
+          (toolbarItem as! OSCToolbarButton).setStyle(iconSize: iconSize)
+        }
+      }
     }
 
 
@@ -1452,7 +1460,7 @@ extension PlayerWindowController {
     let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
     let leadingMargin: CGFloat = 4
     let trailingMargin: CGFloat = 4
-    let verticalOffsetBetweenLines: CGFloat = -8.0  // negative == overlap
+    let verticalOffsetBetweenLines: CGFloat = Constants.Distance.multiLineOSC_SpaceBetweenLines
 
     mainView.removeAllSubviews()
 
@@ -1464,7 +1472,6 @@ extension PlayerWindowController {
     btmStackView.orientation = .horizontal
     btmStackView.alignment = .centerY
     btmStackView.spacing = sectionHSpacing
-//    btmStackView.distribution = .gravityAreas
     btmStackView.translatesAutoresizingMaskIntoConstraints = false
     btmStackView.detachesHiddenViews = true
     btmStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
@@ -1516,20 +1523,22 @@ extension PlayerWindowController {
     let hasStyleChange = transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear
     var needsButtonsUpdate = hasSizeChange || hasStyleChange
 
-    let isControlBarChanging = transition.isControlBarChanging
+    let isOpeningOSC = transition.isOpeningOSC
     let toolbarView: ClickThroughStackView
-    if isControlBarChanging || !oldGeo.toolbarItemsAreSame(as: newGeo) {
+    if isOpeningOSC || !oldGeo.toolbarItemsAreSame(as: newGeo) {
       removeOSCToolBar()
       guard newButtonTypes.count > 0 else { return nil }
       toolbarView = ClickThroughStackView()
       toolbarView.translatesAutoresizingMaskIntoConstraints = false
-
-      log.verbose("[\(transition.name)] Updating OSC toolbarItems to: [\(newButtonTypes.map({$0.keyString}).joined(separator: ", "))]")
-
+      let oscGeo = transition.outputLayout.controlBarGeo
+      let iconSize: CGFloat = isOpeningOSC && !transition.isWindowInitialLayout ? 0 : oscGeo.toolIconSize
+      let iconSpacing = oscGeo.toolIconSpacing
+      log.verbose("[\(transition.name)] Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(oscGeo.barHeight) fullIconHeight=\(oscGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
       var toolbarButtons: [OSCToolbarButton] = []
       for buttonType in newButtonTypes {
         let button = OSCToolbarButton()
-        button.setStyle(buttonType: buttonType, using: transition.outputLayout)
+        button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
+        button.setColors(from: transition.outputLayout)
         button.action = #selector(self.toolBarButtonAction(_:))
         toolbarButtons.append(button)
       }
@@ -1561,7 +1570,8 @@ extension PlayerWindowController {
       let iconSpacing = newGeo.toolIconSpacing
       toolbarView.spacing = 2 * iconSpacing
       let sideInset = (iconSpacing * 0.5).rounded()
-      toolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset, bottom: iconSpacing, right: sideInset)
+      toolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
+                                     bottom: iconSpacing, right: sideInset)
       log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
     }
     return toolbarView

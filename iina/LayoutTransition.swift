@@ -164,7 +164,7 @@ extension PlayerWindowController {
       return isEnteringInteractiveMode || isExitingInteractiveMode
     }
 
-    private var isTopBarPlacementChanging: Bool {
+    var isTopBarPlacementChanging: Bool {
       return inputLayout.topBarPlacement != outputLayout.topBarPlacement
     }
 
@@ -178,7 +178,7 @@ extension PlayerWindowController {
       return isTopBarPlacementChanging || (outputLayout.hasTopOSC && isOSCStyleChanging)
     }
 
-    private var isBottomBarPlacementChanging: Bool {
+    var isBottomBarPlacementChanging: Bool {
       return inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
     }
 
@@ -267,9 +267,19 @@ extension PlayerWindowController {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }
 
+    /// NOT placement!
     var isControlBarChanging: Bool {
       return inputLayout.enableOSC != outputLayout.enableOSC || inputLayout.oscPosition != outputLayout.oscPosition || inputLayout.isMusicMode != outputLayout.isMusicMode || isOSCStyleChanging
     }
+
+    var isOpeningOSC: Bool {
+      !inputLayout.hasControlBar || isClosingThenReopeningOSC
+    }
+
+    /// Animation
+    var isClosingThenReopeningOSC: Bool {
+      inputLayout.hasControlBar && (isBottomBarPlacementChanging || isTopBarPlacementChanging || isControlBarChanging)
+    }
   }
-  
+
 }

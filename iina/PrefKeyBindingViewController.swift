@@ -68,7 +68,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     }
     observers = []
 
-    UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
+    removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
   }
 
   override func viewWillAppear() {
