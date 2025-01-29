@@ -246,26 +246,21 @@ class CustomTitleBarViewController: NSViewController {
   func addViewTo(superview: NSView) {
     superview.addSubview(view)
     view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    refreshTitle()
+    windowController.updateTitle()
   }
 
   override func viewWillAppear() {
     // Need to call this here to patch case where window is not active, but title bar is
     // "inside" & is made visible by mouse hover:
-    refreshTitle()
+    windowController.updateTitle()
   }
 
-  func refreshTitle() {
-    guard let currentPlayback = windowController.player.info.currentPlayback else {
-      windowController.player.log.debug("Cannot update window title for custom title bar: no current media")
-      return
-    }
-
+  /// Should be called by `windowController.updateTitle()` only.
+  func updateTitle(to newTitle: String) {
     // - Update title text content
 
-    let title = currentPlayback.url.lastPathComponent
-    if titleText.string != title {
-      titleText.string = title
+    if titleText.string != newTitle {
+      titleText.string = newTitle
       titleText.sizeToFit()
       titleText.invalidateIntrinsicContentSize()
     }

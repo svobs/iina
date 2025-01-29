@@ -1388,7 +1388,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if let customTitleBar {
       // The traffic light buttons should change to active/inactive
       customTitleBar.leadingStackView.markButtonsDirty()
-      customTitleBar.refreshTitle()
+      updateTitle()
     } else {
       /// Duplicate some of the logic in `customTitleBar.refreshTitle()`
       let alphaValue = isKey ? 1.0 : 0.4
@@ -1501,32 +1501,34 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @objc
   func updateTitle() {
     player.mpv.queue.async { [self] in
-      _updateTitle()
-    }
-  }
+      guard player.isActive else { return }
+      guard let currentPlayback = player.info.currentPlayback else {
+        log.verbose("Cannot update window title: currentPlayback is nil")
+        return
+      }
 
-  private func _updateTitle() {
-    guard player.isActive else { return }
-    guard let currentPlayback = player.info.currentPlayback else {
-      log.verbose("Cannot update window title: currentPlayback is nil")
-      return
-    }
-
-    let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
-
-    DispatchQueue.main.async { [self] in
-      guard let window else { return }
       let title: String
+
       if isInMiniPlayer {
-        miniPlayer.loadIfNeeded()
+        // Update title in music mode control bar
+        let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
         title = mediaTitle
-        window.title = title
-        miniPlayer.updateTitle(mediaTitle: mediaTitle, mediaAlbum: mediaAlbum, mediaArtist: mediaArtist)
+
+        DispatchQueue.main.async { [self] in
+          setWindowTitle(title, isFilename: false)
+          miniPlayer.loadIfNeeded()
+          miniPlayer.updateTitle(mediaTitle: mediaTitle, mediaAlbum: mediaAlbum, mediaArtist: mediaArtist)
+        }
+
       } else if player.info.isNetworkResource {
+        // Streaming media: title can change unpredictably
         title = player.getMediaTitle()
-        window.title = title
+
+        DispatchQueue.main.async { [self] in
+          setWindowTitle(title, isFilename: false)
+        }
       } else {
-        window.representedURL = player.info.currentURL
+        let currentURL = currentPlayback.url
         // Workaround for issue #3543, IINA crashes reporting:
         // NSInvalidArgumentException [NSNextStepFrame _displayName]: unrecognized selector
         // When running on an M1 under Big Sur and using legacy full screen.
@@ -1545,20 +1547,42 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // This problem has been reported to Apple as:
         // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
         // Feedback number FB9789129
-        title = currentPlayback.url.lastPathComponent
-        window.setTitleWithRepresentedFilename(currentPlayback.url.path)
+        title = currentURL.lastPathComponent
+
+        DispatchQueue.main.async { [self] in
+          guard let window else { return }
+          // Local file: facilitate document icon
+          window.representedURL = currentURL
+          setWindowTitle(title, isFilename: true)
+          window.setTitleWithRepresentedFilename(currentURL.path)
+        }
       }
-
-      /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.
-      /// Oddly, there are 2 separate functions for adding and changing the item, but `addWindowsItem` has no effect if called more than once,
-      /// while `changeWindowsItem` needs to be called if `addWindowsItem` was already called. To be safe, just call both.
-      NSApplication.shared.addWindowsItem(window, title: title, filename: false)
-      NSApplication.shared.changeWindowsItem(window, title: title, filename: false)
-
-      log.trace{"Updating window title to: \(title.pii.quoted)"}
-      customTitleBar?.refreshTitle()
     }  // end DispatchQueue.main work item
 
+  }
+
+  private func setWindowTitle(_ titleText: String, isFilename: Bool) {
+    guard let window else { return }
+
+    // Interesting. The Swift preprocessor will not see this variable inside the DEBUG block if it is also named "isFilename".
+    var filename = isFilename
+#if DEBUG
+    // Include player ID in window (example: "[PLR-1234c0] MyVideo.mp4")
+    let debugTitle = "[\(log.rawValue)] \(titleText)"
+    log.trace{"Updating window title to: \(debugTitle.pii.quoted)"}
+    window.title = debugTitle
+    filename = false
+#else
+    window.title = titleText
+#endif
+
+    /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.
+    /// Oddly, there are 2 separate functions for adding and changing the item, but `addWindowsItem` has no effect if called more than once,
+    /// while `changeWindowsItem` needs to be called if `addWindowsItem` was already called. To be safe, just call both.
+    NSApplication.shared.addWindowsItem(window, title: titleText, filename: filename)
+    NSApplication.shared.changeWindowsItem(window, title: titleText, filename: filename)
+
+    customTitleBar?.updateTitle(to: titleText)
   }
 
   // MARK: - UI: Interactive mode
