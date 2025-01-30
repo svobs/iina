@@ -431,7 +431,7 @@ extension PlayerWindowController {
     }
 
     if transition.isBottomBarPlacementOrStyleChanging {
-      initBottomBarView(in: window.contentView!, style: transition.outputLayout.oscOverlayStyle)
+      rebuildBottomBarView(in: window.contentView!, style: transition.outputLayout.oscOverlayStyle)
       updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
     }
 
@@ -511,7 +511,7 @@ extension PlayerWindowController {
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = !outputLayout.isMusicMode && (outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.spec.oscBackgroundIsClear))
+    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.spec.oscBackgroundIsClear)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     // Sidebars

@@ -1498,12 +1498,12 @@ For smoothest results, also enable custom full screen.</string>
                                 </customView>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Overlay-Style Popup">
                                     <rect key="frame" x="266" y="-3" width="168" height="25"/>
-                                    <popUpButtonCell key="cell" type="push" title="MacOS Blended Gray" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="Controller-Position Popup Button Cell">
+                                    <popUpButtonCell key="cell" type="push" title="Native Graphite" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="Controller-Position Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
                                         <menu key="menu" id="4Vv-IT-ZIE">
                                             <items>
-                                                <menuItem title="MacOS Blended Gray" state="on" tag="1" id="IBM-NK-uiO" userLabel="Top"/>
+                                                <menuItem title="Native Graphite" state="on" tag="1" id="IBM-NK-uiO" userLabel="Top"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="C1F-Y0-yvA" userLabel="Floating"/>
                                             </items>
                                         </menu>

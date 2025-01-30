@@ -118,13 +118,17 @@ struct LayoutSpec {
                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                       enableOSC: Preference.bool(for: .enableOSC),
                       oscPosition: Preference.enum(for: .oscPosition),
-                      oscOverlayStyle: oscBackgroundIsClear ? .clearGradient : .visualEffectView,
+                      oscOverlayStyle: effectiveOSCOverlayStyleFromPrefs,
                       interactiveMode: interactiveMode,
                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
-  static var oscBackgroundIsClear: Bool {
-    Preference.bool(for: .enableOSC) && Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom && Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport && Preference.enum(for: .oscOverlayStyle) == Preference.OSCOverlayStyle.clearGradient
+  static var effectiveOSCOverlayStyleFromPrefs: Preference.OSCOverlayStyle {
+    if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
+        Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
+      return Preference.enum(for: .oscOverlayStyle)
+    }
+    return .visualEffectView
   }
 
   // Specify any properties to override; if nil, will use self's property values.

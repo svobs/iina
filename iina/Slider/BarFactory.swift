@@ -51,7 +51,7 @@ class BarFactory {
 
   init(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
-    let isClearBG = LayoutSpec.oscBackgroundIsClear
+    let isClearBG = LayoutSpec.effectiveOSCOverlayStyleFromPrefs == .clearGradient
     let barAppearance = isClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
 
     let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {

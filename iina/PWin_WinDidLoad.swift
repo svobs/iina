@@ -105,7 +105,8 @@ extension PlayerWindowController {
       initOSCViews()
       initTitleBar()
       initTopBarView(in: contentView)
-      initBottomBarView(in: contentView, style: .visualEffectView)
+      initBottomBarTopBorder()
+      rebuildBottomBarView(in: contentView, style: .visualEffectView)
       initSpeedLabel()
       initPlaybackBtnsView()
       initPlayPositionViews()
@@ -281,8 +282,21 @@ extension PlayerWindowController {
 
   }
 
-  func initBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
+  func initBottomBarTopBorder() {
+    bottomBarTopBorder.identifier = .init("BottomBar-TopBorder")  // helps with debug logging
+    bottomBarTopBorder.boxType = .custom
+    bottomBarTopBorder.titlePosition = .noTitle
+    bottomBarTopBorder.borderWidth = 0
+    bottomBarTopBorder.borderColor = .clear
+    bottomBarTopBorder.fillColor = .titleBarBorder
+    bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
+  }
+
+  func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
+    bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
+
+    let bottomBarView: NSView
     switch style {
     case .visualEffectView:
       bottomBarView = NSVisualEffectView()
@@ -301,7 +315,6 @@ extension PlayerWindowController {
       bottomBarView.wantsLayer = true
     }
 
-    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     bottomBarView.clipsToBounds = true
     if let bottomBarView = bottomBarView as? NSVisualEffectView {
       bottomBarView.blendingMode = .withinWindow
@@ -311,6 +324,8 @@ extension PlayerWindowController {
     bottomBarView.identifier = .init("BottomBarView")  // helps with debug logging
     bottomBarView.isHidden = true
     bottomBarView.translatesAutoresizingMaskIntoConstraints = false
+
+    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
 
     viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
     viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
@@ -328,16 +343,11 @@ extension PlayerWindowController {
     bottomBarTrailingSpaceConstraint.isActive = true
     bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
 
-    bottomBarTopBorder.identifier = .init("BottomBar-TopBorder")  // helps with debug logging
-    bottomBarTopBorder.boxType = .custom
-    bottomBarTopBorder.titlePosition = .noTitle
-    bottomBarTopBorder.borderWidth = 0
-    bottomBarTopBorder.borderColor = .clear
-    bottomBarTopBorder.fillColor = .titleBarBorder
-    bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
     bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5).isActive = true
+
+    self.bottomBarView = bottomBarView
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
