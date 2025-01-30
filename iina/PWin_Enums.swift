@@ -233,6 +233,11 @@ enum PlayerWindowMode: Int {
     }
     return Preference.bool(for: .lockViewportToVideoSize)
   }
+
+  var canShowSidebars: Bool {
+    return self == .windowedNormal || self == .fullScreenNormal
+  }
+
 }
 
 

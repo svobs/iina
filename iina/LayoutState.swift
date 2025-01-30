@@ -269,8 +269,20 @@ struct LayoutSpec {
     return (shouldCloseLeadingSidebar, shouldCloseTrailingSidebar)
   }
 
+  var hasPermanentControlBar: Bool {
+    if mode == .musicMode {
+      return true
+    }
+    return enableOSC && ((oscPosition == .top && topBarPlacement == .outsideViewport) ||
+                         (oscPosition == .bottom && bottomBarPlacement == .outsideViewport))
+  }
+
   var hasBottomOSC: Bool {
     return enableOSC && oscPosition == .bottom
+  }
+
+  var hasTopOrBottomOSC: Bool {
+    return enableOSC && (oscPosition == .top || oscPosition == .bottom)
   }
 
   var effectiveOSCOverlayStyle: Preference.OSCOverlayStyle {
@@ -293,11 +305,7 @@ struct LayoutSpec {
 /// • When any member variable inside it needs to be changed, a new `LayoutState` object should be constructed to describe the new state,
 ///   and a `LayoutTransition` should be built to describe the animations needs to go from old to new.
 /// • The new `LayoutState`, once active, should be stored in the `currentLayout` of `PlayerWindowController` for future reference.
-class LayoutState {
-  init(spec: LayoutSpec) {
-    self.spec = spec
-  }
-
+struct LayoutState {
   // MARK: Stored properties
 
   // All other variables in this class are derived from this spec, or from stored prefs:
@@ -305,28 +313,28 @@ class LayoutState {
 
   // - Visibility of views/categories
 
-  var titleBar: VisibilityMode = .hidden
-  var titleIconAndText: VisibilityMode = .hidden
-  var trafficLightButtons: VisibilityMode = .hidden
-  var titlebarAccessoryViewControllers: VisibilityMode = .hidden
-  var leadingSidebarToggleButton: VisibilityMode = .hidden
-  var trailingSidebarToggleButton: VisibilityMode = .hidden
+  let titleBar: VisibilityMode
+  let titleIconAndText: VisibilityMode
+  let trafficLightButtons: VisibilityMode
+  let titlebarAccessoryViewControllers: VisibilityMode
+  let leadingSidebarToggleButton: VisibilityMode
+  let trailingSidebarToggleButton: VisibilityMode
 
-  var controlBarFloating: VisibilityMode = .hidden
+  let controlBarFloating: VisibilityMode
 
-  var bottomBarView: VisibilityMode = .hidden
-  var topBarView: VisibilityMode = .hidden
+  let bottomBarView: VisibilityMode
+  let topBarView: VisibilityMode
 
-  // Only applies for legacy full screen:
-  var hasTopPaddingForCameraHousing = false
+  /// Only applies for legacy full screen
+  let hasTopPaddingForCameraHousing: Bool
 
   // - Sizes / offsets
 
-  var sidebarDownshift: CGFloat = Constants.Sidebar.defaultDownshift
-  var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
+  let sidebarDownshift: CGFloat
+  let sidebarTabHeight: CGFloat
 
-  var titleBarHeight: CGFloat = 0
-  var topOSCHeight: CGFloat = 0
+  let titleBarHeight: CGFloat
+  let topOSCHeight: CGFloat
 
   // MARK: Derived / computed properties
 
@@ -338,7 +346,7 @@ class LayoutState {
     self.titleBarHeight + self.topOSCHeight
   }
 
-  var bottomBarHeight: CGFloat = 0
+  let bottomBarHeight: CGFloat
 
   /// - Bar widths/heights IF `.outsideViewport`
 
@@ -456,7 +464,7 @@ class LayoutState {
   }
 
   var canShowSidebars: Bool {
-    return spec.mode == .windowedNormal || spec.mode == .fullScreenNormal
+    return spec.mode.canShowSidebars
   }
 
   /// Only windowed & full screen modes can have floating OSC, and OSC must be enabled
@@ -488,11 +496,7 @@ class LayoutState {
   }
 
   var hasPermanentControlBar: Bool {
-    if isMusicMode {
-      return true
-    }
-    return enableOSC && ((oscPosition == .top && topBarPlacement == .outsideViewport) ||
-                         (oscPosition == .bottom && bottomBarPlacement == .outsideViewport))
+    return spec.hasPermanentControlBar
   }
 
   var mode: PlayerWindowMode {
@@ -504,7 +508,7 @@ class LayoutState {
   }
 
   var hasTopOrBottomOSC: Bool {
-    return enableOSC && (oscPosition == .top || oscPosition == .bottom)
+    return spec.hasTopOrBottomOSC
   }
 
   var oscBackgroundIsClear: Bool {
@@ -542,115 +546,128 @@ class LayoutState {
   /// Compiles the given `LayoutSpec` into a `LayoutState`. This is an idempotent operation.
   static func buildFrom(_ layoutSpec: LayoutSpec) -> LayoutState {
     let outputLayout = LayoutState(spec: layoutSpec)
+    return outputLayout
+  }
+
+  init(spec: LayoutSpec) {
+    self.spec = spec
 
     // Title bar & title bar accessories:
 
-    if outputLayout.isLegacyFullScreen {
-      outputLayout.hasTopPaddingForCameraHousing = Preference.bool(for: .allowVideoToOverlapCameraHousing)
-    }
-
-    let titleBarVisibleState: VisibilityMode
-    if outputLayout.isNativeFullScreen {
-      titleBarVisibleState = .hidden
-      outputLayout.trafficLightButtons = .showAlways
-      outputLayout.titleIconAndText = .showAlways
-    } else if outputLayout.isLegacyFullScreen {
-      titleBarVisibleState = .hidden
-    } else if outputLayout.isWindowed {
-      titleBarVisibleState = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
-    } else {
-      titleBarVisibleState = .hidden
-    }
+    self.hasTopPaddingForCameraHousing = spec.isLegacyFullScreen && Preference.bool(for: .allowVideoToOverlapCameraHousing)
 
     // Title bar views
-    outputLayout.titleBar = titleBarVisibleState
-    if !outputLayout.isNativeFullScreen {
-      outputLayout.trafficLightButtons = titleBarVisibleState
-      outputLayout.titleIconAndText = titleBarVisibleState
+    let titleBarVisibleState: VisibilityMode
+    let trafficLightButtons: VisibilityMode
+    if spec.isNativeFullScreen {
+      titleBarVisibleState = .hidden
+      self.trafficLightButtons = .showAlways
+      self.titleIconAndText = .showAlways
+    } else {
+      if spec.isLegacyFullScreen {
+        titleBarVisibleState = .hidden
+      } else if spec.isWindowed {
+        titleBarVisibleState = spec.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
+      } else {
+        titleBarVisibleState = .hidden
+      }
+      self.trafficLightButtons = titleBarVisibleState
+      self.titleIconAndText = titleBarVisibleState
     }
-    outputLayout.titlebarAccessoryViewControllers = titleBarVisibleState
+    self.titleBar = titleBarVisibleState
+
+    var titleBarHeight: CGFloat = 0
+    self.titlebarAccessoryViewControllers = titleBarVisibleState
     if titleBarVisibleState.isShowable {
       // May be overridden depending on OSC layout anyway
-      outputLayout.titleBarHeight = Constants.Distance.standardTitleBarHeight
+      titleBarHeight = Constants.Distance.standardTitleBarHeight
     }
     // LeadingSidebar toggle button
-    let hasLeadingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.leadingSidebar.tabGroups.isEmpty
-    if hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) {
-      outputLayout.leadingSidebarToggleButton = titleBarVisibleState
-    }
+    let hasLeadingSidebar = !spec.isInteractiveMode && !spec.leadingSidebar.tabGroups.isEmpty
+    self.leadingSidebarToggleButton = hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBarVisibleState : .hidden
     // TrailingSidebar toggle button
-    let hasTrailingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.trailingSidebar.tabGroups.isEmpty
-    if hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) {
-      outputLayout.trailingSidebarToggleButton = titleBarVisibleState
-    }
+    let hasTrailingSidebar = !spec.isInteractiveMode && !spec.trailingSidebar.tabGroups.isEmpty
+    self.trailingSidebarToggleButton = hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBarVisibleState : .hidden
 
     // May be overridden below
-    outputLayout.topBarView = titleBarVisibleState
+    var topBarView = titleBarVisibleState
+    var bottomBarView = titleBarVisibleState
+    var topOSCHeight: CGFloat = 0
+    var controlBarFloating: VisibilityMode = .hidden
+    var bottomBarHeight: CGFloat = 0
+    var sidebarTabHeight: CGFloat = 0
 
     // OSC:
 
-    if layoutSpec.enableOSC {
+    if spec.enableOSC {
       // add fragment views
-      switch layoutSpec.oscPosition {
+      switch spec.oscPosition {
       case .floating:
-        outputLayout.controlBarFloating = .showFadeableNonTopBar  // floating is always fadeable
+        controlBarFloating = .showFadeableNonTopBar  // floating is always fadeable
       case .top:
-        if outputLayout.titleBar.isShowable {
+        if titleBarVisibleState.isShowable {
           // Reduce title height a bit because it will share space with OSC
-          outputLayout.titleBarHeight = Constants.Distance.reducedTitleBarHeight
+          titleBarHeight = Constants.Distance.reducedTitleBarHeight
         }
 
         let topBarVisibility: VisibilityMode
-        if outputLayout.topBarPlacement == .outsideViewport {
+        if spec.topBarPlacement == .outsideViewport {
           topBarVisibility = .showAlways
-        } else if outputLayout.titleBar.isShowable {
+        } else if titleBarVisibleState.isShowable {
           // Match value from above
-          topBarVisibility = outputLayout.titleBar
+          topBarVisibility = titleBarVisibleState
         } else {
           topBarVisibility = .showFadeableTopBar
         }
-        outputLayout.topBarView = topBarVisibility
-        outputLayout.topOSCHeight = layoutSpec.controlBarGeo.barHeight
+        topBarView = topBarVisibility
+        topOSCHeight = spec.controlBarGeo.barHeight
       case .bottom:
-        outputLayout.bottomBarView = (outputLayout.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
-        outputLayout.bottomBarHeight = layoutSpec.controlBarGeo.barHeight
+        bottomBarView = (spec.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
+        bottomBarHeight = spec.controlBarGeo.barHeight
       }
-    } else if layoutSpec.mode == .musicMode {
-      assert(outputLayout.bottomBarPlacement == .outsideViewport)
-      outputLayout.bottomBarView = .showAlways
-    } else if layoutSpec.isInteractiveMode {
-      assert(outputLayout.bottomBarPlacement == .outsideViewport)
-      outputLayout.bottomBarView = .showAlways
-      
-      outputLayout.bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
+    } else if spec.mode == .musicMode {
+      assert(spec.bottomBarPlacement == .outsideViewport)
+      bottomBarView = .showAlways
+    } else if spec.isInteractiveMode {
+      assert(spec.bottomBarPlacement == .outsideViewport)
+      bottomBarView = .showAlways
+
+      bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
     }
 
     /// Sidebar tabHeight and downshift.
     /// Downshift: try to match height of title bar
     /// Tab height: if top OSC is `insideViewport`, try to match its height
-    if outputLayout.isMusicMode {
+    if spec.mode == .musicMode {
       /// Special case for music mode. Only really applies to `playlistView`,
       /// because `quickSettingView` is never shown in this mode.
-      outputLayout.sidebarTabHeight = Constants.Sidebar.musicModeTabHeight
-    } else if outputLayout.topBarView.isShowable {
+      self.sidebarDownshift = Constants.Sidebar.musicModeTabHeight
+    } else if topBarView.isShowable {
       // Top bar always spans the whole width of the window (unlike the bottom bar)
       // FIXME: someday, refactor title bar & top OSC outside of top bar & make iinto 2 independent bars.
       // (so that top OSC will not overlap outside sidebars)
-      if outputLayout.topBarPlacement == .outsideViewport {
-        outputLayout.sidebarDownshift = Constants.Sidebar.defaultDownshift
+      if spec.topBarPlacement == .outsideViewport {
+        self.sidebarDownshift = Constants.Sidebar.defaultDownshift
       } else {
-        outputLayout.sidebarDownshift = outputLayout.topBarHeight
+        self.sidebarDownshift = titleBarHeight + topOSCHeight
       }
 
-      let tabHeight = outputLayout.topOSCHeight
+      let tabHeight = topOSCHeight
       // Put some safeguards in place. Don't want to waste space or be too tiny to read.
       // Leave default height if not in reasonable range.
       if tabHeight >= Constants.Sidebar.minTabHeight && tabHeight <= Constants.Sidebar.maxTabHeight {
-        outputLayout.sidebarTabHeight = tabHeight
+        sidebarTabHeight = tabHeight
       }
+    } else {
+      self.sidebarDownshift = Constants.Sidebar.defaultDownshift
     }
-
-    return outputLayout
+    self.topOSCHeight = topOSCHeight
+    self.topBarView = topBarView
+    self.titleBarHeight = titleBarHeight
+    self.controlBarFloating = controlBarFloating
+    self.bottomBarHeight = bottomBarHeight
+    self.bottomBarView = bottomBarView
+    self.sidebarTabHeight = sidebarTabHeight
   }
 
   // Converts & updates existing geometry to this layout
