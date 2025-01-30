@@ -529,7 +529,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Layout options for how to layout controls inside `currentControlBar`.
   let osc_SingleLineView = NSStackView()
   let osc_MultiLineView = ClickThroughView()
-
+  let osc_MultiLineView_BtmStackView = ClickThroughStackView()
   let seekPreview = SeekPreview()
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!

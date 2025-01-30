@@ -1458,42 +1458,34 @@ extension PlayerWindowController {
 
   private func addSubviewsToOSC_MultiLineView(_ transition: LayoutTransition) {
     let mainView = osc_MultiLineView
-    guard transition.isControlBarChanging || mainView.subviews.isEmpty else { return }
 
-    let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
-    let leadingMargin: CGFloat = 4
-    let trailingMargin: CGFloat = 4
-    let verticalOffsetBetweenLines: CGFloat = Constants.Distance.multiLineOSC_SpaceBetweenLines
+    if transition.isControlBarChanging || mainView.subviews.isEmpty {
+      let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
+      let leadingMargin: CGFloat = 4
+      let trailingMargin: CGFloat = 4
+      let verticalOffsetBetweenLines: CGFloat = Constants.Distance.multiLineOSC_SpaceBetweenLines
 
-    mainView.removeAllSubviews()
+      mainView.removeAllSubviews()
 
-    mainView.addSubview(playSliderAndTimeLabelsView)
-    playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
+      mainView.addSubview(playSliderAndTimeLabelsView)
+      playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
 
-    let btmStackView = ClickThroughStackView()
-    btmStackView.identifier = .init("OSC_MultiLineView-BtmHStackView")
-    btmStackView.orientation = .horizontal
-    btmStackView.alignment = .centerY
-    btmStackView.spacing = sectionHSpacing
-    btmStackView.translatesAutoresizingMaskIntoConstraints = false
-    btmStackView.detachesHiddenViews = true
-    btmStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
+      osc_MultiLineView_BtmStackView.spacing = sectionHSpacing
+      mainView.addSubview(osc_MultiLineView_BtmStackView)
+      osc_MultiLineView_BtmStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin, trailing: trailingMargin)
+      osc_MultiLineView_BtmStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: verticalOffsetBetweenLines).isActive = true
 
-    mainView.addSubview(btmStackView)
+      osc_MultiLineView_BtmStackView.addView(fragPlaybackBtnsView, in: .leading)
+      let spacer = SpacerView.buildNew(id: "OSC_MultiLineView-CentralSpacerView")
+      osc_MultiLineView_BtmStackView.addView(spacer, in: .leading)
 
-    btmStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin, trailing: trailingMargin)
-    btmStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: verticalOffsetBetweenLines).isActive = true
+      osc_MultiLineView_BtmStackView.addView(fragVolumeView, in: .leading)
+      osc_MultiLineView_BtmStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+    }
 
-    btmStackView.addView(fragPlaybackBtnsView, in: .leading)
-    let spacer = SpacerView.buildNew(id: "OSC_MultiLineView-CentralSpacerView")
-    btmStackView.addView(spacer, in: .leading)
-
-    btmStackView.addView(fragVolumeView, in: .leading)
-    btmStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
-
-    if let fragToolbarView {
-      btmStackView.addView(fragToolbarView, in: .leading)
-      btmStackView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
+    if let fragToolbarView, !osc_MultiLineView_BtmStackView.views.contains(fragToolbarView) {
+      osc_MultiLineView_BtmStackView.addView(fragToolbarView, in: .leading)
+      osc_MultiLineView_BtmStackView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
     }
 
   }

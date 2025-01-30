@@ -566,6 +566,13 @@ extension PlayerWindowController {
     osc_MultiLineView.translatesAutoresizingMaskIntoConstraints = false
     osc_MultiLineView.wantsLayer = true
     osc_MultiLineView.layer?.backgroundColor = .clear
+
+    osc_MultiLineView_BtmStackView.identifier = .init("OSC_MultiLineView-BtmHStackView")
+    osc_MultiLineView_BtmStackView.orientation = .horizontal
+    osc_MultiLineView_BtmStackView.alignment = .centerY
+    osc_MultiLineView_BtmStackView.translatesAutoresizingMaskIntoConstraints = false
+    osc_MultiLineView_BtmStackView.detachesHiddenViews = true
+    osc_MultiLineView_BtmStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
   }
 
   private func initVolumeView() {
