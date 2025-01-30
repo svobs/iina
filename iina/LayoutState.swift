@@ -54,6 +54,7 @@ struct LayoutSpec {
       mode = .windowedNormal
     }
     self.mode = mode
+    self.oscOverlayStyle = oscOverlayStyle
 
     switch mode {
     case .windowedNormal, .fullScreenNormal:
@@ -63,8 +64,6 @@ struct LayoutSpec {
       self.bottomBarPlacement = bottomBarPlacement
       self.enableOSC = enableOSC
       self.interactiveMode = nil
-      let canHaveClearOverlayStyle = enableOSC && oscPosition == .bottom && bottomBarPlacement == .insideViewport
-      self.oscOverlayStyle = canHaveClearOverlayStyle ? oscOverlayStyle : .visualEffectView
 
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       // Override most properties for music mode & interactive mode
@@ -74,7 +73,6 @@ struct LayoutSpec {
       self.bottomBarPlacement = .outsideViewport
       self.enableOSC = false
       self.interactiveMode = interactiveMode
-      self.oscOverlayStyle = .visualEffectView
     }
 
     self.isLegacyStyle = isLegacyStyle
@@ -131,7 +129,8 @@ struct LayoutSpec {
     return .visualEffectView
   }
 
-  // Specify any properties to override; if nil, will use self's property values.
+  /// Specify any properties to override; if nil, will use self's property values -
+  /// EXCEPT for `oscOverlayStyle`, which is computed.
   func clone(leadingSidebar: Sidebar? = nil,
              trailingSidebar: Sidebar? = nil,
              mode: PlayerWindowMode? = nil,
@@ -140,7 +139,6 @@ struct LayoutSpec {
              bottomBarPlacement: Preference.PanelPlacement? = nil,
              enableOSC: Bool? = nil,
              oscPosition: Preference.OSCPosition? = nil,
-             oscOverlayStyle: Preference.OSCOverlayStyle? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
              interactiveMode: InteractiveMode? = nil,
              moreSidebarState: Sidebar.SidebarMiscState? = nil) -> LayoutSpec {
@@ -156,7 +154,7 @@ struct LayoutSpec {
                       bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                       enableOSC: enableOSC ?? self.enableOSC,
                       oscPosition: self.oscPosition,
-                      oscOverlayStyle: oscOverlayStyle ?? self.oscOverlayStyle,
+                      oscOverlayStyle: self.oscOverlayStyle,
                       controlBarGeo: controlBarGeo,
                       interactiveMode: interactiveMode ?? self.interactiveMode,
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
