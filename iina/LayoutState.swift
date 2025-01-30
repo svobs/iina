@@ -269,8 +269,19 @@ struct LayoutSpec {
     return (shouldCloseLeadingSidebar, shouldCloseTrailingSidebar)
   }
 
+  var hasBottomOSC: Bool {
+    return enableOSC && oscPosition == .bottom
+  }
+
+  var effectiveOSCOverlayStyle: Preference.OSCOverlayStyle {
+    if hasBottomOSC && bottomBarPlacement == .insideViewport {
+      return oscOverlayStyle
+    }
+    return .visualEffectView
+  }
+
   var oscBackgroundIsClear: Bool {
-    return oscOverlayStyle == .clearGradient
+    return effectiveOSCOverlayStyle == .clearGradient
   }
 }
 
@@ -458,7 +469,7 @@ class LayoutState {
   }
 
   var hasBottomOSC: Bool {
-    return enableOSC && oscPosition == .bottom
+    return spec.hasBottomOSC
   }
 
   var hasControlBar: Bool {
@@ -494,6 +505,10 @@ class LayoutState {
 
   var hasTopOrBottomOSC: Bool {
     return enableOSC && (oscPosition == .top || oscPosition == .bottom)
+  }
+
+  var oscBackgroundIsClear: Bool {
+    return spec.oscBackgroundIsClear
   }
 
   func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {

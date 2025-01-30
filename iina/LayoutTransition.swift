@@ -273,7 +273,7 @@ extension PlayerWindowController {
     }
 
     var isOpeningOSC: Bool {
-      !inputLayout.hasControlBar || isClosingThenReopeningOSC
+      isWindowInitialLayout || !inputLayout.hasControlBar || isClosingThenReopeningOSC
     }
 
     /// Animation

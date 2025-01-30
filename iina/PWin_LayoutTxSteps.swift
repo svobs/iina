@@ -584,7 +584,6 @@ extension PlayerWindowController {
         playlistView.addAllConstraintsToFillSuperview()
 
         // move playback position slider & time labels
-        addSubviewsToPlaySliderAndTimeLabelsView()
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
@@ -913,7 +912,7 @@ extension PlayerWindowController {
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
       currentControlBar = controlBarFloating
 
-      if !transition.inputLayout.hasFloatingOSC {
+      if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
         oscFloatingPlayButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
         // There sweems to be a race condition when adding to these StackViews.
         // Sometimes it still contains the old view, and then trying to add again will cause a crash.
@@ -925,7 +924,6 @@ extension PlayerWindowController {
 
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-        addSubviewsToPlaySliderAndTimeLabelsView()
         oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 
@@ -1444,7 +1442,6 @@ extension PlayerWindowController {
     if transition.isControlBarChanging || mainView.subviews.isEmpty {
       mainView.removeAllSubviews()
       mainView.addView(fragPlaybackBtnsView, in: .leading)
-      addSubviewsToPlaySliderAndTimeLabelsView()
       mainView.addView(playSliderAndTimeLabelsView, in: .leading)
       mainView.addView(fragVolumeView, in: .leading)
 
@@ -1526,8 +1523,8 @@ extension PlayerWindowController {
     let newButtonTypes = newGeo.toolbarItems
 
     let hasSizeChange = oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing
-    let hasStyleChange = transition.inputLayout.spec.oscBackgroundIsClear != transition.outputLayout.spec.oscBackgroundIsClear
-    var needsButtonsUpdate = hasSizeChange || hasStyleChange
+    let hasColorChange = transition.inputLayout.oscBackgroundIsClear != transition.outputLayout.oscBackgroundIsClear
+    var needsButtonsUpdate = hasSizeChange || hasColorChange
 
     let isOpeningOSC = transition.isOpeningOSC
     let toolbarView: ClickThroughStackView
