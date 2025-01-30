@@ -8,11 +8,6 @@
 
 import Foundation
 
-fileprivate extension NSStackView.VisibilityPriority {
-  static let detachEarly = NSStackView.VisibilityPriority(rawValue: 950)
-  static let detachEarlier = NSStackView.VisibilityPriority(rawValue: 900)
-}
-
 /// This file contains tasks to run in the animation queue, which form a `LayoutTransition`.
 /// Each task is a separate `CATransaction`. Some tasks are assumed to have animations (although they can also be run immediately),
 /// but others are expected to always be immediate.
@@ -500,8 +495,8 @@ extension PlayerWindowController {
     if !outputLayout.hasControlBar || transition.isControlBarChanging {
       playSliderAndTimeLabelsView.removeFromSuperview()
 
-      osc_SingleLineView.removeFromSuperview()
-      osc_MultiLineView.removeFromSuperview()
+      oscOneRowView.removeFromSuperview()
+      oscTwoRowView.removeFromSuperview()
 
       if !transition.inputLayout.hasFloatingOSC {
         for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
@@ -640,14 +635,14 @@ extension PlayerWindowController {
 
 
         let oscContentView: NSView
-        if oscGeo.isMultiLineOSC {
-          oscContentView = osc_MultiLineView
-          log.verbose{"Adding subviews to osc_MultiLineView for top bar"}
-          addSubviewsToOSC_MultiLineView(transition)
+        if oscGeo.isTwoRowBarOSC {
+          oscContentView = oscTwoRowView
+          log.verbose{"Adding subviews to oscTwoRowView for top bar"}
+          oscTwoRowView.updateControls(from: self)
         } else {
-          oscContentView = osc_SingleLineView
-          log.verbose{"Adding subviews to osc_SingleLineView for top bar"}
-          addSubviewsToOSC_SingleLineView(transition)
+          oscContentView = oscOneRowView
+          log.verbose{"Adding subviews to oscOneRowView for top bar"}
+          oscOneRowView.updateControls(from: self)
         }
 
         if !controlBarTop.subviews.contains(oscContentView) {
@@ -661,14 +656,14 @@ extension PlayerWindowController {
         currentControlBar = bottomBarView
 
         let oscContentView: NSView
-        if oscGeo.isMultiLineOSC {
-          oscContentView = osc_MultiLineView
-          log.verbose{"Adding subviews to osc_MultiLineView for bottom bar"}
-          addSubviewsToOSC_MultiLineView(transition)
+        if oscGeo.isTwoRowBarOSC {
+          oscContentView = oscTwoRowView
+          log.verbose{"Adding subviews to oscTwoRowView for bottom bar"}
+          oscTwoRowView.updateControls(from: self)
         } else {
-          oscContentView = osc_SingleLineView
-          log.verbose{"Adding subviews to osc_SingleLineView for bottom bar"}
-          addSubviewsToOSC_SingleLineView(transition)
+          oscContentView = oscOneRowView
+          log.verbose{"Adding subviews to oscOneRowView for bottom bar"}
+          oscOneRowView.updateControls(from: self)
         }
 
         if !bottomBarView.subviews.contains(oscContentView) {
@@ -1434,61 +1429,6 @@ extension PlayerWindowController {
   }
 
   // MARK: - Controller content layout
-
-  /// For "bar"-type OSCs: `bottom` and `top` only - not `floating` or music mode.
-  private func addSubviewsToOSC_SingleLineView(_ transition: LayoutTransition) {
-    let mainView = osc_SingleLineView
-
-    if transition.isControlBarChanging || mainView.subviews.isEmpty {
-      mainView.removeAllSubviews()
-      mainView.addView(fragPlaybackBtnsView, in: .leading)
-      mainView.addView(playSliderAndTimeLabelsView, in: .leading)
-      mainView.addView(fragVolumeView, in: .leading)
-
-      mainView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-      mainView.setVisibilityPriority(.mustHold, for: playSliderAndTimeLabelsView)
-      mainView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
-    }
-
-    if let fragToolbarView, !mainView.views.contains(fragToolbarView) {
-      mainView.addView(fragToolbarView, in: .leading)
-      mainView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
-    }
-  }
-
-  private func addSubviewsToOSC_MultiLineView(_ transition: LayoutTransition) {
-    let mainView = osc_MultiLineView
-
-    if transition.isControlBarChanging || mainView.subviews.isEmpty {
-      let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
-      let leadingMargin: CGFloat = 4
-      let trailingMargin: CGFloat = 4
-      let verticalOffsetBetweenLines: CGFloat = Constants.Distance.multiLineOSC_SpaceBetweenLines
-
-      mainView.removeAllSubviews()
-
-      mainView.addSubview(playSliderAndTimeLabelsView)
-      playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: leadingMargin, trailing: trailingMargin)
-
-      osc_MultiLineView_BtmStackView.spacing = sectionHSpacing
-      mainView.addSubview(osc_MultiLineView_BtmStackView)
-      osc_MultiLineView_BtmStackView.addConstraintsToFillSuperview(bottom: 0, leading: leadingMargin, trailing: trailingMargin)
-      osc_MultiLineView_BtmStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: verticalOffsetBetweenLines).isActive = true
-
-      osc_MultiLineView_BtmStackView.addView(fragPlaybackBtnsView, in: .leading)
-      let spacer = SpacerView.buildNew(id: "OSC_MultiLineView-CentralSpacerView")
-      osc_MultiLineView_BtmStackView.addView(spacer, in: .leading)
-
-      osc_MultiLineView_BtmStackView.addView(fragVolumeView, in: .leading)
-      osc_MultiLineView_BtmStackView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
-    }
-
-    if let fragToolbarView, !osc_MultiLineView_BtmStackView.views.contains(fragToolbarView) {
-      osc_MultiLineView_BtmStackView.addView(fragToolbarView, in: .leading)
-      osc_MultiLineView_BtmStackView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
-    }
-
-  }
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
     leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage, effect: .offUp)

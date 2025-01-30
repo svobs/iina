@@ -170,7 +170,7 @@ extension PlayerWindowController {
 
     var isOSCStyleChanging: Bool {
       return (inputLayout.effectiveOSCOverlayStyle != outputLayout.effectiveOSCOverlayStyle ||
-       inputLayout.controlBarGeo.isMultiLineOSC != outputLayout.controlBarGeo.isMultiLineOSC)
+       inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
     }
 
     var isTopBarPlacementOrStyleChanging: Bool {

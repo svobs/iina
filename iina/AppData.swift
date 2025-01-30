@@ -456,6 +456,11 @@ extension Notification.Name {
   static let iinaHistoryTasksFinished = Notification.Name("iinaHistoryTasksFinished")
 }
 
+extension NSStackView.VisibilityPriority {
+  static let detachEarly = NSStackView.VisibilityPriority(rawValue: 950)
+  static let detachEarlier = NSStackView.VisibilityPriority(rawValue: 900)
+}
+
 struct Images {
   /// `NSImage.SymbolScale` for MacOS 11-
   public enum SymbolScalePolyfill : Int, @unchecked Sendable {

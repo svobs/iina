@@ -102,7 +102,6 @@ extension PlayerWindowController {
       }
 
       initSeekPreview(in: contentView)
-      initOSCViews()
       initTitleBar()
       initTopBarView(in: contentView)
       initBottomBarTopBorder()
@@ -548,31 +547,6 @@ extension PlayerWindowController {
 
     rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: spacing).isActive = true
     rightTimeLabel.trailingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.trailingAnchor).isActive = true
-  }
-
-  private func initOSCViews() {
-    /// `osc_SingleLineView`
-    osc_SingleLineView.identifier = .init("OSC-SingleLine-View")
-    osc_SingleLineView.spacing = Constants.Distance.oscSectionHSpacing_SingleLine
-    osc_SingleLineView.orientation = .horizontal
-    osc_SingleLineView.alignment = .centerY
-    osc_SingleLineView.distribution = .gravityAreas
-    osc_SingleLineView.translatesAutoresizingMaskIntoConstraints = false
-    osc_SingleLineView.wantsLayer = true
-    osc_SingleLineView.layer?.backgroundColor = .clear
-
-    /// `osc_MultiLineView`
-    osc_MultiLineView.identifier = .init("OSC-MultiLine-View")
-    osc_MultiLineView.translatesAutoresizingMaskIntoConstraints = false
-    osc_MultiLineView.wantsLayer = true
-    osc_MultiLineView.layer?.backgroundColor = .clear
-
-    osc_MultiLineView_BtmStackView.identifier = .init("OSC_MultiLineView-BtmHStackView")
-    osc_MultiLineView_BtmStackView.orientation = .horizontal
-    osc_MultiLineView_BtmStackView.alignment = .centerY
-    osc_MultiLineView_BtmStackView.translatesAutoresizingMaskIntoConstraints = false
-    osc_MultiLineView_BtmStackView.detachesHiddenViews = true
-    osc_MultiLineView_BtmStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
   }
 
   private func initVolumeView() {

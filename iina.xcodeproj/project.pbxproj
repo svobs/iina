@@ -362,6 +362,8 @@
 		D1B106682D42444C009D58F5 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B106672D424448009D58F5 /* Debouncer.swift */; };
 		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
 		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
+		D1BE7BCF2D4B7CE90085539F /* TwoRowBarOSCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */; };
+		D1BE7BD22D4B7E010085539F /* SingleRowBarOSCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */; };
 		D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741092CB3833500522FA7 /* ScrollableSlider.swift */; };
 		D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */; };
 		D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741112CB6503100522FA7 /* PWin_Enums.swift */; };
@@ -1898,6 +1900,8 @@
 		D1B106672D424448009D58F5 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
+		D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoRowBarOSCView.swift; sourceTree = "<group>"; };
+		D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleRowBarOSCView.swift; sourceTree = "<group>"; };
 		D1C741092CB3833500522FA7 /* ScrollableSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableSlider.swift; sourceTree = "<group>"; };
 		D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PIP.swift; sourceTree = "<group>"; };
 		D1C741112CB6503100522FA7 /* PWin_Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Enums.swift; sourceTree = "<group>"; };
@@ -2938,6 +2942,8 @@
 				8460FBA71D6497490081841B /* PlaylistViewController.swift */,
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
 				845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */,
+				D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */,
+				D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */,
 				D1491F872CEF543900DB0A06 /* SeekPreview.swift */,
 				846352571EEEE11A0043F0CC /* ThumbnailPeekView.swift */,
 				D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */,
@@ -3425,6 +3431,7 @@
 				E3785B092A83380E00787CB7 /* WebSocketServer.swift in Sources */,
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
 				D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */,
+				D1BE7BCF2D4B7CE90085539F /* TwoRowBarOSCView.swift in Sources */,
 				D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */,
 				D13BEC552D476E6800BF1071 /* SpacerView.swift in Sources */,
 				E3839C5924FFF817007D0AB4 /* JavascriptAPIStandaloneWindow.swift in Sources */,
@@ -3545,6 +3552,7 @@
 				E32693F924BA138000BF7ADC /* JavascriptPluginSubtitleItem.swift in Sources */,
 				34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */,
 				845040471E0B0F500079C194 /* CropSettingsViewController.swift in Sources */,
+				D1BE7BD22D4B7E010085539F /* SingleRowBarOSCView.swift in Sources */,
 				E39EDD842CE2EB9600978036 /* PluginViewController.swift in Sources */,
 				E33836852026223800ABC812 /* PrefOSCToolbarSettingsSheetController.swift in Sources */,
 				D11E07B92D1812C200F9FB9F /* SymButton.swift in Sources */,

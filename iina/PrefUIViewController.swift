@@ -384,7 +384,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
     let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
     let hasBarOSC = oscIsBottom || oscIsTop
-    let hasSingleLineOSCConfig = oscIsTop || (oscIsBottom && newGeo.forceSingleLineStyle)
+    let hasSingleLineOSCConfig = oscIsTop || (oscIsBottom && newGeo.forceSingleRowStyle)
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
 
     // Update enablement, various state (except isHidden state)

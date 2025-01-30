@@ -45,7 +45,7 @@ struct ControlBarGeometry {
   /// If true, always use single-line style OSC, even if qualifying for multi-line OSC.
   ///
   /// (Only applies to top & bottom OSCs).
-  let forceSingleLineStyle: Bool
+  let forceSingleRowStyle: Bool
 
   /// Preferred height for "full-width" OSCs (i.e. top or bottom, not floating or music mode)
   let barHeight: CGFloat
@@ -86,13 +86,13 @@ struct ControlBarGeometry {
        toolbarItems: [Preference.ToolBarButton]? = nil,
        arrowButtonAction: Preference.ArrowButtonAction? = nil,
        barHeight desiredBarHeight: CGFloat? = nil,
-       forceSingleLineStyle: Bool? = nil,
+       forceSingleRowStyle: Bool? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
-    let forceSingleLineStyle = forceSingleLineStyle ?? Preference.bool(for: .oscForceSingleLine)
-    self.forceSingleLineStyle = forceSingleLineStyle
+    let forceSingleRowStyle = forceSingleRowStyle ?? Preference.bool(for: .oscForceSingleLine)
+    self.forceSingleRowStyle = forceSingleRowStyle
 
     // Actual cardinal sizes should be downstream from tick values
     let playIconSizeTicks = playIconSizeTicks ?? Preference.integer(for: .oscBarPlayIconSizeTicks)
@@ -131,7 +131,7 @@ struct ControlBarGeometry {
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
-      if !forceSingleLineStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
+      if !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
         // Is multi-line OSC
         let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
@@ -144,7 +144,7 @@ struct ControlBarGeometry {
         fullIconHeight = barHeight - (oscPosition == .top ? 8 : 4)
       }
 
-      if forceSingleLineStyle || oscPosition == .top {
+      if forceSingleRowStyle || oscPosition == .top {
         // Single-line configuration: icon sizes & spacing are adjustable
         self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
         self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
@@ -209,7 +209,7 @@ struct ControlBarGeometry {
     return true
   }
 
-  var isMultiLineOSC: Bool { !forceSingleLineStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
+  var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
 
   /// Height of the entire `PlaySlider` view, including unused space.
   var playSliderHeight: CGFloat
