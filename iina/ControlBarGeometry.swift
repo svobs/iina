@@ -211,7 +211,15 @@ struct ControlBarGeometry {
 
   var isMultiLineOSC: Bool { !forceSingleLineStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
 
+  /// Height of the entire `PlaySlider` view, including unused space.
   var playSliderHeight: CGFloat
+
+  /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
+  /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
+  /// of its bounds, to prevent clipping.
+  var sllidersBarHeightNormal: CGFloat {
+    return 3.0
+  }
 
   var volumeIconHeight: CGFloat {
     if position == .floating {

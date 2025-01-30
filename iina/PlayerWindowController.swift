@@ -264,7 +264,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Vars: Window Layout State
 
-  var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.defaultLayout()) {
+  var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.fromPrefsAndDefaults()) {
     didSet {
       if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutSpec = currentLayout.spec
@@ -273,7 +273,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
   /// For restoring windowed mode layout from music mode or other mode which does not support sidebars.
   /// Also used to preserve layout if a new file is dragged & dropped into this window
-  var lastWindowedLayoutSpec: LayoutSpec = LayoutSpec.defaultLayout()
+  var lastWindowedLayoutSpec: LayoutSpec = LayoutSpec.fromPrefsAndDefaults()
 
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
@@ -331,7 +331,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     // Compute default geometry for main screen
     let defaultScreen = NSScreen.screens[0]
-    return LayoutState.buildFrom(LayoutSpec.defaultLayout()).buildDefaultInitialGeometry(screen: defaultScreen)
+    return LayoutState.buildFrom(LayoutSpec.fromPrefsAndDefaults()).buildDefaultInitialGeometry(screen: defaultScreen)
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
@@ -685,7 +685,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     window.appearance = newAppearance
     // Either dark or light, never nil:
     let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
-    BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance)
+    
+    BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance, oscGeo: currentLayout.controlBarGeo)
 
     // Change to appearance above does not take effect until this task completes. Enqueue a new task to run after this one.
     DispatchQueue.main.async { [self] in
@@ -699,15 +700,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func updateTitleBarAndOSC() {
     titleBarAndOSCUpdateDebouncer.run { [self] in
       animationPipeline.submitInstantTask { [self] in
+        guard let window, let contentView = window.contentView else { return }
+
+        let oldLayout = currentLayout
+        let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
+
         // This only needs to be run once, but doing it here will multiply the work by the number of player windows
         // currently open. Should be ok for now as this is fairly fast...
         // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
         // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
-        guard let window, let contentView = window.contentView else { return }
-        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: contentView.iinaAppearance)
+        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: contentView.iinaAppearance, oscGeo: newLayoutSpec.controlBarGeo)
 
-        let oldLayout = currentLayout
-        let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }
     }
@@ -1568,7 +1571,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     var filename = isFilename
 #if DEBUG
     // Include player ID in window (example: "[PLR-1234c0] MyVideo.mp4")
-    let debugTitle = "[\(log.rawValue)] \(titleText)"
+    let debugTitle = "[\(player.label)] \(titleText)"
     log.trace{"Updating window title to: \(debugTitle.pii.quoted)"}
     window.title = debugTitle
     filename = false

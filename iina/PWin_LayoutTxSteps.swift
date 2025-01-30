@@ -689,7 +689,6 @@ extension PlayerWindowController {
       let timeLabelFontSize: CGFloat
       switch outputLayout.oscPosition {
       case .top, .bottom:
-        // Expand slider bounds to entire bar so it's easier to hover and/or click on it
         playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
 
         // Knob height > 24 is not supported
@@ -1442,7 +1441,7 @@ extension PlayerWindowController {
   private func addSubviewsToOSC_SingleLineView(_ transition: LayoutTransition) {
     let mainView = osc_SingleLineView
 
-    if transition.isControlBarChanging {
+    if transition.isControlBarChanging || mainView.subviews.isEmpty {
       mainView.removeAllSubviews()
       mainView.addView(fragPlaybackBtnsView, in: .leading)
       addSubviewsToPlaySliderAndTimeLabelsView()
@@ -1461,9 +1460,9 @@ extension PlayerWindowController {
   }
 
   private func addSubviewsToOSC_MultiLineView(_ transition: LayoutTransition) {
-    guard transition.isControlBarChanging else { return }
-
     let mainView = osc_MultiLineView
+    guard transition.isControlBarChanging || mainView.subviews.isEmpty else { return }
+
     let sectionHSpacing = Constants.Distance.oscSectionHSpacing_MultiLine
     let leadingMargin: CGFloat = 4
     let trailingMargin: CGFloat = 4

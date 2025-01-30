@@ -31,8 +31,9 @@ fileprivate extension CGColor {
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class BarFactory {
   /// The current configuration for drawing bars, based on prefs.
-  /// Default to dark. But we will override soon
-  static var current = BarFactory(effectiveAppearance: NSAppearance(iinaTheme: .dark)!)
+  /// Fill in with defaults to keep it non-nil; we will overwrite soon
+  static var current = BarFactory(effectiveAppearance: NSAppearance(iinaTheme: .dark)!,
+                                  oscGeo: LayoutSpec.fromPrefsAndDefaults().controlBarGeo)
 
   // MARK: - Init / Config
 
@@ -47,10 +48,8 @@ class BarFactory {
 
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
-  private var effectiveAppearance: NSAppearance
 
-  init(effectiveAppearance: NSAppearance) {
-    self.effectiveAppearance = effectiveAppearance
+  init(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
     let isClearBG = LayoutSpec.oscBackgroundIsClear
     let barAppearance = isClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
@@ -68,10 +67,11 @@ class BarFactory {
       let barColorRight = (isClearBG ? NSColor.mainSliderBarRightClearBG : NSColor.mainSliderBarRight).cgColor
       return (barColorLeft, barColorRight)
     }
+
     let enableRoundedCorners = Preference.bool(for: .roundRectSliderBars)
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
       guard enableRoundedCorners else { return 0.0 }
-      return barHeight * 0.5
+      return (barHeight * 0.5).rounded()
     }
 
     // CONSTANTS: All in points (not pixels).
@@ -79,7 +79,7 @@ class BarFactory {
 
     // - PlaySlider & VolumeSlider both:
 
-    let barHeight_Normal: CGFloat = 3.0
+    let barHeight_Normal: CGFloat = oscGeo.sllidersBarHeightNormal
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
     leftCachedColor = barColorLeft.exaggerated()
@@ -87,13 +87,13 @@ class BarFactory {
 
     // - PlaySlider:
 
-    let chapterGapWidth: CGFloat = 2.0
+    let chapterGapWidth: CGFloat = (barHeight_Normal * 0.5).rounded()
 
-    let barHeight_FocusedCurrChapter: CGFloat = 9.0
+    let barHeight_FocusedCurrChapter: CGFloat = barHeight_Normal * 3
     let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
 
     /// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
-    let barHeight_FocusedNonCurrChapter: CGFloat = 5.0
+    let barHeight_FocusedNonCurrChapter: CGFloat = barHeight_Normal * 2
     let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
 
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
@@ -107,7 +107,7 @@ class BarFactory {
     let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
 
     let barHeight_Volume_Focused: CGFloat = barHeight_FocusedNonCurrChapter
-    let barHeight_Focused_VolumeAbove100_Left: CGFloat = 7.0
+    let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_Normal * 2
     let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
     let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)
     let barCornerRadius_Focused_VolumeAbove100_Left = cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
@@ -168,9 +168,9 @@ class BarFactory {
                                         volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
   }
 
-  static func updateBarStylesFromPrefs(effectiveAppearance: NSAppearance) {
+  static func updateBarStylesFromPrefs(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
     // Just replace the whole instance:
-    BarFactory.current = BarFactory(effectiveAppearance: effectiveAppearance)
+    BarFactory.current = BarFactory(effectiveAppearance: effectiveAppearance, oscGeo: oscGeo)
   }
 
   // MARK: - Play Bar

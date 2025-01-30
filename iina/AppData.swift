@@ -372,7 +372,7 @@ struct Constants {
       static let playslider_DefaultKnobHeight: CGFloat = 12
     }
   }  /// end `struct Distance`
-     ///
+
   struct Color {
     static let defaultWindowBackgroundColor = CGColor.black
     static let interactiveModeBackground = NSColor.windowBackgroundColor.cgColor

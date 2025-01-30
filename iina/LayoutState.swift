@@ -84,52 +84,33 @@ struct LayoutSpec {
     self.controlBarGeo = controlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
   }
 
-  /// Factory method. Matches what is shown in the XIB
-  static func defaultLayout() -> LayoutSpec {
-    let leadingSidebar = Sidebar(.leadingSidebar, tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
-                                 placement: Preference.enum(for: .leadingSidebarPlacement),
-                                 visibility: .hide)
-    let trailingSidebar = Sidebar(.trailingSidebar, tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
-                                  placement: Preference.enum(for: .trailingSidebarPlacement),
-                                  visibility: .hide)
-    let moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
-    return LayoutSpec(leadingSidebar: leadingSidebar,
-                      trailingSidebar: trailingSidebar,
-                      mode: .windowedNormal,
-                      isLegacyStyle: false,
-                      topBarPlacement:.insideViewport,
-                      bottomBarPlacement: .insideViewport,
-                      enableOSC: false,
-                      oscPosition: .floating,
-                      oscOverlayStyle: Preference.enum(for: .oscOverlayStyle),
-                      interactiveMode: nil,
-                      moreSidebarState: moreSidebarState)
+  /// Factory method. Fills in most from app singleton preferences, and the rest from default values.
+  static func fromPrefsAndDefaults() -> LayoutSpec {
+    return fromPreferences()
   }
 
   /// Factory method. Init from preferences, except for `mode` and tab params
   static func fromPreferences(andMode newMode: PlayerWindowMode? = nil,
-                              interactiveMode: InteractiveMode? = nil,
                               isLegacyStyle: Bool? = nil,
-                              fillingInFrom oldSpec: LayoutSpec) -> LayoutSpec {
+                              fillingInFrom oldSpec: LayoutSpec? = nil) -> LayoutSpec {
 
-    let leadingSidebarVisibility = oldSpec.leadingSidebar.visibility
-    let leadingSidebarLastVisibleTab = oldSpec.leadingSidebar.lastVisibleTab
-    let trailingSidebarVisibility = oldSpec.trailingSidebar.visibility
-    let trailingSidebarLastVisibleTab = oldSpec.trailingSidebar.lastVisibleTab
+    let oldLeadingSidebar = oldSpec?.leadingSidebar
+    let oldTrailingSidebar = oldSpec?.trailingSidebar
 
     let leadingSidebar =  Sidebar(.leadingSidebar,
                                   tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
                                   placement: Preference.enum(for: .leadingSidebarPlacement),
-                                  visibility: leadingSidebarVisibility,
-                                  lastVisibleTab: leadingSidebarLastVisibleTab)
+                                  visibility: oldLeadingSidebar?.visibility ?? .hide,
+                                  lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
     let trailingSidebar = Sidebar(.trailingSidebar,
                                   tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
                                   placement: Preference.enum(for: .trailingSidebarPlacement),
-                                  visibility: trailingSidebarVisibility,
-                                  lastVisibleTab: trailingSidebarLastVisibleTab)
-    let mode = newMode ?? oldSpec.mode
-    let interactiveMode = interactiveMode ?? oldSpec.interactiveMode
-    let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
+                                  visibility: oldTrailingSidebar?.visibility ?? .hide,
+                                  lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
+    let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
+    let isLegacyStyle = isLegacyStyle ?? mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode)
+    let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
+
     return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                       mode: mode,
                       isLegacyStyle: isLegacyStyle,
@@ -137,9 +118,9 @@ struct LayoutSpec {
                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                       enableOSC: Preference.bool(for: .enableOSC),
                       oscPosition: Preference.enum(for: .oscPosition),
-                      oscOverlayStyle: Preference.enum(for: .oscOverlayStyle),
+                      oscOverlayStyle: oscBackgroundIsClear ? .clearGradient : .visualEffectView,
                       interactiveMode: interactiveMode,
-                      moreSidebarState: oldSpec.moreSidebarState)
+                      moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
   static var oscBackgroundIsClear: Bool {
