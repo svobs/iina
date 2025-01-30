@@ -47,10 +47,10 @@ class VolumeSliderCell: ScrollableSliderCell {
     let (knobMinX, knobWidth) = knobMinXAndWidth(enableDrawKnob: enableDrawKnob)
     let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
     let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value
-
+ 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
-      let volBarImg = bf.buildVolumeBarImage(clearBG: isClearBG, useFocusEffect: useFocusEffect,
+      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect,
                                              barWidth: barRect.width,
                                              screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
                                              currentValue: doubleValue, maxValue: maxValue,

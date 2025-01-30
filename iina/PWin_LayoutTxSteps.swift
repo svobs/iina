@@ -414,6 +414,12 @@ extension PlayerWindowController {
       // Set legacy style
       setWindowStyleToLegacy()
 
+      if transition.outputLayout.isLegacyFullScreen {
+        window.styleMask.insert(.borderless)
+      } else {
+        window.styleMask.remove(.borderless)
+      }
+
       /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
       /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
     } else {
@@ -1163,6 +1169,7 @@ extension PlayerWindowController {
 
       if transition.outputLayout.spec.isLegacyStyle {  // legacy windowed
         setWindowStyleToLegacy()
+        window.styleMask.remove(.borderless)
         if let customTitleBar {
           customTitleBar.view.alphaValue = 1
         }
@@ -1606,10 +1613,10 @@ extension PlayerWindowController {
   /// Either legacy FS or windowed
   private func setWindowStyleToLegacy() {
     guard let window = window else { return }
-    guard window.styleMask.contains(.titled) else { return }
-    log.verbose("Removing window styleMask.titled")
-    window.styleMask.remove(.titled)
-    window.styleMask.insert(.borderless)
+    if window.styleMask.contains(.titled) {
+      log.verbose("Removing window styleMask.titled")
+      window.styleMask.remove(.titled)
+    }
     window.styleMask.insert(.closable)
     window.styleMask.insert(.miniaturizable)
   }
@@ -1620,8 +1627,8 @@ extension PlayerWindowController {
 
     if !window.styleMask.contains(.titled) {
       log.verbose("Inserting window styleMask.titled")
-      window.styleMask.insert(.titled)
       window.styleMask.remove(.borderless)
+      window.styleMask.insert(.titled)
     }
 
     if let customTitleBar {

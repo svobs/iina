@@ -397,7 +397,7 @@ class BarFactory {
 
   // MARK: - Volume Bar
 
-  func buildVolumeBarImage(clearBG: Bool, useFocusEffect: Bool,
+  func buildVolumeBarImage(useFocusEffect: Bool,
                            barWidth: CGFloat,
                            screen: NSScreen,
                            knobMinX: CGFloat, knobWidth: CGFloat,
@@ -414,7 +414,7 @@ class BarFactory {
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
     let rightClipMinX: CGFloat
-    if clearBG || knobWidth < 1.0 {
+    if useFocusEffect || knobWidth < 1.0 {
       leftClipMaxX = currentValuePointX
       rightClipMinX = currentValuePointX
     } else {

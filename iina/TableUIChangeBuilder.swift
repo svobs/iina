@@ -10,8 +10,8 @@ import Foundation
 
 class TableUIChangeBuilder {
   // Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
-  static func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0,
-                       selectNextRowAfterDelete: Bool) -> TableUIChange {
+  func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0,
+                selectNextRowAfterDelete: Bool) -> TableUIChange {
     let inverted: TableUIChange
 
     switch original.changeType {
@@ -101,8 +101,8 @@ class TableUIChangeBuilder {
    Further reference:
    https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
    */
-  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
-                           TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = true) -> TableUIChange where R:Hashable {
+  func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
+                    TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = true) -> TableUIChange where R:Hashable {
 
     let diff = TableUIChange(.wholeTableDiff, completionHandler: completionHandler)
     diff.toRemove = IndexSet()
@@ -151,7 +151,7 @@ class TableUIChangeBuilder {
     return diff
   }
 
-  static private func applyExtraSelectionRules(to tableUIChange: TableUIChange, selectNextRowAfterDelete: Bool) {
+  private func applyExtraSelectionRules(to tableUIChange: TableUIChange, selectNextRowAfterDelete: Bool) {
     if selectNextRowAfterDelete && !tableUIChange.hasMove && !tableUIChange.hasInsert && tableUIChange.hasRemove {
       // After selected rows are deleted, keep a selection on the table by selecting the next row
       if let toRemove = tableUIChange.toRemove, let lastRemoveIndex = toRemove.last {
@@ -167,8 +167,8 @@ class TableUIChangeBuilder {
   }
 
   /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
-  static func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
-                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+  func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
+                      completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     let tableUIChange = TableUIChange(.insertRows, completionHandler: completionHandler)
     let toInsert = IndexSet(insertIndex..<(insertIndex+itemsToInsert.count))
     tableUIChange.toInsert = toInsert
@@ -181,10 +181,10 @@ class TableUIChangeBuilder {
   }
 
   /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
-  static func buildRemove<T>(_ indexesToRemove: IndexSet,
-                             in allCurrentRows: [T],
-                             selectNextRowAfterDelete: Bool,
-                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+  func buildRemove<T>(_ indexesToRemove: IndexSet,
+                      in allCurrentRows: [T],
+                      selectNextRowAfterDelete: Bool,
+                      completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
     tableUIChange.toRemove = indexesToRemove
 
@@ -210,10 +210,10 @@ class TableUIChangeBuilder {
   }
 
   /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
-  static func buildMove<T>(_ indexesToMove: IndexSet,
-                           to insertIndex: Int,
-                           in allCurrentRows: [T],
-                           completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+  func buildMove<T>(_ indexesToMove: IndexSet,
+                    to insertIndex: Int,
+                    in allCurrentRows: [T],
+                    completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
@@ -260,21 +260,20 @@ class TableUIChangeBuilder {
 extension EditableTableView {
   func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    return TableUIChangeBuilder.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
-                                            completionHandler: completionHandler)
+    return TableUIChange.builder.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
+                                           completionHandler: completionHandler)
   }
-  func buildRemove<T>(_ indexesToRemove: IndexSet,
-                      in allCurrentRows: [T],
+  func buildRemove<T>(_ indexesToRemove: IndexSet, in allCurrentRows: [T],
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    return TableUIChangeBuilder.buildRemove(indexesToRemove, in: allCurrentRows,
-                                            selectNextRowAfterDelete: selectNextRowAfterDelete,
-                                            completionHandler: completionHandler)
+    return TableUIChange.builder.buildRemove(indexesToRemove, in: allCurrentRows,
+                                           selectNextRowAfterDelete: selectNextRowAfterDelete,
+                                           completionHandler: completionHandler)
   }
   func buildMove<T>(_ indexesToMove: IndexSet,
                     to insertIndex: Int,
                     in allCurrentRows: [T],
                     completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    return TableUIChangeBuilder.buildMove(indexesToMove, to: insertIndex, in: allCurrentRows,
-                                          completionHandler: completionHandler)
+    return TableUIChange.builder.buildMove(indexesToMove, to: insertIndex, in: allCurrentRows,
+                                         completionHandler: completionHandler)
   }
 }

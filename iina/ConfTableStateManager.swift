@@ -64,7 +64,7 @@ class ConfTableStateManager: NSObject {
     }
   }
 
-  static func findUserConfigs() -> [String: String] {
+  func findUserConfigs() -> [String: String] {
     do {
       let files = try FileManager.default.contentsOfDirectory(at: Utility.userInputConfDirURL, includingPropertiesForKeys: nil)
       let configFiles = files.filter { $0.pathExtension == "conf" }
@@ -74,7 +74,7 @@ class ConfTableStateManager: NSObject {
     }
   }
 
-  static func initialState() -> ConfTableState {
+  func initialState() -> ConfTableState {
     let selectedConfName: String
     if let selectedConf = Preference.string(for: .currentInputConfigName) {
       selectedConfName = selectedConf
@@ -87,7 +87,7 @@ class ConfTableStateManager: NSObject {
     return ConfTableState(userConfDict: userConfDict, selectedConfName: selectedConfName, specialState: .none)
   }
 
-  static var defaultConfName: String {
+  var defaultConfName: String {
     Constants.InputConf.defaultConfNamesSorted[0]
   }
 
@@ -119,7 +119,7 @@ class ConfTableStateManager: NSObject {
   // TODO: monitor conf dir for changes and call this on change
   private func confDirDidChange() {
     let curr = ConfTableState.current
-    let userConfDictNew: [String: String] = ConfTableStateManager.findUserConfigs()
+    let userConfDictNew: [String: String] = findUserConfigs()
     guard !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) else { return }
     AppInputConfig.log.verbose("Detected pref update for inputConfigs")
     changeState(userConfDictNew, selectedConfName: curr.selectedConfName, skipSaveToPrefs: true)
@@ -182,7 +182,7 @@ class ConfTableStateManager: NSObject {
                    specialState: ConfTableState.SpecialState = .none, skipSaveToPrefs: Bool = false,
                    completionHandler: TableUIChange.CompletionHandler? = nil) {
 
-    let selectedConfOverride = specialState == .fallBackToDefaultConf ? ConfTableStateManager.defaultConfName : selectedConfName
+    let selectedConfOverride = specialState == .fallBackToDefaultConf ? defaultConfName : selectedConfName
     let undoData = UndoData(userConfDict: userConfDict, selectedConfName: selectedConfOverride)
 
     self.doAction(undoData, specialState: specialState, skipSaveToPrefs: skipSaveToPrefs, completionHandler: completionHandler)
@@ -300,8 +300,8 @@ class ConfTableStateManager: NSObject {
   // Assembles a `TableUIChange` based on the differences between states, then sends it to the UI for updating
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
-    let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
-                                                       completionHandler: completionHandler)
+    let tableUIChange = TableUIChange.builder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
+                                                        completionHandler: completionHandler)
     tableUIChange.reloadAllExistingRows = true
     if self.undoHelper.isUndoingOrRedoing() {
       tableUIChange.setUpFlashForChangedRows()

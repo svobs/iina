@@ -99,7 +99,7 @@ extension PlayerWindowController {
         view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
         view.layer?.opacity = 0.01
         contentView.addSubview(view)
-    }
+      }
 
       initSeekPreview(in: contentView)
       initOSCViews()
@@ -148,6 +148,8 @@ extension PlayerWindowController {
       player.events.emit(.windowLoaded)
     }
   }
+
+  // MARK: - Building Components
 
   private func initSeekPreview(in contentView: NSView) {
     contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)

@@ -18,9 +18,11 @@ import Foundation
  */
 struct ConfTableState {
   // current read-only snapshot:
-  static var current: ConfTableState = ConfTableStateManager.initialState()
+  static var current: ConfTableState = ConfTableState.manager.initialState()
   // this decides the lifecycle of snapshots:
   static let manager: ConfTableStateManager = ConfTableStateManager()
+
+  var manager: ConfTableStateManager { ConfTableState.manager }
 
   enum SpecialState {
     case none
@@ -169,7 +171,7 @@ struct ConfTableState {
     Logger.log("Adding user conf: \(confName.pii.quoted) (filePath: \(filePath.pii.quoted))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
-    ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
+    manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
   func addNewUserConfInline(completionHandler: TableUIChange.CompletionHandler? = nil) {
@@ -179,7 +181,7 @@ struct ConfTableState {
     }
 
     Logger.log("Adding blank row to bottom of table for naming new user conf", level: .verbose)
-    ConfTableState.manager.changeState(specialState: .addingNewInline, completionHandler: completionHandler)
+    manager.changeState(specialState: .addingNewInline, completionHandler: completionHandler)
   }
 
   func completeInlineAdd(confName: String, filePath: String,
@@ -192,7 +194,7 @@ struct ConfTableState {
     Logger.log("Completing inline add of user conf: \(confName.pii.quoted) (filePath: \(filePath.pii.quoted))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
-    ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
+    manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
   func cancelInlineAdd(selectedConfNew: String? = nil) {
@@ -201,7 +203,7 @@ struct ConfTableState {
       return
     }
     Logger.log("Cancelling inline add", level: .verbose)
-    ConfTableState.manager.changeState(selectedConfName: selectedConfNew)
+    manager.changeState(selectedConfName: selectedConfNew)
   }
 
   func addUserConfs(_ userConfsToAdd: [String: String]) {
@@ -220,7 +222,7 @@ struct ConfTableState {
         selectedConfNew = name
       }
     }
-    ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNew)
+    manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNew)
   }
 
   func removeConf(_ confName: String) {
@@ -243,7 +245,7 @@ struct ConfTableState {
       Logger.log("Cannot remove conf \(confName.pii.quoted): it is not a user conf!", level: .error)
       return
     }
-    ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNameNew)
+    manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNameNew)
   }
 
   func renameSelectedConf(newName: String) -> Bool {
@@ -267,7 +269,7 @@ struct ConfTableState {
     let newFilePath = Utility.buildConfFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: newName)
+    manager.changeState(userConfDictUpdated, selectedConfName: newName)
     return true
   }
 
@@ -279,7 +281,7 @@ struct ConfTableState {
       // If conf is being displayed already, give data to BindingTableState. It will include animations and do a better job.
       BindingTableState.current.appendBindingsToUserConfSection(bindings)
     } else {
-      ConfTableState.manager.appendBindingsToUserConfFile(bindings, targetConfName: targetConfName)
+      manager.appendBindingsToUserConfFile(bindings, targetConfName: targetConfName)
     }
   }
 
@@ -287,7 +289,7 @@ struct ConfTableState {
 
   func fallBackToDefaultConf() {
     Logger.log("Changing selected conf to default", level: .verbose)
-    ConfTableState.manager.changeState(selectedConfName: ConfTableStateManager.defaultConfName, specialState: .fallBackToDefaultConf)
+    manager.changeState(selectedConfName: manager.defaultConfName, specialState: .fallBackToDefaultConf)
   }
 
   func changeSelectedConf(_ newIndex: Int) {
@@ -315,7 +317,7 @@ struct ConfTableState {
 
     Logger.log("Changing selected conf to: \(selectedConfNew.pii.quoted)", level: .verbose)
 
-    ConfTableState.manager.changeState(selectedConfName: selectedConfNew, skipSaveToPrefs: skipSaveToPrefs)
+    manager.changeState(selectedConfName: selectedConfNew, skipSaveToPrefs: skipSaveToPrefs)
   }
 
   // Rebuilds & re-sorts the table names. Must not change the actual state of any member vars

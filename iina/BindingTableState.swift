@@ -15,8 +15,10 @@ import Foundation
 ///   so that everything is cleaner.
 /// • Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
 struct BindingTableState {
-  static var current: BindingTableState = BindingTableStateManager.initialState()
+  static var current: BindingTableState = BindingTableState.manager.initialState()
   static let manager: BindingTableStateManager = BindingTableStateManager()
+
+  var manager: BindingTableStateManager { BindingTableState.manager }
 
   init(_ appInputConfig: AppInputConfig, filterString: String, inputConfFile: InputConfFile, showAllBindings: Bool) {
     self.appInputConfig = appInputConfig
@@ -103,8 +105,8 @@ struct BindingTableState {
     Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
-    let (tableUIChange, allRowsUpdated) = TableUIChangeBuilder.buildMove(rowIndexes, to: insertIndex, in: allRows,
-                                                                         completionHandler: afterComplete)
+    let (tableUIChange, allRowsUpdated) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: allRows,
+                                                                          completionHandler: afterComplete)
     tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo
 
     Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
@@ -128,8 +130,8 @@ struct BindingTableState {
     // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
     let insertedRows = mappingList.map{InputBinding($0, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME)}
 
-    let (tableUIChange, allRowsNew) = TableUIChangeBuilder.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
-                                                                       completionHandler: afterComplete)
+    let (tableUIChange, allRowsNew) = TableUIChange.builder.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
+                                                                        completionHandler: afterComplete)
 
     doAction(allRowsNew, tableUIChange)
   }
@@ -156,8 +158,8 @@ struct BindingTableState {
       return
     }
 
-    let (tableUIChange, remainingRowsUnfiltered) = TableUIChangeBuilder.buildRemove(indexesToRemove, in: allRows,
-                                                                                    selectNextRowAfterDelete: BindingTableStateManager.selectNextRowAfterDelete)
+    let (tableUIChange, remainingRowsUnfiltered) = TableUIChange.builder.buildRemove(indexesToRemove, in: allRows,
+                                                                                     selectNextRowAfterDelete: manager.selectNextRowAfterDelete)
     tableUIChange.toRemove = indexesToRemove
 
     doAction(remainingRowsUnfiltered, tableUIChange)
@@ -267,7 +269,7 @@ struct BindingTableState {
   // Both params should be calculated based on UNFILTERED rows.
   // Let BindingTableStateManager deal with altering animations with a filter
   private func doAction(_ allRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
-    BindingTableState.manager.doAction(allRowsNew, tableUIChange)
+    manager.doAction(allRowsNew, tableUIChange)
   }
 
   private var canModifyCurrentConf: Bool {
@@ -282,7 +284,7 @@ struct BindingTableState {
 
   func applyFilter(_ searchString: String) {
     Logger.log("Updating Bindings UI filter to \(searchString.quoted)", level: .verbose)
-    BindingTableState.manager.applyFilter(newFilterString: searchString)
+    manager.applyFilter(newFilterString: searchString)
   }
 
   // Returns the index into filteredRows corresponding to the given unfiltered index.

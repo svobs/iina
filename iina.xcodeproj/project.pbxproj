@@ -318,6 +318,7 @@
 		D13209BB2B90596000069C94 /* AspectTokenField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13209BA2B90596000069C94 /* AspectTokenField.swift */; };
 		D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13350942D06B7E200201623 /* GeometryTransform.swift */; };
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
+		D135572A2D4AF5C500F26A79 /* SliderHoverIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */; };
 		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
 		D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */; };
 		D13A7F102D3A05D000840277 /* VideoView_Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0F2D3A05CB00840277 /* VideoView_Constraints.swift */; };
@@ -1854,6 +1855,7 @@
 		D13209BA2B90596000069C94 /* AspectTokenField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectTokenField.swift; sourceTree = "<group>"; };
 		D13350942D06B7E200201623 /* GeometryTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTransform.swift; sourceTree = "<group>"; };
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
+		D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliderHoverIndicator.swift; sourceTree = "<group>"; };
 		D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutTimer.swift; sourceTree = "<group>"; };
 		D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_DisplayLink.swift; sourceTree = "<group>"; };
 		D13A7F0F2D3A05CB00840277 /* VideoView_Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_Constraints.swift; sourceTree = "<group>"; };
@@ -2891,6 +2893,7 @@
 				D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */,
 				51E63DFA29CFB031008AFC20 /* PlaySlider.swift */,
 				51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */,
+				D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
 				D13A7F152D3C512B00840277 /* KnobFactory.swift */,
@@ -3568,6 +3571,7 @@
 				D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */,
 				84D377671D737F58007F7396 /* MPVChapter.swift in Sources */,
 				3412DB8E2C2FC64C00BBC142 /* Equalizations.swift in Sources */,
+				D135572A2D4AF5C500F26A79 /* SliderHoverIndicator.swift in Sources */,
 				84A886E61E24F3BD008755BB /* OnlineSubtitle.swift in Sources */,
 				847C62CA1DC13CDA00E1EF16 /* PrefGeneralViewController.swift in Sources */,
 				D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */,

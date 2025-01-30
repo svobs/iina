@@ -17,7 +17,10 @@ import Foundation
 /// for it to lose track of the row selection, much additional boilerplate is needed to keep track of state.
 /// This objects attempts to provide as much of this as possible and provide future reusability.
 class TableUIChange {
+
   // MARK: - Static definitions
+
+  static let builder = TableUIChangeBuilder()
 
   typealias AnimationBlock = (NSAnimationContext) -> Void
   typealias CompletionHandler = (TableUIChange) -> Void
@@ -42,7 +45,7 @@ class TableUIChange {
     case wholeTableDiff
   }
 
-  // MARK: Instance Vars
+  // MARK: - Instance Vars
 
   // Required
   let changeType: ContentChangeType

@@ -8,13 +8,13 @@
 
 import Foundation
 
-fileprivate let clearFilterWhenChangeMade = false
-
 /**
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
 class BindingTableStateManager: NSObject {
-  static let selectNextRowAfterDelete = false
+  let clearFilterWhenChangeMade = false
+  let selectNextRowAfterDelete = false
+
   enum Key: String {
     case appInputConfig = "AppInputConfig"
     case tableUIChange = "BindingTableChange"
@@ -59,7 +59,7 @@ class BindingTableStateManager: NSObject {
     }
   }
 
-  static func initialState() -> BindingTableState {
+  func initialState() -> BindingTableState {
     let filterString = UIState.shared.isRestoreEnabled ? Preference.string(for: .uiPrefBindingsTableSearchString) ?? "" : ""
     let showAllBindings = Preference.bool(for: .showKeyBindingsFromAllSources)
     return BindingTableState(AppInputConfig.current, filterString: filterString, inputConfFile: ConfTableState.manager.loadConfFile(),
@@ -97,7 +97,7 @@ class BindingTableStateManager: NSObject {
 
     let tableStateOld = BindingTableState.current
 
-    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: {
+    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableStateNew = BindingTableState.current
 
       /**
@@ -111,7 +111,7 @@ class BindingTableStateManager: NSObject {
       let userConfSectionStartIndexOld = tableStateOld.appInputConfig.userConfSectionStartIndex
       let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
       let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
-      let tableUIChangeUndo = TableUIChangeBuilder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange, selectNextRowAfterDelete: BindingTableStateManager.selectNextRowAfterDelete)
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange, selectNextRowAfterDelete: selectNextRowAfterDelete)
       tableUIChangeUndo.setUpFlashForChangedRows()
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList
@@ -277,7 +277,7 @@ class BindingTableStateManager: NSObject {
 
   private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
     // Remember, the displayed table contents must reflect the *filtered* state (displayed rows).
-    return TableUIChangeBuilder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
+    return TableUIChange.builder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
   }
 
   // Save change to input conf file

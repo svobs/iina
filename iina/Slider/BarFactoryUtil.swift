@@ -179,8 +179,9 @@ extension BarFactory {
     let nonCurrentChapter_Left: BarConfScaleSet
     let nonCurrentChapter_Right: BarConfScaleSet
 
-    /// `scale` should match `backingScaleFactor` from the current screen.
+    /// - `scale` should match `backingScaleFactor` from the current screen.
     /// This will either be `2.0` for Retina displays, or `1.0` for traditional displays.
+    /// - `barWidth` is in points (scale invariant)
     func forImg(scale: CGFloat, barWidth: CGFloat) -> PlayBarImgConf {
       let scaledConf = currentChapter_Left.getScale(scale)
       let imgWidth = (barWidth * scale) + (2 * scaledConf.imgPadding)

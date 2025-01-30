@@ -54,7 +54,7 @@ class BindingTableViewController: NSObject {
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
 
-    tableView.selectNextRowAfterDelete = BindingTableStateManager.selectNextRowAfterDelete
+    tableView.selectNextRowAfterDelete = BindingTableState.manager.selectNextRowAfterDelete
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
