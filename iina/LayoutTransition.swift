@@ -175,7 +175,7 @@ extension PlayerWindowController {
 
     var isTopBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      return isTopBarPlacementChanging || (outputLayout.hasTopOSC && isOSCStyleChanging)
+      return isTopBarPlacementChanging || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isOSCStyleChanging)
     }
 
     var isBottomBarPlacementChanging: Bool {
@@ -184,7 +184,7 @@ extension PlayerWindowController {
 
     var isBottomBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      return isBottomBarPlacementChanging || (outputLayout.hasBottomOSC && isOSCStyleChanging)
+      return isBottomBarPlacementChanging || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isOSCStyleChanging)
     }
 
     var isLeadingSidebarPlacementChanging: Bool {
