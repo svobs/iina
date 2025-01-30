@@ -511,6 +511,10 @@ class LayoutState {
     return spec.oscBackgroundIsClear
   }
 
+  var effectiveOSCOverlayStyle: Preference.OSCOverlayStyle {
+    return spec.effectiveOSCOverlayStyle
+  }
+
   func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {
     switch id {
     case .leadingSidebar:
@@ -552,7 +556,6 @@ class LayoutState {
       outputLayout.titleIconAndText = .showAlways
     } else if outputLayout.isLegacyFullScreen {
       titleBarVisibleState = .hidden
-//      titleBarVisibleState = .showFadeableTopBar
     } else if outputLayout.isWindowed {
       titleBarVisibleState = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
     } else {

@@ -57,7 +57,7 @@ class PlayerWindow: NSWindow {
       return
     }
 
-    log.verbose("[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)")
+    log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
     useZeroDurationForNextResize = true
     setFrame(geometry.windowFrame, display: false, animate: notify)
     contentView?.needsDisplay = true  // set this or sometimes VideoView is not redrawn while paused
@@ -122,7 +122,7 @@ class PlayerWindow: NSWindow {
 
     let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)")
+    log.verbose{"KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)"}
 
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
@@ -170,7 +170,7 @@ class PlayerWindow: NSWindow {
     if let pwc, !event.modifierFlags.contains(.command) {
       let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
       let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-      log.verbose("KEY EQUIV: \(normalizedKeyCode.quoted)")
+      log.verbose{"KEY EQUIV: \(normalizedKeyCode.quoted)"}
       return pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode)
     }
     return super.performKeyEquivalent(with: event)

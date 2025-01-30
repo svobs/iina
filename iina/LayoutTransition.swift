@@ -169,7 +169,7 @@ extension PlayerWindowController {
     }
 
     var isOSCStyleChanging: Bool {
-      return (inputLayout.oscOverlayStyle != outputLayout.oscOverlayStyle ||
+      return (inputLayout.effectiveOSCOverlayStyle != outputLayout.effectiveOSCOverlayStyle ||
        inputLayout.controlBarGeo.isMultiLineOSC != outputLayout.controlBarGeo.isMultiLineOSC)
     }
 

@@ -430,7 +430,7 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isBottomBarPlacementOrStyleChanging {
+    if transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging {
       rebuildBottomBarView(in: window.contentView!, style: transition.outputLayout.oscOverlayStyle)
       updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
     }
