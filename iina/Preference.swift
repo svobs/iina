@@ -151,6 +151,7 @@ struct Preference {
 
     // - Title bar & OSC
 
+    static let titleBarBtnsGlow = Key("activeTitleBarBtnsGlow")
     static let showTopBarTrigger = Key("showTopBarTrigger")
     /// Inside or outside viewport?
     static let topBarPlacement = Key("topBarPlacement")
@@ -1213,6 +1214,7 @@ struct Preference {
     .oscBarToolIconSize: 18,
     .oscBarToolIconSpacing: 5,  // spacing between icons is x2 this number
     .enableOSC: true,
+    .titleBarBtnsGlow: false,
     .showTopBarTrigger: ShowTopBarTrigger.windowHover.rawValue,
     .topBarPlacement: PanelPlacement.insideViewport.rawValue,
     .bottomBarPlacement: PanelPlacement.insideViewport.rawValue,

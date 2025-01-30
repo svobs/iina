@@ -1066,18 +1066,18 @@ extension PlayerWindowController {
   func updateTitleBarUI(from layoutState: LayoutState) {
     guard let window else { return }
     updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
-
+    let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
     // Leading sidebar toggle button
     for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
       if layoutState.leadingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: layoutState.leadingSidebar.isVisible)
+        button.setGlowForTitleBar(enabled: enableGlow && layoutState.leadingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
     }
     // Trailing sidebar toggle button
     for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
       if layoutState.trailingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: layoutState.trailingSidebar.isVisible)
+        button.setGlowForTitleBar(enabled: enableGlow && layoutState.trailingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
     }
@@ -1421,7 +1421,7 @@ extension PlayerWindowController {
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
     for button in [onTopButton, customTitleBar?.onTopButton].compactMap({$0}) {
       button.replaceSymbolImage(with: image, effect: nil)
-      button.setGlowForTitleBar(enabled: isOnTop)
+      button.setGlowForTitleBar(enabled: Preference.bool(for: .titleBarBtnsGlow) && isOnTop)
       fadeableViews.applyVisibility(onTopButtonVisibility, to: button)
     }
 
