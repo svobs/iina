@@ -45,6 +45,8 @@ class CustomTitleBarViewController: NSViewController {
   override func loadView() {
     view = NSView()
     view.identifier = .init("CustomTitleBarView")
+    view.wantsLayer = true
+    view.layer?.backgroundColor = .clear
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.Distance.titleBarIconHSpacing
 
@@ -68,7 +70,6 @@ class CustomTitleBarViewController: NSViewController {
 
     leadingStackView.setViews(trafficLightButtons + [leadingSidebarToggleButton], in: .center)
     leadingStackView.identifier = .init("TitleBar-LeadingStackView")
-    leadingStackView.layer?.backgroundColor = .clear
     leadingStackView.orientation = .horizontal
     leadingStackView.detachesHiddenViews = true
     leadingStackView.alignment = .centerY
@@ -118,7 +119,6 @@ class CustomTitleBarViewController: NSViewController {
 
     centerStackView.setViews([documentIconButton, titleText], in: .center)
     centerStackView.identifier = .init("TitleBar-CenterStackView")
-    centerStackView.layer?.backgroundColor = .clear
     centerStackView.orientation = .horizontal
     centerStackView.detachesHiddenViews = true
     centerStackView.alignment = .centerY
@@ -144,7 +144,6 @@ class CustomTitleBarViewController: NSViewController {
                                     bounceOnClick: true)
     trailingStackView.setViews([trailingSidebarToggleButton, onTopButton], in: .center)
     trailingStackView.identifier = .init("TitleBar-TrailingStackView")
-    trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
     trailingStackView.detachesHiddenViews = true
     trailingStackView.alignment = .centerY
@@ -272,10 +271,21 @@ class CustomTitleBarViewController: NSViewController {
     // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
     let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
 
-    for view in [titleText, leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
-      // Skip buttons which are not visible
+    for view in [titleText] {
+      // Skip if not visible
       guard view.alphaValue > 0.0 else { continue }
       view.alphaValue = alphaValue
+    }
+
+    for btn in symButtons {
+      // Skip buttons which are not visible
+      guard btn.alphaValue > 0.0 else { continue }
+      if drawAsKeyWindow {
+        btn.regularColor = nil
+      } else {
+        btn.regularColor = .disabledControlTextColor
+      }
+      btn.contentTintColor = btn.regularColor
     }
   }
 

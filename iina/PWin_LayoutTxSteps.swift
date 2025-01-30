@@ -487,9 +487,6 @@ extension PlayerWindowController {
           }
         }
       }
-
-      // covers both native & custom variants
-      updateTitleBarUI(from: outputLayout)
     }
 
     if !outputLayout.hasControlBar || transition.isControlBarChanging {
@@ -716,10 +713,10 @@ extension PlayerWindowController {
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging {
 
-        playButton.setColors(from: transition.outputLayout)
-        leftArrowButton.setColors(from: transition.outputLayout)
-        rightArrowButton.setColors(from: transition.outputLayout)
-        muteButton.setColors(from: transition.outputLayout)
+        playButton.setOSCColors(from: transition.outputLayout)
+        leftArrowButton.setOSCColors(from: transition.outputLayout)
+        rightArrowButton.setOSCColors(from: transition.outputLayout)
+        muteButton.setOSCColors(from: transition.outputLayout)
 
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
@@ -1016,19 +1013,23 @@ extension PlayerWindowController {
     }
 
     // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
-    if outputLayout.titleBar.isShowable && !transition.isExitingFullScreen {
-      if outputLayout.spec.isLegacyStyle {  // Legacy windowed mode
-        if let customTitleBar {
-          customTitleBar.view.alphaValue = 1
-        }
-      } else {  // Native windowed mode
-        showBuiltInTitleBarViews()
-        window.titleVisibility = .visible
+    if outputLayout.titleBar.isShowable {
+      if !transition.isExitingFullScreen {
+        if outputLayout.spec.isLegacyStyle {  // Legacy windowed mode
+          if let customTitleBar {
+            customTitleBar.view.alphaValue = 1
+          }
+        } else {  // Native windowed mode
+          showBuiltInTitleBarViews()
+          window.titleVisibility = .visible
 
-        /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
-        /// Add them back:
-        addTitleBarAccessoryViews()
+          /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
+          /// Add them back:
+          addTitleBarAccessoryViews()
+        }
       }
+      // covers both native & custom variants
+      updateTitleBarUI(from: outputLayout)
     }
 
     if let cropController = cropSettingsView {
@@ -1063,17 +1064,20 @@ extension PlayerWindowController {
   }
 
   func updateTitleBarUI(from layoutState: LayoutState) {
+    guard let window else { return }
+    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
+
     // Leading sidebar toggle button
     for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
       if layoutState.leadingSidebarToggleButton.isShowable {
-        button.setShadow(enabled: layoutState.leadingSidebar.isVisible)
+        button.setGlowForTitleBar(enabled: layoutState.leadingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
     }
     // Trailing sidebar toggle button
     for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
       if layoutState.trailingSidebarToggleButton.isShowable {
-        button.setShadow(enabled: layoutState.trailingSidebar.isVisible)
+        button.setGlowForTitleBar(enabled: layoutState.trailingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
     }
@@ -1083,9 +1087,6 @@ extension PlayerWindowController {
     // Title bar accessories (to cover native windowed mode):
     fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
     fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
-
-    guard let window else { return }
-    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
   }
 
   /// -------------------------------------------------
@@ -1420,7 +1421,7 @@ extension PlayerWindowController {
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
     for button in [onTopButton, customTitleBar?.onTopButton].compactMap({$0}) {
       button.replaceSymbolImage(with: image, effect: nil)
-      button.setShadow(enabled: isOnTop)
+      button.setGlowForTitleBar(enabled: isOnTop)
       fadeableViews.applyVisibility(onTopButtonVisibility, to: button)
     }
 
@@ -1474,7 +1475,7 @@ extension PlayerWindowController {
       for buttonType in newButtonTypes {
         let button = OSCToolbarButton()
         button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setColors(from: transition.outputLayout)
+        button.setOSCColors(from: transition.outputLayout)
         button.action = #selector(self.toolBarButtonAction(_:))
         toolbarButtons.append(button)
       }
@@ -1497,7 +1498,7 @@ extension PlayerWindowController {
     if needsButtonsUpdate {
       for btn in toolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         btn.setStyle(using: transition.outputLayout)
-        btn.setColors(from: transition.outputLayout)
+        btn.setOSCColors(from: transition.outputLayout)
       }
     }
 

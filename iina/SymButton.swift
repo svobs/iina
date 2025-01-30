@@ -153,7 +153,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
   private func useDefaultColors() {
     regularColor = nil
     highlightColor = .controlTextColor
-    setShadow(enabled: false)
+    setShadowForOSC(enabled: false)
     updateHighlight(isInsideBounds: false)
   }
 
@@ -161,12 +161,12 @@ class SymButton: NSImageView, NSAccessibilityButton {
   private func useColorsForClearBG() {
     regularColor = .controlForClearBG
     highlightColor = .white
-    setShadow(enabled: true)
+    setShadowForOSC(enabled: true)
     updateHighlight(isInsideBounds: false)
   }
 
   /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  func setColors(from layoutState: LayoutState) {
+  func setOSCColors(from layoutState: LayoutState) {
     if layoutState.spec.oscBackgroundIsClear {
       useColorsForClearBG()
     } else {
@@ -174,7 +174,16 @@ class SymButton: NSImageView, NSAccessibilityButton {
     }
   }
 
-  func setShadow(enabled: Bool) {
+  func setShadowForOSC(enabled: Bool) {
+    if enabled {
+      guard shadow == nil else { return }
+      addShadow(blurRadiusConstant: 0.5, xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
+    } else {
+      shadow = nil
+    }
+  }
+
+  func setGlowForTitleBar(enabled: Bool) {
     if enabled {
       guard shadow == nil else { return }
       addShadow(blurRadiusConstant: 0.5, xOffsetConstant: 0, yOffsetConstant: 0, color: .controlAccentColor)
