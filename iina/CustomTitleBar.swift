@@ -355,7 +355,7 @@ class TitleTextView: NSTextView {
     let stringSize = attributedString().size()
     // Note: need to add some extra width to avoid ellipses (…) being used unnecessarily. Not sure why.
     let contentSize = NSSize(width: (stringSize.width + 8).rounded(), height: stringSize.height)
-    associatedPlayer?.log.verbose{"TitleText intrinsicContentSize: \(contentSize): \(textStorage!.string)"}
+    associatedPlayer?.log.verbose{"TitleText intrinsicContentSize: \(contentSize): \(textStorage!.string.pii.quoted)"}
     return contentSize
   }
 

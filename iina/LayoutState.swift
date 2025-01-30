@@ -227,6 +227,8 @@ struct LayoutSpec {
     && otherSpec.trailingSidebarPlacement == trailingSidebarPlacement
     && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
     && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
+    && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
+    && otherSpec.oscOverlayStyle == oscOverlayStyle
   }
 
   func getWidthBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
@@ -337,10 +339,6 @@ struct LayoutState {
   let topOSCHeight: CGFloat
 
   // MARK: Derived / computed properties
-
-  var oscOverlayStyle: Preference.OSCOverlayStyle {
-    return spec.oscOverlayStyle
-  }
 
   var topBarHeight: CGFloat {
     self.titleBarHeight + self.topOSCHeight
@@ -557,8 +555,8 @@ struct LayoutState {
     self.hasTopPaddingForCameraHousing = spec.isLegacyFullScreen && Preference.bool(for: .allowVideoToOverlapCameraHousing)
 
     // Title bar views
+    var titleBarHeight: CGFloat = 0
     let titleBarVisibleState: VisibilityMode
-    let trafficLightButtons: VisibilityMode
     if spec.isNativeFullScreen {
       titleBarVisibleState = .hidden
       self.trafficLightButtons = .showAlways
@@ -575,27 +573,25 @@ struct LayoutState {
       self.titleIconAndText = titleBarVisibleState
     }
     self.titleBar = titleBarVisibleState
-
-    var titleBarHeight: CGFloat = 0
     self.titlebarAccessoryViewControllers = titleBarVisibleState
     if titleBarVisibleState.isShowable {
       // May be overridden depending on OSC layout anyway
       titleBarHeight = Constants.Distance.standardTitleBarHeight
     }
     // LeadingSidebar toggle button
-    let hasLeadingSidebar = !spec.isInteractiveMode && !spec.leadingSidebar.tabGroups.isEmpty
+    let hasLeadingSidebar = spec.mode.canShowSidebars && !spec.leadingSidebar.tabGroups.isEmpty
     self.leadingSidebarToggleButton = hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBarVisibleState : .hidden
     // TrailingSidebar toggle button
-    let hasTrailingSidebar = !spec.isInteractiveMode && !spec.trailingSidebar.tabGroups.isEmpty
+    let hasTrailingSidebar = spec.mode.canShowSidebars && !spec.trailingSidebar.tabGroups.isEmpty
     self.trailingSidebarToggleButton = hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBarVisibleState : .hidden
 
     // May be overridden below
-    var topBarView = titleBarVisibleState
-    var bottomBarView = titleBarVisibleState
+    var topBarView: VisibilityMode = titleBarVisibleState
+    var bottomBarView: VisibilityMode = .hidden
     var topOSCHeight: CGFloat = 0
     var controlBarFloating: VisibilityMode = .hidden
-    var bottomBarHeight: CGFloat = 0
-    var sidebarTabHeight: CGFloat = 0
+    var bottomBarHeight: CGFloat = Constants.Sidebar.defaultDownshift
+    var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
 
     // OSC:
 
@@ -634,6 +630,11 @@ struct LayoutState {
 
       bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
     }
+    self.topBarView = topBarView
+    self.topOSCHeight = topOSCHeight
+    self.controlBarFloating = controlBarFloating
+    self.bottomBarView = bottomBarView
+    self.bottomBarHeight = bottomBarHeight
 
     /// Sidebar tabHeight and downshift.
     /// Downshift: try to match height of title bar
@@ -661,12 +662,7 @@ struct LayoutState {
     } else {
       self.sidebarDownshift = Constants.Sidebar.defaultDownshift
     }
-    self.topOSCHeight = topOSCHeight
-    self.topBarView = topBarView
     self.titleBarHeight = titleBarHeight
-    self.controlBarFloating = controlBarFloating
-    self.bottomBarHeight = bottomBarHeight
-    self.bottomBarView = bottomBarView
     self.sidebarTabHeight = sidebarTabHeight
   }
 

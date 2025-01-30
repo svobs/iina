@@ -245,7 +245,7 @@ extension PlayerWindowController {
 
     // EndingAnimation: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
-    if transition.needsFadeInNewViews {
+    if transition.isWindowInitialLayout || transition.needsFadeInNewViews {
       transition.tasks.append(IINAAnimation.Task(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
         fadeInNewViews(transition)
       })
