@@ -171,26 +171,32 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   override func knobRect(flipped: Bool) -> NSRect {
+    let knobWidth = enableDrawKnob ? knobWidth : 0
     let barRect = barRect(flipped: flipped)
     // The usable width of the bar is reduced by the width of the knob.
     let effectiveBarWidth = barRect.width - knobWidth
-    let pos = barRect.origin.x + slider.progressRatio * effectiveBarWidth
+    let originX = (barRect.origin.x + slider.progressRatio * effectiveBarWidth).rounded()
     let superKnobRect = super.knobRect(flipped: flipped)
 
-    let height: CGFloat
-    if #available(macOS 11, *) {
-      height = (barRect.origin.y - superKnobRect.origin.y) * 2 + barRect.height
-    } else {
-      height = superKnobRect.height
-    }
-    return NSMakeRect(pos, superKnobRect.origin.y, knobWidth, height)
+    return NSMakeRect(originX, superKnobRect.origin.y, knobWidth, superKnobRect.height)
   }
 
-  func knobMinXAndWidth(enableDrawKnob: Bool) -> (CGFloat, CGFloat) {
-    // can use flipped=true because we don't care about Y value
-    let knobWidth = enableDrawKnob ? knobWidth : 0
-    let knobMinX: CGFloat = ((knobRect(flipped: true).origin.x) + (knobWidth * 0.5)).rounded()
-    return (knobMinX, knobWidth)
+  override func barRect(flipped: Bool) -> NSRect {
+    let superRect = super.barRect(flipped: flipped)
+    let bf = BarFactory.current
+    // Important: use knobHeight because it is the tallest thing being redrawn.
+    // When seeking, anything being rapidly redrawn needs to have all its possible bounds included in
+    // the slider's barRect, so that it knows what to mark dirty. Otherwise we will see artifacts!
+    let imgHeight = bf.heightNeeded(tallestBarHeight: knobHeight)
+    let extraHeightNeeded = imgHeight - superRect.height
+    if extraHeightNeeded <= 0.0 {
+      return superRect
+    }
+
+    let extraHeightAvailable = max(0.0, slider.bounds.height - superRect.height)
+    let extraHeight = min(extraHeightAvailable, extraHeightNeeded)
+    let rect = superRect.insetBy(dx: 0, dy: -(extraHeight * 0.5))
+    return rect
   }
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {

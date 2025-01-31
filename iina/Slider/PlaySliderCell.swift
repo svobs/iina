@@ -24,28 +24,13 @@ class PlaySliderCell: ScrollableSliderCell {
   
   // MARK:- Displaying the Cell
 
-  override func barRect(flipped: Bool) -> NSRect {
-    let superRect = super.barRect(flipped: flipped)
-    let bf = BarFactory.current
-    let imgHeight = bf.heightNeeded(tallestBarHeight: bf.maxPlayBarHeightNeeded)
-    let extraHeightNeeded = imgHeight - superRect.height
-    if extraHeightNeeded <= 0.0 {
-      return superRect
-    }
-
-    let extraHeightAvailable = max(0.0, slider.bounds.height - superRect.height)
-    let extraHeight = min(extraHeightAvailable, extraHeightNeeded)
-    let rect = superRect.insetBy(dx: 0, dy: -(extraHeight * 0.5))
-    return rect
-  }
-
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
     guard let appearance = iinaAppearance,
           let screen = controlView?.window?.screen else { return }
 
     /// The position of the knob, rounded for cleaner drawing
     let enableDrawKnob = enableDrawKnob
-    let (knobMinX, knobWidth) = knobMinXAndWidth(enableDrawKnob: enableDrawKnob)
+    let knobRect = knobRect(flipped: false)
     let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
 
     let chapters = drawChapters ? player.info.chapters : []
@@ -60,7 +45,7 @@ class PlaySliderCell: ScrollableSliderCell {
       let bf = BarFactory.current
       let playBarImg = bf.buildPlayBarImage(barWidth: barRect.width,
                                             screen: screen, useFocusEffect: useFocusEffect,
-                                            knobMinX: knobMinX, knobWidth: knobWidth, currentValueRatio: progressRatio,
+                                            knobMinX: knobRect.minX, knobWidth: knobRect.width, currentValueRatio: progressRatio,
                                             durationSec: durationSec, chapters, cachedRanges: cachedRanges,
                                             currentPreviewTimeSec: currentPreviewTimeSec)
 
