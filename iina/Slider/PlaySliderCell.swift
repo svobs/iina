@@ -53,7 +53,8 @@ class PlaySliderCell: ScrollableSliderCell {
     let durationSec = player.info.playbackDurationSec ?? 0.0
 
     let progressRatio = slider.progressRatio
-    let currentPreviewTimeSec = player.windowController.seekPreview.currentPreviewTimeSec
+    // Disable hover zoom effect & indicator while actively scrolling; looks bad
+    let currentPreviewTimeSec: Double? = player.windowController.isScrollingOrDraggingPlaySlider ? nil : player.windowController.seekPreview.currentPreviewTimeSec
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current

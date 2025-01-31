@@ -472,11 +472,14 @@ extension PlayerWindowController {
       isMouseInWindow = true
       showFadeableViews(duration: 0)
     case .playSlider:
-      if currentDragObject != nil { return }
-
-      refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
+      // Need to guard against false positives caused by events being queued during mouseDown of
+      // something else:
+      guard isMouseActuallyInside(view: playSlider) else  { return }
+      // Do not use `event.locationInWindow`: it can be stale
+      let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
-      if currentDragObject != nil { return }
+      guard isMouseActuallyInside(view: volumeSlider) else  { return }
       isMouseHoveringOverVolumeSlider = true
       player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
@@ -519,9 +522,12 @@ extension PlayerWindowController {
       return
     }
 
+    // Do not use `event.locationInWindow`: it can be stale
+    let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+
     /// Set or unset the cursor to `resizeLeftRight` if able to resize the sidebar
-    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) ||
-        isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
+    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
+        isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
       if sidebarResizeCursor == nil {
         let newCursor = NSCursor.resizeLeftRight
         newCursor.push()
@@ -540,27 +546,34 @@ extension PlayerWindowController {
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
-    refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
+    if isMouseActuallyInside(view: playSlider) {
+      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+    }
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
-    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(event) && fadeableViews.topBarAnimationState == .hidden
+    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
     // Check whether mouse is in OSC
-    let shouldRestartFadeTimer = !isMouseEvent(event, inAnyOf: [currentControlBar, titleBarView])
+    let shouldRestartFadeTimer = !isPoint(pointInWindow, inAnyOf: [currentControlBar, titleBarView])
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
 
     // Always hide after timeout even if OSD fade time is longer
     restartHideCursorTimer()
   }
 
+  func isMouseActuallyInside(view: NSView) -> Bool {
+    let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+    return isPoint(pointInWindow, inAnyOf: [view])
+  }
+
   // assumes mouse is in window
-  private func isMouseInTopBarArea(_ event: NSEvent) -> Bool {
+  private func isMouseInTopBarArea(_ mouseLocInWindow: NSPoint) -> Bool {
     if !currentLayout.topBarView.isShowable {
       // e.g. music mode
       return false
     }
     guard let window = window, let contentView = window.contentView else { return false }
     let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
-    return event.locationInWindow.y >= heightThreshold
+    return mouseLocInWindow.y >= heightThreshold
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
