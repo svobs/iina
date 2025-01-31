@@ -68,16 +68,21 @@ class BarFactory {
       return (barColorLeft, barColorRight)
     }
 
-    let enableRoundedCorners = Preference.bool(for: .roundRectSliderBars)
-    func cornerRadius(for barHeight: CGFloat) -> CGFloat {
-      guard enableRoundedCorners else { return 0.0 }
-      if barHeight <= 6.0 {
+    // I want to vary the curvature based on bar height, but want to avoid drawing bars with different curvature in the same image,
+    // which can happen when focusing on a chapter in a multi-chapter video. So: only update the curvature once per image set.
+    var cornerCurvature: CGFloat = Preference.bool(for: .roundRectSliderBars) ? 1.0 : 0.0
+    func updateCurvature(using baseBarHeight: CGFloat) {
+      guard cornerCurvature > 0.0 else { return }
+      if baseBarHeight <= 6.0 {
         // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
-        return (barHeight * 0.5).rounded()
+        cornerCurvature = 0.5
       } else {
         // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
-        return (barHeight * 0.25).rounded()
+        cornerCurvature = 0.25
       }
+    }
+    func cornerRadius(for barHeight: CGFloat) -> CGFloat {
+      return (barHeight * cornerCurvature).rounded()
     }
 
     // CONSTANTS: All in points (not pixels).
@@ -86,6 +91,7 @@ class BarFactory {
     // - PlaySlider & VolumeSlider both:
 
     let barHeight_Normal: CGFloat = oscGeo.slidersBarHeightNormal
+    updateCurvature(using: barHeight_Normal)
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
     leftCachedColor = barColorLeft.exaggerated()
@@ -96,6 +102,7 @@ class BarFactory {
     let chapterGapWidth: CGFloat = (barHeight_Normal * 0.5).rounded()
 
     let barHeight_FocusedCurrChapter: CGFloat = barHeight_Normal * 3
+    updateCurvature(using: barHeight_FocusedCurrChapter)
     let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
 
     /// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
@@ -109,12 +116,14 @@ class BarFactory {
 
     let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
     let barHeight_VolumeAbove100_Right: CGFloat = (barHeight_VolumeAbove100_Left * 0.5).rounded()
+    updateCurvature(using: barHeight_VolumeAbove100_Left) // base on tallest bar height being drawn
     let barCornerRadius_VolumeAbove100_Left = cornerRadius(for: barHeight_VolumeAbove100_Left)
     let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
 
     let barHeight_Volume_Focused: CGFloat = barHeight_FocusedNonCurrChapter
     let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_FocusedCurrChapter
     let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
+    updateCurvature(using: barHeight_FocusedCurrChapter)
     let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)
     let barCornerRadius_Focused_VolumeAbove100_Left = cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
     let barCornerRadius_Focused_VolumeAbove100_Right = cornerRadius(for: barHeight_Focused_VolumeAbove100_Right)
