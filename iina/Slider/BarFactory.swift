@@ -79,7 +79,7 @@ class BarFactory {
 
     // - PlaySlider & VolumeSlider both:
 
-    let barHeight_Normal: CGFloat = oscGeo.sllidersBarHeightNormal
+    let barHeight_Normal: CGFloat = oscGeo.slidersBarHeightNormal
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
     leftCachedColor = barColorLeft.exaggerated()
@@ -107,7 +107,7 @@ class BarFactory {
     let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
 
     let barHeight_Volume_Focused: CGFloat = barHeight_FocusedNonCurrChapter
-    let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_Normal * 2
+    let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_FocusedNonCurrChapter * 2
     let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
     let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)
     let barCornerRadius_Focused_VolumeAbove100_Left = cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
@@ -414,13 +414,14 @@ class BarFactory {
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
     let rightClipMinX: CGFloat
-    if useFocusEffect || knobWidth < 1.0 {
-      leftClipMaxX = currentValuePointX
-      rightClipMinX = currentValuePointX
-    } else {
+    if useFocusEffect && knobWidth >= 1.0 {
       // - Will clip out the knob
       leftClipMaxX = (knobMinX - 1) * scaleFactor
       rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+    } else {
+      // No knob
+      leftClipMaxX = currentValuePointX
+      rightClipMinX = currentValuePointX
     }
 
     let hasLeft = leftClipMaxX - conf.imgPadding > 0.0

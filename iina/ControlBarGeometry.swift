@@ -217,8 +217,11 @@ struct ControlBarGeometry {
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
   /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
   /// of its bounds, to prevent clipping.
-  var sllidersBarHeightNormal: CGFloat {
-    return 3.0
+  var slidersBarHeightNormal: CGFloat {
+    if mode == .musicMode || (position != .top && position != .bottom) {
+      return 3.0
+    }
+    return (playSliderHeight * 0.125).rounded().clamped(to: 3.0...9.0)
   }
 
   var volumeIconHeight: CGFloat {
@@ -230,7 +233,7 @@ struct ControlBarGeometry {
   }
 
   var volumeSliderWidth: CGFloat {
-    return 70
+    return (70 * (slidersBarHeightNormal / 3.0)).rounded()
   }
 
   // MARK: Computed props: Playback Controls
@@ -249,7 +252,7 @@ struct ControlBarGeometry {
     case .floating:
       return 10
     case .top, .bottom:
-      return (playSliderHeight * 0.5).rounded().clamped(to: 13...24)
+      return (playSliderHeight * 0.4).rounded().clamped(to: 13...32)
     }
   }
 

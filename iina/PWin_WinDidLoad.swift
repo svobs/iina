@@ -582,7 +582,7 @@ extension PlayerWindowController {
     volumeSlider.identifier = .init("VolumeSlider")
     volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
-    let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
+    volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
     volumeSliderWidthConstraint.identifier = .init("VolumeSlider-WidthConstraint")
     volumeSliderWidthConstraint.isActive = true
     volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true

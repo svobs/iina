@@ -297,6 +297,9 @@ extension PlayerWindowController {
       if volumeIconHeightConstraint.constant > oscGeo.volumeIconHeight {
         volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
       }
+      if volumeSliderWidthConstraint.constant > oscGeo.volumeSliderWidth {
+        volumeSliderWidthConstraint.animateToConstant(oscGeo.volumeSliderWidth)
+      }
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
@@ -864,6 +867,7 @@ extension PlayerWindowController {
       let oscGeo = outputLayout.controlBarGeo
 
       volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
+      volumeSliderWidthConstraint.animateToConstant(oscGeo.volumeSliderWidth)
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)

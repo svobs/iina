@@ -441,6 +441,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var volumeIconHeightConstraint: NSLayoutConstraint!
   var volumeIconAspectConstraint: NSLayoutConstraint!
+  var volumeSliderWidthConstraint: NSLayoutConstraint!
 
   // - Outlets: Views
 
