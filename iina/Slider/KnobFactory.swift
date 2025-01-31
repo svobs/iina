@@ -25,7 +25,6 @@ class KnobFactory {
 
   /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
   let knobMarginRadius: CGFloat = 1.0
-  let knobCornerRadius: CGFloat = 1.0
 
   var mainKnobColor = NSColor.mainSliderKnob
   var mainKnobActiveColor = NSColor.mainSliderKnobActive
@@ -40,6 +39,10 @@ class KnobFactory {
     for i in 0..<cachedKnobs.count {
       cachedKnobs[i] = nil
     }
+  }
+
+  func knobCornerRadius(fromKnobWidth knobWidth: CGFloat) -> CGFloat {
+    (knobWidth * 0.33).rounded().clamped(to: 1.0...)
   }
 
   func getKnob(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
@@ -122,8 +125,9 @@ class KnobFactory {
     static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat,
                           scaleFactor: CGFloat) -> CGImage {
       let knobImageSizeScaled = Knob.imgSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
+
       let knobMarginRadius_Scaled = KnobFactory.shared.knobMarginRadius * scaleFactor
-      let knobCornerRadius_Scaled = KnobFactory.shared.knobCornerRadius * scaleFactor
+      let knobCornerRadius_Scaled = KnobFactory.shared.knobCornerRadius(fromKnobWidth: knobWidth) * scaleFactor
       let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
                                                height: knobImageSizeScaled.heightInt) { cgContext in
 

@@ -799,6 +799,10 @@ extension FloatingPoint {
     }
   }
 
+  func clamped(to minRange: PartialRangeFrom<Self>) -> Self {
+    return max(self, minRange.lowerBound)
+  }
+
   /// Formats as String, rounding the number to 2 digits after the decimal.
   /// Always displays 2 digits after the decimal.
   var string2FractionDigits: String {

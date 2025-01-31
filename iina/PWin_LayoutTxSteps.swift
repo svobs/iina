@@ -759,6 +759,14 @@ extension PlayerWindowController {
       if !transition.outputLayout.hasFloatingOSC {
         addSpeedLabelToControlBar(transition)
       }
+
+      let sliderKnobWidth = oscGeo.sliderKnobWidth
+      let sliderKnobHeight = oscGeo.sliderKnobHeight
+      playSlider.customCell.knobWidth = sliderKnobWidth
+      playSlider.customCell.knobHeight = sliderKnobHeight
+      let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
+      volumeSliderCell.knobWidth = sliderKnobWidth
+      volumeSliderCell.knobHeight = sliderKnobHeight
     }
 
     // Interactive mode

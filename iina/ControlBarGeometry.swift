@@ -211,17 +211,23 @@ struct ControlBarGeometry {
 
   var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
 
+  // MARK: - Sliders
+
   /// Height of the entire `PlaySlider` view, including unused space.
   var playSliderHeight: CGFloat
+
+  var sliderScale: CGFloat {
+    if mode == .musicMode || (position != .top && position != .bottom) {
+      return 1.0
+    }
+    return (playSliderHeight / Constants.Distance.minPlaySliderHeight * 0.9).clamped(to: 1.0...3.0)
+  }
 
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
   /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
   /// of its bounds, to prevent clipping.
   var slidersBarHeightNormal: CGFloat {
-    if mode == .musicMode || (position != .top && position != .bottom) {
-      return 3.0
-    }
-    return (playSliderHeight * 0.125).rounded().clamped(to: 3.0...9.0)
+    return (sliderScale * 3.0).rounded()
   }
 
   var volumeIconHeight: CGFloat {
@@ -233,14 +239,23 @@ struct ControlBarGeometry {
   }
 
   var volumeSliderWidth: CGFloat {
-    return (70 * (slidersBarHeightNormal / 3.0)).rounded()
+    return (70 * sliderScale).rounded()
+  }
+
+  var sliderKnobWidth: CGFloat {
+    return (Constants.Distance.slider_DefaultKnobWidth * sliderScale).rounded()
+  }
+
+  var sliderKnobHeight: CGFloat {
+    return (Constants.Distance.slider_DefaultKnobHeight * sliderScale).rounded()
   }
 
   // MARK: Computed props: Playback Controls
 
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
-    NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .medium)
+    let timeLabelFontSize = timeLabelFontSize
+    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .medium)
   }
 
   var timeLabelFontSize: CGFloat {
@@ -252,7 +267,8 @@ struct ControlBarGeometry {
     case .floating:
       return 10
     case .top, .bottom:
-      return (playSliderHeight * 0.4).rounded().clamped(to: 13...32)
+      let normalSize = 12.0
+      return (sliderScale * normalSize).rounded().clamped(to: 12...36)
     }
   }
 

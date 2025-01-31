@@ -71,7 +71,13 @@ class BarFactory {
     let enableRoundedCorners = Preference.bool(for: .roundRectSliderBars)
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
       guard enableRoundedCorners else { return 0.0 }
-      return (barHeight * 0.5).rounded()
+      if barHeight <= 6.0 {
+        // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
+        return (barHeight * 0.5).rounded()
+      } else {
+        // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
+        return (barHeight * 0.25).rounded()
+      }
     }
 
     // CONSTANTS: All in points (not pixels).
@@ -107,7 +113,7 @@ class BarFactory {
     let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
 
     let barHeight_Volume_Focused: CGFloat = barHeight_FocusedNonCurrChapter
-    let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_FocusedNonCurrChapter * 2
+    let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_FocusedCurrChapter
     let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
     let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)
     let barCornerRadius_Focused_VolumeAbove100_Left = cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
@@ -217,9 +223,9 @@ class BarFactory {
     // Hover indicator needs to be drawn at the very end, possibly after compositing cached ranges
     let drawHoverIndicator: ((CGContext) -> Void)?
     if let currentPreviewTimeSec {
-      let hoverX = (currentPreviewTimeSec / durationSec * imgConf.barWidth).rounded()
+      let hoverX = imgConf.imgPadding + (currentPreviewTimeSec / durationSec * imgConf.barWidth).rounded()
       currentHoverX = hoverX
-      if hoverX >= leftClipMaxX && hoverX <= rightClipMinX {
+      if hoverX >= leftClipMaxX && (hoverX <= rightClipMinX) {
         drawHoverIndicator = nil
       } else {
         // Hover indicator
@@ -269,7 +275,9 @@ class BarFactory {
         while !doneWithLeft && segIndex < segsMaxX.count {
           let segMaxX = segsMaxX[segIndex]
           let conf: BarConf
-          if let currentHoverX, segsMaxX.count > 1, currentHoverX >= segMinX && currentHoverX <= segMaxX {
+          // Need to adjust calculation here to account for trailing img padding:
+          if let currentHoverX, segsMaxX.count > 1, currentHoverX >= segMinX &&
+              (segIndex == segsMaxX.count - 1 || currentHoverX <= segMaxX) {
             // Is hovering in chapter
             conf = imgConf.currentChapter_Left
           } else {
@@ -314,7 +322,8 @@ class BarFactory {
           let segMaxX = segsMaxX[segIndex]
 
           let conf: BarConf
-          if let currentHoverX, segsMaxX.count > 1, currentHoverX > segMinX && currentHoverX < segMaxX {
+          if let currentHoverX, segsMaxX.count > 1, currentHoverX > segMinX &&
+              (segIndex == segsMaxX.count - 1 || currentHoverX <= segMaxX) {
             conf = imgConf.currentChapter_Right
           } else {
             conf = imgConf.nonCurrentChapter_Right
