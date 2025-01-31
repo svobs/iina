@@ -408,7 +408,7 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout && transition.isTopBarPlacementOrStyleChanging {
       insideTopBarHeight = 0  // close completely. will animate reopening if needed later
       outsideTopBarHeight = 0
-    } else if transition.outputGeometry.outsideBars.top < transition.inputGeometry.outsideBars.bottom {
+    } else if transition.outputGeometry.outsideBars.top < transition.inputGeometry.outsideBars.top {
       insideTopBarHeight = 0
       outsideTopBarHeight = transition.outputGeometry.outsideBars.top
     } else if transition.outputGeometry.insideBars.top < transition.inputGeometry.insideBars.top {
@@ -462,14 +462,17 @@ extension PlayerWindowController {
       outsideTrailingBarWidth = transition.inputGeometry.outsideBars.trailing
     }
 
+    let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+                                bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+    let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+                                 bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+
     if transition.outputLayout.isFullScreen {
       let screen = NSScreen.getScreenOrDefault(screenID: transition.inputGeometry.screenID)
       return PWinGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
                                         mode: transition.outputLayout.mode,
-                                        outsideBars: MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
-                                                                bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth),
-                                        insideBars: MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
-                                                                bottom: insideBottomBarHeight, leading: insideLeadingBarWidth),
+                                        outsideBars: outsideBars,
+                                        insideBars: insideBars,
                                         video: transition.outputGeometry.video,
                                         allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }

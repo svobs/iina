@@ -267,8 +267,8 @@ struct ControlBarGeometry {
     case .floating:
       return 10
     case .top, .bottom:
-      let normalSize = 12.0
-      return (sliderScale * normalSize).rounded().clamped(to: 12...36)
+      let normalSize = 9.0
+      return (sliderScale * normalSize).rounded()
     }
   }
 

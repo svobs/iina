@@ -188,8 +188,8 @@ class ScrollableSliderCell: NSSliderCell {
 
   func knobMinXAndWidth(enableDrawKnob: Bool) -> (CGFloat, CGFloat) {
     // can use flipped=true because we don't care about Y value
-    let knobMinX: CGFloat = ((knobRect(flipped: true).origin.x) + (enableDrawKnob ? 0 : self.knobWidth * 0.5)).rounded()
     let knobWidth = enableDrawKnob ? knobWidth : 0
+    let knobMinX: CGFloat = ((knobRect(flipped: true).origin.x) + (knobWidth * 0.5)).rounded()
     return (knobMinX, knobWidth)
   }
 

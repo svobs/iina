@@ -1495,7 +1495,9 @@ extension PlayerWindowController {
 
       toolbarView.identifier = .init("OSC-ToolBarView")
       toolbarView.orientation = .horizontal
-      toolbarView.distribution = .equalCentering
+      toolbarView.distribution = .fill
+      toolbarView.setHuggingPriority(.init(499), for: .horizontal)
+      toolbarView.setHuggingPriority(.init(500), for: .vertical)
       for button in toolbarButtons {
         toolbarView.addView(button, in: .trailing)
         toolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
