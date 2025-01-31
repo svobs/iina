@@ -2783,10 +2783,9 @@ class PlayerCore: NSObject {
   }
 
   func subScaleChanged(_ subScale: Double) {
-    let displayValue = subScale >= 1 ? subScale : -1/subScale
-    let subScale = displayValue.clamped(to: 0.1...10).roundedTo2()
     info.subScale = subScale
-    sendOSD(.subScale(subScale))
+    let displayValue = subScale >= 1 ? subScale : -1/subScale
+    sendOSD(.subScale(displayValue.roundedTo2()))
     saveState()
     reloadQuickSettingsView()
   }

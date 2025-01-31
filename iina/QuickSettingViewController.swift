@@ -517,8 +517,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     player.mpv.queue.async { [self] in
       guard !player.isStopping else { return }
 
-      let currSubScale = player.info.subScale
+      let currSubScale = player.mpv.getDouble(MPVOption.Subtitles.subScale).clamped(to: 0.1...10)
       let displaySubScale = Utility.toDisplaySubScale(fromRealSubScale: currSubScale)
+      player.log.verbose("Current subScale: \(currSubScale) -> display: \(displaySubScale)")
 
       let currSubPos = isPrimary ? player.info.subPos : player.info.sub2Pos
       let subDelay = isPrimary ? player.info.subDelay : player.info.sub2Delay
@@ -542,7 +543,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         subTextSizePopUp.selectItem(withTitle: fontSize.description)
 
         subTextBorderWidthPopUp.selectItem(at: -1)
-        subTextBorderWidthPopUp.itemArray.forEach { item in
+        for item in subTextBorderWidthPopUp.itemArray {
           if borderWidth == Double(item.title) {
             subTextBorderWidthPopUp.select(item)
           }
