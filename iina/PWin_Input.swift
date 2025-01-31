@@ -506,8 +506,12 @@ extension PlayerWindowController {
         fadeableViews.hideTimer.restart()
       }
     case .playSlider:
-      refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
+      // Do not use `event.locationInWindow`: it can be stale
+      let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
+      let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+      guard !isMouseActuallyInside(view: volumeSlider) else  { return }
       isMouseHoveringOverVolumeSlider = false
       player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
