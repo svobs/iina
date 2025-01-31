@@ -168,6 +168,9 @@ struct Constants {
 
     static let keyDownHandlingTimeout = 1.0
 
+    /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
+    static let sliderSeekThrottlingInterval = 0.01
+
     /// Time in seconds to wait before regenerating thumbnails.
     /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
     /// This should help cut down on unnecessary requests.
@@ -536,6 +539,7 @@ struct DebugConfig {
 
   static let addHistoryWindowLoadingDelay = false
   static let logAllScreenChangeEvents = false
+  static let disableLookaheadCaches = true
 #endif
 }
 

@@ -348,7 +348,7 @@ extension PlayerWindowController {
   }
 
   /// With animation. For non-animated version, see: `hideSeekPreviewImmediately()`.
-  func hideSeekPreviewWithAnimation() {
+  fileprivate func hideSeekPreviewWithAnimation() {
     var tasks: [IINAAnimation.Task] = []
 
     tasks.append(.init(duration: IINAAnimation.HideSeekPreviewDuration) { [self] in
@@ -387,6 +387,11 @@ extension PlayerWindowController {
           return
         }
       }
+
+      // Check focus & show/hide volume slider hover
+      isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
+      player.windowController.volumeSlider.needsDisplay = true
+
       if animateHide {
         hideSeekPreviewWithAnimation()
       } else {

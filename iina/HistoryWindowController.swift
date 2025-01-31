@@ -167,7 +167,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
           log.debug("Sleeping for 5 sec to test History window async loading...")
           Thread.sleep(forTimeInterval: 5)
         }
-      #endif
+#endif
         self.reloadData()
       }
     }

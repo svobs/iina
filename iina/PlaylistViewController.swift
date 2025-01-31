@@ -75,6 +75,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   var playlistChangeObserver: NSObjectProtocol?
   var fileHistoryUpdateObserver: NSObjectProtocol?
+  var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
 
   func updateTableColors() {
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
@@ -158,6 +159,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           reloadCache(forRowIndex: index)
         }
       }
+    }
+
+#if DEBUG
+    enablePrefetching = enablePrefetching && !DebugConfig.disableLookaheadCaches
+#endif
+
+    if !enablePrefetching {
+      player.log.debug("Playlist video duration prefetch is disabled")
     }
 
     // register for double click action
@@ -710,7 +719,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
       PlayerCore.playlistQueue.async { [self] in
-        if isPlaying || Preference.bool(for: .prefetchPlaylistVideoDuration) {
+        if isPlaying || enablePrefetching {
           let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
 
           if cachedMeta?.duration ?? 0 > 0 {

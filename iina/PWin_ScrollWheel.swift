@@ -55,11 +55,11 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
     guard let position = player.info.playbackPositionSec,
           let duration = player.info.playbackDurationSec else { return }
     let valueDelta: CGFloat = session.consumePendingEvents(for: slider)
-    let newAbsolutePosition = (position + Double(valueDelta)).clamped(to: 0.0...duration)
+    let playbackPositionNew = (position + Double(valueDelta)).clamped(to: 0.0...duration)
     // Use modelValueAtEnd to keep track of last seek, to prevent sending duplicate seek requests
-    guard session.modelValueAtEnd != newAbsolutePosition else { return }
-    session.modelValueAtEnd = newAbsolutePosition
-    player.windowController.seekFromPlaySlider(absoluteSecond: newAbsolutePosition, forceExactSeek: false)
+    guard session.modelValueAtEnd != playbackPositionNew else { return }
+    session.modelValueAtEnd = playbackPositionNew
+    player.windowController.seekFromPlaySlider(playbackPositionSec: playbackPositionNew, forceExactSeek: false)
   }
 
 }  /// end `class PlaySliderScrollWheel`

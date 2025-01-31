@@ -472,15 +472,12 @@ extension PlayerWindowController {
       isMouseInWindow = true
       showFadeableViews(duration: 0)
     case .playSlider:
-      // Need to guard against false positives caused by events being queued during mouseDown of
-      // something else:
-      guard isMouseActuallyInside(view: playSlider) else  { return }
-      // Do not use `event.locationInWindow`: it can be stale
+      // Do not use `event.locationInWindow` as it can be stale. Need to guard against
+      // false positives caused by events being queued during mouseDown of something else.
       let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
-      guard isMouseActuallyInside(view: volumeSlider) else  { return }
-      isMouseHoveringOverVolumeSlider = true
+      isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
       player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseEntered(with: event)
@@ -510,8 +507,7 @@ extension PlayerWindowController {
       let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
-      guard !isMouseActuallyInside(view: volumeSlider) else  { return }
-      isMouseHoveringOverVolumeSlider = false
+      isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
       player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseExited(with: event)
@@ -549,9 +545,8 @@ extension PlayerWindowController {
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
-    if isMouseActuallyInside(view: playSlider) {
-      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    }
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+    isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden

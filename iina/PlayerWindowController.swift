@@ -2341,13 +2341,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Scroll wheel seek should call `seekFromPlaySlider` directly.
   @IBAction func playSliderAction(_ slider: PlaySlider) {
     // Update player.info & UI proactively
-    let absoluteSecond = player.info.playbackDurationSec! * slider.progressRatio
+    let playbackPositionAbsSec = player.info.playbackDurationSec! * slider.progressRatio
     let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
-    seekFromPlaySlider(absoluteSecond: absoluteSecond, forceExactSeek: forceExactSeek)
+    seekFromPlaySlider(playbackPositionSec: playbackPositionAbsSec, forceExactSeek: forceExactSeek)
   }
 
-  func seekFromPlaySlider(absoluteSecond: CGFloat, forceExactSeek: Bool) {
-    guard player.info.isFileLoaded else { return }
+  func seekFromPlaySlider(playbackPositionSec absoluteSecond: CGFloat, forceExactSeek: Bool) {
     guard !isInInteractiveMode else { return }
 
     // Update player.info & UI proactively
@@ -2357,8 +2356,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: playSlider.frameInWindowCoords.midY)
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
 
-    let option: Preference.SeekOption = forceExactSeek ? .exact : Preference.enum(for: .useExactSeek)
-    player.seek(absoluteSecond: absoluteSecond, option: option)
+    player.sliderSeekDebouncer.run { [self] in
+      guard player.info.isFileLoaded else { return }
+
+      let option: Preference.SeekOption = forceExactSeek ? .exact : Preference.enum(for: .useExactSeek)
+      player.seek(absoluteSecond: absoluteSecond, option: option)
+    }
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {
