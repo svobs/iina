@@ -510,7 +510,6 @@ extension PlayerWindowController {
       let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
-      let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
       guard !isMouseActuallyInside(view: volumeSlider) else  { return }
       isMouseHoveringOverVolumeSlider = false
       player.windowController.volumeSlider.needsDisplay = true

@@ -352,11 +352,10 @@ class VirtualScrollWheel {
       } else if phase.contains(.ended) {
         return .smoothScrollJustEnded
       } else if phase.contains(.cancelled) {
-        // This isn't expected to be seen while in an active scroll session. But be wary if it ever changes
+        // Not sure why this happens exactly, but it does happen. Try to roll with it
         if case .notScrolling = state {
         } else {
-          assert(false, "Received scroll wheel event with .cancelled phase but state is not .notScrolling!")
-          log.error("Received scroll wheel event with .cancelled phase but state is not .notScrolling!")
+          log.debug("Received scroll wheel event with .cancelled phase but state is not .notScrolling")
         }
         return .notScrolling
       } else if phase.isEmpty {

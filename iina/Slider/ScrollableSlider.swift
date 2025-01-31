@@ -178,7 +178,14 @@ class ScrollableSliderCell: NSSliderCell {
     let originX = (barRect.origin.x + slider.progressRatio * effectiveBarWidth).rounded()
     let superKnobRect = super.knobRect(flipped: flipped)
 
-    return NSMakeRect(originX, superKnobRect.origin.y, knobWidth, superKnobRect.height)
+    let height: CGFloat
+    if #available(macOS 11, *) {
+      height = (barRect.origin.y - superKnobRect.origin.y) * 2 + barRect.height
+    } else {
+      height = superKnobRect.height
+    }
+
+    return NSRect(x: originX, y: superKnobRect.origin.y, width: knobWidth, height: height)
   }
 
   override func barRect(flipped: Bool) -> NSRect {
