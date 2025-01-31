@@ -472,11 +472,13 @@ extension PlayerWindowController {
       isMouseInWindow = true
       showFadeableViews(duration: 0)
     case .playSlider:
+      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
       // Do not use `event.locationInWindow` as it can be stale. Need to guard against
       // false positives caused by events being queued during mouseDown of something else.
       let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
+      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
       isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
       player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
@@ -503,10 +505,12 @@ extension PlayerWindowController {
         fadeableViews.hideTimer.restart()
       }
     case .playSlider:
+      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
       // Do not use `event.locationInWindow`: it can be stale
       let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
+      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
       isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
       player.windowController.volumeSlider.needsDisplay = true
     case .customTitleBar:
@@ -515,6 +519,8 @@ extension PlayerWindowController {
   }
 
   override func mouseMoved(with event: NSEvent) {
+    guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
+    
     if isInInteractiveMode {
       let disableWindowDragging = isMouseEvent(event, inAnyOf: [viewportView])
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)

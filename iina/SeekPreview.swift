@@ -344,6 +344,10 @@ extension PlayerWindowController {
   func seekPreviewTimeout() {
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
     log.trace{"SeekPreview timed out: current mouseLoc=\(pointInWindow)"}
+    if isScrollingOrDraggingPlaySlider {
+      seekPreview.hideTimer.restart()
+      return
+    }
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: true)
   }
 
