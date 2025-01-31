@@ -1940,7 +1940,7 @@ For smoothest results, also enable custom full screen.</string>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="1k5-iK-kYc">
                                     <rect key="frame" x="-2" y="116" width="454" height="16"/>
-                                    <textFieldCell key="cell" lineBreakMode="clipping" title="Playback position slider:" id="QH0-nv-oSi">
+                                    <textFieldCell key="cell" lineBreakMode="clipping" title="Playback position &amp; volume sliders:" id="QH0-nv-oSi">
                                         <font key="font" usesAppearanceFont="YES"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2160,7 +2160,7 @@ For smoothest results, also enable custom full screen.</string>
                 </popUpButton>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6ml-Xj-nVX">
                     <rect key="frame" x="118" y="76" width="87" height="16"/>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="&quot;Inside&quot; bars:" id="SBZ-A7-Btg">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="&quot;Inside&quot; panels:" id="SBZ-A7-Btg">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

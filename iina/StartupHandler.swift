@@ -25,6 +25,8 @@ class StartupHandler {
 
   // MARK: Properties
 
+  let launchStartTime = CFAbsoluteTimeGetCurrent()
+
   var state: OpenWindowsState = .stillEnqueuing
 
   /**
@@ -419,7 +421,8 @@ class StartupHandler {
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
 
-    Logger.log.verbose("Done with startup")
+    let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime
+    Logger.log.verbose("Done with startup (\(timeElapsed.stringMaxFrac2)s)")
   }
 
 
