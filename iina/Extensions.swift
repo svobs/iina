@@ -1795,6 +1795,10 @@ extension NSWindow {
 
 class IINAWindowController: NSWindowController {
 
+  var mouseLocationInWindow: NSPoint {
+    return window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+  }
+
   func openWindow(_ sender: Any?) {
     guard let window else {
       Logger.log("Cannot open window: no window object!", level: .error)

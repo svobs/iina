@@ -223,7 +223,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var isScrollingOrDraggingVolumeSlider: Bool {
-    if (volumeSlider.cell as! VolumeSliderCell).isDragging  {
+    if volumeSliderCell.isDragging  {
       return true
     }
     if (volumeSlider.scrollWheelDelegate?.isScrolling() ?? false) {
@@ -236,8 +236,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     return false
   }
-
-  var isMouseHoveringOverVolumeSlider = false
 
   /// - Sidebars: See file `Sidebars.swift`
 
@@ -567,6 +565,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fragVolumeView = ClickThroughView()
   let muteButton = SymButton()
   let volumeSlider = ScrollableSlider()
+  let volumeSliderCell = VolumeSliderCell()
 
   /// Container for playback buttons
   let fragPlaybackBtnsView = ClickThroughView()
@@ -801,21 +800,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     if playSlider.trackingAreas.isEmpty {
       playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds,
-                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved],
                                                 owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
     }
     // Track the thumbs on the progress bar representing the A-B loop points and treat them as part
     // of the slider.
     if playSlider.abLoopA.trackingAreas.count <= 1 {
-      playSlider.abLoopA.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopA.bounds, options:  [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
+      playSlider.abLoopA.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopA.bounds, options:  [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
     }
     if playSlider.abLoopB.trackingAreas.count <= 1 {
-      playSlider.abLoopB.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopB.bounds, options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
+      playSlider.abLoopB.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopB.bounds, options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
     }
 
     if volumeSlider.trackingAreas.isEmpty {
       volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds,
-                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved],
                                                   owner: self, userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
     }
     // truncate middle for title

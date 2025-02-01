@@ -471,17 +471,10 @@ extension PlayerWindowController {
     case .playerWindow:
       isMouseInWindow = true
       showFadeableViews(duration: 0)
-    case .playSlider:
-      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-      // Do not use `event.locationInWindow` as it can be stale. Need to guard against
-      // false positives caused by events being queued during mouseDown of something else.
-      let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    case .volumeSlider:
-      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-      refreshVolumeSliderHoverEffect()
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseEntered(with: event)
+    default:
+      break
     }
   }
 
@@ -503,16 +496,10 @@ extension PlayerWindowController {
         // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
         fadeableViews.hideTimer.restart()
       }
-    case .playSlider:
-      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-      // Do not use `event.locationInWindow`: it can be stale
-      let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    case .volumeSlider:
-      guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-      refreshVolumeSliderHoverEffect()
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseExited(with: event)
+    default:
+      break
     }
   }
 
@@ -550,7 +537,7 @@ extension PlayerWindowController {
     }
 
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    refreshVolumeSliderHoverEffect()
+    volumeSliderCell.refreshVolumeSliderHoverEffect()
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
@@ -560,25 +547,6 @@ extension PlayerWindowController {
 
     // Always hide after timeout even if OSD fade time is longer
     restartHideCursorTimer()
-  }
-
-  func refreshVolumeSliderHoverEffect() {
-    let priorHoverState = isMouseHoveringOverVolumeSlider
-    let newHoverState = isMouseActuallyInside(view: volumeSlider)
-    isMouseHoveringOverVolumeSlider = newHoverState
-
-    if priorHoverState != newHoverState {
-      volumeSlider.needsDisplay = true
-    }
-    if isMouseHoveringOverVolumeSlider {
-      (volumeSlider.cell as! VolumeSliderCell).hoverTimer.restart()
-    } else {
-      (volumeSlider.cell as! VolumeSliderCell).hoverTimer.cancel()
-    }
-  }
-
-  var mouseLocationInWindow: NSPoint {
-    return window!.convertPoint(fromScreen: NSEvent.mouseLocation)
   }
 
   func isMouseActuallyInside(view: NSView) -> Bool {

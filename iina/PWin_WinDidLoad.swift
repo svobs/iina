@@ -578,7 +578,10 @@ extension PlayerWindowController {
 
     // Volume slider
     fragVolumeView.addSubview(volumeSlider)
-    volumeSlider.cell = VolumeSliderCell()
+    volumeSlider.cell = volumeSliderCell
+    // For some reason this needs to be set here, instead of in volumeSliderCell init.
+    // Otherwise action will continue to be nil...
+    volumeSliderCell.hoverTimer.action = volumeSliderCell.refreshVolumeSliderHoverEffect
     volumeSlider.identifier = .init("VolumeSlider")
     volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false

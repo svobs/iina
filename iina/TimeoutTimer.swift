@@ -40,8 +40,6 @@ class TimeoutTimer {
 
   @objc private func timeoutReached() {
     cancel()
-    if let action {
-      action()
-    }
+    action!()
   }
 }

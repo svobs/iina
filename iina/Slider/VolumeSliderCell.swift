@@ -10,12 +10,16 @@ import Cocoa
 
 /// See also: `PlaySliderCell`
 class VolumeSliderCell: ScrollableSliderCell {
+
+  var isMouseHoveringOverVolumeSlider = false
+
+  /// Calls `wc.refreshVolumeSliderHoverEffect` on timeout
+  let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
+
   override var enableDrawKnob: Bool {
     guard let wc else { return false }
-    return !player.windowController.currentLayout.useSliderFocusEffect || wc.isScrollingOrDraggingVolumeSlider || wc.isMouseHoveringOverVolumeSlider
+    return !wc.currentLayout.useSliderFocusEffect || wc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider
   }
-
-  let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
 
   override var currentKnobType: KnobFactory.KnobType {
     isHighlighted ? .volumeKnobSelected : .volumeKnob
@@ -24,7 +28,7 @@ class VolumeSliderCell: ScrollableSliderCell {
   override func awakeFromNib() {
     minValue = 0
     maxValue = Double(Preference.integer(for: .maxVolume))
-    hoverTimer.action = self.hoverTimeout
+    hoverTimer.action = refreshVolumeSliderHoverEffect
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
@@ -48,8 +52,19 @@ class VolumeSliderCell: ScrollableSliderCell {
     }
   }
 
-  func hoverTimeout() {
-    wc?.refreshVolumeSliderHoverEffect()
+  @objc func refreshVolumeSliderHoverEffect() {
+    guard let wc else { return }
+    let priorHoverState = isMouseHoveringOverVolumeSlider
+    let newHoverState = wc.isMouseActuallyInside(view: slider)
+    isMouseHoveringOverVolumeSlider = newHoverState
+    if priorHoverState != newHoverState {
+      slider.needsDisplay = true
+    }
+    if newHoverState {
+      hoverTimer.restart()
+    } else {
+      hoverTimer.cancel()
+    }
   }
 
 }
