@@ -479,8 +479,7 @@ extension PlayerWindowController {
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
       guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-      isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
-      player.windowController.volumeSlider.needsDisplay = true
+      refreshVolumeSliderHoverEffect()
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseEntered(with: event)
     }
@@ -511,8 +510,7 @@ extension PlayerWindowController {
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     case .volumeSlider:
       guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-      isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
-      player.windowController.volumeSlider.needsDisplay = true
+      refreshVolumeSliderHoverEffect()
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseExited(with: event)
     }
@@ -528,7 +526,7 @@ extension PlayerWindowController {
     }
 
     // Do not use `event.locationInWindow`: it can be stale
-    let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+    let pointInWindow = mouseLocationInWindow
 
     /// Set or unset the cursor to `resizeLeftRight` if able to resize the sidebar
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
@@ -552,7 +550,7 @@ extension PlayerWindowController {
     }
 
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
+    refreshVolumeSliderHoverEffect()
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
@@ -564,9 +562,27 @@ extension PlayerWindowController {
     restartHideCursorTimer()
   }
 
+  func refreshVolumeSliderHoverEffect() {
+    let priorHoverState = isMouseHoveringOverVolumeSlider
+    let newHoverState = isMouseActuallyInside(view: volumeSlider)
+    isMouseHoveringOverVolumeSlider = newHoverState
+
+    if priorHoverState != newHoverState {
+      volumeSlider.needsDisplay = true
+    }
+    if isMouseHoveringOverVolumeSlider {
+      (volumeSlider.cell as! VolumeSliderCell).hoverTimer.restart()
+    } else {
+      (volumeSlider.cell as! VolumeSliderCell).hoverTimer.cancel()
+    }
+  }
+
+  var mouseLocationInWindow: NSPoint {
+    return window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+  }
+
   func isMouseActuallyInside(view: NSView) -> Bool {
-    let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-    return isPoint(pointInWindow, inAnyOf: [view])
+    return window!.isKeyWindow && isPoint(mouseLocationInWindow, inAnyOf: [view])
   }
 
   // assumes mouse is in window

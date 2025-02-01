@@ -15,6 +15,8 @@ class VolumeSliderCell: ScrollableSliderCell {
     return !player.windowController.currentLayout.useSliderFocusEffect || wc.isScrollingOrDraggingVolumeSlider || wc.isMouseHoveringOverVolumeSlider
   }
 
+  let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
+
   override var currentKnobType: KnobFactory.KnobType {
     isHighlighted ? .volumeKnobSelected : .volumeKnob
   }
@@ -22,6 +24,7 @@ class VolumeSliderCell: ScrollableSliderCell {
   override func awakeFromNib() {
     minValue = 0
     maxValue = Double(Preference.integer(for: .maxVolume))
+    hoverTimer.action = self.hoverTimeout
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
@@ -43,6 +46,10 @@ class VolumeSliderCell: ScrollableSliderCell {
       
       bf.drawBar(volBarImg, in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded)
     }
+  }
+
+  func hoverTimeout() {
+    wc?.refreshVolumeSliderHoverEffect()
   }
 
 }

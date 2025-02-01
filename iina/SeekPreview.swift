@@ -392,10 +392,6 @@ extension PlayerWindowController {
         }
       }
 
-      // Check focus & show/hide volume slider hover
-      isMouseHoveringOverVolumeSlider = isMouseActuallyInside(view: volumeSlider)
-      player.windowController.volumeSlider.needsDisplay = true
-
       if animateHide {
         hideSeekPreviewWithAnimation()
       } else {
