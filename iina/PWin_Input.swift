@@ -536,6 +536,7 @@ extension PlayerWindowController {
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
+    // Show Seek Preview on mouse hover. But favor the "active seeking" preview over the "hover" preview:
     if !isScrollingOrDraggingPlaySlider {
       refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
     }

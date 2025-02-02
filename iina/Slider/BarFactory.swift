@@ -102,12 +102,12 @@ class BarFactory {
     let chapterGapWidth: CGFloat = (barHeight_Normal * 0.5).rounded()
 
     // Focused AND is the current chapter, when media has more than 1 chapter:
-    let barHeight_FocusedCurrChapter: CGFloat = (barHeight_Normal * 7.0 / 3.0).rounded()
+    let barHeight_FocusedCurrChapter: CGFloat = (barHeight_Normal * Constants.Distance.Slider.unscaledFocusedCurrentChapterHeight_Multiplier).rounded()
     updateCurvature(using: barHeight_FocusedCurrChapter)
     let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
 
     /// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
-    let barHeight_FocusedNonCurrChapter: CGFloat = (barHeight_Normal * 5.0 / 3.0).rounded()
+    let barHeight_FocusedNonCurrChapter: CGFloat = (barHeight_Normal * Constants.Distance.Slider.unscaledFocusedNonCurrentChapterHeight_Multiplier).rounded()
     let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
 
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)

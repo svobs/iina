@@ -133,7 +133,7 @@ struct ControlBarGeometry {
 
       if !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
         // Is multi-line OSC
-        let playSliderHeight = min(barHeight * 0.5, Constants.Distance.minPlaySliderHeight * 2)
+        let playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
         // FIXME: here, `16` is duct tape. These icon calculations are all sorts of wrong
         fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_SpaceBetweenLines - 16
@@ -220,14 +220,14 @@ struct ControlBarGeometry {
     if mode == .musicMode || (position != .top && position != .bottom) {
       return 1.0
     }
-    return (playSliderHeight / Constants.Distance.minPlaySliderHeight * 0.7).clamped(to: 1.0...3.0)
+    return (playSliderHeight / Constants.Distance.Slider.minPlaySliderHeight * 0.7).clamped(to: 1.0...3.0)
   }
 
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
   /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
   /// of its bounds, to prevent clipping.
   var slidersBarHeightNormal: CGFloat {
-    return (sliderScale * 3.0).rounded()
+    return (sliderScale * Constants.Distance.Slider.unscaledBarNormalHeight).rounded()
   }
 
   var volumeIconHeight: CGFloat {
@@ -239,15 +239,15 @@ struct ControlBarGeometry {
   }
 
   var volumeSliderWidth: CGFloat {
-    return (70 * sliderScale).rounded()
+    return (Constants.Distance.Slider.unscaledVolumeSliderWidth * sliderScale).rounded()
   }
 
   var sliderKnobWidth: CGFloat {
-    return (Constants.Distance.slider_DefaultKnobWidth * sliderScale).rounded()
+    return (Constants.Distance.Slider.defaultKnobWidth * sliderScale).rounded()
   }
 
   var sliderKnobHeight: CGFloat {
-    return (Constants.Distance.slider_DefaultKnobHeight * sliderScale).rounded()
+    return (Constants.Distance.Slider.defaultKnobHeight * sliderScale).rounded()
   }
 
   // MARK: Computed props: Playback Controls

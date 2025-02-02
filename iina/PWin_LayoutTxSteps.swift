@@ -583,7 +583,7 @@ extension PlayerWindowController {
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
         playSliderHeightConstraint.animateToConstant(transition.outputLayout.controlBarGeo.playSliderHeight)
-        playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playslider_DefaultKnobHeight
+        playSlider.customCell.knobHeight = Constants.Distance.Slider.musicModeKnobHeight
 
         // move playback buttons
         if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {

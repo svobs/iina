@@ -303,13 +303,25 @@ struct Constants {
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
 
-    /// May be overridden
-    static let slider_DefaultKnobHeight: CGFloat = 15
-    static let slider_DefaultKnobWidth: CGFloat = 3
+    struct Slider {
+      /// May be overridden
+      static let defaultKnobWidth: CGFloat = 3
+      static let defaultKnobHeight: CGFloat = 15
 
-    static let minPlaySliderHeight: CGFloat = 20
+      static let musicModeKnobHeight: CGFloat = 12
+
+      static let unscaledVolumeSliderWidth: CGFloat = 70.0
+
+      static let unscaledBarNormalHeight: CGFloat = 3.0
+      static let unscaledFocusedCurrentChapterHeight_Multiplier: CGFloat = 7.0 / unscaledBarNormalHeight
+      static let unscaledFocusedNonCurrentChapterHeight_Multiplier: CGFloat = 5.0 / unscaledBarNormalHeight
+
+      static let minPlaySliderHeight: CGFloat = 20
+    }
+
     static let playSliderAndTimeLabelsViewHSpacing: CGFloat = 6
 
+    /// Should match the range of OSC height values in Settings > UI.
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 100
 
@@ -319,7 +331,7 @@ struct Constants {
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
     /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
-    static let multiLineOSC_minBarHeightThreshold: CGFloat = minOSCBarHeight + minPlaySliderHeight
+    static let multiLineOSC_minBarHeightThreshold: CGFloat = minOSCBarHeight + Slider.minPlaySliderHeight
 
     /// Negative == overlap
     static let multiLineOSC_SpaceBetweenLines: CGFloat = -8
@@ -371,8 +383,6 @@ struct Constants {
       static let defaultWindowWidth: CGFloat = minWindowWidth
       // Hide playlist if its height is too small to display at least 3 items:
       static let minPlaylistHeight: CGFloat = 138
-
-      static let playslider_DefaultKnobHeight: CGFloat = 12
     }
   }  /// end `struct Distance`
 
