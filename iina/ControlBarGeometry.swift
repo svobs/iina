@@ -220,7 +220,7 @@ struct ControlBarGeometry {
     if mode == .musicMode || (position != .top && position != .bottom) {
       return 1.0
     }
-    return (playSliderHeight / Constants.Distance.minPlaySliderHeight * 0.9).clamped(to: 1.0...3.0)
+    return (playSliderHeight / Constants.Distance.minPlaySliderHeight * 0.7).clamped(to: 1.0...3.0)
   }
 
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).

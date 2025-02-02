@@ -536,7 +536,9 @@ extension PlayerWindowController {
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
-    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+    if !isScrollingOrDraggingPlaySlider {
+      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+    }
     volumeSliderCell.refreshVolumeSliderHoverEffect()
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
