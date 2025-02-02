@@ -9,8 +9,6 @@
 /// For "bar"-type OSCs: `bottom` and `top` only - not `floating` or music mode.
 class SingleRowBarOSCView: ClickThroughStackView {
   static let id = "OSC_1RowView"
-  static let leadingMargin: CGFloat = 4
-  static let trailingMargin: CGFloat = 4
   let hStackView = ClickThroughStackView()
 
   init() {

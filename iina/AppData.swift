@@ -501,8 +501,9 @@ struct Images {
     return NSImage(named: name)!
   }
 
-  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", weight: .light, scale: .medium)
-  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", weight: .semibold, scale: .medium)
+  // Try to keep play & pause icons at the same pt size & scale for fewer animation problems
+  static let play = makeSymbol(named: "play.fill", fallbackName: "play", desc: "Play", ptSize: 11, weight: .light, scale: .large)
+  static let pause = makeSymbol(named: "pause.fill", fallbackName: "pause", desc: "Pause", ptSize: 11, weight: .black, scale: .large)
   static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning", weight: .black, scale: .small)
 
   static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s", weight: .medium , scale: .small)

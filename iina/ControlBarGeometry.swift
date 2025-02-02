@@ -141,7 +141,7 @@ struct ControlBarGeometry {
         // Is single-line OSC
         self.playSliderHeight = barHeight
         // Reduce max button size so they don't touch edges or (if .top) icons above
-        fullIconHeight = barHeight - (oscPosition == .top ? 8 : 4)
+        fullIconHeight = barHeight - 8
       }
 
       if forceSingleRowStyle || oscPosition == .top {
