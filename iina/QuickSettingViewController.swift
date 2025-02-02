@@ -229,6 +229,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // colors
     withAllTableViews { tableView, _ in tableView.backgroundColor = NSColor.sidebarTableBackground }
 
+    updateVerticalConstraints()
+
     if pendingSwitchRequest == nil {
       updateTabButtons()
     } else {

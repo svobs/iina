@@ -52,7 +52,7 @@ class VolumeSliderCell: ScrollableSliderCell {
     }
   }
 
-  @objc func refreshVolumeSliderHoverEffect() {
+  func refreshVolumeSliderHoverEffect() {
     guard let wc else { return }
     let priorHoverState = isMouseHoveringOverVolumeSlider
     let newHoverState = wc.isMouseActuallyInside(view: slider)

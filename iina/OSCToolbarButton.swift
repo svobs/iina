@@ -52,7 +52,7 @@ class OSCToolbarButton: SymButton {
       widthConstraint.animateToConstant(iconSize)
     } else {
       let constraint = widthAnchor.constraint(equalToConstant: iconSize)
-      constraint.priority = .defaultHigh
+      constraint.priority = .required
       constraint.isActive = true
       self.widthConstraint = constraint
     }

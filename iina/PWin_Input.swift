@@ -550,7 +550,7 @@ extension PlayerWindowController {
   }
 
   func isMouseActuallyInside(view: NSView) -> Bool {
-    return window!.isKeyWindow && isPoint(mouseLocationInWindow, inAnyOf: [view])
+    return isPoint(mouseLocationInWindow, inAnyOf: [view])
   }
 
   // assumes mouse is in window
