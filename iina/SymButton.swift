@@ -7,10 +7,6 @@
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView, NSAccessibilityButton {
-  var pwc: PlayerWindowController? {
-    window?.windowController as? PlayerWindowController
-  }
-
   var bounceOnClick: Bool = false
 
   var regularColor: NSColor? = nil

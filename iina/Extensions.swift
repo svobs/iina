@@ -2028,8 +2028,12 @@ extension NSControl {
 }
 
 extension NSView {
+  var pwc: PlayerWindowController? {
+    window?.windowController as? PlayerWindowController
+  }
+  
   var associatedPlayer: PlayerCore? {
-    return (window?.windowController as? PlayerWindowController)?.player
+    return pwc?.player
   }
 
   var frameInWindowCoords: NSRect {

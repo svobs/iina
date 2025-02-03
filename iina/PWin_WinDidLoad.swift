@@ -358,19 +358,19 @@ extension PlayerWindowController {
     playButton.target = self
     playButton.action = #selector(playButtonAction(_:))
     playButton.refusesFirstResponder = true
-    playButton.identifier = .init("playButton")  // helps with debug logging
+    playButton.identifier = .init("PlayButton")  // helps with debug logging
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     let playIconSize = oscGeo.playIconSize
     playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: playIconSize)
-    playBtnWidthConstraint.identifier = .init("playBtnWidthConstraint")
+    playBtnWidthConstraint.identifier = .init("PlayBtnWidthConstraint")
     playBtnWidthConstraint.priority = .init(850)  // allow to shrink for animations or speedLabel
     playBtnWidthConstraint.isActive = true
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
     let playbackBtnsVStackView = ClickThroughStackView()
-    playbackBtnsVStackView.identifier = .init("playbackBtnsVStackView")
+    playbackBtnsVStackView.identifier = .init("PlaybackBtnsVStackView")
     playbackBtnsVStackView.orientation = .vertical
     playbackBtnsVStackView.alignment = .centerX
     playbackBtnsVStackView.detachesHiddenViews = true
@@ -463,7 +463,7 @@ extension PlayerWindowController {
   }
 
   private func initSpeedLabel() {
-    speedLabel.identifier = .init("speedLabel")  // helps with debug logging
+    speedLabel.idString = "SpeedLabel"  // helps with debug logging
     speedLabel.translatesAutoresizingMaskIntoConstraints = false
     speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
     speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -487,6 +487,7 @@ extension PlayerWindowController {
 
   private func initPlayPositionViews() {
     // - Configure playSliderAndTimeLabelsView
+    playSliderAndTimeLabelsView.idString = "PlaySliderAndTimeLabelsView"
     playSliderAndTimeLabelsView.translatesAutoresizingMaskIntoConstraints = false
     playSliderAndTimeLabelsView.userInterfaceLayoutDirection = .leftToRight
     playSliderAndTimeLabelsView.setContentHuggingPriority(.init(249), for: .horizontal)
@@ -495,7 +496,7 @@ extension PlayerWindowController {
 
     // - Configure subviews
 
-    leftTimeLabel.identifier = .init("PlayPosition-LeftTimeLabel")
+    leftTimeLabel.idString = "PlayPos-LeftTimeLabel"
     leftTimeLabel.alignment = .right
     leftTimeLabel.isBordered = false
     leftTimeLabel.drawsBackground = false
@@ -505,18 +506,18 @@ extension PlayerWindowController {
     leftTimeLabel.setContentHuggingPriority(.init(501), for: .horizontal)
     leftTimeLabel.setContentCompressionResistancePriority(.init(501), for: .horizontal)
 
-    playSlider.identifier = .init("PlaySlider")
+    playSlider.idString = "PlaySlider"
     playSlider.minValue = 0
     playSlider.maxValue = 100
     playSlider.isContinuous = true
     playSlider.refusesFirstResponder = true
     playSlider.translatesAutoresizingMaskIntoConstraints = false
     playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: 20)
-    playSliderHeightConstraint.identifier = .init("PlaySlider-HeightConstraint")
+    playSliderHeightConstraint.identifier = "PlaySlider-HeightConstraint"
     playSliderHeightConstraint.priority = .init(900)
     playSliderHeightConstraint.isActive = true
 
-    rightTimeLabel.identifier = .init("PlayPosition-RightTimeLabel")
+    rightTimeLabel.idString = "PlayPos-RightTimeLabel"
     rightTimeLabel.alignment = .left
     rightTimeLabel.isBordered = false
     rightTimeLabel.drawsBackground = false

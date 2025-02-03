@@ -16,7 +16,7 @@ class TwoRowBarOSCView: ClickThroughView {
 
   init() {
     super.init(frame: .zero)
-    identifier = .init(TwoRowBarOSCView.id)
+    idString = TwoRowBarOSCView.id
     translatesAutoresizingMaskIntoConstraints = false
     wantsLayer = true
     layer?.backgroundColor = .clear
@@ -33,7 +33,8 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView.addConstraintsToFillSuperview(leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
                                              trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
     hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0.0)
-    hStackView_BottomMarginConstraint.priority = .defaultLow  // for now
+    hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
+    relaxConstraints()
     hStackView_BottomMarginConstraint.isActive = true
   }
 
@@ -41,27 +42,41 @@ class TwoRowBarOSCView: ClickThroughView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  /// Should be called when no longer needed (for now anyway).
+  /// Discards enough of the state to prevent this view & its constraints from causing problems with other layout.
+  func disuse() {
+    relaxConstraints()
+    if let pwc {
+      if subviews.contains(pwc.playSliderAndTimeLabelsView) {
+        pwc.playSliderAndTimeLabelsView.removeFromSuperview()
+      }
+    }
+    hStackView.removeAllSubviews()
+    removeFromSuperview()
+  }
+
   func updateSubviews(from pwc: PlayerWindowController, _ oscGeo: ControlBarGeometry) {
     // Avoid constraint violations while we change things below
-    hStackView_BottomMarginConstraint.priority = .defaultLow
-    intraRowSpacingConstraint?.priority = .defaultLow
+    relaxConstraints()
 
     let playSliderAndTimeLabelsView = pwc.playSliderAndTimeLabelsView
     let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
 
     if !subviews.contains(playSliderAndTimeLabelsView) {
       addSubview(playSliderAndTimeLabelsView)
-
       playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
                                                                 trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
       intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: -bottomMargin)
+      intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"
+      intraRowSpacingConstraint.priority = .defaultLow  // for now
       intraRowSpacingConstraint.isActive = true
     }
 
     pwc.log.verbose("TwoRowOSC bottomMargin: \(bottomMargin)")
     intraRowSpacingConstraint.animateToConstant(-bottomMargin)
     hStackView_BottomMarginConstraint.animateToConstant(bottomMargin)
-    hStackView_BottomMarginConstraint.priority = .required  // restore priority now that we're done
+    // Restore enforcement of consraints now that we're done:
+    hStackView_BottomMarginConstraint.priority = .required
     intraRowSpacingConstraint.priority = .required
 
     // [Re-]add views to hstack
@@ -76,5 +91,10 @@ class TwoRowBarOSCView: ClickThroughView {
     if let toolbarView = pwc.fragToolbarView {
       hStackView.setVisibilityPriority(.detachEarlier, for: toolbarView)
     }
+  }
+
+  func relaxConstraints() {
+    hStackView_BottomMarginConstraint.priority = .defaultLow
+    intraRowSpacingConstraint?.priority = .defaultLow
   }
 }

@@ -132,8 +132,15 @@ struct ControlBarGeometry {
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
       if !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
-        // Is multi-line OSC
-        let playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2).rounded()
+        // Is 2-row OSC
+        let playSliderHeight: CGFloat
+        if Constants.twoRowOSC_LimitPlaySliderHeight {
+          // Cap PlaySlider height at 2x its minimum
+          playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2).rounded()
+        } else {
+          // Use half the bar height for the play slider
+          playSliderHeight = (barHeight * 0.5).rounded()
+        }
         self.playSliderHeight = playSliderHeight
         let excessPlaySliderHeight_Halved = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: playSliderHeight)
         let remainingFreeHeight = barHeight - playSliderHeight - excessPlaySliderHeight_Halved
