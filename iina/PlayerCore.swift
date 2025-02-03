@@ -1282,10 +1282,10 @@ class PlayerCore: NSObject {
   /// If `forceResume` is `true`, then always resume if paused; if `false`, never resume if paused;
   /// if `nil`, then resume if paused based on pref setting.
   func setSpeed(_ speed: Double, forceResume: Bool? = nil) {
-    let speedTrunc = speed.truncatedTo6()
-    info.playSpeed = speedTrunc  // set preemptively to keep UI in sync
+    let speedRounded = speed.roundedTo6()
+    info.playSpeed = speedRounded  // set preemptively to keep UI in sync
     mpv.queue.async { [self] in
-      _setSpeed(speedTrunc, forceResume: forceResume)
+      _setSpeed(speedRounded, forceResume: forceResume)
     }
   }
 
@@ -1427,7 +1427,7 @@ class PlayerCore: NSObject {
         log.verbose{"Updating mpv window-scale from videoSize=\(windowGeo.videoSize): \(currentVideoScale) → \(desiredVideoScale)"}
 
         let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeo.screenID).backingScaleFactor
-        let adjustedVideoScale = (desiredVideoScale * backingScaleFactor).truncatedTo6()
+        let adjustedVideoScale = (desiredVideoScale * backingScaleFactor).roundedTo6()
         log.verbose{"Adjusted videoScale from windowGeo (\(desiredVideoScale)) * BSF (\(backingScaleFactor)) → sending mpv \(adjustedVideoScale)"}
         mpv.setDouble(MPVProperty.windowScale, adjustedVideoScale)
 

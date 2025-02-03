@@ -758,10 +758,16 @@ extension CGSize: @retroactive CustomStringConvertible {
   var widthInt: Int { Int(width) }
   var heightInt: Int { Int(height) }
 
+  /// Returns a new `CGSize` which equals this `CGSize` but with both `width` &
+  /// `height` rounded to the the nearest integer.
+  func rounded() -> CGSize {
+    return CGSize(width: width.rounded(), height: height.rounded())
+  }
+
   /// Finds the smallest box whose size matches the given `aspect` but with width >= `minWidth` & height >= `minHeight`.
   /// Note: `minWidth` & `minHeight` can be any positive integers. They do not need to match `aspect`.
   static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
-    let sizeKeepingMinWidth = NSSize(width: minWidth, height: round(minWidth / aspect))
+    let sizeKeepingMinWidth = CGSize(width: minWidth, height: round(minWidth / aspect))
     if sizeKeepingMinWidth.height >= minHeight {
       return sizeKeepingMinWidth
     }

@@ -596,13 +596,13 @@ extension PlayerWindowController {
         // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
         // FIXME: regression: viewport keeps expanding when video runs into screen boundary
-        let videoSizeScaled = oldVideoGeo.videoSizeCAR * desiredVideoScale
+        let videoSizeScaled = (oldVideoGeo.videoSizeCAR * desiredVideoScale).rounded()
         let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         let screenFit: ScreenFit = .stayInside
         let newGeometry = newGeoUnconstrained.refitted(using: screenFit)
 
-        log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVideoGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
+        log.verbose("SetVideoScale: reqScale=\(desiredVideoScale)x, oldVideoSize=\(oldVideoGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
         buildApplyWindowGeoTasks(newGeometry, thenRun: true)
       }
     }

@@ -1168,7 +1168,8 @@ class MPVController: NSObject {
   func getVideoScale() -> Double {
     let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
     let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
-    return mpvVideoScale / backingScaleFactor
+    // Use 6 decimals to be consistent with both mpv & IINA calculations
+    return (mpvVideoScale / backingScaleFactor).roundedTo6()
   }
 
   // MARK: - Hooks

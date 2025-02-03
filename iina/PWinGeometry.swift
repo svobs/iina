@@ -286,9 +286,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   func mpvVideoScale() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
     let backingScaleFactor = screen.backingScaleFactor
-    let videoWidthScaled = (videoSize.width * backingScaleFactor).truncatedTo6()
+    let videoWidthScaled = (videoSize.width * backingScaleFactor).roundedTo6()
     let videoSizeCAR = video.videoSizeCAR
-    let videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
+    let videoScale = (videoWidthScaled / videoSizeCAR.width).roundedTo6()
     log.verbose("[geo] Derived videoScale from cached vidGeo. GeoVideoSize=\(videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
     return videoScale
   }
