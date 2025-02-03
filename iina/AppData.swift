@@ -155,7 +155,8 @@ struct Constants {
 
   static let symButtonImageTransitionSpeed = 2.0
 
-  static let twoRowOSC_LimitPlaySliderHeight = true
+  // Should PlaySlider height be capped at 2x its minimum?
+  static let twoRowOSC_LimitPlaySliderHeight = false
 
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {

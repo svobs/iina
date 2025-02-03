@@ -73,6 +73,8 @@ class TwoRowBarOSCView: ClickThroughView {
     }
 
     pwc.log.verbose("TwoRowOSC bottomMargin: \(bottomMargin)")
+    // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top
+    // (and overlapping with the btm of the play slider, but that is just empty space not being used anyway).
     intraRowSpacingConstraint.animateToConstant(-bottomMargin)
     hStackView_BottomMarginConstraint.animateToConstant(bottomMargin)
     // Restore enforcement of consraints now that we're done:

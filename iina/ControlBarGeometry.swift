@@ -225,10 +225,20 @@ struct ControlBarGeometry {
   var playSliderHeight: CGFloat
 
   var sliderScale: CGFloat {
-    if mode == .musicMode || (position != .top && position != .bottom) {
+    if mode == .musicMode {
       return 1.0
     }
-    return (playSliderHeight * 0.8 / Constants.Distance.Slider.minPlaySliderHeight).clamped(to: 1.0...3.0)
+
+    let scaleMultiplier: CGFloat
+    switch position {
+    case .floating:
+      return 1.0
+    case .top:
+      scaleMultiplier = 0.4
+    case .bottom:
+      scaleMultiplier = 0.8
+    }
+    return (playSliderHeight * scaleMultiplier / Constants.Distance.Slider.minPlaySliderHeight).clamped(to: 1.0...3.0)
   }
 
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
