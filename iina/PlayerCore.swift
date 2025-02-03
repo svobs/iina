@@ -158,7 +158,11 @@ class PlayerCore: NSObject {
 
   var syncUITimer: Timer?
 
-  var isUsingMpvOSD = false
+  var isUsingMpvOSD = false {
+    didSet {
+      log.verbose("Updated isUsingMpvOSD=\(isUsingMpvOSD.yn)")
+    }
+  }
 
   var state: LifecycleState = .notYetStarted {
     didSet {
@@ -2811,9 +2815,12 @@ class PlayerCore: NSObject {
 
   func subDelayChanged(_ delay: Double) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    info.subDelay = delay
-    sendOSD(.subDelay(delay))
-    saveState()
+    if info.subDelay != delay {
+      log.verbose{"Δ mpv prop: `sub-delay` = \(delay)"}
+      info.subDelay = delay
+      sendOSD(.subDelay(delay))
+      saveState()
+    }
     reloadQuickSettingsView()
   }
 

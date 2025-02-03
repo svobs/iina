@@ -108,6 +108,7 @@ class MPVController: NSObject {
     MPVOption.PlaybackControl.pause: MPV_FORMAT_FLAG,
     MPVOption.PlaybackControl.loopPlaylist: MPV_FORMAT_STRING,
     MPVOption.PlaybackControl.loopFile: MPV_FORMAT_STRING,
+    MPVOption.OSD.osdLevel: MPV_FORMAT_INT64,
     MPVProperty.chapter: MPV_FORMAT_INT64,
     MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
     MPVOption.Video.hwdec: MPV_FORMAT_STRING,
@@ -340,7 +341,7 @@ class MPVController: NSObject {
         userOptions = opts.filter{ $0.count > 0 && !$0[0].isEmpty }
       } else {
         userOptions = []
-        DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+        DispatchQueue.main.async {  // do not block at startup! Must avoid deadlock in static initializers
           Utility.showAlert("extra_option.cannot_read")
         }
       }
@@ -362,13 +363,13 @@ class MPVController: NSObject {
 
     // - Advanced
 
-    // disable internal OSD
     let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
-    // FIXME: need to keep this synced with useMpvOsd during run
     player.isUsingMpvOSD = useMpvOSD
     if useMpvOSD {
+      // If using mpv OSD, then disable IINA's OSD
       player.hideOSD()
     } else {
+      // Otherwise disable mpv OSD
       chkErr(mpv_set_option_string(mpv, MPVOption.OSD.osdLevel, "0"))
     }
 
@@ -1238,7 +1239,7 @@ class MPVController: NSObject {
 
     case MPV_EVENT_LOG_MESSAGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
-      guard let dataPtr = UnsafeMutablePointer<mpv_event_log_message>(dataOpaquePtr) else { return }
+      guard let dataPtr = UnsafeMutablePointer<mpv_event_log_message>(dataOpaquePtr) else { break }
       let prefix = String(cString: (dataPtr.pointee.prefix)!)
       let level = String(cString: (dataPtr.pointee.level)!)
       let text = String(cString: (dataPtr.pointee.text)!)
@@ -1296,7 +1297,7 @@ class MPVController: NSObject {
     case MPV_EVENT_END_FILE:
       // if receive end-file when loading file, might be error
       // wait for idle
-      guard let dataPtr = UnsafeMutablePointer<mpv_event_end_file>(OpaquePointer(event.pointee.data)) else { return }
+      guard let dataPtr = UnsafeMutablePointer<mpv_event_end_file>(OpaquePointer(event.pointee.data)) else { break }
       let reasonString = dataPtr.pointee.reasonString
       let reason = event!.pointee.data.load(as: mpv_end_file_reason.self)
       // let reasonString = dataPtr.pointee.reasonString
@@ -1316,7 +1317,7 @@ class MPVController: NSObject {
           DispatchQueue.main.async {
             Utility.showAlert("screenshot.error_taking")
           }
-          return
+          break
         }
         player.screenshotCallback()
       } else if reply == MPVController.UserData.screenshotRaw {
@@ -1330,7 +1331,7 @@ class MPVController: NSObject {
           DispatchQueue.main.async {
             Utility.showAlert("screenshot.error_taking")
           }
-          return
+          break
         }
 
         // TODO: implement parsing of screenshot-raw!
@@ -1441,11 +1442,21 @@ class MPVController: NSObject {
       }
       player.syncUI(.loop)
 
+    case MPVOption.OSD.osdLevel:
+      guard let level = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee else { break }
+      player.log.verbose{"Δ mpv prop: `osdLevel` = \(level)"}
+      let isUsingMpvOSD: Bool = level != 0
+      player.isUsingMpvOSD = isUsingMpvOSD
+      if isUsingMpvOSD {
+        // If using mpv OSD, then disable IINA's OSD
+        player.hideOSD()
+      }
+
     case MPVOption.Video.deinterlace:
       guard let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else { break }
       // this property will fire a change event at file start
       if player.info.deinterlace != data {
-        player.log.verbose("Δ mpv prop: `deinterlace` = \(data)")
+        player.log.verbose{"Δ mpv prop: `deinterlace` = \(data.yesno)"}
         player.info.deinterlace = data
         player.sendOSD(.deinterlace(data))
       }
@@ -1454,6 +1465,7 @@ class MPVController: NSObject {
     case MPVOption.Video.hwdec:
       let data = String(cString: property.data.assumingMemoryBound(to: UnsafePointer<UInt8>.self).pointee)
       if player.info.hwdec != data {
+        player.log.verbose{"Δ mpv prop: `hwdec` = \(data)"}
         player.info.hwdec = data
         player.sendOSD(.hwdec(player.info.hwdecEnabled))
       }
@@ -1486,9 +1498,11 @@ class MPVController: NSObject {
         break
       }
       let delay = delayUnrounded.roundedTo6()
-      player.log.verbose("Δ mpv prop: `audio-delay` = \(delay)")
-      player.info.audioDelay = delay
-      player.sendOSD(.audioDelay(delay))
+      if player.info.audioDelay != delay {
+        player.log.verbose{"Δ mpv prop: `audio-delay` = \(delay)"}
+        player.info.audioDelay = delay
+        player.sendOSD(.audioDelay(delay))
+      }
       player.reloadQuickSettingsView()
 
     case MPVOption.Subtitles.subVisibility:
@@ -1512,7 +1526,7 @@ class MPVController: NSObject {
         logPropertyValueError(name, property.format)
         break
       }
-      player.log.verbose("Δ mpv prop: `secondary-sub-delay` = \(data)")
+      player.log.verbose{"Δ mpv prop: `secondary-sub-delay` = \(data)"}
 
       player.secondarySubDelayChanged(data)
 
@@ -1521,7 +1535,6 @@ class MPVController: NSObject {
         logPropertyValueError(name, property.format)
         break
       }
-      player.log.verbose("Δ mpv prop: `sub-delay` = \(data)")
       player.subDelayChanged(data)
 
     case MPVOption.Subtitles.subScale:
@@ -1688,10 +1701,10 @@ class MPVController: NSObject {
       do {
         let dataNode = UnsafeMutablePointer<mpv_node>(OpaquePointer(property.data))?.pointee
         let inputBindingArray = try MPVNode.parse(dataNode!)
-        let keyMappingList = toKeyMappings(inputBindingArray, filterCommandsBy: { s in return true} )
+        let keyMappingList = toKeyMappings(inputBindingArray, filterCommandsBy: { s in true} )
 
         let mappingListStr = keyMappingList.enumerated().map { (index, mapping) in
-          return "\t\(String(format: "%03d", index))   \(mapping.confFileFormat)"
+          "\t\(String(format: "%03d", index))   \(mapping.confFileFormat)"
         }.joined(separator: "\n")
 
         player.log.verbose("Δ mpv prop: \(MPVProperty.inputBindings.quoted)≔\n\(mappingListStr)")
@@ -1705,6 +1718,9 @@ class MPVController: NSObject {
 
     }
 
+    let listeners = player.events.listeners
+    guard !listeners.isEmpty else { return }  // optimization: don't enqueue anything if there are no listeners
+    
     // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
     // plugins from a task in this queue. Accessing EventController data from a thread in this queue
     // results in data races that can cause a crash. See issue 3986.
