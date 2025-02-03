@@ -31,7 +31,7 @@ class SingleRowBarOSCView: ClickThroughStackView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func updateControls(from pwc: PlayerWindowController) {
+  func updateSubviews(from pwc: PlayerWindowController) {
     var views: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView]
 
     if let fragToolbarView = pwc.fragToolbarView {

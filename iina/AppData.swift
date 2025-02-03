@@ -329,13 +329,18 @@ struct Constants {
     /// be offset from the one before it by this amount, by +X and -Y (points, not pixels).
     static let multiWindowOpenOffsetIncrement = 20.0
 
-    /// If OSC is shorter than this, never show the speed label
+    /// If OSC is shorter than this, never show the speed label.
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
-    /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
-    static let multiLineOSC_minBarHeightThreshold: CGFloat = minOSCBarHeight + Slider.minPlaySliderHeight
 
-    /// Negative == overlap
-    static let multiLineOSC_SpaceBetweenLines: CGFloat = -8
+    struct TwoRowOSC {
+      /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
+      static let minQualifyingBarHeight: CGFloat = minOSCBarHeight + Slider.minPlaySliderHeight
+
+      /// Negative == overlap
+      static let spacingBetweenRows: CGFloat = -4
+      static let leadingStackViewMargin: CGFloat = 4
+      static let trailingStackViewMargin: CGFloat = 4
+    }
 
     /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
     /// their images)

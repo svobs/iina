@@ -133,9 +133,11 @@ struct ControlBarGeometry {
 
       if !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
         // Is multi-line OSC
-        let playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2)
+        let playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2).rounded()
         self.playSliderHeight = playSliderHeight
-        fullIconHeight = barHeight - playSliderHeight + Constants.Distance.multiLineOSC_SpaceBetweenLines
+        let excessPlaySliderHeight_Halved = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: playSliderHeight)
+        let remainingFreeHeight = barHeight - playSliderHeight - excessPlaySliderHeight_Halved
+        fullIconHeight = remainingFreeHeight
       } else {
         // Is single-line OSC
         self.playSliderHeight = barHeight
@@ -219,7 +221,7 @@ struct ControlBarGeometry {
     if mode == .musicMode || (position != .top && position != .bottom) {
       return 1.0
     }
-    return (playSliderHeight / Constants.Distance.Slider.minPlaySliderHeight * 0.7).clamped(to: 1.0...3.0)
+    return (playSliderHeight * 0.8 / Constants.Distance.Slider.minPlaySliderHeight).clamped(to: 1.0...3.0)
   }
 
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
@@ -264,11 +266,20 @@ struct ControlBarGeometry {
     }
     switch position {
     case .floating:
-      return 10
+      return 11.0
     case .top, .bottom:
-      let normalSize = 9.0
-      return (sliderScale * normalSize).rounded()
+      let normalSize = 11.0
+      return (sliderScale * normalSize).rounded().clamped(to:11...32)
     }
+  }
+
+  /// Font size for Seek Preview time label (shown while hovering over PlaySlider and/or seeking).
+  var seekPreviewTimeLabelFontSize: CGFloat {
+    if mode == .musicMode {
+      return 11.0
+    }
+    let normalSize = 11.0
+    return (sliderScale * 1.1 * normalSize).rounded().clamped(to:11...24)
   }
 
   var speedLabelFontSize: CGFloat {
@@ -277,15 +288,6 @@ struct ControlBarGeometry {
     let deficit: CGFloat = max(0.0, idealSize - freeHeight)
     let compromise = idealSize - (0.5 * deficit)
     return compromise.clamped(to: 8...32)
-  }
-
-  /// Font size for Seek Preview time label (shown while hovering over PlaySlider and/or seeking).
-  var seekPreviewTimeLabelFontSize: CGFloat {
-    if mode == .musicMode {
-      return 9
-    }
-    let normalSize = 11.0
-    return (sliderScale * normalSize).rounded().clamped(to:11...24)
   }
 
   /// Width of left, right, play btns + their spacing.
@@ -387,6 +389,14 @@ struct ControlBarGeometry {
 
   static func canUseMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
     guard position == .bottom else { return false }
-    return barHeight >= Constants.Distance.multiLineOSC_minBarHeightThreshold
+    return barHeight >= Constants.Distance.TwoRowOSC.minQualifyingBarHeight
+  }
+
+  /// Derives desired bottom margin from playSliderHeight (TwoRowOSC style only)
+  static func twoRowOSC_BottomMargin(playSliderHeight: CGFloat) -> CGFloat {
+    let minimum = 2.0
+    // Assume that 1/2 of slider vertical space is empty once it exceeds its minimum height.
+    // We want 1/2 of that space (so, 1/4 of slider space total when slider is larger than normal).
+    return minimum + ((playSliderHeight - Constants.Distance.Slider.minPlaySliderHeight) * 0.25).rounded()
   }
 }

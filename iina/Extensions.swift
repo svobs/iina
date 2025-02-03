@@ -2112,8 +2112,7 @@ extension NSView {
       trailingConstraint.isActive = true
     }
     if let bottom = bottom {
-      // Y origin is at bottom, but (+) offset goes UP from superview bottom
-      let bottomConstraint = bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: bottom)
+      let bottomConstraint = superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: bottom)
       bottomConstraint.isActive = true
     }
   }
