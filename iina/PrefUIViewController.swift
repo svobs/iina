@@ -245,6 +245,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       updateSidebarSectionFromPrefs()
     case PK.oscBarHeight,
       PK.controlBarToolbarButtons,
+      PK.oscForceSingleRow,
       PK.oscBarPlayIconSizeTicks,
       PK.oscBarPlayIconSpacingTicks,
       PK.oscBarToolIconSizeTicks,

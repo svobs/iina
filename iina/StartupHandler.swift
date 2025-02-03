@@ -57,11 +57,16 @@ class StartupHandler {
 
   // Command Line
 
-  private var commandLineStatus = CommandLineStatus()
+  private var commandLineStatus: CommandLineStatus? = nil
+
+  var isCommandLine: Bool {
+    commandLineStatus != nil
+  }
 
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
   var shouldIgnoreOpenFile: Bool {
-    return commandLineStatus.isCommandLine && !state.isDone
+    guard isCommandLine else { return false }
+    return !state.isDone
   }
 
   // MARK: Init
@@ -74,9 +79,7 @@ class StartupHandler {
     // Restore window state *before* hooking up the listener which saves state.
     restoreWindowsFromPreviousLaunch()
 
-    if commandLineStatus.isCommandLine {
-      startFromCommandLine()
-    }
+    commandLineStatus?.startFromCommandLine()
 
     state = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
@@ -94,7 +97,7 @@ class StartupHandler {
       return false
     }
 
-    if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
+    if isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
       log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
       UIState.shared.disableSaveAndRestoreUntilNextLaunch()
       return false
@@ -406,7 +409,7 @@ class StartupHandler {
     state = .doneOpening
 
     let didOpenSomething = didRestoreSomething || wcsForOpenFiles != nil
-    if !commandLineStatus.isCommandLine && !didOpenSomething {
+    if !isCommandLine && !didOpenSomething {
       // Fall back to default action:
       AppDelegate.shared.doLaunchOrReopenAction()
     }
@@ -476,62 +479,98 @@ class StartupHandler {
 
   // MARK: - Command Line
 
-  // TODO: refactor to put this all in CommandLineStatus class
-  func parseCommandLine(_ args: ArraySlice<String>) {
-    var iinaArgs: [String] = []
-    var iinaArgFilenames: [String] = []
-    var dropNextArg = false
+  func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
+    commandLineStatus = CommandLineStatus(cmdLineArgs)
+  }
+}
 
-    Logger.log("Command-line arguments \("\(args)".pii)")
-    for arg in args {
-      if dropNextArg {
-        dropNextArg = false
-        continue
-      }
-      if arg.first == "-" {
-        let indexAfterDash = arg.index(after: arg.startIndex)
-        if indexAfterDash == arg.endIndex {
-          // single '-'
-          commandLineStatus.isStdin = true
-        } else if arg[indexAfterDash] == "-" {
-          // args starting with --
-          iinaArgs.append(arg)
-        } else {
-          // args starting with -
-          dropNextArg = true
-        }
+fileprivate class CommandLineStatus {
+  var isStdin = false
+  var openSeparateWindows = false
+  var enterMusicMode = false
+  var enterPIP = false
+  var mpvArguments: [(String, String)] = []
+  var filenames: [String] = []
+
+  init?(_ arguments: ArraySlice<String>) {
+    guard !arguments.isEmpty else { return nil }
+
+    for arg in arguments {
+      if arg.hasPrefix("--") {
+        parseDoubleDashedArg(arg)
+      } else if arg.hasPrefix("-") {
+        parseSingleDashedArg(arg)
       } else {
-        // assume args starting with nothing is a filename
-        iinaArgFilenames.append(arg)
+        // assume arg with no starting dashes is a filename
+        filenames.append(arg)
       }
     }
 
-    commandLineStatus.parseArguments(iinaArgs)
-    Logger.log("Filenames from args: \(iinaArgFilenames)")
-    Logger.log("Derived mpv properties from args: \(commandLineStatus.mpvArguments)")
+    Logger.log("Parsed command-line args: isStdin=\(isStdin) separateWindows=\(openSeparateWindows), enterMusicMode=\(enterMusicMode), enterPIP=\(enterPIP))")
+    Logger.log("Filenames from arguments: \(filenames)")
+    Logger.log("Derived mpv properties from args: \(mpvArguments)")
 
-    guard !iinaArgFilenames.isEmpty || commandLineStatus.isStdin else {
+    guard !filenames.isEmpty || isStdin else {
       print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
       print("Please ignore this message if you are running in a debug environment.")
-      return
+      return nil
     }
-
-    commandLineStatus.isCommandLine = true
-    commandLineStatus.filenames = iinaArgFilenames
   }
 
-  private func startFromCommandLine() {
-    var lastPlayerCore: PlayerCore? = nil
-    let getNewPlayerCore = { [self] () -> PlayerCore in
-      let pc = PlayerManager.shared.getIdleOrCreateNew()
-      commandLineStatus.applyMPVArguments(to: pc)
-      lastPlayerCore = pc
-      return pc
+  private func parseDoubleDashedArg(_ arg: String) {
+    if arg == "--" {
+      // ignore
+      return
     }
-    if commandLineStatus.isStdin {
-      getNewPlayerCore().openURLString("-")
+    let splitted = arg.dropFirst(2).split(separator: "=", maxSplits: 1)
+    let name = String(splitted[0])
+    if name.hasPrefix("mpv-") {
+      // mpv args
+      let strippedName = String(name.dropFirst(4))
+      if strippedName == "-" {
+        isStdin = true
+      } else if splitted.count <= 1 {
+        mpvArguments.append((strippedName, "yes"))
+      } else {
+        mpvArguments.append((strippedName, String(splitted[1])))
+      }
     } else {
-      let validFileURLs: [URL] = commandLineStatus.filenames.compactMap { filename in
+      // Check for IINA args. If an arg is not recognized, assume it is an mpv arg.
+      // (The names here should match the "Usage" message in main.swift)
+      switch name {
+      case "stdin":
+        isStdin = true
+      case "separate-windows":
+        openSeparateWindows = true
+      case "music-mode":
+        enterMusicMode = true
+      case "pip":
+        enterPIP = true
+      default:
+        if splitted.count <= 1 {
+          mpvArguments.append((name, "yes"))
+        } else {
+          mpvArguments.append((name, String(splitted[1])))
+        }
+      }
+    }
+  }
+
+  private func parseSingleDashedArg(_ arg: String) {
+    if arg == "-" {
+      // single '-'
+      isStdin = true
+    }
+    // else ignore all single-dashed args
+  }
+
+  fileprivate func startFromCommandLine() {
+    var lastPlayerCore: PlayerCore? = nil
+    if isStdin {
+      lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
+      lastPlayerCore?.openURLString("-")
+    } else {
+      let validFileURLs: [URL] = filenames.compactMap { filename in
         if Regex.url.matches(filename) {
           return URL(string: filename.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? filename)
         } else {
@@ -543,19 +582,21 @@ class StartupHandler {
         return
       }
 
-      if commandLineStatus.openSeparateWindows {
-        validFileURLs.forEach { url in
-          getNewPlayerCore().openURL(url)
+      if openSeparateWindows {
+        for url in validFileURLs {
+          lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
+          lastPlayerCore?.openURL(url)
         }
       } else {
-        getNewPlayerCore().openURLs(validFileURLs)
+        lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
+        lastPlayerCore?.openURLs(validFileURLs)
       }
     }
 
     if let pc = lastPlayerCore {
-      if commandLineStatus.enterMusicMode {
+      if enterMusicMode {
         Logger.log.verbose("Entering music mode as specified via command line")
-        if commandLineStatus.enterPIP {
+        if enterPIP {
           // PiP is not supported in music mode. Combining these options is not permitted and is
           // rejected by iina-cli. The IINA executable must have been invoked directly with
           // arguments.
@@ -564,79 +605,26 @@ class StartupHandler {
           exit(EX_USAGE)
         }
         pc.enterMusicMode()
-      } else if commandLineStatus.enterPIP {
+      } else if enterPIP {
         Logger.log.verbose("Entering PIP as specified via command line")
         pc.windowController.enterPIP()
       }
     }
   }
-}
 
-
-struct CommandLineStatus {
-  var isCommandLine = false
-  var isStdin = false
-  var openSeparateWindows = false
-  var enterMusicMode = false
-  var enterPIP = false
-  var mpvArguments: [(String, String)] = []
-  var iinaArguments: [(String, String)] = []
-  var filenames: [String] = []
-
-  mutating func parseArguments(_ args: [String]) {
-    mpvArguments.removeAll()
-    iinaArguments.removeAll()
-    for arg in args {
-      let splitted = arg.dropFirst(2).split(separator: "=", maxSplits: 1)
-      let name = String(splitted[0])
-      if (name.hasPrefix("mpv-")) {
-        // mpv args
-        let strippedName = String(name.dropFirst(4))
-        if strippedName == "-" {
-          isStdin = true
-        } else {
-          let argPair: (String, String)
-          if splitted.count <= 1 {
-            argPair = (strippedName, "yes")
-          } else {
-            argPair = (strippedName, String(splitted[1]))
-          }
-          mpvArguments.append(argPair)
-        }
-      } else {
-        // other args
-        if splitted.count <= 1 {
-          iinaArguments.append((name, "yes"))
-        } else {
-          iinaArguments.append((name, String(splitted[1])))
-        }
-        if name == "stdin" {
-          isStdin = true
-        }
-        if name == "separate-windows" {
-          openSeparateWindows = true
-        }
-        if name == "music-mode" {
-          enterMusicMode = true
-        }
-        if name == "pip" {
-          enterPIP = true
-        }
-      }
-    }
-  }
-
-  func applyMPVArguments(to playerCore: PlayerCore) {
+  func getOrCreatePlayerWithCmdLineArgs() -> PlayerCore {
+    let playerCore = PlayerManager.shared.getIdleOrCreateNew()
     Logger.log("Setting mpv properties from arguments: \(mpvArguments)")
     for argPair in mpvArguments {
       if argPair.0 == "shuffle" && argPair.1 == "yes" {
         // Special handling for this one
         Logger.log("Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist")
         playerCore.addShufflePlaylistHook()
-        continue
+      } else {
+        playerCore.mpv.setString(argPair.0, argPair.1)
       }
-      playerCore.mpv.setString(argPair.0, argPair.1)
     }
+    return playerCore
   }
 
 }

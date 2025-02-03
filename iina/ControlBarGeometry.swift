@@ -91,7 +91,7 @@ struct ControlBarGeometry {
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
-    let forceSingleRowStyle = forceSingleRowStyle ?? Preference.bool(for: .oscForceSingleLine)
+    let forceSingleRowStyle = forceSingleRowStyle ?? Preference.bool(for: .oscForceSingleRow)
     self.forceSingleRowStyle = forceSingleRowStyle
 
     // Actual cardinal sizes should be downstream from tick values
@@ -135,8 +135,7 @@ struct ControlBarGeometry {
         // Is multi-line OSC
         let playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2)
         self.playSliderHeight = playSliderHeight
-        // FIXME: here, `16` is duct tape. These icon calculations are all sorts of wrong
-        fullIconHeight = barHeight - playSliderHeight - Constants.Distance.multiLineOSC_SpaceBetweenLines - 16
+        fullIconHeight = barHeight - playSliderHeight + Constants.Distance.multiLineOSC_SpaceBetweenLines
       } else {
         // Is single-line OSC
         self.playSliderHeight = barHeight

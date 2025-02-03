@@ -208,10 +208,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
 
     // handle command line arguments
-    let arguments = ProcessInfo.processInfo.arguments.dropFirst()
-    if !arguments.isEmpty {
-      startupHandler.parseCommandLine(arguments)
-    }
+    let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
+    Logger.log("All app arguments: \(cmdLineArgs)")
+    startupHandler.parseCommandLine(cmdLineArgs)
   }
 
   private func registerUserDefaultValues() {

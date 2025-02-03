@@ -298,7 +298,7 @@ struct Constants {
     static let rawHeight: Int = 1600
   }
   struct Distance {
-    // TODO: change to % of screen width
+    // TODO: change to % of window width
     static let floatingControllerSnapToCenterThreshold = 20.0
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
@@ -325,7 +325,8 @@ struct Constants {
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 100
 
-    // When opening multiple windows simultaneously & no other layout is applied, how much to offset one window from the one before
+    /// When opening multiple windows simultaneously & no other layout is applied, each window's frame on screen will
+    /// be offset from the one before it by this amount, by +X and -Y (points, not pixels).
     static let multiWindowOpenOffsetIncrement = 20.0
 
     /// If OSC is shorter than this, never show the speed label
