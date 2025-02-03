@@ -1715,7 +1715,8 @@ extension NSScreen {
 
 extension NSWindow {
 
-  /// Provides a unique window ID for reference by `UIState`.
+  /// Provides a unique window ID for reference by `UIState`. Use this instead of `frameAutosaveName` (although in most cases
+  /// it will be the same string).
   var savedStateName: String {
     if let playerController = windowController as? PlayerWindowController {
       // Not using AppKit autosave for player windows. Instead build ID based on player label
