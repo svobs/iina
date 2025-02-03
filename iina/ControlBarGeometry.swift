@@ -142,8 +142,8 @@ struct ControlBarGeometry {
           playSliderHeight = (barHeight * 0.5).rounded()
         }
         self.playSliderHeight = playSliderHeight
-        let excessPlaySliderHeight_Halved = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: playSliderHeight)
-        let remainingFreeHeight = barHeight - playSliderHeight - excessPlaySliderHeight_Halved
+        let iconVerticalMarginsTotal = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: playSliderHeight)
+        let remainingFreeHeight = barHeight - playSliderHeight - iconVerticalMarginsTotal
         fullIconHeight = remainingFreeHeight
       } else {
         // Is single-line OSC

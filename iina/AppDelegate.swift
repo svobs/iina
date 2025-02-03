@@ -196,6 +196,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives
     LegacyMigration.migrateLegacyPreferences()
 
+#if DEBUG
+    /// Set the NSUserDefault NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints to YES to have
+    /// `-[NSWindow visualizeConstraints:]` automatically called when [conflicting constraints] happens.
+    ///  And/or, set a symbolic breakpoint on `LAYOUT_CONSTRAINTS_NOT_SATISFIABLE` to catch this in the debugger.
+    UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")
+#endif
+
     // Call this *before* registering for url events, to guarantee that menu is init'd
     confTableStateManager.startUp()
 
