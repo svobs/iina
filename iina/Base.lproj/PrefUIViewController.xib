@@ -1326,7 +1326,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="20" y="679" width="430" height="24"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="BTX-tO-uhL">
-                                    <rect key="frame" x="-2" y="0.0" width="265" height="21"/>
+                                    <rect key="frame" x="-2" y="0.0" width="267" height="21"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Top bar placement vs. video:" id="EvR-Ml-f7d">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1334,7 +1334,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalHuggingPriority="500" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3vi-Iu-deL" userLabel="Top-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="267" y="0.0" width="165" height="24"/>
+                                    <rect key="frame" x="269" y="0.0" width="163" height="24"/>
                                     <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="K2B-JO-2IX">
                                         <font key="font" usesAppearanceFont="YES"/>
                                         <segments>
@@ -1447,7 +1447,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="20" y="554" width="430" height="24"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="Xua-UF-KwL">
-                                    <rect key="frame" x="-2" y="0.0" width="265" height="21"/>
+                                    <rect key="frame" x="-2" y="0.0" width="267" height="21"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Bottom bar placement vs. video:" id="FAb-aX-CEz">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1455,7 +1455,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalHuggingPriority="500" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oZp-7o-wcg" userLabel="Bottom-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="267" y="0.0" width="165" height="24"/>
+                                    <rect key="frame" x="269" y="0.0" width="163" height="24"/>
                                     <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="TEO-g1-ffc">
                                         <font key="font" usesAppearanceFont="YES"/>
                                         <segments>
@@ -1494,10 +1494,10 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="900" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="NQR-nq-sbu" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="92" y="0.0" width="169" height="22"/>
+                                    <rect key="frame" x="92" y="0.0" width="171" height="22"/>
                                 </customView>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Overlay-Style Popup">
-                                    <rect key="frame" x="266" y="-3" width="168" height="25"/>
+                                    <rect key="frame" x="268" y="-3" width="166" height="25"/>
                                     <popUpButtonCell key="cell" type="push" title="Native Graphite" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="Controller-Position Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -1539,7 +1539,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="20" y="495" width="430" height="21"/>
                             <subviews>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xbl-vr-NaJ">
-                                    <rect key="frame" x="-2" y="3" width="84" height="16"/>
+                                    <rect key="frame" x="-2" y="3" width="73" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Bar height:" id="5BF-Xi-M9u">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1547,11 +1547,11 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <slider translatesAutoresizingMaskIntoConstraints="NO" id="dsQ-QF-qYK" userLabel="OSC-Height Horizontal Slider">
-                                    <rect key="frame" x="86" y="-2" width="306" height="25"/>
+                                    <rect key="frame" x="75" y="-2" width="313" height="25"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" constant="302" id="EyV-vj-7Y7"/>
+                                        <constraint firstAttribute="width" constant="309" id="EyV-vj-7Y7"/>
                                     </constraints>
-                                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="24" maxValue="100" doubleValue="43" tickMarkPosition="below" numberOfTickMarks="21" allowsTickMarkValuesOnly="YES" sliderType="linear" id="8b9-rY-Ke5"/>
+                                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="24" maxValue="100" doubleValue="44" tickMarkPosition="below" numberOfTickMarks="20" allowsTickMarkValuesOnly="YES" sliderType="linear" id="8b9-rY-Ke5"/>
                                     <connections>
                                         <action selector="oscBarHeightAction:" target="-2" id="iWm-b9-yfN"/>
                                         <binding destination="lH7-Vv-0M1" name="value" keyPath="values.oscBarHeight" id="Bwl-jr-dnr">
@@ -1563,9 +1563,9 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </slider>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="WPN-TF-OlT" userLabel="OSC-Height Text Field">
-                                    <rect key="frame" x="398" y="0.0" width="32" height="21"/>
+                                    <rect key="frame" x="394" y="0.0" width="36" height="21"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" constant="32" id="ohn-Jd-w6h"/>
+                                        <constraint firstAttribute="width" constant="36" id="ohn-Jd-w6h"/>
                                     </constraints>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="43s-eH-8ms" userLabel="OSC-Height Text Field Cell">
                                         <numberFormatter key="formatter" formatterBehavior="default10_4" usesGroupingSeparator="NO" lenient="YES" formatWidth="-1" groupingSize="0" minimumIntegerDigits="1" maximumIntegerDigits="42" id="e2m-pr-W7O">
@@ -2159,7 +2159,7 @@ For smoothest results, also enable custom full screen.</string>
                     </connections>
                 </popUpButton>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6ml-Xj-nVX">
-                    <rect key="frame" x="118" y="76" width="87" height="16"/>
+                    <rect key="frame" x="118" y="76" width="100" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="&quot;Inside&quot; panels:" id="SBZ-A7-Btg">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
