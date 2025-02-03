@@ -423,9 +423,8 @@ extension PlayerWindowController {
       return false
     }
 
-    let centerOfKnobInSliderCoordX = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
-
     // May need to adjust X to account for knob width
+    let centerOfKnobInSliderCoordX = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
     let pointInSlider = NSPoint(x: centerOfKnobInSliderCoordX, y: 0)
     let pointInWindowCorrected = NSPoint(x: playSlider.convert(pointInSlider, to: nil).x, y: pointInWindow.y)
 
@@ -433,8 +432,8 @@ extension PlayerWindowController {
 
     let showThumbnail = Preference.bool(for: .enableThumbnailPreview)
     let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
-    if isShowingThumbnailForSeek && (!showThumbnail || !Preference.bool(for: .showThumbnailDuringSliderSeek)) {
-      // Do not show any preview if this feature is disabled
+    if isShowingThumbnailForSeek && (!Preference.bool(for: .enableThumbnailPreview) || !Preference.bool(for: .showThumbnailDuringSliderSeek)) {
+      // Do not show any preview if preview for seeking is disabled
       return false
     }
 
@@ -461,12 +460,15 @@ extension PlayerWindowController {
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
     let previewTimeSec = mediaDuration * playbackPositionRatio
 
-    let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
-    let currentGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
-                                                 screenID: winGeoUpdated.screenID,
-                                                 video: geo.video)
-    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x, player,
-                            currentControlBar: currentControlBar, currentGeo)
+    guard let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() else {
+      log.debug("Cannot display SeekPreview: could not get window.frame or screenID")
+      return false
+    }
+    // This may be for music mode also!
+    let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, video: geo.video)
+
+    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x,
+                            player, currentControlBar: currentControlBar, currentGeo)
     return true
   }
 

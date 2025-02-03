@@ -37,7 +37,7 @@ struct GeometrySet {
 }
 
 extension PlayerWindowController {
-  private func getLatestWindowFrameAndScreenID() -> (NSRect, String)? {
+  func getLatestWindowFrameAndScreenID() -> (NSRect, String)? {
     guard DispatchQueue.isExecutingIn(.main, logError: false) else {
       log.debug("Not executing in main queue; will use cached window frame & screenID")
       return nil
