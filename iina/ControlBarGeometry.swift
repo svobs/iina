@@ -279,6 +279,15 @@ struct ControlBarGeometry {
     return compromise.clamped(to: 8...32)
   }
 
+  /// Font size for Seek Preview time label (shown while hovering over PlaySlider and/or seeking).
+  var seekPreviewTimeLabelFontSize: CGFloat {
+    if mode == .musicMode {
+      return 9
+    }
+    let normalSize = 11.0
+    return (sliderScale * normalSize).rounded().clamped(to:11...24)
+  }
+
   /// Width of left, right, play btns + their spacing.
   /// Items will have `playIconSpacing` between each item, and `playIconSpacing * 0.5` for each of left margin & right margin.
   var totalPlayControlsWidth: CGFloat {

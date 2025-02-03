@@ -65,8 +65,10 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private func updateVerticalConstraints() {
     // May not be available until after load
     guard isViewLoaded else { return }
+    let tabHeight: CGFloat = hasTab ? 36 : 0
+    player.log.verbose("PluginSidebar: updating downshift=\(downshift), tabHeight=\(tabHeight)")
     buttonTopConstraint?.animateToConstant(downshift)
-    pluginTabsViewHeightConstraint?.animateToConstant(hasTab ? 36 : 0)
+    pluginTabsViewHeightConstraint?.animateToConstant(tabHeight)
     view.layoutSubtreeIfNeeded()
   }
 

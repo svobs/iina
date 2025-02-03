@@ -99,6 +99,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private func updateVerticalConstraints() {
     // may not be available until after load
+    guard isViewLoaded else { return }
+    player.log.verbose("Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)")
     self.buttonTopConstraint?.animateToConstant(downshift)
     self.tabHeightConstraint?.animateToConstant(tabHeight)
     view.layoutSubtreeIfNeeded()

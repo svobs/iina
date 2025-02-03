@@ -76,7 +76,7 @@ extension PlayerWindowController {
     func updateTimeLabelFontSize(to newSize: CGFloat) {
       guard timeLabel.font?.pointSize != newSize else { return }
 
-      timeLabel.font = NSFont.boldSystemFont(ofSize: newSize)
+      timeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: newSize, weight: .bold)
       addShadow()
     }
 
@@ -176,6 +176,16 @@ extension PlayerWindowController {
       let showAbove: Bool
       if currentLayout.isMusicMode {
         showAbove = true  // always show above in music mode
+
+        if showThumbnail {
+          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height
+          let availableHeightAbove = max(0, viewportSize.height - totalExtraVerticalSpace)
+          if thumbHeight > availableHeightAbove {
+            // Scale down thumbnail so it doesn't get clipped by the side of the window
+            thumbHeight = availableHeightAbove
+            thumbWidth = thumbHeight * thumbAspect
+          }
+        }
       } else {
         switch currentLayout.oscPosition {
         case .top:
@@ -185,23 +195,23 @@ extension PlayerWindowController {
         case .floating:
           // Need to check available space in viewport above & below OSC
           let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height
-          let availableHeightBelow = max(0, oscOriginInWindowY - currentGeo.insideBars.bottom - totalExtraVerticalSpace)
-          if availableHeightBelow > thumbHeight {
+          let availableHeightBelowOSC = max(0, oscOriginInWindowY - currentGeo.insideBars.bottom - totalExtraVerticalSpace)
+          if availableHeightBelowOSC > thumbHeight {
             // Show below by default, if there is space for the desired size
             showAbove = false
           } else {
             // If not enough space to show the full-size thumb below, then show above if it has more space
-            let availableHeightAbove = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalExtraVerticalSpace + currentGeo.insideBars.top))
-            showAbove = availableHeightAbove > availableHeightBelow
-            if showThumbnail, showAbove, thumbHeight > availableHeightAbove {
+            let availableHeightAboveOSC = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalExtraVerticalSpace + currentGeo.insideBars.top))
+            showAbove = availableHeightAboveOSC > availableHeightBelowOSC
+            if showThumbnail, showAbove, thumbHeight > availableHeightAboveOSC {
               // Scale down thumbnail so it doesn't get clipped by the side of the window
-              thumbHeight = availableHeightAbove
+              thumbHeight = availableHeightAboveOSC
               thumbWidth = thumbHeight * thumbAspect
             }
           }
 
-          if showThumbnail, !showAbove, thumbHeight > availableHeightBelow {
-            thumbHeight = availableHeightBelow
+          if showThumbnail, !showAbove, thumbHeight > availableHeightBelowOSC {
+            thumbHeight = availableHeightBelowOSC
             thumbWidth = thumbHeight * thumbAspect
           }
         }
@@ -225,13 +235,14 @@ extension PlayerWindowController {
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
+          let quarterMargin = margins.bottom * 0.25
+          let halfKnobHeight = player.windowController.playSlider.customCell.knobHeight * 0.5
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
-          if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY + timeLabelSize.height >= oscTopY {
-            timeLabelOriginY = oscTopY + halfMargin
+          if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
+            timeLabelOriginY = oscTopY + quarterMargin
           } else {
-            let quarterMargin = margins.bottom * 0.25
-            timeLabelOriginY = sliderCenterY + (player.windowController.playSlider.customCell.knobHeight * 0.5) + quarterMargin
+            timeLabelOriginY = sliderCenterY + halfKnobHeight + quarterMargin
           }
         }
       } else {  // Show below PlaySlider
@@ -241,10 +252,12 @@ extension PlayerWindowController {
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
-          if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY - timeLabelSize.height <= oscOriginInWindowY {
-            timeLabelOriginY = oscOriginInWindowY + halfMargin - timeLabelSize.height
+          // See note for the Above case (but use ½ margin instead of ¼).
+          let halfKnobHeight = player.windowController.playSlider.customCell.knobHeight * 0.5
+          if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
+            timeLabelOriginY = oscOriginInWindowY - halfMargin - timeLabelSize.height
           } else {
-            timeLabelOriginY = sliderCenterY - (player.windowController.playSlider.customCell.knobHeight * 0.5) - halfMargin - timeLabelSize.height
+            timeLabelOriginY = sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height
           }
         }
       }

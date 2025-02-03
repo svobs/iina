@@ -590,7 +590,7 @@ struct LayoutState {
     var bottomBarView: VisibilityMode = .hidden
     var topOSCHeight: CGFloat = 0
     var controlBarFloating: VisibilityMode = .hidden
-    var bottomBarHeight: CGFloat = Constants.Sidebar.defaultDownshift
+    var bottomBarHeight: CGFloat = 0
     var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
 
     // OSC:
@@ -642,7 +642,8 @@ struct LayoutState {
     if spec.mode == .musicMode {
       /// Special case for music mode. Only really applies to `playlistView`,
       /// because `quickSettingView` is never shown in this mode.
-      self.sidebarDownshift = Constants.Sidebar.musicModeTabHeight
+      sidebarTabHeight = Constants.Sidebar.musicModeTabHeight
+      self.sidebarDownshift = Constants.Sidebar.defaultDownshift
     } else if topBarView.isShowable {
       // Top bar always spans the whole width of the window (unlike the bottom bar)
       // FIXME: someday, refactor title bar & top OSC outside of top bar & make iinto 2 independent bars.

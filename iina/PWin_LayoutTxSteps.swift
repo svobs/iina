@@ -680,23 +680,9 @@ extension PlayerWindowController {
         }
       }
 
-      let timeLabelFontSize: CGFloat
-      switch outputLayout.oscPosition {
-      case .top, .bottom:
-        playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
+      playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
 
-        // Knob height > 24 is not supported
-        //        playSlider.customCell.knobHeight = min(((barHeight - 6) * 0.5).rounded(), 24.0)
-        if oscGeo.barHeight >= 36, #available(macOS 11.0, *) {
-          timeLabelFontSize = NSFont.systemFontSize(for: .large)
-        } else {
-          timeLabelFontSize = NSFont.systemFontSize(for: .regular)
-        }
-      case .floating:
-        timeLabelFontSize = NSFont.smallSystemFontSize
-      }
-
-      seekPreview.updateTimeLabelFontSize(to: timeLabelFontSize)
+      seekPreview.updateTimeLabelFontSize(to: oscGeo.seekPreviewTimeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
 
