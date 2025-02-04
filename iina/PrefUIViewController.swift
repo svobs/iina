@@ -16,7 +16,7 @@ fileprivate let SideLeftTag = 0
 fileprivate let SideRightTag = 1
 fileprivate let SideTopTag = 0
 fileprivate let SideBottomTag = 1
-fileprivate let maxToolbarPreviewBarHeight: CGFloat = 43
+fileprivate let maxToolbarPreviewBarHeight: CGFloat = 52
 
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
