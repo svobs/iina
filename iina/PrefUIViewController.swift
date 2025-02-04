@@ -94,10 +94,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
-  @IBOutlet weak var oscBottomStylesHStackView: NSStackView!
+  @IBOutlet weak var oscOverlayStyleHStackView: NSStackView!
   @IBOutlet weak var oscForceSingleRowCheckbox: NSButton!
-  @IBOutlet weak var oscOverlayStyleLabel: NSTextField!
-  @IBOutlet weak var oscOverlayStylePopupButton: NSPopUpButton!
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
@@ -393,6 +391,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let hasBarOSC = oscIsBottom || oscIsTop
     let hasSingleLineOSCConfig = oscIsTop || (oscIsBottom && newGeo.forceSingleRowStyle)
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+    let isAdvancedEnabled = Preference.bool(for: .enableAdvancedSettings)
+    let showForceSingleRowCheckbox = isAdvancedEnabled && oscIsBottom
+    let showOverlayStyleTrigger = oscIsBottom && oscIsOverlay
+    let hasTopBar = ib.hasTopBar
+    let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && isAdvancedEnabled
 
     // Update enablement, various state (except isHidden state)
     arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
@@ -403,34 +406,26 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Update if invalid value was entered in text field:
     oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
 
-    // Build list of views which need a change to their visible state.
+    /// Build list of views which need a change to their visible state.
     /// Each entry contains a ref to a view & intended `isHidden` state:
     var viewHidePairs: [(NSView, Bool)] = []
 
-    let isAdvancedEnabled = Preference.bool(for: .enableAdvancedSettings)
-    let showForceSingleRowCheckbox = isAdvancedEnabled
-    let showOverlayStyleTrigger = oscIsBottom && oscIsOverlay
+    viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
+
+    viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
+
+    // Not a container, but just fudge it (shh...)
     viewHidePairs.append((oscForceSingleRowCheckbox, !showForceSingleRowCheckbox))
-    // Note: these next 2 are not containers, but I'm gonna fudge the model
-    viewHidePairs.append((oscOverlayStylePopupButton, !showOverlayStyleTrigger))
-    viewHidePairs.append((oscOverlayStyleLabel, !showOverlayStyleTrigger))
-    // Show this container only if there is something to show in it:
-    viewHidePairs.append((oscBottomStylesHStackView, !(showOverlayStyleTrigger || showForceSingleRowCheckbox)))
+    viewHidePairs.append((oscOverlayStyleHStackView, !showOverlayStyleTrigger))
+    viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
-
-    viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     viewHidePairs.append((toolbarIconDimensionsHStackView, !hasSingleLineOSCConfig))
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
     viewHidePairs.append((playbackBtnDimensionsHStackView, !hasSingleLineOSCConfig))
 
-    let hasTopBar = ib.hasTopBar
-    viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-
-    let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && isAdvancedEnabled
-    viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     let arrowButtonActionIsSpeed = arrowButtonAction == .speed
     viewHidePairs.append((usePressureForArrowsButton, !arrowButtonActionIsSpeed))
@@ -438,10 +433,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     // Two-phase animation. First show/hide the subviews of each container view with no animation.
     for (view, shouldHide) in viewHidePairs {
-      guard view as? NSControl == nil else {
-        // Not a container; no subviews to skip
-        continue
-      }
+      guard view as? NSControl == nil else { continue }
       for subview in view.subviews {
         if subview.isHidden != shouldHide {
           subview.animator().isHidden = shouldHide
