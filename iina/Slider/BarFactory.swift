@@ -45,6 +45,7 @@ class BarFactory {
 
   let maxPlayBarHeightNeeded: CGFloat
   let maxVolBarHeightNeeded: CGFloat
+  let shadowPadding: CGFloat
 
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
@@ -78,7 +79,7 @@ class BarFactory {
         cornerCurvature = 0.5
       } else {
         // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
-        cornerCurvature = 0.25
+        cornerCurvature = 0.35
       }
     }
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
@@ -99,6 +100,10 @@ class BarFactory {
 
     // - PlaySlider:
 
+    // Bar shadow is only drawn when using clear BG style
+    let shadowPadding = Constants.Distance.Slider.shadowBlurRadius  // each side of bar!
+    self.shadowPadding = shadowPadding
+
     let chapterGapWidth: CGFloat = (barHeight_Normal * 0.5).rounded()
 
     // Focused AND is the current chapter, when media has more than 1 chapter:
@@ -111,7 +116,7 @@ class BarFactory {
     let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
 
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
-    self.maxPlayBarHeightNeeded = maxPlayBarHeightNeeded
+    self.maxPlayBarHeightNeeded = (maxPlayBarHeightNeeded + (shadowPadding * 2)).rounded()
 
     // - VolumeSlider:
 
@@ -131,7 +136,7 @@ class BarFactory {
 
     let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right,
                                     barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
-    self.maxVolBarHeightNeeded = maxVolBarHeightNeeded
+    self.maxVolBarHeightNeeded = (maxVolBarHeightNeeded + (shadowPadding * 2)).rounded()
 
     // - PlaySlider config sets
 
@@ -237,7 +242,7 @@ class BarFactory {
         drawHoverIndicator = nil
       } else {
         // Hover indicator
-        // TODO:
+        // TODO: use view instead
         drawHoverIndicator = { ctx in
           ctx.beginPath()
           // Use entire img height for now. In the future, would be better to make taller than the main knob.
@@ -254,7 +259,7 @@ class BarFactory {
       drawHoverIndicator = nil
     }
 
-    var barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
+    let barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
 
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
@@ -310,7 +315,7 @@ class BarFactory {
           conf.drawPill(ctx, minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge,
-                        shadow: drawShadow)
+                        shadow: false)
 
           // Set for all but first pill
           leftEdge = .bordersAnotherPill
@@ -347,7 +352,7 @@ class BarFactory {
                         minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
                         rightEdge: rightEdge,
-                        shadow: drawShadow)
+                        shadow: false)
 
           segIndex += 1
           // For next loop
@@ -355,20 +360,20 @@ class BarFactory {
           leftEdge = .bordersAnotherPill
         }
       }
-
-      let drawingIsDone = cachedRanges.isEmpty
-      if let drawHoverIndicator, drawingIsDone {
-        ctx.resetClip()
-        drawHoverIndicator(ctx)
-      }
     }  // end first img
 
-    if !cachedRanges.isEmpty {
+    let cacheImg: CGImage?
+    if cachedRanges.isEmpty {
+      if !drawShadow {
+        return barImg  // optimization: skip composite img build
+      }
+      cacheImg = nil
+    } else {
       // Show cached ranges (if enabled).
       // Not sure how efficient this is...
 
       // First build overlay image which colors all the cached regions
-      let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
+      cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
         if hasSpaceForKnob {
           // Apply clip (pixel whitelist) to avoid drawing over the knob
           ctx.clip(to: [leftClipRect, rightClipRect])
@@ -408,11 +413,40 @@ class BarFactory {
         ctx.setBlendMode(.destinationIn)
         ctx.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
       }
-      // Now paste cacheImg into barImg:
-      barImg = CGImage.buildCompositeBarImg(barImg: barImg, highlightOverlayImg: cacheImg, drawHoverIndicator)
     }
 
-    return barImg
+    let shadowPadding_Scaled: CGFloat
+    let shadowPadding2x: Int
+    if drawShadow {
+      shadowPadding_Scaled = shadowPadding * scaleFactor
+      shadowPadding2x = Int(shadowPadding_Scaled * 2)
+    } else {
+      shadowPadding_Scaled = 0
+      shadowPadding2x = 0
+    }
+
+    let compositeImg = CGImage.buildBitmapImage(width: barImg.width + shadowPadding2x,
+                                                height: barImg.height + shadowPadding2x) { cgc in
+      let barFrame = CGRect(origin: CGPoint(x: shadowPadding_Scaled, y: shadowPadding_Scaled), size: barImg.size())
+
+      cgc.setBlendMode(.normal)
+      if drawShadow {
+        cgc.setShadow(offset: CGSize(width: 0, height: 0), blur: shadowPadding_Scaled)
+      }
+      cgc.draw(barImg, in: barFrame)
+
+      if let cacheImg {
+        // Paste cacheImg over barImg:
+        cgc.setBlendMode(.overlay)
+        cgc.draw(cacheImg, in: barFrame)
+      }
+
+      if let drawHoverIndicator {
+        cgc.setBlendMode(.normal)
+        drawHoverIndicator(cgc)
+      }
+    }
+    return compositeImg
   }
 
   // MARK: - Volume Bar

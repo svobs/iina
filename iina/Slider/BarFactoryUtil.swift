@@ -113,7 +113,7 @@ extension BarFactory {
         path = CGPath(rect: segment, transform: nil)
       }
       if shadow {
-        ctx.setShadow(offset: CGSize(width: 0, height: 0 * scaleFactor), blur: 1.0 * scaleFactor)
+        ctx.setShadow(offset: CGSize(width: 0, height: 0 * scaleFactor), blur: 2.0 * scaleFactor)
       }
       ctx.beginPath()
 

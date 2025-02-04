@@ -311,6 +311,8 @@ struct Constants {
       static let defaultKnobWidth: CGFloat = 3
       static let defaultKnobHeight: CGFloat = 15
 
+      static let shadowBlurRadius: CGFloat = 1.0
+
       static let musicModeKnobHeight: CGFloat = 12
 
       static let unscaledVolumeSliderWidth: CGFloat = 70.0
