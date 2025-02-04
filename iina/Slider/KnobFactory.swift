@@ -103,7 +103,7 @@ class KnobFactory {
                         cornerHeight: knobCornerRadius_Scaled, transform: nil)
 
       if let shadow {
-        cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadow)
+        cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 2.5 * scaleFactor, color: shadow)
       }
       cgContext.beginPath()
       cgContext.addPath(path)
@@ -115,7 +115,7 @@ class KnobFactory {
         /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
         cgContext.beginPath()
         cgContext.addPath(path)
-        cgContext.setLineWidth(0.4 * scaleFactor)
+        cgContext.setLineWidth(0.5 * scaleFactor)
         cgContext.setStrokeColor(shadow)
         cgContext.strokePath()
       }
