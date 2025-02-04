@@ -311,7 +311,8 @@ struct Constants {
       static let defaultKnobWidth: CGFloat = 3
       static let defaultKnobHeight: CGFloat = 15
 
-      static let shadowBlurRadius: CGFloat = 4.0
+      /// Note: doubling this value must result in a whole integer because it influences CGImage size.
+      static let shadowBlurRadius: CGFloat = 1.0
 
       static let musicModeKnobHeight: CGFloat = 12
 

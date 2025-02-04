@@ -709,7 +709,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // currently open. Should be ok for now as this is fairly fast...
         // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
         // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
-        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: contentView.iinaAppearance, oscGeo: newLayoutSpec.controlBarGeo)
+        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: contentView.iinaAppearance,
+                                            oscGeo: newLayoutSpec.controlBarGeo)
+        // These cache their images so they need to be refreshed manually:
+        playSlider.abLoopA.updateKnobImage(to: .loopKnob)
+        playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }

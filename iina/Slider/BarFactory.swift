@@ -190,6 +190,8 @@ class BarFactory {
   static func updateBarStylesFromPrefs(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
     // Just replace the whole instance:
     BarFactory.current = BarFactory(effectiveAppearance: effectiveAppearance, oscGeo: oscGeo)
+    // The knobs almost certainly need to be rebuilt:
+    KnobFactory.shared.invalidateCachedKnobs()
   }
 
   // MARK: - Play Bar

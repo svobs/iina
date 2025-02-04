@@ -71,13 +71,13 @@ final class PlaySlider: ScrollableSlider {
   /// `super.draw` and that has now been corrected. As a workaround on earlier versions of macOS the loop knob `draw` method
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
+    guard let window else { return }
     super.draw(dirtyRect)
-    let scaleFactor = customCell.controlView?.window?.backingScaleFactor ?? 2.0
-    let isDark = customCell.controlView?.window?.contentView?.iinaAppearance.isDark ?? false
+    let isDark = window.contentView?.iinaAppearance.isDark ?? false
     if isDark != isDarkMode {
       isDarkMode = isDark
-      abLoopA.updateKnobImage(to: .loopKnob, scaleFactor: scaleFactor)
-      abLoopB.updateKnobImage(to: .loopKnob, scaleFactor: scaleFactor)
+      abLoopA.updateKnobImage(to: .loopKnob)
+      abLoopB.updateKnobImage(to: .loopKnob)
     }
     abLoopA.updateHorizontalPosition()
     abLoopB.updateHorizontalPosition()
