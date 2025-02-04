@@ -373,6 +373,7 @@
 		D1D4C7442B10B7D2003B09C2 /* ViewportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D4C7432B10B7D2003B09C2 /* ViewportView.swift */; };
 		D1D579542B16C38F009E3520 /* ClickThroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D579532B16C38F009E3520 /* ClickThroughView.swift */; };
 		D1D579562B192946009E3520 /* CustomWindowBorderBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */; };
+		D1D5EC902D51BC4300B468FA /* OSCSymButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D5EC8F2D51BC3F00B468FA /* OSCSymButton.swift */; };
 		D1D87DFC2923A4E500737886 /* BindingTableStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87DFB2923A4E500737886 /* BindingTableStateManager.swift */; };
 		D1D87E002924F92100737886 /* ConfTableStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */; };
 		D1D87E02292B2AEE00737886 /* BiDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87E01292B2AEE00737886 /* BiDictionary.swift */; };
@@ -1911,6 +1912,7 @@
 		D1D4C7432B10B7D2003B09C2 /* ViewportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportView.swift; sourceTree = "<group>"; };
 		D1D579532B16C38F009E3520 /* ClickThroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickThroughView.swift; sourceTree = "<group>"; };
 		D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWindowBorderBox.swift; sourceTree = "<group>"; };
+		D1D5EC8F2D51BC3F00B468FA /* OSCSymButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSCSymButton.swift; sourceTree = "<group>"; };
 		D1D87DFB2923A4E500737886 /* BindingTableStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableStateManager.swift; sourceTree = "<group>"; };
 		D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableStateManager.swift; sourceTree = "<group>"; };
 		D1D87E01292B2AEE00737886 /* BiDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiDictionary.swift; sourceTree = "<group>"; };
@@ -2751,7 +2753,6 @@
 			isa = PBXGroup;
 			children = (
 				D13BEC542D476E6400BF1071 /* SpacerView.swift */,
-				D11E07B82D1812BE00F9FB9F /* SymButton.swift */,
 				D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */,
 				51096C0A2CD88BEC00702C31 /* MPVOptionDefaults.swift */,
 				E3DBD23C218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.swift */,
@@ -2778,6 +2779,8 @@
 				E32712B424F2B8CA00359DAB /* ScreenshootOSDView.xib */,
 				E3958563253133E80096811F /* SidebarTabView.swift */,
 				E3958564253133E80096811F /* SidebarTabView.xib */,
+				D11E07B82D1812BE00F9FB9F /* SymButton.swift */,
+				D1D5EC8F2D51BC3F00B468FA /* OSCSymButton.swift */,
 				D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */,
 				D1D579532B16C38F009E3520 /* ClickThroughView.swift */,
 				D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */,
@@ -3519,6 +3522,7 @@
 				D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */,
 				84AABE941DBFAF1A00D138FD /* FontPickerWindowController.swift in Sources */,
 				844C59E71F7C143D008D1B00 /* ThumbnailCacheManager.swift in Sources */,
+				D1D5EC902D51BC4300B468FA /* OSCSymButton.swift in Sources */,
 				E34EAA83251A36CE00057F27 /* JavascriptAPIFile.swift in Sources */,
 				E32712B024EAA14500359DAB /* ScreenshootOSDView.swift in Sources */,
 				D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */,

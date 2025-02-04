@@ -563,7 +563,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// Container for volume slider & mute button
   var fragVolumeView = ClickThroughView()
-  let muteButton = SymButton()
+  let muteButton = OSCSymButton()
   let volumeSlider = ScrollableSlider()
   let volumeSliderCell = VolumeSliderCell()
 
@@ -571,9 +571,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let fragPlaybackBtnsView = ClickThroughView()
   /// Speed indicator label, when playing at speeds other than 1x
   let speedLabel = NSTextField()
-  let playButton = SymButton()
-  let leftArrowButton = SymButton()
-  let rightArrowButton = SymButton()
+  let playButton = OSCSymButton()
+  let leftArrowButton = OSCSymButton()
+  let rightArrowButton = OSCSymButton()
 
   /// Toolbar Buttons container
   var fragToolbarView: ClickThroughStackView? = nil
@@ -585,7 +585,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let rightTimeLabel = DurationDisplayTextField()
 
   var symButtons: [SymButton] {
-    var buttons = [muteButton, playButton, leftArrowButton, rightArrowButton, leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton]
+    var buttons = [muteButton, playButton, leftArrowButton, rightArrowButton,
+                   leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton]
     if let moreButtons = customTitleBar?.symButtons {
       buttons += moreButtons
     }

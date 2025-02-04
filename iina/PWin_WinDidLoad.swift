@@ -561,7 +561,7 @@ extension PlayerWindowController {
     fragVolumeView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
 
     // Mute button
-    muteButton.identifier = .init("muteButton")
+    muteButton.idString = "MuteButton"
     let volImage = Images.volume3
     muteButton.image = Images.volume3
     muteButton.target = self
@@ -584,7 +584,7 @@ extension PlayerWindowController {
     // For some reason this needs to be set here, instead of in volumeSliderCell init.
     // Otherwise action will continue to be nil...
     volumeSliderCell.hoverTimer.action = volumeSliderCell.refreshVolumeSliderHoverEffect
-    volumeSlider.identifier = .init("VolumeSlider")
+    volumeSlider.idString = "VolumeSlider"
     volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
     volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
@@ -598,7 +598,7 @@ extension PlayerWindowController {
   }
 
   private func initAlbumArtView() {
-    defaultAlbumArtView.identifier = .init("DefaultAlbumArtView")
+    defaultAlbumArtView.idString = "DefaultAlbumArtView"
     defaultAlbumArtView.wantsLayer = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
     defaultAlbumArtView.isHidden = true

@@ -44,7 +44,7 @@ class PlaySliderCell: ScrollableSliderCell {
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
       let playBarImg = bf.buildPlayBarImage(barWidth: barRect.width,
-                                            screen: screen, useFocusEffect: useFocusEffect,
+                                            screen: screen, useFocusEffect: useFocusEffect, drawShadow: isClearBG,
                                             knobMinX: knobRect.minX, knobWidth: knobRect.width, currentValueRatio: progressRatio,
                                             durationSec: durationSec, chapters, cachedRanges: cachedRanges,
                                             currentPreviewTimeSec: currentPreviewTimeSec)

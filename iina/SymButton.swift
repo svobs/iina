@@ -46,11 +46,10 @@ class SymButton: NSImageView, NSAccessibilityButton {
     self.action = action
   }
 
-  private func configureSelf() {
+  func configureSelf() {
     translatesAutoresizingMaskIntoConstraints = false
     imageScaling = .scaleProportionallyUpOrDown
     imageAlignment = .alignCenter
-    useDefaultColors()
   }
 
   // MARK: - Mouse Input
@@ -137,45 +136,11 @@ class SymButton: NSImageView, NSAccessibilityButton {
     return isInsideBounds
   }
 
-  private func updateHighlight(isInsideBounds: Bool) {
+  func updateHighlight(isInsideBounds: Bool) {
     if isInsideBounds {
       contentTintColor = highlightColor
     } else {
       contentTintColor = regularColor
-    }
-  }
-
-  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  private func useDefaultColors() {
-    regularColor = nil
-    highlightColor = .controlTextColor
-    setShadowForOSC(enabled: false)
-    updateHighlight(isInsideBounds: false)
-  }
-
-  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  private func useColorsForClearBG() {
-    regularColor = .controlForClearBG
-    highlightColor = .white
-    setShadowForOSC(enabled: true)
-    updateHighlight(isInsideBounds: false)
-  }
-
-  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  func setOSCColors(from layoutState: LayoutState) {
-    if layoutState.spec.oscBackgroundIsClear {
-      useColorsForClearBG()
-    } else {
-      useDefaultColors()
-    }
-  }
-
-  func setShadowForOSC(enabled: Bool) {
-    if enabled {
-      guard shadow == nil else { return }
-      addShadow(blurRadiusConstant: 0.5, xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
-    } else {
-      shadow = nil
     }
   }
 

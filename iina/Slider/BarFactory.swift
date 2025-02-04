@@ -60,7 +60,7 @@ class BarFactory {
       switch userSetting {
       case .gray:
         barColorLeft = (isClearBG ? NSColor.mainSliderBarLeftClearBG : NSColor.mainSliderBarLeft).cgColor
-      default:
+      case .controlAccentColor:
         barColorLeft = NSColor.controlAccentColor.cgColor
       }
 
@@ -133,8 +133,6 @@ class BarFactory {
                                     barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
     self.maxVolBarHeightNeeded = maxVolBarHeightNeeded
 
-    // FIXME: clear colors
-
     // - PlaySlider config sets
 
     let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxPlayBarHeightNeeded,
@@ -193,7 +191,7 @@ class BarFactory {
 
   /// `barWidth` does not include added leading or trailing margin
   func buildPlayBarImage(barWidth: CGFloat,
-                         screen: NSScreen, useFocusEffect: Bool,
+                         screen: NSScreen, useFocusEffect: Bool, drawShadow: Bool,
                          knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
                          durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
                          currentPreviewTimeSec: Double?) -> CGImage {
@@ -239,6 +237,7 @@ class BarFactory {
         drawHoverIndicator = nil
       } else {
         // Hover indicator
+        // TODO:
         drawHoverIndicator = { ctx in
           ctx.beginPath()
           // Use entire img height for now. In the future, would be better to make taller than the main knob.
@@ -310,7 +309,8 @@ class BarFactory {
 
           conf.drawPill(ctx, minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
-                        rightEdge: rightEdge)
+                        rightEdge: rightEdge,
+                        shadow: drawShadow)
 
           // Set for all but first pill
           leftEdge = .bordersAnotherPill
@@ -346,7 +346,8 @@ class BarFactory {
           conf.drawPill(ctx,
                         minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
-                        rightEdge: rightEdge)
+                        rightEdge: rightEdge,
+                        shadow: drawShadow)
 
           segIndex += 1
           // For next loop
@@ -416,7 +417,7 @@ class BarFactory {
 
   // MARK: - Volume Bar
 
-  func buildVolumeBarImage(useFocusEffect: Bool,
+  func buildVolumeBarImage(useFocusEffect: Bool, drawShadow: Bool,
                            barWidth: CGFloat,
                            screen: NSScreen,
                            knobMinX: CGFloat, knobWidth: CGFloat,
@@ -468,7 +469,7 @@ class BarFactory {
                          minX: barConf.barMinX,
                          maxX: barMaxX,
                          leftEdge: .noBorderingPill,
-                         rightEdge: .noBorderingPill)
+                         rightEdge: .noBorderingPill, shadow: drawShadow)
       }
 
       var barConf = conf.below100_Left
