@@ -38,17 +38,18 @@ class VolumeSliderCell: ScrollableSliderCell {
     let enableDrawKnob = enableDrawKnob
     let knobRect = knobRect(flipped: false)
     let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
-    let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value
- 
+    let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value, implement preview
+
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
-      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect, drawShadow: isClearBG,
+      let drawShadow = false // TODO: isClearBG
+      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect, drawShadow: drawShadow,
                                              barWidth: barRect.width,
                                              screen: screen, knobMinX: knobRect.minX, knobWidth: knobRect.width,
                                              currentValue: doubleValue, maxValue: maxValue,
                                              currentPreviewValue: previewValue)
       
-      bf.drawBar(volBarImg, in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded)
+      bf.drawBar(volBarImg, in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded, drawShadow: drawShadow)
     }
   }
 

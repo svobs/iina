@@ -43,13 +43,14 @@ class PlaySliderCell: ScrollableSliderCell {
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
+      let drawShadow = isClearBG
       let playBarImg = bf.buildPlayBarImage(barWidth: barRect.width,
-                                            screen: screen, useFocusEffect: useFocusEffect, drawShadow: isClearBG,
+                                            screen: screen, useFocusEffect: useFocusEffect, drawShadow: drawShadow,
                                             knobMinX: knobRect.minX, knobWidth: knobRect.width, currentValueRatio: progressRatio,
                                             durationSec: durationSec, chapters, cachedRanges: cachedRanges,
                                             currentPreviewTimeSec: currentPreviewTimeSec)
 
-      bf.drawBar(playBarImg, in: barRect, tallestBarHeight: bf.maxPlayBarHeightNeeded)
+      bf.drawBar(playBarImg, in: barRect, tallestBarHeight: bf.maxPlayBarHeightNeeded, drawShadow: drawShadow)
     }
   }
 

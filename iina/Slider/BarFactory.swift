@@ -233,30 +233,11 @@ class BarFactory {
 
     // X coord of hover is needed to determine chapter hover effect.
     let currentHoverX: CGFloat?
-    // Hover indicator needs to be drawn at the very end, possibly after compositing cached ranges
-    let drawHoverIndicator: ((CGContext) -> Void)?
     if let currentPreviewTimeSec {
       let hoverX = imgConf.imgPadding + (currentPreviewTimeSec / durationSec * imgConf.barWidth).rounded()
       currentHoverX = hoverX
-      if hoverX >= leftClipMaxX && (hoverX <= rightClipMinX) {
-        drawHoverIndicator = nil
-      } else {
-        // Hover indicator
-        // TODO: use view instead
-        drawHoverIndicator = { ctx in
-          ctx.beginPath()
-          // Use entire img height for now. In the future, would be better to make taller than the main knob.
-          // Need to investigate drawing directly to CGLayers
-          let indicatorRect = NSRect(x: hoverX, y: 0, width: scaleFactor, height: imgConf.imgHeight)
-          ctx.addPath(CGPath(rect: indicatorRect, transform: nil))
-          ctx.setFillColor(KnobFactory.shared.loopKnobColor.cgColor)
-          ctx.fillPath()
-        }
-
-      }
     } else {
       currentHoverX = nil
-      drawHoverIndicator = nil
     }
 
     let barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
@@ -304,18 +285,18 @@ class BarFactory {
             doneWithLeft = true
           } else if segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
             // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
-            conf.addPillPath(ctx, minX: segMinX,
-                             maxX: segMaxX,
+            conf.addPillPath(ctx,
+                             minX: segMinX, maxX: segMaxX,
                              leftEdge: leftEdge,
                              rightEdge: rightEdge)
             ctx.clip()
             doneWithLeft = true
           }
 
-          conf.drawPill(ctx, minX: segMinX, maxX: segMaxX,
+          conf.drawPill(ctx,
+                        minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
-                        rightEdge: rightEdge,
-                        shadow: false)
+                        rightEdge: rightEdge)
 
           // Set for all but first pill
           leftEdge = .bordersAnotherPill
@@ -351,8 +332,7 @@ class BarFactory {
           conf.drawPill(ctx,
                         minX: segMinX, maxX: segMaxX,
                         leftEdge: leftEdge,
-                        rightEdge: rightEdge,
-                        shadow: false)
+                        rightEdge: rightEdge)
 
           segIndex += 1
           // For next loop
@@ -426,24 +406,19 @@ class BarFactory {
     }
 
     let compositeImg = CGImage.buildBitmapImage(width: barImg.width + shadowPadding2x,
-                                                height: barImg.height + shadowPadding2x) { cgc in
+                                                height: barImg.height + shadowPadding2x) { ctx in
       let barFrame = CGRect(origin: CGPoint(x: shadowPadding_Scaled, y: shadowPadding_Scaled), size: barImg.size())
 
-      cgc.setBlendMode(.normal)
+      ctx.setBlendMode(.normal)
       if drawShadow {
-        cgc.setShadow(offset: CGSize(width: 0, height: 0), blur: shadowPadding_Scaled)
+        ctx.setShadow(offset: CGSize(width: 0, height: 0), blur: shadowPadding_Scaled)
       }
-      cgc.draw(barImg, in: barFrame)
+      ctx.draw(barImg, in: barFrame)
 
       if let cacheImg {
         // Paste cacheImg over barImg:
-        cgc.setBlendMode(.overlay)
-        cgc.draw(cacheImg, in: barFrame)
-      }
-
-      if let drawHoverIndicator {
-        cgc.setBlendMode(.normal)
-        drawHoverIndicator(cgc)
+        ctx.setBlendMode(.overlay)
+        ctx.draw(cacheImg, in: barFrame)
       }
     }
     return compositeImg
@@ -503,7 +478,7 @@ class BarFactory {
                          minX: barConf.barMinX,
                          maxX: barMaxX,
                          leftEdge: .noBorderingPill,
-                         rightEdge: .noBorderingPill, shadow: drawShadow)
+                         rightEdge: .noBorderingPill)
       }
 
       var barConf = conf.below100_Left
@@ -551,17 +526,18 @@ class BarFactory {
   }
 
   /// Measured in points, not pixels!
-  func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
+  private func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat, drawShadow: Bool) -> CGRect {
     let imgHeight = heightNeeded(tallestBarHeight: tallestBarHeight)
     // can be negative:
     let spareHeight = drawRect.height - imgHeight
-    let y = drawRect.origin.y + (spareHeight * 0.5)
-    return CGRect(x: drawRect.origin.x - barImgPadding, y: y,
-                  width: drawRect.width + (2 * barImgPadding), height: imgHeight)
+    let totalPaddingX = barImgPadding + (drawShadow ? shadowPadding : 0.0)
+    return CGRect(x: drawRect.origin.x - totalPaddingX,
+                  y: drawRect.origin.y + (spareHeight * 0.5),
+                  width: drawRect.width + (2 * totalPaddingX), height: imgHeight)
   }
 
-  func drawBar(_ barImg: CGImage, in barRect: NSRect, tallestBarHeight: CGFloat) {
-    var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight)
+  func drawBar(_ barImg: CGImage, in barRect: NSRect, tallestBarHeight: CGFloat, drawShadow: Bool) {
+    var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight, drawShadow: drawShadow)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
                         y: drawRect.origin.y + 1,

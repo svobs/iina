@@ -1197,20 +1197,20 @@ extension CGImage {
   func roundCorners(cornerWidth: CGFloat, cornerHeight: CGFloat) -> CGImage {
     let size = CGSize(width: width, height: height)
     let rect = CGRect(origin: NSPoint.zero, size: size)
-    if let context = CGContext(data: nil,
-                             width: Int(size.width),
-                             height: Int(size.height),
-                             bitsPerComponent: 8,
-                             bytesPerRow: 4 * Int(size.width),
-                             space: CGColorSpaceCreateDeviceRGB(),
-                               bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) {
-      context.beginPath()
-      context.addPath(CGPath(roundedRect: rect, cornerWidth: cornerWidth, cornerHeight: cornerHeight, transform: nil))
-      context.closePath()
-      context.clip()
-      context.draw(self, in: rect)
+    if let ctx = CGContext(data: nil,
+                           width: Int(size.width),
+                           height: Int(size.height),
+                           bitsPerComponent: 8,
+                           bytesPerRow: 4 * Int(size.width),
+                           space: CGColorSpaceCreateDeviceRGB(),
+                           bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) {
+      ctx.beginPath()
+      ctx.addPath(CGPath(roundedRect: rect, cornerWidth: cornerWidth, cornerHeight: cornerHeight, transform: nil))
+      ctx.closePath()
+      ctx.clip()
+      ctx.draw(self, in: rect)
 
-      if let composedImage = context.makeImage() {
+      if let composedImage = ctx.makeImage() {
         return composedImage
       }
     }
@@ -1324,19 +1324,20 @@ extension CGImage {
       bitsPerPixel: 0)
   }
 
-  static func buildCompositeBarImg(barImg: CGImage, highlightOverlayImg: CGImage, _ drawingCalls: ((CGContext) -> Void)? = nil) -> CGImage {
-    let compositeImg = CGImage.buildBitmapImage(width: barImg.width, height: barImg.height) { cgc in
+  static func buildCompositeBarImg(barImg: CGImage, highlightOverlayImg: CGImage,
+                                   _ drawingCalls: ((CGContext) -> Void)? = nil) -> CGImage {
+    let compositeImg = CGImage.buildBitmapImage(width: barImg.width, height: barImg.height) { ctx in
       let bounds = CGRect(origin: .zero, size: barImg.size())
 
-      cgc.setBlendMode(.normal)
-      cgc.draw(barImg, in: bounds)
+      ctx.setBlendMode(.normal)
+      ctx.draw(barImg, in: bounds)
 
-      cgc.setBlendMode(.overlay)
-      cgc.draw(highlightOverlayImg, in: bounds)
+      ctx.setBlendMode(.overlay)
+      ctx.draw(highlightOverlayImg, in: bounds)
 
       if let drawingCalls {
-        cgc.setBlendMode(.normal)
-        drawingCalls(cgc)
+        ctx.setBlendMode(.normal)
+        drawingCalls(ctx)
       }
     }
     return compositeImg
