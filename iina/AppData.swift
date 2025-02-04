@@ -303,6 +303,7 @@ struct Constants {
   struct Distance {
     // TODO: change to % of window width
     static let floatingControllerSnapToCenterThreshold = 20.0
+
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
 
@@ -312,7 +313,7 @@ struct Constants {
       static let defaultKnobHeight: CGFloat = 15
 
       /// Note: doubling this value must result in a whole integer because it influences CGImage size.
-      static let shadowBlurRadius: CGFloat = 1.0
+      static let shadowBlurRadius: CGFloat = 3.0
 
       static let musicModeKnobHeight: CGFloat = 12
 

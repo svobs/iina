@@ -531,18 +531,27 @@ fileprivate class CommandLineStatus {
   init?(_ arguments: ArraySlice<String>) {
     guard !arguments.isEmpty else { return nil }
 
+    var dropNextArg = false
     for arg in arguments {
-      if arg.hasPrefix("--") {
+      if dropNextArg {
+        continue
+      } else if arg == "-" {
+        // single '-'
+        isStdin = true
+      } else if arg == "--" {
+        // ignore
+        continue
+      } else if arg.hasPrefix("--") {
         parseDoubleDashedArg(arg)
       } else if arg.hasPrefix("-") {
-        parseSingleDashedArg(arg)
+        dropNextArg = true
       } else {
         // assume arg with no starting dashes is a filename
         filenames.append(arg)
       }
     }
 
-    Logger.log("Parsed command-line args: isStdin=\(isStdin) separateWindows=\(openSeparateWindows), enterMusicMode=\(enterMusicMode), enterPIP=\(enterPIP))")
+    Logger.log("Parsed command-line args: isStdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), enterMusicMode=\(enterMusicMode.yn), enterPIP=\(enterPIP.yn)")
     Logger.log("Filenames from arguments: \(filenames)")
     Logger.log("Derived mpv properties from args: \(mpvArguments)")
 
@@ -554,10 +563,6 @@ fileprivate class CommandLineStatus {
   }
 
   private func parseDoubleDashedArg(_ arg: String) {
-    if arg == "--" {
-      // ignore
-      return
-    }
     let splitted = arg.dropFirst(2).split(separator: "=", maxSplits: 1)
     let name = String(splitted[0])
     if name.hasPrefix("mpv-") {

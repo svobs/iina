@@ -91,7 +91,7 @@ struct ControlBarGeometry {
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
-    let forceSingleRowStyle = forceSingleRowStyle ?? Preference.bool(for: .oscForceSingleRow)
+    let forceSingleRowStyle = forceSingleRowStyle ?? (Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .oscForceSingleRow))
     self.forceSingleRowStyle = forceSingleRowStyle
 
     // Actual cardinal sizes should be downstream from tick values
