@@ -637,7 +637,7 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if oscGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"Adding subviews to oscTwoRowView for top bar"}
+          log.verbose{"Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
           oscTwoRowView.updateSubviews(from: self, oscGeo)
         } else {
           oscContentView = oscOneRowView
@@ -658,7 +658,7 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if oscGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"Adding subviews to oscTwoRowView for bottom bar"}
+          log.verbose{"Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
           oscTwoRowView.updateSubviews(from: self, oscGeo)
         } else {
           oscContentView = oscOneRowView

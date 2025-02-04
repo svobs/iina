@@ -72,14 +72,16 @@ class TwoRowBarOSCView: ClickThroughView {
       intraRowSpacingConstraint.isActive = true
     }
 
-    pwc.log.verbose("TwoRowOSC bottomMargin: \(bottomMargin)")
+    pwc.log.verbose("TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) toolIconH=\(oscGeo.toolIconSize)")
     // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top
     // (and overlapping with the btm of the play slider, but that is just empty space not being used anyway).
     intraRowSpacingConstraint.animateToConstant(-bottomMargin)
     hStackView_BottomMarginConstraint.animateToConstant(bottomMargin)
-    // Restore enforcement of consraints now that we're done:
-    hStackView_BottomMarginConstraint.priority = .required
-    intraRowSpacingConstraint.priority = .required
+
+    // Restore enforcement of consraints now that we're done. Do not use .required: the superiew may not be updated at
+    // exactly the same time and can result in constraint conflict errors.
+    hStackView_BottomMarginConstraint.priority = .init(901)
+    intraRowSpacingConstraint.priority = .init(901)
 
     // [Re-]add views to hstack
     var views: [NSView] = [pwc.fragPlaybackBtnsView, centralSpacerView, pwc.fragVolumeView]

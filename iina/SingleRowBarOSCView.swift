@@ -33,6 +33,7 @@ class SingleRowBarOSCView: ClickThroughStackView {
 
   func disuse() {
     // Not much to do here presently
+    removeAllSubviews()
     removeFromSuperview()
   }
 
