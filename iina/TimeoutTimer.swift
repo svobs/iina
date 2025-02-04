@@ -34,6 +34,13 @@ class TimeoutTimer {
                                           userInfo: nil, repeats: false)
   }
 
+  var isValid: Bool {
+    if let scheduledTimer, scheduledTimer.isValid {
+      return true
+    }
+    return false
+  }
+
   func cancel() {
     scheduledTimer?.invalidate()
   }

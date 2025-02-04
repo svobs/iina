@@ -320,6 +320,8 @@ struct Constants {
       static let unscaledFocusedNonCurrentChapterHeight_Multiplier: CGFloat = 5.0 / unscaledBarNormalHeight
 
       static let minPlaySliderHeight: CGFloat = 20
+
+      static let reducedCurvatureBarHeightThreshold = 9.0
     }
 
     static let playSliderAndTimeLabelsViewHSpacing: CGFloat = 6

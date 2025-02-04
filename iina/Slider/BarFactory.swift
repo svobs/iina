@@ -73,7 +73,7 @@ class BarFactory {
     var cornerCurvature: CGFloat = Preference.bool(for: .roundRectSliderBars) ? 1.0 : 0.0
     func updateCurvature(using baseBarHeight: CGFloat) {
       guard cornerCurvature > 0.0 else { return }
-      if baseBarHeight <= 6.0 {
+      if baseBarHeight <= Constants.Distance.Slider.reducedCurvatureBarHeightThreshold {
         // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
         cornerCurvature = 0.5
       } else {

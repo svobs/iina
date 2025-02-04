@@ -201,6 +201,7 @@ class VirtualScrollWheel {
     guard let session = currentSession else { Logger.fatal("currentSession==nil for state \(state) → \(ScrollState.notScrolling)") }
     let wasScrolling = isScrolling()
     currentSession = nil
+    scrollSessionTimer.cancel()
     state = .notScrolling
 
     guard wasScrolling else { return }
@@ -329,8 +330,8 @@ class VirtualScrollWheel {
 
   /// Executed when `scrollSessionTimer` fires.
   private func scrollSessionDidTimeOut() {
+    Logger.log.verbose("ScrollWheel timed out: state=\(state)")
     guard isScrolling() else { return }
-    Logger.log.verbose("ScrollWheel timed out")
     endScrollSession()
   }
 
