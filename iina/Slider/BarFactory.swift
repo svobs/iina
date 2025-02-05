@@ -197,15 +197,14 @@ class BarFactory {
   // MARK: - Play Bar
 
   /// `barWidth` does not include added leading or trailing margin
-  func buildPlayBarImage(useFocusEffect: Bool, drawShadow: Bool,
+  func buildPlayBarImage(useFocusEffect: Bool,
                          barWidth: CGFloat,
-                         screen: NSScreen,
+                         scaleFactor: CGFloat,
                          knobRect: NSRect,
                          currentValueSec: CGFloat, maxValueSec: CGFloat,
                          currentPreviewTimeSec: Double?,
                          _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
     // - Set up calculations
-    let scaleFactor = screen.backingScaleFactor
 
     let imgConf = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
@@ -346,99 +345,78 @@ class BarFactory {
       }
     }  // end first img
 
-    let cacheImg: CGImage?
     if cachedRanges.isEmpty {
-      if !drawShadow {
-        return barImg  // optimization: skip composite img build
-      }
-      cacheImg = nil
-    } else {
-      // Show cached ranges (if enabled).
-      // Not sure how efficient this is...
-
-      // First build overlay image which colors all the cached regions
-      cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
-        if hasSpaceForKnob {
-          // Apply clip (pixel whitelist) to avoid drawing over the knob
-          ctx.clip(to: [leftClipRect, rightClipRect])
-        }
-
-        // First, just color the cached regions as crude rects which are at least as large as barImg…
-        let maxBarHeightNeeded = imgConf.maxBarHeightNeeded
-        let minY: CGFloat = (imgConf.imgHeight - maxBarHeightNeeded) * 0.5
-
-        var rectsLeft: [NSRect] = []
-        var rectsRight: [NSRect] = []
-        for cachedRange in cachedRanges {
-          let startX: CGFloat = cachedRange.0 / maxValueSec * imgConf.barWidth
-          let endX: CGFloat = cachedRange.1 / maxValueSec * imgConf.barWidth
-          if startX > leftClipMaxX {
-            rectsRight.append(CGRect(x: startX, y: minY,
-                                     width: endX - startX, height: maxBarHeightNeeded))
-          } else if endX > leftClipMaxX {
-            rectsLeft.append(CGRect(x: startX, y: minY,
-                                    width: leftClipMaxX - startX, height: maxBarHeightNeeded))
-
-            let start2ndX = leftClipMaxX
-            rectsRight.append(CGRect(x: start2ndX, y: minY,
-                                     width: endX - start2ndX, height: maxBarHeightNeeded))
-          } else {
-            rectsLeft.append(CGRect(x: startX, y: minY,
-                                    width: endX - startX, height: maxBarHeightNeeded))
-          }
-        }
-
-        ctx.setFillColor(leftCachedColor)
-        ctx.fill(rectsLeft)
-        ctx.setFillColor(rightCachedColor)
-        ctx.fill(rectsRight)
-
-        // Now use barImg as a mask, so that crude rects above are trimmed to match its silhoulette:
-        ctx.setBlendMode(.destinationIn)
-        ctx.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
-      }
+      return barImg  // optimization: skip composite img build
     }
 
-    let shadowPadding_Scaled: CGFloat
-    let shadowPadding2x: Int
-    if drawShadow {
-      shadowPadding_Scaled = shadowPadding * scaleFactor
-      shadowPadding2x = Int(shadowPadding_Scaled * 2)
-    } else {
-      shadowPadding_Scaled = 0
-      shadowPadding2x = 0
+    // Show cached ranges (if enabled).
+    // Not sure how efficient this is...
+
+    // First build overlay image which colors all the cached regions
+    let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
+      if hasSpaceForKnob {
+        // Apply clip (pixel whitelist) to avoid drawing over the knob
+        ctx.clip(to: [leftClipRect, rightClipRect])
+      }
+
+      // First, just color the cached regions as crude rects which are at least as large as barImg…
+      let maxBarHeightNeeded = imgConf.maxBarHeightNeeded
+      let minY: CGFloat = (imgConf.imgHeight - maxBarHeightNeeded) * 0.5
+
+      var rectsLeft: [NSRect] = []
+      var rectsRight: [NSRect] = []
+      for cachedRange in cachedRanges {
+        let startX: CGFloat = cachedRange.0 / maxValueSec * imgConf.barWidth
+        let endX: CGFloat = cachedRange.1 / maxValueSec * imgConf.barWidth
+        if startX > leftClipMaxX {
+          rectsRight.append(CGRect(x: startX, y: minY,
+                                   width: endX - startX, height: maxBarHeightNeeded))
+        } else if endX > leftClipMaxX {
+          rectsLeft.append(CGRect(x: startX, y: minY,
+                                  width: leftClipMaxX - startX, height: maxBarHeightNeeded))
+
+          let start2ndX = leftClipMaxX
+          rectsRight.append(CGRect(x: start2ndX, y: minY,
+                                   width: endX - start2ndX, height: maxBarHeightNeeded))
+        } else {
+          rectsLeft.append(CGRect(x: startX, y: minY,
+                                  width: endX - startX, height: maxBarHeightNeeded))
+        }
+      }
+
+      ctx.setFillColor(leftCachedColor)
+      ctx.fill(rectsLeft)
+      ctx.setFillColor(rightCachedColor)
+      ctx.fill(rectsRight)
+
+      // Now use barImg as a mask, so that crude rects above are trimmed to match its silhoulette:
+      ctx.setBlendMode(.destinationIn)
+      ctx.draw(barImg, in: CGRect(origin: .zero, size: imgConf.imgSize))
     }
 
-    let compositeImg = CGImage.buildBitmapImage(width: barImg.width + shadowPadding2x,
-                                                height: barImg.height + shadowPadding2x) { ctx in
-      let barFrame = CGRect(origin: CGPoint(x: shadowPadding_Scaled, y: shadowPadding_Scaled), size: barImg.size())
+    let compositeImg = CGImage.buildBitmapImage(width: barImg.width, height: barImg.height) { ctx in
+      let barFrame = CGRect(origin: CGPoint(x: 0, y: 0), size: barImg.size())
 
       ctx.setBlendMode(.normal)
-      if drawShadow {
-        ctx.setShadow(offset: CGSize(width: 0, height: 0), blur: shadowPadding_Scaled)
-      }
-      ctx.draw(barImg, in: barFrame)
 
-      if let cacheImg {
-        // Paste cacheImg over barImg:
-        ctx.setBlendMode(.overlay)
-        ctx.draw(cacheImg, in: barFrame)
-      }
+      // Paste cacheImg over barImg:
+      ctx.setBlendMode(.overlay)
+      ctx.draw(cacheImg, in: barFrame)
     }
+
     return compositeImg
   }
 
   // MARK: - Volume Bar
 
-  func buildVolumeBarImage(useFocusEffect: Bool, drawShadow: Bool,
+  func buildVolumeBarImage(useFocusEffect: Bool,
                            barWidth: CGFloat,
-                           screen: NSScreen,
+                           scaleFactor: CGFloat,
                            knobRect: NSRect,
                            currentValue: Double, maxValue: Double,
                            currentPreviewValue: CGFloat? = nil) -> CGImage {
 
     // - Set up calculations
-    let scaleFactor = screen.backingScaleFactor
     let conf = (useFocusEffect ? volBar_Focused : volBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
     let currentValueRatio = currentValue / maxValue
@@ -531,18 +509,19 @@ class BarFactory {
   }
 
   /// Measured in points, not pixels!
-  private func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat, drawShadow: Bool) -> CGRect {
+  private func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
     let imgHeight = heightNeeded(tallestBarHeight: tallestBarHeight)
     // can be negative:
     let spareHeight = drawRect.height - imgHeight
-    let totalPaddingX = barImgPadding + (drawShadow ? shadowPadding : 0.0)
-    return CGRect(x: drawRect.origin.x - totalPaddingX,
+    let barImgPadding = barImgPadding
+    return CGRect(x: drawRect.origin.x - barImgPadding,
                   y: drawRect.origin.y + (spareHeight * 0.5),
-                  width: drawRect.width + (2 * totalPaddingX), height: imgHeight)
+                  width: drawRect.width + (2 * barImgPadding), height: imgHeight)
   }
 
-  func drawBar(_ barImg: CGImage, in barRect: NSRect, tallestBarHeight: CGFloat, drawShadow: Bool) {
-    var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight, drawShadow: drawShadow)
+  func drawBar(_ barImg: CGImage, in barRect: NSRect, scaleFactor: CGFloat,
+               tallestBarHeight: CGFloat, drawShadow: Bool) {
+    var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
                         y: drawRect.origin.y + 1,
@@ -550,7 +529,17 @@ class BarFactory {
                         height: drawRect.height - 2)
     }
 
-    NSGraphicsContext.current!.cgContext.draw(barImg, in: drawRect)
+    let ctx = NSGraphicsContext.current!.cgContext
+
+    if drawShadow {
+      let shadowPadding_Scaled = shadowPadding * scaleFactor
+      ctx.setShadow(offset: CGSize(width: 0, height: 0), blur: shadowPadding_Scaled)
+      ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+    }
+    ctx.draw(barImg, in: drawRect)
+    if drawShadow {
+      ctx.endTransparencyLayer()
+    }
   }
 
 }

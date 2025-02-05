@@ -42,14 +42,16 @@ class VolumeSliderCell: ScrollableSliderCell {
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
-      let drawShadow = false // TODO: isClearBG
-      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect, drawShadow: drawShadow,
+      let drawShadow = isClearBG
+      let scaleFactor = screen.backingScaleFactor
+      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect,
                                              barWidth: barRect.width,
-                                             screen: screen, knobRect: knobRect,
+                                             scaleFactor: scaleFactor, knobRect: knobRect,
                                              currentValue: doubleValue, maxValue: maxValue,
                                              currentPreviewValue: previewValue)
       
-      bf.drawBar(volBarImg, in: barRect, tallestBarHeight: bf.maxVolBarHeightNeeded, drawShadow: drawShadow)
+      bf.drawBar(volBarImg, in: barRect, scaleFactor: scaleFactor,
+                 tallestBarHeight: bf.maxVolBarHeightNeeded, drawShadow: drawShadow)
     }
   }
 
