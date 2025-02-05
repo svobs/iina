@@ -197,11 +197,6 @@ extension PlayerWindowController {
   /// - SeeAlso: mouseUp(with:)
   @objc internal func performMouseActionLater(_ timer: Timer) {
     guard let action = timer.userInfo as? Preference.MouseClickAction else { return }
-    if mouseExitEnterCount >= 2 && action == .hideOSC {
-      /// the counter being greater than or equal to 2 means that the mouse re-entered the window
-      /// `showFadeableViews()` must be called due to the movement in the window, thus `hideOSC` action should be cancelled
-      return
-    }
     performMouseAction(action)
   }
 
@@ -367,7 +362,6 @@ extension PlayerWindowController {
             performMouseAction(singleClickAction)
           } else {
             singleClickTimer = Timer.scheduledTimer(timeInterval: NSEvent.doubleClickInterval, target: self, selector: #selector(performMouseActionLater), userInfo: singleClickAction, repeats: false)
-            mouseExitEnterCount = 0
           }
         } else if isDoubleClick {
           if let timer = singleClickTimer {
@@ -465,7 +459,6 @@ extension PlayerWindowController {
       log.warn("No data for tracking area")
       return
     }
-    mouseExitEnterCount += 1
 
     switch area {
     case .playerWindow:
@@ -484,7 +477,6 @@ extension PlayerWindowController {
       log.warn("MouseExited: no data for tracking area!")
       return
     }
-    mouseExitEnterCount += 1
 
     switch area {
     case .playerWindow:

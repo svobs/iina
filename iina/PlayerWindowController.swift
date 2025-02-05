@@ -194,7 +194,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// Differentiate between single clicks and double clicks.
   var singleClickTimer: Timer?
-  var mouseExitEnterCount = 0
 
   /// Scroll wheel (see `PWin_ScrollWheel.swift`)
 
