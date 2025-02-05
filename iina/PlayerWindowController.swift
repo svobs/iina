@@ -163,37 +163,31 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // - Mouse
 
-  var mouseDownLocationInWindow: CGPoint?
-
-  // might use another obj to handle slider?
-  var isMouseInWindow: Bool = false
-
-  // - Left and right arrow buttons
-
-  /** The maximum pressure recorded when clicking on the arrow buttons. */
+  /// When the speed arrow buttons were last clicked.
+  var lastForceTouchClick = Date()
+  /// The maximum pressure recorded when clicking on the speed arrow buttons.
   var maxPressure: Int = 0
-
-  /** The value of speedValueIndex before Force Touch. */
+  /// The value of speedValueIndex before Force Touch.
   var oldSpeedValueIndex: Int = AppData.availableSpeedValues.count / 2
 
-  /** When the arrow buttons were last clicked. */
-  var lastClick = Date()
+  /// Force Touch: for `PK.forceTouchAction`
+  var isCurrentPressInSecondStage = false
 
   /// Responder chain is a mess. Use this to prevent duplicate event processing
   var lastMouseDownEventID: Int = -1
+  var mouseDownLocationInWindow: CGPoint?
+
+  var lastKeyWindowStatus = false
+  /// Special state needed to prevent hideOSC from happening on first mouse
+  var wasKeyWindowAtMouseDown = false
+
   var lastMouseUpEventID: Int = -1
+  /// Differentiate between single clicks and double clicks.
+  var singleClickTimer: Timer?
+
   var lastRightMouseDownEventID: Int = -1
   var lastRightMouseUpEventID: Int = -1
 
-  /// Special state needed to prevent hideOSC from happening on first mouse
-  var wasKeyWindowAtMouseDown = false
-  var lastKeyWindowStatus = false
-
-  /// For force touch action
-  var isCurrentPressInSecondStage = false
-
-  /// Differentiate between single clicks and double clicks.
-  var singleClickTimer: Timer?
 
   /// Scroll wheel (see `PWin_ScrollWheel.swift`)
 
@@ -202,12 +196,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // - State for PlaySlider, VolumeSlider
 
-  var isDraggingPlaySlider: Bool {
-    playSlider.customCell.isDragging
-  }
-
   var isScrollingOrDraggingPlaySlider: Bool {
-    if isDraggingPlaySlider {
+    if playSlider.customCell.isDragging {
+      // Dragging play slider
       return true
     }
     if (playSlider.scrollWheelDelegate?.isScrolling() ?? false) {
@@ -2287,7 +2278,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
           if maxPressure == 1 &&
               ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
-               Date().timeIntervalSince(lastClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
+               Date().timeIntervalSince(lastForceTouchClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
             newSpeedIndex = oldSpeedValueIndex + directionUnit
           } else { // Force Touch or long press ended
             newSpeedIndex = indexSpeed1x
@@ -2297,7 +2288,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           if clickPressure == 1 && maxPressure == 0 { // First press
             oldSpeedValueIndex = currentSpeedIndex
             newSpeedIndex = currentSpeedIndex + directionUnit
-            lastClick = Date()
+            lastForceTouchClick = Date()
           } else { // Force Touch
             newSpeedIndex = oldSpeedValueIndex + (clickPressure * directionUnit)
           }

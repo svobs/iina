@@ -207,7 +207,7 @@ extension PlayerWindowController {
       return
     }
     log.trace{"PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)"}
-    if isCurrentPressInSecondStage == false && event.stage == 2 {
+    if !isCurrentPressInSecondStage && event.stage == 2 {
       performMouseAction(Preference.enum(for: .forceTouchAction))
       isCurrentPressInSecondStage = true
     } else if event.stage == 1 {
@@ -462,7 +462,6 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
-      isMouseInWindow = true
       showFadeableViews(duration: 0)
     case .customTitleBar:
       customTitleBar?.leadingStackView.mouseEntered(with: event)
@@ -480,7 +479,6 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
-      isMouseInWindow = false
       if currentDragObject != nil { return }
       if !isAnimating && Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
         hideFadeableViews()
