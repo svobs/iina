@@ -29,7 +29,9 @@ final class PlaySlider: ScrollableSlider {
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
 
-  var hoverIndicator: SliderHoverIndicator?
+  lazy var hoverIndicator: SliderHoverIndicator = {
+    SliderHoverIndicator(slider: self, scaleFactor: window?.screen?.backingScaleFactor ?? 1.0)
+  }()
 
   // MARK:- Private Properties
 
@@ -71,6 +73,7 @@ final class PlaySlider: ScrollableSlider {
   /// `super.draw` and that has now been corrected. As a workaround on earlier versions of macOS the loop knob `draw` method
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
+    guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
     let sliderAppearance = customCell.sliderAppearance!
     super.draw(dirtyRect)
     let isDark = sliderAppearance.isDark
@@ -79,6 +82,7 @@ final class PlaySlider: ScrollableSlider {
         isDarkMode = isDark
         abLoopA.updateKnobImage(to: .loopKnob)
         abLoopB.updateKnobImage(to: .loopKnob)
+        hoverIndicator.update(scaleFactor: scaleFactor)
       }
     }
     abLoopA.updateHorizontalPosition()
@@ -103,13 +107,11 @@ final class PlaySlider: ScrollableSlider {
     guard let scaleFactor = window?.screen?.backingScaleFactor,
           let sliderAppearance = customCell.sliderAppearance else { return }
 
-    let xInWindowCoord = self.convert(NSPoint(x: x, y: 0), to: nil).x
-
     // Do not draw over the main knob, or AB loop knobs
     if customCell.wantsKnob {
       let knobRect = customCell.knobRect(flipped: isFlipped)
-      if xInWindowCoord.isBetweenInclusive(knobRect.minX, and: knobRect.maxX) {
-        hoverIndicator?.isHidden = true
+      if x.isBetweenInclusive(knobRect.minX, and: knobRect.maxX) {
+        hoverIndicator.isHidden = true
         return
       }
     }
@@ -117,8 +119,8 @@ final class PlaySlider: ScrollableSlider {
       let knobCenterX = abLoopA.x
       let kf = KnobFactory.shared
       let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
-      if xInWindowCoord.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX - halfWidth) {
-        hoverIndicator?.isHidden = true
+      if x.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX + halfWidth) {
+        hoverIndicator.isHidden = true
         return
       }
     }
@@ -126,26 +128,22 @@ final class PlaySlider: ScrollableSlider {
       let knobCenterX = abLoopB.x
       let kf = KnobFactory.shared
       let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
-      if xInWindowCoord.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX - halfWidth) {
-        hoverIndicator?.isHidden = true
+      if x.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX + halfWidth) {
+        hoverIndicator.isHidden = true
         return
       }
     }
 
     sliderAppearance.applyAppearanceFor {
-      let indicator: SliderHoverIndicator
-      if let hoverIndicator, hoverIndicator.imgLayer.contentsScale == scaleFactor {
-        indicator = hoverIndicator
-      } else {
-        if let prevIndicator = hoverIndicator {
-          prevIndicator.dispose()
-        }
-        let indicatorSize = NSSize(width: max(2.0, (customCell.knobWidth * 0.25).rounded()), height: customCell.knobHeight)
-        indicator = SliderHoverIndicator(slider: self, size: indicatorSize, scaleFactor: scaleFactor)
-        hoverIndicator = indicator
+      if hoverIndicator.imgLayer.contentsScale != scaleFactor {
+        hoverIndicator.update(scaleFactor: scaleFactor)
       }
 
-      indicator.show(atSliderCoordX: x)
+      hoverIndicator.show(atSliderCoordX: x)
     }
+  }
+
+  func indicatorSize() -> NSSize {
+    NSSize(width: max(2.0, (customCell.knobWidth * 0.25).rounded()), height: customCell.knobHeight)
   }
 }

@@ -380,7 +380,7 @@ extension PlayerWindowController {
         fadeableViews.hideTimer.restart()
       }
 
-      playSlider.hoverIndicator?.alphaValue = 0
+      playSlider.hoverIndicator.alphaValue = 0
     })
 
     tasks.append(.init(duration: 0) { [self] in
@@ -399,7 +399,7 @@ extension PlayerWindowController {
     seekPreview.thumbnailPeekView.isHidden = true
     seekPreview.timeLabel.isHidden = true
     seekPreview.currentPreviewTimeSec = nil
-    playSlider.hoverIndicator?.isHidden = true
+    playSlider.hoverIndicator.isHidden = true
   }
 
   /// Display time label & thumbnail when mouse over slider

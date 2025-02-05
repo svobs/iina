@@ -485,6 +485,7 @@ extension Notification.Name {
 }
 
 extension NSStackView.VisibilityPriority {
+  static let detachLessEarly = NSStackView.VisibilityPriority(rawValue: 975)
   static let detachEarly = NSStackView.VisibilityPriority(rawValue: 950)
   static let detachEarlier = NSStackView.VisibilityPriority(rawValue: 900)
 }

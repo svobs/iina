@@ -116,7 +116,7 @@ class BarFactory {
     let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
 
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
-    self.maxPlayBarHeightNeeded = (maxPlayBarHeightNeeded + (shadowPadding * 2)).rounded()
+    self.maxPlayBarHeightNeeded = maxPlayBarHeightNeeded
 
     // - Secondary Vars - VolumeSlider:
 
@@ -136,7 +136,7 @@ class BarFactory {
 
     let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right,
                                     barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)
-    self.maxVolBarHeightNeeded = (maxVolBarHeightNeeded + (shadowPadding * 2)).rounded()
+    self.maxVolBarHeightNeeded = maxVolBarHeightNeeded
 
     // - PlaySlider config sets
 
@@ -208,7 +208,10 @@ class BarFactory {
 
     let imgConf = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
-    let currentValuePointX = (imgConf.imgPadding + (currentValueSec / maxValueSec * imgConf.barWidth)).rounded()
+    func xForSec(_ sec: CGFloat) -> CGFloat {
+      (imgConf.imgPadding + (sec / maxValueSec * imgConf.barWidth)).rounded()
+    }
+    let currentValuePointX = xForSec(currentValueSec)
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
@@ -239,7 +242,7 @@ class BarFactory {
     if useFocusEffect {
       if let currentPreviewTimeSec {
         // Mouse is hovering & showing Seek Preview: use its X coord
-        currentHoverX = imgConf.imgPadding + (currentPreviewTimeSec / maxValueSec * imgConf.barWidth).rounded()
+        currentHoverX = xForSec(currentPreviewTimeSec)
       } else {
         // Actively seeking or scrolling: use position of the knob for current chapter
         currentHoverX = currentValuePointX
@@ -255,7 +258,7 @@ class BarFactory {
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
       var segsMaxX: [Double]
       if chapters.count > 0, maxValueSec > 0 {
-        segsMaxX = chapters[1...].map{ $0.startTime / maxValueSec * imgConf.barWidth }
+        segsMaxX = chapters[1...].map{ xForSec($0.startTime) }
       } else {
         segsMaxX = []
       }
@@ -372,8 +375,8 @@ class BarFactory {
       var rectsLeft: [NSRect] = []
       var rectsRight: [NSRect] = []
       for cachedRange in cachedRanges {
-        let startX: CGFloat = cachedRange.0 / maxValueSec * imgConf.barWidth
-        let endX: CGFloat = cachedRange.1 / maxValueSec * imgConf.barWidth
+        let startX: CGFloat = xForSec(cachedRange.0)
+        let endX: CGFloat = xForSec(cachedRange.1)
         if startX > leftClipMaxX {
           rectsRight.append(CGRect(x: startX, y: minY,
                                    width: endX - startX, height: maxBarHeightNeeded))
@@ -404,6 +407,7 @@ class BarFactory {
       let barFrame = CGRect(origin: CGPoint(x: 0, y: 0), size: barImg.size())
 
       ctx.setBlendMode(.normal)
+      ctx.draw(barImg, in: barFrame)
 
       // Paste cacheImg over barImg:
       ctx.setBlendMode(.overlay)

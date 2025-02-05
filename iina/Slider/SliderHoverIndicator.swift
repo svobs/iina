@@ -10,12 +10,14 @@ import Cocoa
 
 final class SliderHoverIndicator: NSView {
   private let slider: PlaySlider
+  private var heightConstraint: NSLayoutConstraint!
+  private var widthConstraint: NSLayoutConstraint!
   private var centerXConstraint: NSLayoutConstraint!
-
-  let imgLayer: IndicatorImgLayer
+  var imgLayer: IndicatorImgLayer
 
   /// Size in points
-  init(slider: PlaySlider, size: NSSize, scaleFactor: CGFloat) {
+  init(slider: PlaySlider, scaleFactor: CGFloat) {
+    let size = slider.indicatorSize()
     self.slider = slider
     imgLayer = IndicatorImgLayer(size, scaleFactor: scaleFactor)
     // The frame is calculated and set once the superclass is initialized.
@@ -23,6 +25,7 @@ final class SliderHoverIndicator: NSView {
     slider.addSubview(self)
     setFrameSize(size)
     isHidden = true
+    idString = slider.idString + "\(slider.idString)HoverIndicator"
 
     layer = imgLayer
     wantsLayer = true
@@ -30,12 +33,23 @@ final class SliderHoverIndicator: NSView {
     layerContentsPlacement = .center
 
     translatesAutoresizingMaskIntoConstraints = false
-    heightAnchor.constraint(equalToConstant: size.height).isActive = true
-    widthAnchor.constraint(equalToConstant: size.width).isActive = true
-    centerYAnchor.constraint(equalTo: slider.centerYAnchor).isActive = true
+
+    widthConstraint = widthAnchor.constraint(equalToConstant: size.width)
+    widthConstraint.identifier = "\(idString)-WidthConstraint"
+    widthConstraint.isActive = true
+
+    heightConstraint = heightAnchor.constraint(equalToConstant: size.height)
+    heightConstraint.identifier = "\(idString)-HeightConstraint"
+    heightConstraint.isActive = true
+
+    // Do not change:
+    let centerYConstraint = centerYAnchor.constraint(equalTo: slider.centerYAnchor)
+    centerYConstraint.identifier = "\(idString)-CenterYConstraint"
+    centerYConstraint.isActive = true
 
     centerXConstraint = centerXAnchor.constraint(equalTo: slider.leadingAnchor,
                                                  constant: size.width * 0.5)
+    centerXConstraint.identifier = "\(idString)-CenterXConstraint"
     centerXConstraint.isActive = true
   }
 
@@ -46,6 +60,16 @@ final class SliderHoverIndicator: NSView {
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+  func update(scaleFactor: CGFloat) {
+    let size = slider.indicatorSize()
+    setFrameSize(size)
+    widthConstraint.animateToConstant(size.width)
+    heightConstraint.animateToConstant(size.height)
+
+    imgLayer = IndicatorImgLayer(size, scaleFactor: scaleFactor)
+    needsDisplay = true
+  }
 
   func show(atSliderCoordX sliderCoordX: CGFloat) {
     centerXConstraint.constant = sliderCoordX
@@ -68,7 +92,6 @@ final class SliderHoverIndicator: NSView {
       super.init()
       contentsScale = prevLayer.contentsScale
       bounds = prevLayer.bounds
-      contentsFormat = prevLayer.contentsFormat
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -81,7 +104,8 @@ final class SliderHoverIndicator: NSView {
       // Use entire img height for now. In the future, would be better to make taller than the main knob.
       // Need to investigate drawing directly to CGLayers
       let indicatorRect = NSRect(origin: .zero, size: bounds.size)
-      ctx.addPath(CGPath(roundedRect: indicatorRect, cornerWidth: 1.0, cornerHeight: 1.0, transform: nil))
+      let cornerRadius: CGFloat = 1.0 //(bounds.size.height * 0.25).rounded()
+      ctx.addPath(CGPath(roundedRect: indicatorRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
       ctx.setFillColor(NSColor.sliderHoverIndicator.cgColor)
       ctx.fillPath()
     }

@@ -46,7 +46,8 @@ class SingleRowBarOSCView: ClickThroughStackView {
 
     setViews(views, in: .leading)
 
-    setVisibilityPriority(.mustHold, for: pwc.playSliderAndTimeLabelsView)
+    setVisibilityPriority(.mustHold, for: pwc.fragPlaybackBtnsView)
+    setVisibilityPriority(.detachLessEarly, for: pwc.playSliderAndTimeLabelsView)
     setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
     if let fragToolbarView = pwc.fragToolbarView {
       setVisibilityPriority(.detachEarlier, for: fragToolbarView)

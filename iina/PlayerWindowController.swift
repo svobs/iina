@@ -702,6 +702,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // These cache their images so they need to be refreshed manually:
         playSlider.abLoopA.updateKnobImage(to: .loopKnob)
         playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+        playSlider.hoverIndicator.update(scaleFactor: window.screen!.backingScaleFactor)
 
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }

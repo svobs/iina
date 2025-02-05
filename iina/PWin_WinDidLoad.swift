@@ -513,6 +513,10 @@ extension PlayerWindowController {
     playSlider.isContinuous = true
     playSlider.refusesFirstResponder = true
     playSlider.translatesAutoresizingMaskIntoConstraints = false
+    let widthConstraint = playSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    widthConstraint.identifier = "PlaySlider-MinWidthConstraint"
+    widthConstraint.isActive = true
+
     playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: 20)
     playSliderHeightConstraint.identifier = "PlaySlider-HeightConstraint"
     playSliderHeightConstraint.priority = .init(900)
