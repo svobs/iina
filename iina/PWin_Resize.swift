@@ -749,7 +749,7 @@ extension PlayerWindowController {
       resetRotationPreview()
     })
 
-    tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
+    tasks.append(.init(duration: duration, timing: timing, { [self] in
 
       // This is only needed to achieve "fade-in" effect when opening window:
       updateWindowBorderAndOpacity()

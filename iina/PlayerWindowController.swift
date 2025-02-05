@@ -1894,6 +1894,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return showingFadeableViews || showingFadeableTopBar || showingOSD
   }
 
+  /// Updates all UI controls
   func updateUI() {
     assert(DispatchQueue.isExecutingIn(.main))
     // This method is often run outside of the animation queue, which can be dangerous.
@@ -1976,9 +1977,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     volumeSlider.maxValue = Double(Preference.integer(for: .maxVolume))
     volumeSlider.doubleValue = volume
     muteButton.isEnabled = hasAudio
+
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
-      let task = IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration, { [self] in
+      let task = IINAAnimation.Task(duration: IINAAnimation.btnLayoutChangeDuration, { [self] in
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
         volumeIconAspectConstraint.priority = .init(900)
@@ -2040,13 +2042,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= Constants.Distance.minOSCBarHeightForSpeedLabel
 
     let hasPlayButtonChange = playButton.image != playPauseImage
-    let hasChange = speedLabel.isHidden == !showSpeedLabel || hasPlayButtonChange
-    let duration = hasChange ? IINAAnimation.OSDAnimationDuration : 0
+    let hasSpeedLayoutChange = speedLabel.isHidden == !showSpeedLabel
 
     // Update status in menu bar menu (if enabled)
     MediaPlayerIntegration.shared.update()
 
-    IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
+    let duration = (hasSpeedLayoutChange || hasPlayButtonChange) ? IINAAnimation.btnLayoutChangeDuration * 4 : 0.0
+    IINAAnimation.runAsync(.init(duration: duration) { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
       var effect: SymButton.ReplacementEffect = .downUp
@@ -2062,7 +2064,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
       }
       player.touchBarSupport.updateTouchBarPlayBtn()
-    }))
+    })
   }
 
   func syncPlaySliderABLoop() {
