@@ -52,8 +52,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
 
-  private var oscToolbarStackViewHeightConstraint: NSLayoutConstraint? = nil
-  private var oscToolbarStackViewWidthConstraint: NSLayoutConstraint? = nil
+  private var oscToolbarStackViewHeightConstraint: NSLayoutConstraint!
+  private var oscToolbarStackViewWidthConstraint: NSLayoutConstraint!
 
   @IBOutlet weak var toolIconSizeSlider: NSSlider!
   @IBOutlet weak var toolIconSpacingSlider: NSSlider!
@@ -473,7 +473,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let playIconSpacingTicks = newGeo.playIconSpacingTicks
 
     // Constrain sizes for prefs preview
-    let previewBarHeight = newGeo.position == .floating ? 24 : min(maxToolbarPreviewBarHeight, newGeo.barHeight)
+    let previewBarHeight = newGeo.position == .floating ? 24 : newGeo.isTwoRowBarOSC ? newGeo.barHeight : min(maxToolbarPreviewBarHeight, newGeo.barHeight)
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
@@ -482,12 +482,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     Logger.log.verbose{"Updating OSC toolbar preview geometry: origBarHeight=\(newGeo.barHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewBarHeight)"}
 
     // Prevent constraint violations by lowering these briefly...
-    oscToolbarStackViewHeightConstraint?.priority = .defaultHigh
-    oscToolbarStackViewWidthConstraint?.priority = .defaultHigh
+    oscToolbarStackViewHeightConstraint.priority = .defaultHigh
+    oscToolbarStackViewWidthConstraint.priority = .defaultHigh
     let toolbarButtonTypes = previewGeo.toolbarItems
 
-    oscToolbarStackViewHeightConstraint?.animateToConstant(previewBarHeight)
-    oscToolbarStackViewWidthConstraint?.animateToConstant(previewTotalToolbarWidth)
+    oscToolbarStackViewHeightConstraint.animateToConstant(previewGeo.fullIconHeight)
+    oscToolbarStackViewWidthConstraint.animateToConstant(previewTotalToolbarWidth)
 
     // If button count hasn't changed, we'll reuse existing buttons. Otherwise delete all & replace
     var btns = oscToolbarStackView.views.compactMap{ $0 as? OSCToolbarButton }
@@ -519,7 +519,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     // Update sheet preview also (both available items & current items)
     toolbarSettingsSheetController.updateToolbarButtonHeight()
 
-    oscToolbarStackViewHeightConstraint?.priority = .required
+    oscToolbarStackViewHeightConstraint.priority = .required
     // Do not set oscToolbarStackViewWidthConstraint to "required" - avoid constraint errors
 
     oscToolbarPreviewBox.updateConstraints()
