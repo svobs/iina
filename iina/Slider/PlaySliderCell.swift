@@ -33,22 +33,24 @@ class PlaySliderCell: ScrollableSliderCell {
     let knobRect = knobRect(flipped: false)
     let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
 
-    let chapters = drawChapters ? player.info.chapters : []
-    let cachedRanges = player.info.cachedRanges
     let durationSec = player.info.playbackDurationSec ?? 0.0
+    let currentValueSec = slider.progressRatio * durationSec
+    let chapters = drawChapters ? player.info.chapters : []
+    let cachedRanges = player.info.cachedRanges  // will be empty if drawing cache is disabled
 
-    let progressRatio = slider.progressRatio
     // Disable hover zoom effect & indicator while actively scrolling; looks bad
     let currentPreviewTimeSec: Double? = player.windowController.isScrollingOrDraggingPlaySlider ? nil : player.windowController.seekPreview.currentPreviewTimeSec
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
       let drawShadow = isClearBG
-      let playBarImg = bf.buildPlayBarImage(barWidth: barRect.width,
-                                            screen: screen, useFocusEffect: useFocusEffect, drawShadow: drawShadow,
-                                            knobMinX: knobRect.minX, knobWidth: knobRect.width, currentValueRatio: progressRatio,
-                                            durationSec: durationSec, chapters, cachedRanges: cachedRanges,
-                                            currentPreviewTimeSec: currentPreviewTimeSec)
+      let playBarImg = bf.buildPlayBarImage(useFocusEffect: useFocusEffect, drawShadow: drawShadow,
+                                            barWidth: barRect.width,
+                                            screen: screen,
+                                            knobRect: knobRect,
+                                            currentValueSec: currentValueSec, maxValueSec: durationSec,
+                                            currentPreviewTimeSec: currentPreviewTimeSec,
+                                            chapters, cachedRanges: cachedRanges)
 
       bf.drawBar(playBarImg, in: barRect, tallestBarHeight: bf.maxPlayBarHeightNeeded, drawShadow: drawShadow)
     }

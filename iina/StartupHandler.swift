@@ -544,6 +544,7 @@ fileprivate class CommandLineStatus {
       } else if arg.hasPrefix("--") {
         parseDoubleDashedArg(arg)
       } else if arg.hasPrefix("-") {
+        Logger.log.verbose{"Ignoring arg: \(arg)"}
         dropNextArg = true
       } else {
         // assume arg with no starting dashes is a filename
@@ -551,9 +552,9 @@ fileprivate class CommandLineStatus {
       }
     }
 
-    Logger.log("Parsed command-line args: isStdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), enterMusicMode=\(enterMusicMode.yn), enterPIP=\(enterPIP.yn)")
-    Logger.log("Filenames from arguments: \(filenames)")
-    Logger.log("Derived mpv properties from args: \(mpvArguments)")
+    Logger.log.debug{"Parsed command-line args: isStdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), enterMusicMode=\(enterMusicMode.yn), enterPIP=\(enterPIP.yn)"}
+    Logger.log.debug{"Filenames from arguments: \(filenames.map{$0.pii.quoted})"}
+    Logger.log.debug{"Derived mpv properties from args: \(mpvArguments)"}
 
     guard !filenames.isEmpty || isStdin else {
       print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")

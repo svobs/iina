@@ -89,7 +89,7 @@ class BarFactory {
     // CONSTANTS: All in points (not pixels).
     // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
 
-    // - PlaySlider & VolumeSlider both:
+    // - Secondary Vars - PlaySlider & VolumeSlider both:
 
     let barHeight_Normal: CGFloat = oscGeo.slidersBarHeightNormal
     updateCurvature(using: barHeight_Normal)
@@ -98,7 +98,7 @@ class BarFactory {
     leftCachedColor = barColorLeft.exaggerated()
     rightCachedColor = barColorRight.exaggerated()
 
-    // - PlaySlider:
+    // - Secondary Vars - PlaySlider:
 
     // Bar shadow is only drawn when using clear BG style
     let shadowPadding = Constants.Distance.Slider.shadowBlurRadius  // each side of bar!
@@ -118,7 +118,7 @@ class BarFactory {
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
     self.maxPlayBarHeightNeeded = (maxPlayBarHeightNeeded + (shadowPadding * 2)).rounded()
 
-    // - VolumeSlider:
+    // - Secondary Vars - VolumeSlider:
 
     let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
     let barHeight_VolumeAbove100_Right: CGFloat = (barHeight_VolumeAbove100_Left * 0.5).rounded()
@@ -197,26 +197,28 @@ class BarFactory {
   // MARK: - Play Bar
 
   /// `barWidth` does not include added leading or trailing margin
-  func buildPlayBarImage(barWidth: CGFloat,
-                         screen: NSScreen, useFocusEffect: Bool, drawShadow: Bool,
-                         knobMinX: CGFloat, knobWidth: CGFloat, currentValueRatio: CGFloat,
-                         durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)],
-                         currentPreviewTimeSec: Double?) -> CGImage {
+  func buildPlayBarImage(useFocusEffect: Bool, drawShadow: Bool,
+                         barWidth: CGFloat,
+                         screen: NSScreen,
+                         knobRect: NSRect,
+                         currentValueSec: CGFloat, maxValueSec: CGFloat,
+                         currentPreviewTimeSec: Double?,
+                         _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
     // - Set up calculations
     let scaleFactor = screen.backingScaleFactor
 
     let imgConf = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
-    let currentValuePointX = (imgConf.imgPadding + (currentValueRatio * imgConf.barWidth)).rounded()
+    let currentValuePointX = (imgConf.imgPadding + (currentValueSec / maxValueSec * imgConf.barWidth)).rounded()
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
     let rightClipMinX: CGFloat
-    let hasSpaceForKnob = knobWidth > 0.0
+    let hasSpaceForKnob = knobRect.width > 0.0
     if hasSpaceForKnob {
       // - Will clip out the knob
-      leftClipMaxX = (knobMinX - 1) * scaleFactor
-      rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+      leftClipMaxX = (knobRect.minX - 1) * scaleFactor
+      rightClipMinX = leftClipMaxX + (knobRect.width * scaleFactor)
     } else {
       leftClipMaxX = currentValuePointX
       rightClipMinX = currentValuePointX
@@ -236,7 +238,7 @@ class BarFactory {
     // X coord of hover is needed to determine chapter hover effect.
     let currentHoverX: CGFloat?
     if let currentPreviewTimeSec {
-      let hoverX = imgConf.imgPadding + (currentPreviewTimeSec / durationSec * imgConf.barWidth).rounded()
+      let hoverX = imgConf.imgPadding + (currentPreviewTimeSec / maxValueSec * imgConf.barWidth).rounded()
       currentHoverX = hoverX
     } else {
       currentHoverX = nil
@@ -247,8 +249,8 @@ class BarFactory {
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
       var segsMaxX: [Double]
-      if chapters.count > 0, durationSec > 0 {
-        segsMaxX = chapters[1...].map{ $0.startTime / durationSec * imgConf.barWidth }
+      if chapters.count > 0, maxValueSec > 0 {
+        segsMaxX = chapters[1...].map{ $0.startTime / maxValueSec * imgConf.barWidth }
       } else {
         segsMaxX = []
       }
@@ -368,8 +370,8 @@ class BarFactory {
         var rectsLeft: [NSRect] = []
         var rectsRight: [NSRect] = []
         for cachedRange in cachedRanges {
-          let startX: CGFloat = cachedRange.0 / durationSec * imgConf.barWidth
-          let endX: CGFloat = cachedRange.1 / durationSec * imgConf.barWidth
+          let startX: CGFloat = cachedRange.0 / maxValueSec * imgConf.barWidth
+          let endX: CGFloat = cachedRange.1 / maxValueSec * imgConf.barWidth
           if startX > leftClipMaxX {
             rectsRight.append(CGRect(x: startX, y: minY,
                                      width: endX - startX, height: maxBarHeightNeeded))
@@ -431,7 +433,7 @@ class BarFactory {
   func buildVolumeBarImage(useFocusEffect: Bool, drawShadow: Bool,
                            barWidth: CGFloat,
                            screen: NSScreen,
-                           knobMinX: CGFloat, knobWidth: CGFloat,
+                           knobRect: NSRect,
                            currentValue: Double, maxValue: Double,
                            currentPreviewValue: CGFloat? = nil) -> CGImage {
 
@@ -445,10 +447,11 @@ class BarFactory {
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
     let rightClipMinX: CGFloat
-    if useFocusEffect && knobWidth >= 1.0 {
+    let hasSpaceForKnob = knobRect.width > 0.0
+    if useFocusEffect && hasSpaceForKnob {
       // - Will clip out the knob
-      leftClipMaxX = (knobMinX - 1) * scaleFactor
-      rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+      leftClipMaxX = (knobRect.minX - 1) * scaleFactor
+      rightClipMinX = leftClipMaxX + (knobRect.width * scaleFactor)
     } else {
       // No knob
       leftClipMaxX = currentValuePointX

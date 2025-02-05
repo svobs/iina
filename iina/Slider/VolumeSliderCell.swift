@@ -45,7 +45,7 @@ class VolumeSliderCell: ScrollableSliderCell {
       let drawShadow = false // TODO: isClearBG
       let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect, drawShadow: drawShadow,
                                              barWidth: barRect.width,
-                                             screen: screen, knobMinX: knobRect.minX, knobWidth: knobRect.width,
+                                             screen: screen, knobRect: knobRect,
                                              currentValue: doubleValue, maxValue: maxValue,
                                              currentPreviewValue: previewValue)
       
