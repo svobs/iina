@@ -50,9 +50,7 @@ final class PlaySlider: ScrollableSlider {
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
   }
 
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   // MARK:- Drawing
 
@@ -73,13 +71,15 @@ final class PlaySlider: ScrollableSlider {
   /// `super.draw` and that has now been corrected. As a workaround on earlier versions of macOS the loop knob `draw` method
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
-    guard let window else { return }
+    let sliderAppearance = customCell.sliderAppearance!
     super.draw(dirtyRect)
-    let isDark = window.contentView?.iinaAppearance.isDark ?? false
+    let isDark = sliderAppearance.isDark
     if isDark != isDarkMode {
-      isDarkMode = isDark
-      abLoopA.updateKnobImage(to: .loopKnob)
-      abLoopB.updateKnobImage(to: .loopKnob)
+      sliderAppearance.applyAppearanceFor {
+        isDarkMode = isDark
+        abLoopA.updateKnobImage(to: .loopKnob)
+        abLoopB.updateKnobImage(to: .loopKnob)
+      }
     }
     abLoopA.updateHorizontalPosition()
     abLoopB.updateHorizontalPosition()
@@ -100,6 +100,9 @@ final class PlaySlider: ScrollableSlider {
   }
 
   func showHoverIndicator(atSliderCoordX x: CGFloat) {
+    guard let scaleFactor = window?.screen?.backingScaleFactor,
+          let sliderAppearance = customCell.sliderAppearance else { return }
+
     let xInWindowCoord = self.convert(NSPoint(x: x, y: 0), to: nil).x
 
     // Do not draw over the main knob, or AB loop knobs
@@ -129,17 +132,20 @@ final class PlaySlider: ScrollableSlider {
       }
     }
 
-    guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
+    sliderAppearance.applyAppearanceFor {
+      let indicator: SliderHoverIndicator
+      if let hoverIndicator, hoverIndicator.imgLayer.contentsScale == scaleFactor {
+        indicator = hoverIndicator
+      } else {
+        if let prevIndicator = hoverIndicator {
+          prevIndicator.dispose()
+        }
+        let indicatorSize = NSSize(width: max(2.0, (customCell.knobWidth * 0.25).rounded()), height: customCell.knobHeight)
+        indicator = SliderHoverIndicator(slider: self, size: indicatorSize, scaleFactor: scaleFactor)
+        hoverIndicator = indicator
+      }
 
-    let indicator: SliderHoverIndicator
-    if let hoverIndicator, hoverIndicator.imgLayer.contentsScale == scaleFactor {
-      indicator = hoverIndicator
-    } else {
-      let indicatorSize = NSSize(width: max(4.0, (customCell.knobWidth * 0.25).rounded()), height: customCell.knobHeight)
-      indicator = SliderHoverIndicator(slider: self, size: indicatorSize, scaleFactor: scaleFactor)
-      hoverIndicator = indicator
+      indicator.show(atSliderCoordX: x)
     }
-
-    indicator.show(atSliderCoordX: x)
   }
 }

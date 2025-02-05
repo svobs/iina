@@ -13,10 +13,6 @@ class PlaySliderCell: ScrollableSliderCell {
 
   var wasPausedBeforeSeeking = false
 
-  var isDarkMode: Bool {
-    iinaAppearance?.isDark ?? false
-  }
-
   override var wantsKnob: Bool {
     guard let wc else { return false }
     let alwaysShowKnob = !player.windowController.currentLayout.useSliderFocusEffect
@@ -26,8 +22,8 @@ class PlaySliderCell: ScrollableSliderCell {
   // MARK:- Displaying the Cell
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    guard let appearance = iinaAppearance,
-          let screen = controlView?.window?.screen else { return }
+    guard let appearance = sliderAppearance,
+          let scaleFactor = controlView?.window?.screen?.backingScaleFactor else { return }
 
     /// The position of the knob, rounded for cleaner drawing
     let drawKnob = wantsKnob
@@ -45,7 +41,6 @@ class PlaySliderCell: ScrollableSliderCell {
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
       let drawShadow = isClearBG
-      let scaleFactor = screen.backingScaleFactor
       let playBarImg = bf.buildPlayBarImage(useFocusEffect: useFocusEffect,
                                             barWidth: barRect.width,
                                             scaleFactor: scaleFactor,

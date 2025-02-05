@@ -44,7 +44,7 @@ class TwoRowBarOSCView: ClickThroughView {
 
   /// Should be called when no longer needed (for now anyway).
   /// Discards enough of the state to prevent this view & its constraints from causing problems with other layout.
-  func disuse() {
+  func dispose() {
     relaxConstraints()
     if let pwc {
       if subviews.contains(pwc.playSliderAndTimeLabelsView) {

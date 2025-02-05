@@ -33,7 +33,7 @@ class VolumeSliderCell: ScrollableSliderCell {
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    guard let appearance = iinaAppearance,
+    guard let appearance = sliderAppearance,
           let screen = controlView?.window?.screen else { return }
 
     let wantsKnob = wantsKnob

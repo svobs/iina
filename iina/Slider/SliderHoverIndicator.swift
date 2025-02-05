@@ -39,13 +39,13 @@ final class SliderHoverIndicator: NSView {
     centerXConstraint.isActive = true
   }
 
-  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-  override func draw(_ dirtyRect: NSRect) {
-    Logger.log("*** DRAW *** dirtyRect: \(dirtyRect)")  // TODO: remove
-    let ctx = NSGraphicsContext.current!.cgContext
-    imgLayer.draw(in: ctx)
+  func dispose() {
+    centerXConstraint.isActive = false
+    layer =  nil
+    removeFromSuperview()
   }
+
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   func show(atSliderCoordX sliderCoordX: CGFloat) {
     centerXConstraint.constant = sliderCoordX
@@ -71,9 +71,7 @@ final class SliderHoverIndicator: NSView {
       contentsFormat = prevLayer.contentsFormat
     }
 
-    required init?(coder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
-    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func draw(in ctx: CGContext) {
       Logger.log("*** DRAW LAYER *** \(bounds.size) scale=\(contentsScale)")  // TODO: remove
@@ -82,9 +80,9 @@ final class SliderHoverIndicator: NSView {
 
       // Use entire img height for now. In the future, would be better to make taller than the main knob.
       // Need to investigate drawing directly to CGLayers
-      let indicatorRect = NSRect(x: 0, y: 0, width: bounds.width - 2, height: bounds.height - 2)
-      ctx.addPath(CGPath(rect: indicatorRect, transform: nil))
-      ctx.setFillColor(.white)
+      let indicatorRect = NSRect(origin: .zero, size: bounds.size)
+      ctx.addPath(CGPath(roundedRect: indicatorRect, cornerWidth: 1.0, cornerHeight: 1.0, transform: nil))
+      ctx.setFillColor(NSColor.sliderHoverIndicator.cgColor)
       ctx.fillPath()
     }
   }

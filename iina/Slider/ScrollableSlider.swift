@@ -131,14 +131,18 @@ class ScrollableSliderCell: NSSliderCell {
 
   var slider: ScrollableSlider { controlView as! ScrollableSlider }
 
-  var iinaAppearance: NSAppearance? {
+  var isDragging = false
+
+  var sliderAppearance: NSAppearance? {
     if isClearBG {
       return NSAppearance(iinaTheme: .dark)
     }
     return controlView?.window?.contentView?.iinaAppearance
   }
 
-  var isDragging = false
+  var isDarkMode: Bool {
+    sliderAppearance?.isDark ?? false
+  }
 
   var isClearBG: Bool {
     wc?.currentLayout.spec.oscBackgroundIsClear ?? false
@@ -159,14 +163,17 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   override func drawKnob(_ knobRect: NSRect) {
+    guard let scaleFactor = controlView?.window?.screen?.backingScaleFactor,
+          let appearance = sliderAppearance else { return }
+
     guard wantsKnob else { return }
-    guard let screen = controlView?.window?.screen, let appearance = iinaAppearance else { return }
+
     appearance.applyAppearanceFor {
       KnobFactory.shared.drawKnob(currentKnobType, in: knobRect,
                                   darkMode: appearance.isDark,
                                   clearBG: isClearBG,
                                   knobWidth: knobWidth, mainKnobHeight: knobHeight,
-                                  scaleFactor: screen.backingScaleFactor)
+                                  scaleFactor: scaleFactor)
     }
   }
 

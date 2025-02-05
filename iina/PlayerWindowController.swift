@@ -194,8 +194,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// The window's virtual scroll wheel which may result in either volume or playback time seeking depending on direction
   var windowScrollWheel: PWinScrollWheel!
 
-  // - State for PlaySlider, VolumeSlider
-
   var isScrollingOrDraggingPlaySlider: Bool {
     if playSlider.customCell.isDragging {
       // Dragging play slider

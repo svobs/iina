@@ -495,8 +495,8 @@ extension PlayerWindowController {
     if !outputLayout.hasControlBar || transition.isControlBarChanging {
       playSliderAndTimeLabelsView.removeFromSuperview()
 
-      oscOneRowView.disuse()
-      oscTwoRowView.disuse()
+      oscOneRowView.dispose()
+      oscTwoRowView.dispose()
 
       if !transition.inputLayout.hasFloatingOSC {
         for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {

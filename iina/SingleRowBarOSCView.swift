@@ -31,7 +31,7 @@ class SingleRowBarOSCView: ClickThroughStackView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func disuse() {
+  func dispose() {
     // Not much to do here presently
     removeAllSubviews()
     removeFromSuperview()
