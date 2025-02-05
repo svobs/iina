@@ -82,8 +82,6 @@ extension PlayerWindowController {
       /// bleed through during their show/hide animations.
       setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
 
-      applyThemeMaterial()
-
       // Titlebar accessories
 
       // Update this here to reduce animation jitter on older versions of MacOS:
@@ -114,6 +112,9 @@ extension PlayerWindowController {
       initAlbumArtView()
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
+
+      // Apply theme after all views are hooked up
+      applyThemeMaterial()
 
       bufferIndicatorView.roundCorners()
       additionalInfoView.roundCorners()

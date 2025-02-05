@@ -268,6 +268,10 @@ struct ControlBarGeometry {
     return (Constants.Distance.Slider.defaultKnobHeight * sliderScale).rounded()
   }
 
+  var sliderIndicatorSize: NSSize {
+    NSSize(width: max(2.0, (sliderKnobWidth * 0.25).rounded()), height: sliderKnobHeight)
+  }
+
   // MARK: Computed props: Playback Controls
 
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.

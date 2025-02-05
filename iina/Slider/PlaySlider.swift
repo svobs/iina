@@ -17,9 +17,6 @@ import Cocoa
 /// - Requires: The custom slider cell provided by `PlaySliderCell` **must** be used with this class.
 /// - Note: Unlike `NSSlider` the `draw` method of this class will do nothing if the view is hidden.
 final class PlaySlider: ScrollableSlider {
-  /// Cache this to keep track of PlaySliderLoopKnob style
-  var isDarkMode: Bool = false
-
   /// Knob representing the A loop point for the mpv A-B loop feature.
   var abLoopA: PlaySliderLoopKnob { abLoopAKnob }
 
@@ -29,9 +26,7 @@ final class PlaySlider: ScrollableSlider {
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
 
-  lazy var hoverIndicator: SliderHoverIndicator = {
-    SliderHoverIndicator(slider: self, scaleFactor: window?.screen?.backingScaleFactor ?? 1.0)
-  }()
+  var hoverIndicator: SliderHoverIndicator!
 
   // MARK:- Private Properties
 
@@ -74,17 +69,7 @@ final class PlaySlider: ScrollableSlider {
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
     guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
-    let sliderAppearance = customCell.sliderAppearance!
     super.draw(dirtyRect)
-    let isDark = sliderAppearance.isDark
-    if isDark != isDarkMode {
-      sliderAppearance.applyAppearanceFor {
-        isDarkMode = isDark
-        abLoopA.updateKnobImage(to: .loopKnob)
-        abLoopB.updateKnobImage(to: .loopKnob)
-        hoverIndicator.update(scaleFactor: scaleFactor)
-      }
-    }
     abLoopA.updateHorizontalPosition()
     abLoopB.updateHorizontalPosition()
   }
@@ -136,14 +121,11 @@ final class PlaySlider: ScrollableSlider {
 
     sliderAppearance.applyAppearanceFor {
       if hoverIndicator.imgLayer.contentsScale != scaleFactor {
-        hoverIndicator.update(scaleFactor: scaleFactor)
+        let oscGeo = player.windowController.currentLayout.controlBarGeo
+        hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo)
       }
 
       hoverIndicator.show(atSliderCoordX: x)
     }
-  }
-
-  func indicatorSize() -> NSSize {
-    NSSize(width: max(2.0, (customCell.knobWidth * 0.25).rounded()), height: customCell.knobHeight)
   }
 }

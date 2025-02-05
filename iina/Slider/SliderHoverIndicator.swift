@@ -16,8 +16,8 @@ final class SliderHoverIndicator: NSView {
   var imgLayer: IndicatorImgLayer
 
   /// Size in points
-  init(slider: PlaySlider, scaleFactor: CGFloat) {
-    let size = slider.indicatorSize()
+  init(slider: PlaySlider, oscGeo: ControlBarGeometry, scaleFactor: CGFloat) {
+    let size = oscGeo.sliderIndicatorSize
     self.slider = slider
     imgLayer = IndicatorImgLayer(size, scaleFactor: scaleFactor)
     // The frame is calculated and set once the superclass is initialized.
@@ -61,8 +61,9 @@ final class SliderHoverIndicator: NSView {
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-  func update(scaleFactor: CGFloat) {
-    let size = slider.indicatorSize()
+  func update(scaleFactor: CGFloat, oscGeo: ControlBarGeometry) {
+    slider.associatedPlayer?.log.verbose("Updating SliderHoverIndicator")
+    let size = oscGeo.sliderIndicatorSize
     setFrameSize(size)
     widthConstraint.animateToConstant(size.width)
     heightConstraint.animateToConstant(size.height)
@@ -97,15 +98,10 @@ final class SliderHoverIndicator: NSView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func draw(in ctx: CGContext) {
-      Logger.log("*** DRAW LAYER *** \(bounds.size) scale=\(contentsScale)")  // TODO: remove
-      
-      // TODO!
-
-      // Use entire img height for now. In the future, would be better to make taller than the main knob.
-      // Need to investigate drawing directly to CGLayers
       let indicatorRect = NSRect(origin: .zero, size: bounds.size)
-      let cornerRadius: CGFloat = 1.0 //(bounds.size.height * 0.25).rounded()
-      ctx.addPath(CGPath(roundedRect: indicatorRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
+      let cornerRadius: CGFloat = 1.0
+      ctx.addPath(CGPath(roundedRect: indicatorRect,
+                         cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
       ctx.setFillColor(NSColor.sliderHoverIndicator.cgColor)
       ctx.fillPath()
     }

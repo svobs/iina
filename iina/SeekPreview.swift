@@ -225,15 +225,14 @@ extension PlayerWindowController {
       let maxX = minX + availableWidth
 
 
-      let halfMargin = margins.top * 0.5
       // Y offset calculation
       let timeLabelOriginY: CGFloat
       if showAbove {
         let oscTopY = oscOriginInWindowY + oscHeight
-        let halfMargin = margins.bottom * 0.5
+        let halfMargin = (margins.bottom * 0.5).rounded()
         // Show thumbnail above seek time, which is above slider
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
-          timeLabelOriginY = oscTopY + halfMargin
+          timeLabelOriginY = (oscTopY + halfMargin).rounded()
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
@@ -242,24 +241,25 @@ extension PlayerWindowController {
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
           if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
-            timeLabelOriginY = oscTopY + quarterMargin
+            timeLabelOriginY = (oscTopY + quarterMargin).rounded()
           } else {
-            timeLabelOriginY = sliderCenterY + halfKnobHeight + quarterMargin
+            timeLabelOriginY = (sliderCenterY + halfKnobHeight + quarterMargin).rounded()
           }
         }
       } else {  // Show below PlaySlider
         let quarterMargin = margins.top * 0.25
+        let halfMargin = margins.top * 0.5
         if currentLayout.oscPosition == .floating {
-          timeLabelOriginY = oscOriginInWindowY - quarterMargin - timeLabelSize.height
+          timeLabelOriginY = (oscOriginInWindowY - quarterMargin - timeLabelSize.height).rounded()
         } else {
           let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
-          let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
+          let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
-          let halfKnobHeight = player.windowController.playSlider.customCell.knobHeight * 0.5
+          let halfKnobHeight = (player.windowController.playSlider.customCell.knobHeight * 0.5).rounded()
           if !currentLayout.spec.oscBackgroundIsClear, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
-            timeLabelOriginY = oscOriginInWindowY - halfMargin - timeLabelSize.height
+            timeLabelOriginY = (oscOriginInWindowY - halfMargin - timeLabelSize.height).rounded()
           } else {
-            timeLabelOriginY = sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height
+            timeLabelOriginY = (sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height).rounded()
           }
         }
       }
@@ -268,7 +268,7 @@ extension PlayerWindowController {
       // Keep timeLabel centered with seek time location, which should usually match center of thumbnailPeekView.
       // But keep text fully inside window.
       let timeLabelWidth_Halved = timeLabelSize.width * 0.5
-      let timeLabelCenterX = round(posInWindowX).clamped(to: (minX + timeLabelWidth_Halved)...(maxX - timeLabelWidth_Halved))
+      let timeLabelCenterX = posInWindowX.clamped(to: (minX + timeLabelWidth_Halved)...(maxX - timeLabelWidth_Halved)).rounded()
       timeLabelHorizontalCenterConstraint.constant = timeLabelCenterX
 
       timeLabel.alphaValue = 1.0
@@ -291,14 +291,16 @@ extension PlayerWindowController {
       if showThumbnail {
         let thumbOriginY: CGFloat
         if showAbove {
+          let halfMargin = (margins.bottom * 0.5).rounded()
           thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
         } else {
+          let halfMargin = margins.top * 0.5
           thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
         }
 
         let thumbWidth_Halved = thumbWidth / 2
         let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
-        let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
+        let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
 
         // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
         let ffThumbnail = ffThumbnail!

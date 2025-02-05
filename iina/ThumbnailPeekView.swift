@@ -21,6 +21,7 @@ class ThumbnailPeekView: NSImageView {
   init() {
     let dummyFrame = NSRect(origin: .zero, size: CGSize(width: 160, height: 90))
     super.init(frame: dummyFrame)
+    wantsLayer = true
     layer?.masksToBounds = true
     imageScaling = .scaleNone
     imageFrameStyle = .none
@@ -32,13 +33,14 @@ class ThumbnailPeekView: NSImageView {
     shadow.shadowOffset = .zero
     self.shadow = shadow
 
+    // Need to call this initially; viewDidChangeEffectiveAppearance will only be called on change
+    updateColors()
+
     translatesAutoresizingMaskIntoConstraints = false
     widthConstraint = widthAnchor.constraint(equalToConstant: dummyFrame.width)
     widthConstraint.isActive = true
     heightConstraint = heightAnchor.constraint(equalToConstant: dummyFrame.height)
     heightConstraint.isActive = true
-
-    updateColors()
   }
 
   required init?(coder: NSCoder) {
@@ -96,9 +98,12 @@ class ThumbnailPeekView: NSImageView {
     return min(10, 2 + (frameHeight * 0.005))
   }
 
+  override func viewDidChangeEffectiveAppearance() {
+    updateColors()
+  }
+
   func updateColors() {
     guard let layer = self.layer else { return }
-
     layer.borderColor = CGColor(gray: 0.6, alpha: 0.5)
 
     if effectiveAppearance.isDark {

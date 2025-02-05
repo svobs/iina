@@ -673,13 +673,27 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     window.appearance = newAppearance
     // Either dark or light, never nil:
     let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
-    
-    BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance, oscGeo: currentLayout.controlBarGeo)
 
-    // Change to appearance above does not take effect until this task completes. Enqueue a new task to run after this one.
-    DispatchQueue.main.async { [self] in
-      effectiveAppearance.applyAppearanceFor {
-        seekPreview.thumbnailPeekView.updateColors()
+    let barAppearance = currentLayout.oscBackgroundIsClear ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    barAppearance.applyAppearanceFor {
+      BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance, oscGeo: currentLayout.controlBarGeo)
+      log.verbose("CLEAR: \(currentLayout.oscBackgroundIsClear.yesno), DARK: *** \(barAppearance.isDark.yesno) ***")
+      // Need to set .appearance on thumbnailPeekView, or else it will fall back to superview appearance
+      seekPreview.thumbnailPeekView.appearance = barAppearance
+      playSlider.appearance = barAppearance
+      volumeSlider.appearance = barAppearance
+      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
+      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+      if let scaleFactor = window.screen?.backingScaleFactor {
+        let oscGeo = currentLayout.controlBarGeo
+        if let hoverIndicator = playSlider.hoverIndicator {
+          hoverIndicator.appearance = barAppearance
+          hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo)
+        } else {
+          playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
+                                                           scaleFactor: scaleFactor)
+          playSlider.hoverIndicator?.appearance = barAppearance
+        }
       }
     }
   }
@@ -688,7 +702,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func updateTitleBarAndOSC() {
     titleBarAndOSCUpdateDebouncer.run { [self] in
       animationPipeline.submitInstantTask { [self] in
-        guard let window, let contentView = window.contentView else { return }
+        guard let window, let contentView = window.contentView, let screen = window.screen else { return }
 
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
@@ -697,13 +711,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // currently open. Should be ok for now as this is fairly fast...
         // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
         // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
-        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: contentView.iinaAppearance,
-                                            oscGeo: newLayoutSpec.controlBarGeo)
-        // These cache their images so they need to be refreshed manually:
-        playSlider.abLoopA.updateKnobImage(to: .loopKnob)
-        playSlider.abLoopB.updateKnobImage(to: .loopKnob)
-        playSlider.hoverIndicator.update(scaleFactor: window.screen!.backingScaleFactor)
-
+        let oscGeo = newLayoutSpec.controlBarGeo
+        let barAppearance = newLayoutSpec.oscBackgroundIsClear ? NSAppearance(iinaTheme: .dark)! : contentView.iinaAppearance
+        barAppearance.applyAppearanceFor {
+          seekPreview.thumbnailPeekView.appearance = barAppearance
+          playSlider.appearance = barAppearance
+          volumeSlider.appearance = barAppearance
+          BarFactory.updateBarStylesFromPrefs(effectiveAppearance: barAppearance, oscGeo: oscGeo)
+          // These cache their images so they need to be refreshed manually:
+          playSlider.abLoopA.updateKnobImage(to: .loopKnob)
+          playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+          playSlider.hoverIndicator.update(scaleFactor: screen.backingScaleFactor, oscGeo: oscGeo)
+        }
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }
     }
