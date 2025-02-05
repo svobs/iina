@@ -478,6 +478,11 @@ extension CGFloat {
   var isInteger: Bool {
     return CGFloat(Int(self)) == self
   }
+
+  func isBetweenInclusive(_ lowerBound: CGFloat, and upperBound: CGFloat) -> Bool {
+    return self >= lowerBound && self <= upperBound
+  }
+
 }
 
 extension Bool {

@@ -34,7 +34,9 @@ extension PlayerWindowController {
         thumbnailPeekView.associatedPlayer?.windowController.playSlider.needsDisplay = true
       }
     }
-    var currentPreviewTimeSec: Double? = nil  // only non-nil when shown
+    // Only non-nil when SeekPreview is shown
+    var currentPreviewTimeSec: Double? = nil
+
     /// For auto hiding seek time & thumbnail after a timeout.
     /// Calls `PlayerWindowController.seekPreviewTimeout` on timeout.
     let hideTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
@@ -377,6 +379,8 @@ extension PlayerWindowController {
         fadeableViews.isShowingFadeableViewsForSeek = false
         fadeableViews.hideTimer.restart()
       }
+
+      playSlider.hoverIndicator?.alphaValue = 0
     })
 
     tasks.append(.init(duration: 0) { [self] in
@@ -395,6 +399,7 @@ extension PlayerWindowController {
     seekPreview.thumbnailPeekView.isHidden = true
     seekPreview.timeLabel.isHidden = true
     seekPreview.currentPreviewTimeSec = nil
+    playSlider.hoverIndicator?.isHidden = true
   }
 
   /// Display time label & thumbnail when mouse over slider
@@ -464,6 +469,9 @@ extension PlayerWindowController {
       log.debug("Cannot display SeekPreview: could not get window.frame or screenID")
       return false
     }
+
+    playSlider.showHoverIndicator(atSliderCoordX: centerOfKnobInSliderCoordX)
+
     // This may be for music mode also!
     let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, video: geo.video)
 

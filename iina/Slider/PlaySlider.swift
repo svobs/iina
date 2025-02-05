@@ -29,6 +29,8 @@ final class PlaySlider: ScrollableSlider {
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
 
+  var hoverIndicator: SliderHoverIndicator?
+
   // MARK:- Private Properties
 
   private var abLoopAKnob: PlaySliderLoopKnob!
@@ -95,5 +97,49 @@ final class PlaySlider: ScrollableSlider {
 
   override func mouseUp(with event: NSEvent) {
     player.windowController.mouseUp(with: event)
+  }
+
+  func showHoverIndicator(atSliderCoordX x: CGFloat) {
+    let xInWindowCoord = self.convert(NSPoint(x: x, y: 0), to: nil).x
+
+    // Do not draw over the main knob, or AB loop knobs
+    if customCell.wantsKnob {
+      let knobRect = customCell.knobRect(flipped: isFlipped)
+      if xInWindowCoord.isBetweenInclusive(knobRect.minX, and: knobRect.maxX) {
+        hoverIndicator?.isHidden = true
+        return
+      }
+    }
+    if !abLoopA.isHidden {
+      let knobCenterX = abLoopA.x
+      let kf = KnobFactory.shared
+      let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
+      if xInWindowCoord.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX - halfWidth) {
+        hoverIndicator?.isHidden = true
+        return
+      }
+    }
+    if !abLoopB.isHidden {
+      let knobCenterX = abLoopB.x
+      let kf = KnobFactory.shared
+      let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
+      if xInWindowCoord.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX - halfWidth) {
+        hoverIndicator?.isHidden = true
+        return
+      }
+    }
+
+    guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
+
+    let indicator: SliderHoverIndicator
+    if let hoverIndicator, hoverIndicator.imgLayer.contentsScale == scaleFactor {
+      indicator = hoverIndicator
+    } else {
+      let indicatorSize = NSSize(width: max(4.0, (customCell.knobWidth * 0.25).rounded()), height: customCell.knobHeight)
+      indicator = SliderHoverIndicator(slider: self, size: indicatorSize, scaleFactor: scaleFactor)
+      hoverIndicator = indicator
+    }
+
+    indicator.show(atSliderCoordX: x)
   }
 }

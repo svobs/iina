@@ -515,7 +515,7 @@ extension PlayerWindowController {
     // Do not use `event.locationInWindow`: it can be stale
     let pointInWindow = mouseLocationInWindow
 
-    /// Set or unset the cursor to `resizeLeftRight` if able to resize the sidebar
+    /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
       if sidebarResizeCursor == nil {
@@ -536,10 +536,10 @@ extension PlayerWindowController {
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
     }
 
-    // Show Seek Preview on mouse hover. But favor the "active seeking" preview over the "hover" preview:
-    if !isScrollingOrDraggingPlaySlider {
-      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    }
+    // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
+    // preview to ensure that the "hover" preview here will not activate:
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+    // Check if hovering over volume slider, and add/remove its hover effect
     volumeSliderCell.refreshVolumeSliderHoverEffect()
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover

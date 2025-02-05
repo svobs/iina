@@ -236,10 +236,16 @@ class BarFactory {
 
     // X coord of hover is needed to determine chapter hover effect.
     let currentHoverX: CGFloat?
-    if let currentPreviewTimeSec {
-      let hoverX = imgConf.imgPadding + (currentPreviewTimeSec / maxValueSec * imgConf.barWidth).rounded()
-      currentHoverX = hoverX
+    if useFocusEffect {
+      if let currentPreviewTimeSec {
+        // Mouse is hovering & showing Seek Preview: use its X coord
+        currentHoverX = imgConf.imgPadding + (currentPreviewTimeSec / maxValueSec * imgConf.barWidth).rounded()
+      } else {
+        // Actively seeking or scrolling: use position of the knob for current chapter
+        currentHoverX = currentValuePointX
+      }
     } else {
+      // Chapter hover effect not enabled
       currentHoverX = nil
     }
 

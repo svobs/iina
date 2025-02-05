@@ -17,9 +17,10 @@ class PlaySliderCell: ScrollableSliderCell {
     iinaAppearance?.isDark ?? false
   }
 
-  override var enableDrawKnob: Bool {
+  override var wantsKnob: Bool {
     guard let wc else { return false }
-    return !player.windowController.currentLayout.useSliderFocusEffect || wc.isScrollingOrDraggingPlaySlider || wc.seekPreview.animationState == .shown
+    let alwaysShowKnob = !player.windowController.currentLayout.useSliderFocusEffect
+    return alwaysShowKnob || wc.isScrollingOrDraggingPlaySlider || wc.seekPreview.animationState == .shown
   }
   
   // MARK:- Displaying the Cell
@@ -29,9 +30,9 @@ class PlaySliderCell: ScrollableSliderCell {
           let screen = controlView?.window?.screen else { return }
 
     /// The position of the knob, rounded for cleaner drawing
-    let enableDrawKnob = enableDrawKnob
+    let drawKnob = wantsKnob
     let knobRect = knobRect(flipped: false)
-    let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
+    let useFocusEffect: Bool = drawKnob && player.windowController.currentLayout.useSliderFocusEffect
 
     let durationSec = player.info.playbackDurationSec ?? 0.0
     let currentValueSec = slider.progressRatio * durationSec

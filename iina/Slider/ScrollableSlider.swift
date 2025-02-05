@@ -143,7 +143,7 @@ class ScrollableSliderCell: NSSliderCell {
   var isClearBG: Bool {
     wc?.currentLayout.spec.oscBackgroundIsClear ?? false
   }
-  var enableDrawKnob: Bool {
+  var wantsKnob: Bool {
     return !isClearBG || isDragging
   }
 
@@ -159,7 +159,7 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   override func drawKnob(_ knobRect: NSRect) {
-    guard enableDrawKnob else { return }
+    guard wantsKnob else { return }
     guard let screen = controlView?.window?.screen, let appearance = iinaAppearance else { return }
     appearance.applyAppearanceFor {
       KnobFactory.shared.drawKnob(currentKnobType, in: knobRect,
@@ -171,7 +171,7 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   override func knobRect(flipped: Bool) -> NSRect {
-    let knobWidth = enableDrawKnob ? knobWidth : 0
+    let knobWidth = wantsKnob ? knobWidth : 0
     let barRect = barRect(flipped: flipped)
     // The usable width of the bar is reduced by the width of the knob.
     let effectiveBarWidth = barRect.width - knobWidth

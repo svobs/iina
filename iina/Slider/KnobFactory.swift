@@ -136,7 +136,11 @@ class KnobFactory {
     return knobImage
   }
 
-  private func loopKnobHeight(mainKnobHeight: CGFloat) -> CGFloat {
+  func loopKnobWidth(mainKnobWidth: CGFloat) -> CGFloat {
+    return mainKnobWidth
+  }
+
+  func loopKnobHeight(mainKnobHeight: CGFloat) -> CGFloat {
     // We want loop knobs to be shorter than the primary knob.
     return round(mainKnobHeight * loopKnobHeightAdjustment)
   }

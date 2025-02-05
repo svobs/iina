@@ -44,7 +44,7 @@ final class PlaySliderLoopKnob: NSImageView {
   /// layout is set to `Bottom` or `Top` the width of the slider's bar will change with the width of the window. The width will also
   /// change if the user changes the OSC layout from either of those layouts to `Floating`. Thus the x coordinate can change even
   /// though the value has remained constant.
-  private var x: CGFloat {
+  private(set) var x: CGFloat {
     get {
       let bar = slider.customCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.

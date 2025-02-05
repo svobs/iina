@@ -16,9 +16,10 @@ class VolumeSliderCell: ScrollableSliderCell {
   /// Calls `wc.refreshVolumeSliderHoverEffect` on timeout
   let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
 
-  override var enableDrawKnob: Bool {
+  override var wantsKnob: Bool {
     guard let wc else { return false }
-    return !wc.currentLayout.useSliderFocusEffect || wc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider
+    let alwaysShowKnob = !player.windowController.currentLayout.useSliderFocusEffect
+    return alwaysShowKnob || wc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider
   }
 
   override var currentKnobType: KnobFactory.KnobType {
@@ -35,10 +36,10 @@ class VolumeSliderCell: ScrollableSliderCell {
     guard let appearance = iinaAppearance,
           let screen = controlView?.window?.screen else { return }
 
-    let enableDrawKnob = enableDrawKnob
+    let wantsKnob = wantsKnob
     let knobRect = knobRect(flipped: false)
-    let useFocusEffect: Bool = enableDrawKnob && player.windowController.currentLayout.useSliderFocusEffect
-    let previewValue: CGFloat? = enableDrawKnob ? 0.0 : nil  // FIXME: find actual preview value, implement preview
+    let useFocusEffect: Bool = wantsKnob && player.windowController.currentLayout.useSliderFocusEffect
+    let previewValue: CGFloat? = wantsKnob ? 0.0 : nil  // FIXME: find actual preview value, implement preview
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
