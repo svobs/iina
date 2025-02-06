@@ -27,8 +27,13 @@ extension PlayerWindowController {
       .playerWindowOpacity,
       .showRemainingTime,
       .maxVolume,
+
       .showCachedRangesInSlider,
-      .roundRectSliderBars,
+      .roundSliderBarRects,
+      .sliderBarDoneColor,
+      .alwaysShowSliderKnob,
+      .showChapterPos,
+
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -59,9 +64,7 @@ extension PlayerWindowController {
       .thumbnailRawSizePercentage,
       .thumbnailDisplayedSizePercentage,
       .thumbnailBorderStyle,
-      .showChapterPos,
       .arrowButtonAction,
-      .sliderDoneColor,
       .blackOutMonitor,
       .useLegacyFullScreen,
       .displayTimeAndBatteryInFullScreen,
@@ -230,11 +233,14 @@ extension PlayerWindowController {
         .useLegacyWindowedMode,
         .arrowButtonAction,
       // These need calls to BarFactory.current.updateBarStylesFromPrefs():
-        .roundRectSliderBars,
-        .sliderDoneColor:
+        .roundSliderBarRects,
+        .sliderBarDoneColor:
 
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
       updateTitleBarAndOSC()
+    case .alwaysShowSliderKnob:
+      playSlider.needsDisplay = true
+      volumeSlider.needsDisplay = true
     case .controlBarAutoHideTimeout:
       fadeableViews.hideTimer.timeout = max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout)))
       fadeableViews.hideTimer.restart()

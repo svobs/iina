@@ -95,7 +95,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
   @IBOutlet weak var oscOverlayStyleHStackView: NSStackView!
-  @IBOutlet weak var oscForceSingleRowCheckbox: NSButton!
+  @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
@@ -414,8 +414,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
-    // Not a container, but just fudge it (shh...)
-    viewHidePairs.append((oscForceSingleRowCheckbox, !showForceSingleRowCheckbox))
+    viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
     viewHidePairs.append((oscOverlayStyleHStackView, !showOverlayStyleTrigger))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 

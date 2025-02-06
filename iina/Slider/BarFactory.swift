@@ -57,7 +57,7 @@ class BarFactory {
 
     let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
       let barColorLeft: CGColor
-      let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderDoneColor)
+      let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
       switch userSetting {
       case .gray:
         barColorLeft = (isClearBG ? NSColor.mainSliderBarLeftClearBG : NSColor.mainSliderBarLeft).cgColor
@@ -71,7 +71,7 @@ class BarFactory {
 
     // I want to vary the curvature based on bar height, but want to avoid drawing bars with different curvature in the same image,
     // which can happen when focusing on a chapter in a multi-chapter video. So: only update the curvature once per image set.
-    var cornerCurvature: CGFloat = Preference.bool(for: .roundRectSliderBars) ? 1.0 : 0.0
+    var cornerCurvature: CGFloat = Preference.bool(for: .roundSliderBarRects) ? 1.0 : 0.0
     func updateCurvature(using baseBarHeight: CGFloat) {
       guard cornerCurvature > 0.0 else { return }
       if baseBarHeight <= Constants.Distance.Slider.reducedCurvatureBarHeightThreshold {

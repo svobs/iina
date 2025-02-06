@@ -203,8 +203,9 @@ struct Preference {
     ///
     /// Applies to remote files only. This is always enabled for streaming media.
     static let showCachedRangesInSlider = Key("showCachedRangesInSlider")
-    static let roundRectSliderBars = Key("roundRectSliderBars")
-    static let sliderDoneColor = Key("sliderDoneColor")
+    static let roundSliderBarRects = Key("roundSliderBarRects")
+    static let sliderBarDoneColor = Key("sliderBarDoneColor")
+    static let alwaysShowSliderKnob = Key("alwaysShowSliderKnob")
     // If true, break up the PlaySlider bar into chapter segments. (bool)
     static let showChapterPos = Key("showChapterPos")
 
@@ -1208,7 +1209,10 @@ struct Preference {
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
-    .roundRectSliderBars: true,
+    .roundSliderBarRects: true,
+    .sliderBarDoneColor: SliderBarLeftColor.defaultValue.rawValue,
+    .alwaysShowSliderKnob: false,
+    .showChapterPos: false,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolIconSize: 18,
@@ -1229,7 +1233,6 @@ struct Preference {
     .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .oscForceSingleRow: false,
     .hideFadeableViewsWhenOutsideWindow: true,
-    .sliderDoneColor: SliderBarLeftColor.defaultValue.rawValue,
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,
     .playlistTabGroupLocation: SidebarLocation.trailingSidebar.rawValue,
@@ -1264,7 +1267,6 @@ struct Preference {
     .useLegacyWindowedMode: true,
     .fullScreenWhenOpen: false,
     .useLegacyFullScreen: true,
-    .showChapterPos: false,
     .resumeLastPosition: false,
     .preventScreenSaver: true,
     .allowScreenSaverForAudio: false,

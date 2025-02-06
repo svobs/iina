@@ -148,7 +148,7 @@ class ScrollableSliderCell: NSSliderCell {
     wc?.currentLayout.spec.oscBackgroundIsClear ?? false
   }
   var wantsKnob: Bool {
-    return !isClearBG || isDragging
+    return Preference.bool(for: .alwaysShowSliderKnob) || isDragging
   }
 
   override var knobThickness: CGFloat {

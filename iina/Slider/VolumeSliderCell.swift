@@ -17,9 +17,13 @@ class VolumeSliderCell: ScrollableSliderCell {
   let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
 
   override var wantsKnob: Bool {
+    let alwaysShowKnob = Preference.bool(for: .alwaysShowSliderKnob) || !player.windowController.currentLayout.useSliderFocusEffect
+    return alwaysShowKnob || wantsFocusEffect
+  }
+
+  var wantsFocusEffect: Bool {
     guard let wc else { return false }
-    let alwaysShowKnob = !player.windowController.currentLayout.useSliderFocusEffect
-    return alwaysShowKnob || wc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider
+    return player.windowController.currentLayout.useSliderFocusEffect && (wc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider)
   }
 
   override var currentKnobType: KnobFactory.KnobType {
@@ -36,16 +40,15 @@ class VolumeSliderCell: ScrollableSliderCell {
     guard let appearance = sliderAppearance,
           let screen = controlView?.window?.screen else { return }
 
-    let wantsKnob = wantsKnob
+    /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
     let knobRect = knobRect(flipped: false)
-    let useFocusEffect: Bool = wantsKnob && player.windowController.currentLayout.useSliderFocusEffect
-    let previewValue: CGFloat? = wantsKnob ? 0.0 : nil  // FIXME: find actual preview value, implement preview
+    let previewValue: CGFloat? = nil  // FIXME: find actual preview value, implement preview
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
       let drawShadow = isClearBG
       let scaleFactor = screen.backingScaleFactor
-      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: useFocusEffect,
+      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: wantsFocusEffect,
                                              barWidth: barRect.width,
                                              scaleFactor: scaleFactor, knobRect: knobRect,
                                              currentValue: doubleValue, maxValue: maxValue,
