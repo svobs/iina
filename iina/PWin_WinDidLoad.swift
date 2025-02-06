@@ -293,6 +293,7 @@ extension PlayerWindowController {
   }
 
   func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
+    log.verbose{"Rebuilding bottomBarView: style=\(style)"}
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
 

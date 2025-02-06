@@ -565,7 +565,7 @@ extension PlayerWindowController {
       showOrHidePipOverlayView()
 
       if transition.isEnteringMusicMode {
-        // Entering music mode: add views to bottom bar
+        log.verbose{"[\(transition.name)] Entering music mode: adding views to bottomBarView"}
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
@@ -625,7 +625,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       let oscGeo = outputLayout.controlBarGeo
-      log.verbose("[\(transition.name)] Setting up control bar=\(outputLayout.oscPosition) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
+      log.verbose("[\(transition.name)] Setting up control bar: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
 
       fragToolbarView = rebuildOSCToolbar(transition)
 
@@ -637,11 +637,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if oscGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
+          log.verbose{"[\(transition.name)] Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
           oscTwoRowView.updateSubviews(from: self, oscGeo)
         } else {
           oscContentView = oscOneRowView
-          log.verbose{"Adding subviews to oscOneRowView for top bar"}
+          log.verbose{"[\(transition.name)] Adding subviews to oscOneRowView for top bar"}
           oscOneRowView.updateSubviews(from: self)
         }
 
@@ -658,11 +658,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if oscGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
+          log.verbose{"[\(transition.name)] Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
           oscTwoRowView.updateSubviews(from: self, oscGeo)
         } else {
           oscContentView = oscOneRowView
-          log.verbose{"Adding subviews to oscOneRowView for bottom bar"}
+          log.verbose{"[\(transition.name)] Adding subviews to oscOneRowView for bottom bar"}
           oscOneRowView.updateSubviews(from: self)
         }
 
@@ -701,11 +701,13 @@ extension PlayerWindowController {
       volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging {
+        let hasClearBG = transition.outputLayout.oscHasClearBG
+        log.verbose{"[\(transition.name)] Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}
 
-        playButton.setOSCColors(from: transition.outputLayout)
-        leftArrowButton.setOSCColors(from: transition.outputLayout)
-        rightArrowButton.setOSCColors(from: transition.outputLayout)
-        muteButton.setOSCColors(from: transition.outputLayout)
+        playButton.setOSCColors(hasClearBG: hasClearBG)
+        leftArrowButton.setOSCColors(hasClearBG: hasClearBG)
+        rightArrowButton.setOSCColors(hasClearBG: hasClearBG)
+        muteButton.setOSCColors(hasClearBG: hasClearBG)
 
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
@@ -1473,7 +1475,7 @@ extension PlayerWindowController {
       for buttonType in newButtonTypes {
         let button = OSCToolbarButton()
         button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setOSCColors(from: transition.outputLayout)
+        button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
         button.action = #selector(self.toolBarButtonAction(_:))
         toolbarButtons.append(button)
       }
@@ -1498,7 +1500,7 @@ extension PlayerWindowController {
     if needsButtonsUpdate {
       for btn in toolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         btn.setStyle(using: transition.outputLayout)
-        btn.setOSCColors(from: transition.outputLayout)
+        btn.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
       }
     }
 

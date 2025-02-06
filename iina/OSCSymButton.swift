@@ -29,8 +29,8 @@ class OSCSymButton: SymButton {
   }
 
   /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  func setOSCColors(from layoutState: LayoutState) {
-    if layoutState.oscHasClearBG {
+  func setOSCColors(hasClearBG: Bool) {
+    if hasClearBG {
       useColorsForClearBG()
     } else {
       useDefaultColors()
