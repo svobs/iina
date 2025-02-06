@@ -1233,7 +1233,7 @@ struct Preference {
     .oscPosition: OSCPosition.floating.rawValue,
     .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .oscForceSingleRow: false,
-    .oscPutTimesInRow2: false,
+    .oscPutTimesInRow2: true,
     .hideFadeableViewsWhenOutsideWindow: true,
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,

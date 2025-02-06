@@ -91,11 +91,12 @@ class TwoRowBarOSCView: ClickThroughView {
     }
 
     if !subviews.contains(playSliderTypeView) {
-      intraRowSpacingConstraint?.isActive = false  // just to be sure
+      // just to be sure
+      intraRowSpacingConstraint?.isActive = false
       // Make sure to put PlaySlider below other controls. Older MacOS versions may clip overlapping views
       addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
       playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
-                                                                trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
+                                                       trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
       // Negative number here means overlapping:
       intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderTypeView.bottomAnchor, constant: -bottomMargin)
       intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"

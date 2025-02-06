@@ -181,8 +181,8 @@
 /* Class = "NSTextFieldCell"; title = "Thumbnail Preview:"; ObjectID = "kYu-0l-jQQ"; */
 "kYu-0l-jQQ.title" = "Thumbnail forehåndsvisning:";
 
-/* Class = "NSTextFieldCell"; title = "Layout:"; ObjectID = "l54-63-V6n"; */
-"l54-63-V6n.title" = "Layout:";
+/* Class = "NSTextFieldCell"; title = "Position:"; ObjectID = "l54-63-V6n"; */
+"l54-63-V6n.title" = "Position:";
 
 /* Class = "NSMenuItem"; title = "Light"; ObjectID = "lZc-Dl-3cQ"; */
 "lZc-Dl-3cQ.title" = "Lys";

@@ -141,10 +141,10 @@ struct ControlBarGeometry {
           // Use half the bar height for the play slider
           playSliderHeight = (barHeight * 0.5).rounded()
         }
-        self.playSliderHeight = playSliderHeight
         let iconVerticalMarginsTotal = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: playSliderHeight)
         let remainingFreeHeight = barHeight - playSliderHeight - iconVerticalMarginsTotal
         fullIconHeight = remainingFreeHeight
+        self.playSliderHeight = playSliderHeight
       } else {
         // Is single-line OSC
         self.playSliderHeight = barHeight
@@ -281,7 +281,10 @@ struct ControlBarGeometry {
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
     let timeLabelFontSize = timeLabelFontSize
-    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .medium)
+    if isTwoRowBarOSC {
+      return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .light)
+    }
+    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .light)
   }
 
   var timeLabelFontSize: CGFloat {
@@ -293,6 +296,10 @@ struct ControlBarGeometry {
     case .floating:
       return 11.0
     case .top, .bottom:
+      if isTwoRowBarOSC && Preference.bool(for: .oscPutTimesInRow2) {
+        let normalSize = 13.0
+        return (sliderScale * normalSize).rounded().clamped(to:13...39)
+      }
       let normalSize = 11.0
       return (sliderScale * normalSize).rounded().clamped(to:11...32)
     }
@@ -419,9 +426,6 @@ struct ControlBarGeometry {
 
   /// Derives desired bottom margin from playSliderHeight (TwoRowOSC style only)
   static func twoRowOSC_BottomMargin(playSliderHeight: CGFloat) -> CGFloat {
-    let minimum = 2.0
-    // Assume that 1/2 of slider vertical space is empty once it exceeds its minimum height.
-    // We want 1/2 of that space (so, 1/4 of slider space total when slider is larger than normal).
-    return minimum + ((playSliderHeight - Constants.Distance.Slider.minPlaySliderHeight) * 0.25).rounded()
+    return(playSliderHeight * 0.2).rounded()
   }
 }
