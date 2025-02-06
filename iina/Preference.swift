@@ -161,7 +161,7 @@ struct Preference {
     /// Top, bottom, or floating
     static let oscPosition = Key("oscPosition")
     /// Blended gray, or clear-black gradient. Only applies to top & bottom OSCs which are `.insideViewport`
-    static let oscOverlayStyle = Key("oscOverlayStyle")
+    static let oscColorScheme = Key("oscColorScheme")
     static let oscForceSingleRow = Key("oscForceSingleRow")
     static let oscPutTimesInRow2 = Key("oscPutTimesInRow2")
 
@@ -695,13 +695,13 @@ struct Preference {
     }
   }
 
-  enum OSCOverlayStyle: Int, InitializingFromKey {
+  enum OSCColorScheme: Int, InitializingFromKey {
     /// Use Apple's `NSVisualEffectView`
     case visualEffectView = 1
     /// Use clear background with slight alpha gradient
     case clearGradient
 
-    static var defaultValue = OSCOverlayStyle.visualEffectView
+    static var defaultValue = OSCColorScheme.visualEffectView
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1231,7 +1231,7 @@ struct Preference {
     .oscBarToolIconSizeTicks: 1,
     .oscBarToolIconSpacingTicks: 1,
     .oscPosition: OSCPosition.floating.rawValue,
-    .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
+    .oscColorScheme: OSCColorScheme.clearGradient.rawValue,
     .oscForceSingleRow: false,
     .oscPutTimesInRow2: true,
     .hideFadeableViewsWhenOutsideWindow: true,

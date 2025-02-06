@@ -30,7 +30,7 @@ struct LayoutSpec {
   /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
-  let oscOverlayStyle: Preference.OSCOverlayStyle
+  let oscColorScheme: Preference.OSCColorScheme
 
   let controlBarGeo: ControlBarGeometry
 
@@ -42,7 +42,7 @@ struct LayoutSpec {
   init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
-       oscOverlayStyle: Preference.OSCOverlayStyle,
+       oscColorScheme: Preference.OSCColorScheme,
        controlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState) {
@@ -54,7 +54,7 @@ struct LayoutSpec {
       mode = .windowedNormal
     }
     self.mode = mode
-    self.oscOverlayStyle = oscOverlayStyle
+    self.oscColorScheme = oscColorScheme
 
     switch mode {
     case .windowedNormal, .fullScreenNormal:
@@ -116,21 +116,21 @@ struct LayoutSpec {
                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                       enableOSC: Preference.bool(for: .enableOSC),
                       oscPosition: Preference.enum(for: .oscPosition),
-                      oscOverlayStyle: effectiveOSCOverlayStyleFromPrefs,
+                      oscColorScheme: effectiveOSCColorSchemeFromPrefs,
                       interactiveMode: interactiveMode,
                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
-  static var effectiveOSCOverlayStyleFromPrefs: Preference.OSCOverlayStyle {
+  static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
     if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
         Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-      return Preference.enum(for: .oscOverlayStyle)
+      return Preference.enum(for: .oscColorScheme)
     }
     return .visualEffectView
   }
 
   /// Specify any properties to override; if nil, will use self's property values -
-  /// EXCEPT for `oscOverlayStyle`, which is computed.
+  /// EXCEPT for `oscColorScheme`, which is computed.
   func clone(leadingSidebar: Sidebar? = nil,
              trailingSidebar: Sidebar? = nil,
              mode: PlayerWindowMode? = nil,
@@ -154,7 +154,7 @@ struct LayoutSpec {
                       bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                       enableOSC: enableOSC ?? self.enableOSC,
                       oscPosition: self.oscPosition,
-                      oscOverlayStyle: self.oscOverlayStyle,
+                      oscColorScheme: self.oscColorScheme,
                       controlBarGeo: controlBarGeo,
                       interactiveMode: interactiveMode ?? self.interactiveMode,
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
@@ -228,7 +228,7 @@ struct LayoutSpec {
     && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
     && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
     && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
-    && otherSpec.oscOverlayStyle == oscOverlayStyle
+    && otherSpec.oscColorScheme == oscColorScheme
   }
 
   func getWidthBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
@@ -287,15 +287,15 @@ struct LayoutSpec {
     return enableOSC && (oscPosition == .top || oscPosition == .bottom)
   }
 
-  var effectiveOSCOverlayStyle: Preference.OSCOverlayStyle {
+  var effectiveOSCColorScheme: Preference.OSCColorScheme {
     if hasBottomOSC && bottomBarPlacement == .insideViewport {
-      return oscOverlayStyle
+      return oscColorScheme
     }
     return .visualEffectView
   }
 
   var oscBackgroundIsClear: Bool {
-    return effectiveOSCOverlayStyle == .clearGradient
+    return effectiveOSCColorScheme == .clearGradient
   }
 }
 
@@ -342,7 +342,7 @@ struct LayoutState {
 
   /// Has OSC with clear background.
   ///
-  /// Equivalent to `effectiveOSCOverlayStyle == .clearGradient`
+  /// Equivalent to `effectiveOSCColorScheme == .clearGradient`
   let oscHasClearBG: Bool
 
   // MARK: Derived / computed properties
@@ -516,8 +516,8 @@ struct LayoutState {
     return spec.hasTopOrBottomOSC
   }
 
-  var effectiveOSCOverlayStyle: Preference.OSCOverlayStyle {
-    return spec.effectiveOSCOverlayStyle
+  var effectiveOSCColorScheme: Preference.OSCColorScheme {
+    return spec.effectiveOSCColorScheme
   }
 
   func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {

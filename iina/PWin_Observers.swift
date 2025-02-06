@@ -47,7 +47,7 @@ extension PlayerWindowController {
       .oscForceSingleRow,
       .controlBarAutoHideTimeout,
       .oscPosition,
-      .oscOverlayStyle,
+      .oscColorScheme,
       .topBarPlacement,
       .bottomBarPlacement,
       .oscBarHeight,
@@ -217,7 +217,7 @@ extension PlayerWindowController {
 
     case .enableOSC,
         .oscPosition,
-        .oscOverlayStyle,
+        .oscColorScheme,
         .oscForceSingleRow,
         .topBarPlacement,
         .bottomBarPlacement,

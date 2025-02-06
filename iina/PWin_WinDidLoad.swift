@@ -294,7 +294,7 @@ extension PlayerWindowController {
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
   }
 
-  func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCOverlayStyle) {
+  func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCColorScheme) {
     log.verbose{"Rebuilding bottomBarView: style=\(style)"}
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()

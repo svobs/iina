@@ -683,7 +683,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let layoutSpec: LayoutSpec = layoutSpec ?? currentLayout.spec
       let oscGeo = layoutSpec.controlBarGeo
 
-      let sliderAppearance = layoutSpec.effectiveOSCOverlayStyle == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+      let sliderAppearance = layoutSpec.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
       sliderAppearance.applyAppearanceFor {
         // This only needs to be run once, but doing it here will multiply the work by the number of player windows
         // currently open. Should be ok for now as this is fairly fast...

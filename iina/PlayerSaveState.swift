@@ -1386,7 +1386,7 @@ extension LayoutSpec {
       return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
                         isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
                         bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
-                        oscOverlayStyle: Preference.enum(for: .oscOverlayStyle),
+                        oscColorScheme: Preference.enum(for: .oscColorScheme),
                         interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
     }
 

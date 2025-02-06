@@ -29,7 +29,7 @@
                 <outlet property="oscBottomPlacementContainerView" destination="PrI-KL-aZn" id="2q0-hp-otk"/>
                 <outlet property="oscForceSingleRowContainerView" destination="ovw-kj-Bwx" id="TJQ-Ev-O3a"/>
                 <outlet property="oscHeightStackView" destination="d0z-Kd-exY" id="nMX-hb-ykw"/>
-                <outlet property="oscOverlayStyleHStackView" destination="KxK-zk-W7E" id="Q7g-TQ-owA"/>
+                <outlet property="oscColorSchemeHStackView" destination="KxK-zk-W7E" id="Q7g-TQ-owA"/>
                 <outlet property="oscSnapToCenterContainerView" destination="zoh-W5-eqa" id="meb-Xs-TxP"/>
                 <outlet property="oscToolbarPreviewBox" destination="omS-tS-OVJ" id="GdQ-hH-LD9"/>
                 <outlet property="oscToolbarStackView" destination="8jY-9m-q4O" id="J9u-Ui-dUT"/>
@@ -1497,13 +1497,13 @@ For smoothest results, also enable custom full screen.</string>
                                 </customView>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="hwA-ec-V4c">
                                     <rect key="frame" x="194" y="3" width="88" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Overlay Style:" id="Gxo-GK-ECm">
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="Gxo-GK-ECm">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Overlay-Style Popup">
+                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Color-Scheme Popup">
                                     <rect key="frame" x="285" y="-4" width="166" height="25"/>
                                     <popUpButtonCell key="cell" type="push" title="MacOS Graphite" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="Controller-Position Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>

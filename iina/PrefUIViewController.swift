@@ -94,7 +94,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
-  @IBOutlet weak var oscOverlayStyleHStackView: NSStackView!
+  @IBOutlet weak var oscColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
@@ -203,7 +203,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .bottomBarPlacement,
       .enableOSC,
       .oscPosition,
-      .oscOverlayStyle,
+      .oscColorScheme,
       .oscForceSingleRow,
       .themeMaterial,
       .settingsTabGroupLocation,
@@ -249,7 +249,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     case PK.oscBarHeight,
       PK.controlBarToolbarButtons,
       PK.oscForceSingleRow,
-      PK.oscOverlayStyle,
+      PK.oscColorScheme,
       PK.oscBarPlayIconSizeTicks,
       PK.oscBarPlayIconSpacingTicks,
       PK.oscBarToolIconSizeTicks,
@@ -415,7 +415,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
-    viewHidePairs.append((oscOverlayStyleHStackView, !showOverlayStyleTrigger))
+    viewHidePairs.append((oscColorSchemeHStackView, !showOverlayStyleTrigger))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
@@ -534,9 +534,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     Preference.set(oscPosition.rawValue, for: .oscPosition)
   }
 
-  @IBAction func oscOverlayStyleAction(_ sender: NSPopUpButton) {
-    guard let oscOverlayStyle = Preference.OSCOverlayStyle(rawValue: sender.selectedTag()) else { return }
-    Preference.set(oscOverlayStyle.rawValue, for: .oscOverlayStyle)
+  @IBAction func oscColorSchemeAction(_ sender: NSPopUpButton) {
+    guard let oscColorScheme = Preference.OSCColorScheme(rawValue: sender.selectedTag()) else { return }
+    Preference.set(oscColorScheme.rawValue, for: .oscColorScheme)
   }
 
   @IBAction func customizeOSCToolbarAction(_ sender: Any) {
