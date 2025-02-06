@@ -13,25 +13,21 @@ final class SliderHoverIndicator: NSView {
   private var heightConstraint: NSLayoutConstraint!
   private var widthConstraint: NSLayoutConstraint!
   private var centerXConstraint: NSLayoutConstraint!
-//  var imgLayer: IndicatorImgLayer { layer as! IndicatorImgLayer }
-  var imgLayer: IndicatorImgLayer
+  var imgLayer: IndicatorImgLayer { layer as! IndicatorImgLayer }
 
   /// Size in points
   init(slider: PlaySlider, oscGeo: ControlBarGeometry, scaleFactor: CGFloat, isDark: Bool) {
     let size = oscGeo.sliderIndicatorSize
     self.slider = slider
-    imgLayer = IndicatorImgLayer(size, scaleFactor: scaleFactor, isDark: isDark)
     // The frame is calculated and set once the superclass is initialized.
     super.init(frame: NSRect(origin: .zero, size: size))
     slider.addSubview(self)
+    layer = IndicatorImgLayer(size, scaleFactor: scaleFactor, isDark: isDark)
     isHidden = true
     idString = slider.idString + "\(slider.idString)HoverIndicator"
 
-    layer = imgLayer
     wantsLayer = true
     layerContentsRedrawPolicy = .onSetNeedsDisplay
-    layerContentsPlacement = .center
-    setFrameSize(size)
 
     translatesAutoresizingMaskIntoConstraints = false
 
@@ -65,11 +61,10 @@ final class SliderHoverIndicator: NSView {
   func update(scaleFactor: CGFloat, oscGeo: ControlBarGeometry, isDark: Bool) {
     slider.associatedPlayer?.log.verbose("Updating SliderHoverIndicator: isDark=\(isDark.yn)")
     let size = oscGeo.sliderIndicatorSize
-    imgLayer = IndicatorImgLayer(size, scaleFactor: scaleFactor, isDark: isDark)
-    layer = imgLayer
-    setFrameSize(size)
     widthConstraint.animateToConstant(size.width)
     heightConstraint.animateToConstant(size.height)
+    // For some reason, the drawing disappears if the layer is replaced. Must reuse existing layer.
+    imgLayer.updateState(size, scaleFactor: scaleFactor, isDark: isDark)
     needsDisplay = true
   }
 
@@ -83,28 +78,32 @@ final class SliderHoverIndicator: NSView {
   }
 
   class IndicatorImgLayer: CALayer {
-    let isDark: Bool
+    var isDark: Bool = false
+
     init(_ size: CGSize, scaleFactor: CGFloat, isDark: Bool) {
-      self.isDark = isDark
       super.init()
-      contentsScale = scaleFactor
-      bounds = CGRect(origin: .zero, size: size * scaleFactor)
+      updateState(size, scaleFactor: scaleFactor, isDark: isDark)
     }
 
     override init(layer: Any) {
       let prevLayer = layer as! IndicatorImgLayer
-      isDark = prevLayer.isDark
       super.init()
+      isDark = prevLayer.isDark
       contentsScale = prevLayer.contentsScale
       bounds = prevLayer.bounds
+    }
+
+    func updateState(_ size: CGSize, scaleFactor: CGFloat, isDark: Bool) {
+      self.isDark = isDark
+      contentsScale = scaleFactor
+      bounds = CGRect(origin: .zero, size: size * scaleFactor)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func draw(in ctx: CGContext) {
-      let indicatorRect = NSRect(origin: .zero, size: bounds.size)
+      let indicatorRect = bounds
       let cornerRadius: CGFloat = 1.0
-      ctx.clear(indicatorRect)
       ctx.addPath(CGPath(roundedRect: indicatorRect,
                          cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
       let color: NSColor = isDark ? .sliderHoverIndicatorDark : .sliderHoverIndicatorLight

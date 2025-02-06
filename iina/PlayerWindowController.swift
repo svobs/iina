@@ -694,18 +694,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         volumeSlider.appearance = sliderAppearance
         playSlider.abLoopA.updateKnobImage(to: .loopKnob)
         playSlider.abLoopB.updateKnobImage(to: .loopKnob)
-      }
 
-      if let scaleFactor = window.screen?.backingScaleFactor {
-        // TODO: figure out why this doesn't work
-        //          if let hoverIndicator = playSlider.hoverIndicator {
-        //            hoverIndicator.appearance = sliderAppearance
-        //            hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
-        //          } else {
-        playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
-                                                         scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
-        playSlider.hoverIndicator.appearance = sliderAppearance
-        //          }
+         let scaleFactor = window.screen!.backingScaleFactor
+          if let hoverIndicator = playSlider.hoverIndicator {
+            hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
+          } else {
+            playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
+                                                             scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
+          }
       }
     }
   }

@@ -26,7 +26,14 @@ final class PlaySlider: ScrollableSlider {
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
 
-  var hoverIndicator: SliderHoverIndicator!
+  var hoverIndicator: SliderHoverIndicator! {
+    willSet {
+      // Make sure to remove constraints & other cleanup!
+      if newValue != hoverIndicator {
+        hoverIndicator?.dispose()
+      }
+    }
+  }
 
   // MARK:- Private Properties
 

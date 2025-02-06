@@ -472,7 +472,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let playIconSpacingTicks = newGeo.playIconSpacingTicks
 
     // Constrain sizes for prefs preview
-    let previewBarHeight = newGeo.isTwoRowBarOSC ? newGeo.barHeight : min(maxToolbarPreviewSingleRowBarHeight, newGeo.barHeight)
+    var previewBarHeight = newGeo.barHeight
+    if !newGeo.isTwoRowBarOSC {
+      previewBarHeight = min(maxToolbarPreviewSingleRowBarHeight, newGeo.barHeight)
+    }
     let previewGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: previewBarHeight,
                                         toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
