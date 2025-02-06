@@ -269,7 +269,9 @@ struct ControlBarGeometry {
   }
 
   var sliderIndicatorSize: NSSize {
-    NSSize(width: max(2.0, (sliderKnobWidth * 0.25).rounded()), height: sliderKnobHeight)
+    let width = max(1.0, (sliderKnobWidth * 0.25).rounded())
+    let height = sliderKnobHeight - 2.0
+    return NSSize(width: width, height: height)
   }
 
   // MARK: Computed props: Playback Controls

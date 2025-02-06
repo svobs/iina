@@ -68,7 +68,6 @@ final class PlaySlider: ScrollableSlider {
   /// `super.draw` and that has now been corrected. As a workaround on earlier versions of macOS the loop knob `draw` method
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
-    guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
     super.draw(dirtyRect)
     abLoopA.updateHorizontalPosition()
     abLoopB.updateHorizontalPosition()
@@ -119,13 +118,11 @@ final class PlaySlider: ScrollableSlider {
       }
     }
 
-    sliderAppearance.applyAppearanceFor {
-      if hoverIndicator.imgLayer.contentsScale != scaleFactor {
-        let oscGeo = player.windowController.currentLayout.controlBarGeo
-        hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo)
-      }
-
-      hoverIndicator.show(atSliderCoordX: x)
+    if hoverIndicator.imgLayer.contentsScale != scaleFactor {
+      let oscGeo = player.windowController.currentLayout.controlBarGeo
+      hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
     }
+
+    hoverIndicator.show(atSliderCoordX: x)
   }
 }
