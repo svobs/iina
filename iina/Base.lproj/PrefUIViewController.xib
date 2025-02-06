@@ -2042,12 +2042,12 @@ For smoothest results, also enable custom full screen.</string>
                                                 <subviews>
                                                     <button horizontalHuggingPriority="252" translatesAutoresizingMaskIntoConstraints="NO" id="z4a-Gk-7vu">
                                                         <rect key="frame" x="-2" y="95" width="115" height="18"/>
-                                                        <buttonCell key="cell" type="check" title="Round corners" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="fHb-AB-HeE">
+                                                        <buttonCell key="cell" type="check" title="Round bar corners" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="fHb-AB-HeE">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
                                                         <connections>
-                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.roundRectSliderBars" id="Lad-2h-2qG"/>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.roundSliderBarRects" id="Lad-2h-2qG"/>
                                                         </connections>
                                                     </button>
                                                     <button horizontalHuggingPriority="252" translatesAutoresizingMaskIntoConstraints="NO" id="8KP-wv-9Yl">
