@@ -2042,12 +2042,9 @@ extension NSView {
     return pwc?.player
   }
 
-  var frameInWindowCoords: NSRect {
-    // For some reason, convert(NSRect) sometimes returns 0 origin.
-    // Use convert(NSPoint) instead.
-    let myFrame = frame
-    let newOrigin = convert(myFrame.origin, to: nil)
-    return NSRect(origin: newOrigin, size: myFrame.size)
+  /// Needs superview to return non-nil value.
+  var frameInWindowCoords: NSRect? {
+    return superview?.convert(frame, to: nil)
   }
 
   var idString: String {

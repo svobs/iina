@@ -2355,13 +2355,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func seekFromPlaySlider(playbackPositionSec absoluteSecond: CGFloat, forceExactSeek: Bool) {
-    guard !isInInteractiveMode else { return }
+    guard !isInInteractiveMode, let playSliderFrameInWindowCoords = playSlider.frameInWindowCoords else { return }
 
     // Update player.info & UI proactively
     player.info.playbackPositionSec = absoluteSecond
     updatePlaybackTimeUI()
     // Make fake point in window to position seek time & thumbnail
-    let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: playSlider.frameInWindowCoords.midY)
+    let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: playSliderFrameInWindowCoords.midY)
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
 
     player.sliderSeekDebouncer.run { [self] in

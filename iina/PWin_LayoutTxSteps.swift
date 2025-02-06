@@ -495,8 +495,10 @@ extension PlayerWindowController {
     if !outputLayout.hasControlBar || transition.isControlBarChanging {
       playSliderAndTimeLabelsView.removeFromSuperview()
 
+      /* TODO: figure out if this is needed
       oscOneRowView.dispose()
       oscTwoRowView.dispose()
+       */
 
       if !transition.inputLayout.hasFloatingOSC {
         for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
@@ -582,8 +584,6 @@ extension PlayerWindowController {
         addSubviewsToPlaySliderAndTimeLabelsView()
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
-        // Expand slider bounds so that hovers are more likely to register
-        playSliderHeightConstraint.animateToConstant(transition.outputLayout.controlBarGeo.playSliderHeight)
         playSlider.customCell.knobHeight = Constants.Distance.Slider.musicModeKnobHeight
 
         // move playback buttons
@@ -681,8 +681,6 @@ extension PlayerWindowController {
         }
       }
 
-      playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
-
       seekPreview.updateTimeLabelFontSize(to: oscGeo.seekPreviewTimeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
@@ -697,6 +695,7 @@ extension PlayerWindowController {
     if currentControlBar != nil {
       // Has OSC, or music mode
       let oscGeo = outputLayout.controlBarGeo
+      playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
       updateArrowButtons(oscGeo: oscGeo)
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true

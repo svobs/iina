@@ -222,6 +222,8 @@ struct ControlBarGeometry {
   // MARK: - Sliders
 
   /// Height of the entire `PlaySlider` view, including unused space.
+  /// 
+  /// It is useful to expand slider height so that hovers are more likely to register.
   var playSliderHeight: CGFloat
 
   var sliderScale: CGFloat {

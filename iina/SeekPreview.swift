@@ -236,7 +236,7 @@ extension PlayerWindowController {
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
           timeLabelOriginY = (oscTopY + halfMargin).rounded()
         } else {
-          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
+          guard let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords else { return }
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
           let quarterMargin = margins.bottom * 0.25
           let halfKnobHeight = player.windowController.playSlider.customCell.knobHeight * 0.5
@@ -254,7 +254,7 @@ extension PlayerWindowController {
         if currentLayout.oscPosition == .floating {
           timeLabelOriginY = (oscOriginInWindowY - quarterMargin - timeLabelSize.height).rounded()
         } else {
-          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
+          guard let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords else { return }
           let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
           let halfKnobHeight = (player.windowController.playSlider.customCell.knobHeight * 0.5).rounded()
@@ -277,7 +277,7 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
 
       // Done with timeLabel.
-      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY)"}
+      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize)"}
 
       // Need integers below.
       if showThumbnail {
@@ -333,7 +333,7 @@ extension PlayerWindowController {
         }
 
         thumbnailPeekView.frame.origin = thumbFrame.origin
-        log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, frame=\(thumbFrame)"}
+        log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, frame=\(thumbFrame), in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWindFrame=\(currentGeo.windowFrame)"}
         thumbnailPeekView.alphaValue = 1.0
       }
 
