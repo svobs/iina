@@ -278,7 +278,7 @@ extension PlayerWindowController {
 
     /// Animation
     var isClosingThenReopeningOSC: Bool {
-      inputLayout.hasControlBar && (isBottomBarPlacementChanging || isTopBarPlacementChanging || isControlBarChanging)
+      isControlBarChanging || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isBottomBarPlacementChanging) || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isTopBarPlacementChanging)
     }
   }
 

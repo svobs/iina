@@ -792,10 +792,10 @@ extension PlayerWindowController {
           case .crop:
             if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
               selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-              log.verbose{"Setting crop box selection from prevFilter: \(selectedRect)"}
+              log.verbose{"[\(transition.name)] Setting crop box selection from prevFilter: \(selectedRect)"}
             } else {
               selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-              log.verbose{"Setting crop box selection to default entire video size: \(selectedRect)"}
+              log.verbose{"[\(transition.name)] Setting crop box selection to default whole videoSize: \(selectedRect)"}
             }
           case .freeSelecting, .none:
             selectedRect = .zero
