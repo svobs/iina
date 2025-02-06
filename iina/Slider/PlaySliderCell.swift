@@ -42,7 +42,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
     appearance.applyAppearanceFor {
       let bf = BarFactory.current
-      let drawShadow = isClearBG
+      let drawShadow = hasClearBG
       let playBarImg = bf.buildPlayBarImage(useFocusEffect: wantsFocusEffect,
                                             barWidth: barRect.width,
                                             scaleFactor: scaleFactor,

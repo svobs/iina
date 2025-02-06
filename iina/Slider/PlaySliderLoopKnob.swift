@@ -117,7 +117,7 @@ final class PlaySliderLoopKnob: NSImageView {
     guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
     let cell = slider.customCell
     let knob = KnobFactory.shared.getKnob(knobType,
-                                          darkMode: cell.isDarkMode, clearBG: cell.isClearBG,
+                                          darkMode: cell.isDarkMode, clearBG: cell.hasClearBG,
                                           knobWidth: cell.knobWidth, mainKnobHeight: cell.knobHeight,
                                           scaleFactor: scaleFactor)
     let knobImage = knob.image

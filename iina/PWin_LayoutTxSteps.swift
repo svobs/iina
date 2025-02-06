@@ -506,7 +506,7 @@ extension PlayerWindowController {
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.spec.oscBackgroundIsClear)
+    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     // Sidebars
@@ -709,7 +709,7 @@ extension PlayerWindowController {
 
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
-        if transition.outputLayout.oscBackgroundIsClear {
+        if transition.outputLayout.oscHasClearBG {
           textAlpha = 0.8
           timeLabelTextColor = .white
 
@@ -1455,7 +1455,7 @@ extension PlayerWindowController {
     let newButtonTypes = newGeo.toolbarItems
 
     let hasSizeChange = oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing
-    let hasColorChange = transition.inputLayout.oscBackgroundIsClear != transition.outputLayout.oscBackgroundIsClear
+    let hasColorChange = transition.inputLayout.oscHasClearBG != transition.outputLayout.oscHasClearBG
     var needsButtonsUpdate = hasSizeChange || hasColorChange
 
     let isOpeningOSC = transition.isOpeningOSC

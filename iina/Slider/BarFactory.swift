@@ -52,20 +52,20 @@ class BarFactory {
 
   init(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
-    let isClearBG = LayoutSpec.effectiveOSCOverlayStyleFromPrefs == .clearGradient
-    let barAppearance = isClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    let hasClearBG = LayoutSpec.effectiveOSCOverlayStyleFromPrefs == .clearGradient
+    let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
 
     let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
       let barColorLeft: CGColor
       let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
       switch userSetting {
       case .gray:
-        barColorLeft = (isClearBG ? NSColor.mainSliderBarLeftClearBG : NSColor.mainSliderBarLeft).cgColor
+        barColorLeft = (hasClearBG ? NSColor.mainSliderBarLeftClearBG : NSColor.mainSliderBarLeft).cgColor
       case .controlAccentColor:
         barColorLeft = NSColor.controlAccentColor.cgColor
       }
 
-      let barColorRight = (isClearBG ? NSColor.mainSliderBarRightClearBG : NSColor.mainSliderBarRight).cgColor
+      let barColorRight = (hasClearBG ? NSColor.mainSliderBarRightClearBG : NSColor.mainSliderBarRight).cgColor
       return (barColorLeft, barColorRight)
     }
 

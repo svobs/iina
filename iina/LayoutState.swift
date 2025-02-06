@@ -338,6 +338,13 @@ struct LayoutState {
   let titleBarHeight: CGFloat
   let topOSCHeight: CGFloat
 
+  // - Colors / styles
+
+  /// Has OSC with clear background.
+  ///
+  /// Equivalent to `effectiveOSCOverlayStyle == .clearGradient`
+  let oscHasClearBG: Bool
+
   // MARK: Derived / computed properties
 
   var topBarHeight: CGFloat {
@@ -509,10 +516,6 @@ struct LayoutState {
     return spec.hasTopOrBottomOSC
   }
 
-  var oscBackgroundIsClear: Bool {
-    return spec.oscBackgroundIsClear
-  }
-
   var effectiveOSCOverlayStyle: Preference.OSCOverlayStyle {
     return spec.effectiveOSCOverlayStyle
   }
@@ -665,6 +668,7 @@ struct LayoutState {
     }
     self.titleBarHeight = titleBarHeight
     self.sidebarTabHeight = sidebarTabHeight
+    self.oscHasClearBG = spec.oscBackgroundIsClear
   }
 
   // Converts & updates existing geometry to this layout

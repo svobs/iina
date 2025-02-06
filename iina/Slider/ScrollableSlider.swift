@@ -134,7 +134,7 @@ class ScrollableSliderCell: NSSliderCell {
   var isDragging = false
 
   var sliderAppearance: NSAppearance? {
-    if isClearBG {
+    if hasClearBG {
       return NSAppearance(iinaTheme: .dark)
     }
     return controlView?.window?.contentView?.iinaAppearance
@@ -144,8 +144,11 @@ class ScrollableSliderCell: NSSliderCell {
     sliderAppearance?.isDark ?? false
   }
 
-  var isClearBG: Bool {
-    wc?.currentLayout.spec.oscBackgroundIsClear ?? false
+  var hasClearBG: Bool {
+    if let wc, wc.currentLayout.oscHasClearBG {
+      return true
+    }
+    return false
   }
   var wantsKnob: Bool {
     return Preference.bool(for: .alwaysShowSliderKnob) || isDragging
@@ -171,7 +174,7 @@ class ScrollableSliderCell: NSSliderCell {
     appearance.applyAppearanceFor {
       KnobFactory.shared.drawKnob(currentKnobType, in: knobRect,
                                   darkMode: appearance.isDark,
-                                  clearBG: isClearBG,
+                                  clearBG: hasClearBG,
                                   knobWidth: knobWidth, mainKnobHeight: knobHeight,
                                   scaleFactor: scaleFactor)
     }

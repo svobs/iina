@@ -67,7 +67,7 @@ class KnobFactory {
       return cachedKnob
     }
     // There may some minor loss due to races, but it will settle quickly. Don't need lousy locksss
-    let knob = Knob(knobType, isDarkMode: darkMode, isClearBG: clearBG,
+    let knob = Knob(knobType, isDarkMode: darkMode, hasClearBG: clearBG,
                     knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: scaleFactor)
     cachedKnobs[knobType.rawValue] = knob
     return knob
@@ -157,13 +157,13 @@ class KnobFactory {
 
   struct Knob {
     let isDarkMode: Bool
-    let isClearBG: Bool
+    let hasClearBG: Bool
     let knobWidth: CGFloat
     let mainKnobHeight: CGFloat
     let image: CGImage
     let scaleFactor: CGFloat
 
-    init(_ knobType: KnobType, isDarkMode: Bool, isClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
+    init(_ knobType: KnobType, isDarkMode: Bool, hasClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
       let kf = KnobFactory.shared
       let loopKnobHeight = kf.loopKnobHeight(mainKnobHeight: mainKnobHeight)
       let shadowOrGlowColor = isDarkMode ? KnobFactory.shared.glowColor : KnobFactory.shared.shadowColor
@@ -172,7 +172,7 @@ class KnobFactory {
         image = kf.makeImage(fill: KnobFactory.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
                              knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .mainKnob, .volumeKnob:
-        let shadowColor = isClearBG ? KnobFactory.shared.shadowColor : ((isClearBG || !isDarkMode) ? KnobFactory.shared.shadowColor : nil)
+        let shadowColor = hasClearBG ? KnobFactory.shared.shadowColor : ((hasClearBG || !isDarkMode) ? KnobFactory.shared.shadowColor : nil)
         image = kf.makeImage(fill: KnobFactory.shared.mainKnobColor, shadow: shadowColor,
                              knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .loopKnob:
@@ -186,7 +186,7 @@ class KnobFactory {
                      knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       }
       self.isDarkMode = isDarkMode
-      self.isClearBG = isClearBG
+      self.hasClearBG = hasClearBG
       self.knobWidth = knobWidth
       self.mainKnobHeight = mainKnobHeight
       self.scaleFactor = scaleFactor
