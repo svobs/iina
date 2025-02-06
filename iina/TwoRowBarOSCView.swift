@@ -14,6 +14,9 @@ class TwoRowBarOSCView: ClickThroughView {
   /// This subtracts from the height of the icons, but is needed to balance out the space above
   var hStackView_BottomMarginConstraint: NSLayoutConstraint!
 
+  /// Used only if `PK.oscPutTimesInRow2` is enabled.
+  let timeSlashLabel = ClickThroughTextField()
+
   init() {
     super.init(frame: .zero)
     idString = TwoRowBarOSCView.id
@@ -36,6 +39,14 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
     relaxConstraints()
     hStackView_BottomMarginConstraint.isActive = true
+
+    timeSlashLabel.idString = "PlayPos-TimeSlashLabel"
+    timeSlashLabel.isBordered = false
+    timeSlashLabel.drawsBackground = false
+    timeSlashLabel.isEditable = false
+    timeSlashLabel.refusesFirstResponder = true
+    timeSlashLabel.baseWritingDirection = .leftToRight
+    timeSlashLabel.stringValue = "/"
   }
 
   required init?(coder: NSCoder) {
@@ -59,42 +70,67 @@ class TwoRowBarOSCView: ClickThroughView {
     // Avoid constraint violations while we change things below
     relaxConstraints()
 
-    let playSliderAndTimeLabelsView = pwc.playSliderAndTimeLabelsView
     let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
 
-    if !subviews.contains(playSliderAndTimeLabelsView) {
-      addSubview(playSliderAndTimeLabelsView)
-      playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
+    // Start building replacement views list
+    var viewsForRow2: [NSView] = [pwc.fragPlaybackBtnsView]
+
+    // Choose either playSlider or playSliderAndTimeLabelsView based on pref
+    let playSliderTypeView: NSView
+    if Preference.bool(for: .oscPutTimesInRow2) {
+      // Option 1: PlaySlider goes in Row 1; time labels in Row 2
+      pwc.playSliderAndTimeLabelsView.removeAllSubviews()
+      playSliderTypeView = pwc.playSlider
+      viewsForRow2.append(pwc.leftTimeLabel)
+      viewsForRow2.append(timeSlashLabel)
+      viewsForRow2.append(pwc.rightTimeLabel)
+    } else {
+      // Option 2: Both PlaySlider & time labels go in Row 1 (via playSliderAndTimeLabelsView)
+      pwc.addSubviewsToPlaySliderAndTimeLabelsView()
+      playSliderTypeView = pwc.playSliderAndTimeLabelsView
+    }
+
+    if !subviews.contains(playSliderTypeView) {
+      intraRowSpacingConstraint?.isActive = false  // just to be sure
+      // Make sure to put PlaySlider below other controls. Older MacOS versions may clip overlapping views
+      addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
+      playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
                                                                 trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
-      intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderAndTimeLabelsView.bottomAnchor, constant: -bottomMargin)
+      // Negative number here means overlapping:
+      intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderTypeView.bottomAnchor, constant: -bottomMargin)
       intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"
       intraRowSpacingConstraint.priority = .defaultLow  // for now
       intraRowSpacingConstraint.isActive = true
+    } else if let middleSpaceConstraint = intraRowSpacingConstraint, intraRowSpacingConstraint.isActive {
+      middleSpaceConstraint.animateToConstant(-bottomMargin)
+    }
+
+    // - [Re-]add views to hStack
+
+    viewsForRow2.append(centralSpacerView)
+    viewsForRow2.append(pwc.fragVolumeView)
+
+    if let toolbarView = pwc.fragToolbarView {
+      viewsForRow2.append(toolbarView)
+    }
+    hStackView.setViews(viewsForRow2, in: .leading)
+
+    // - Set visibility priorities
+
+    hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
+    if let toolbarView = pwc.fragToolbarView {
+      hStackView.setVisibilityPriority(.detachEarlier, for: toolbarView)
     }
 
     pwc.log.verbose("TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) toolIconH=\(oscGeo.toolIconSize)")
     // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top
     // (and overlapping with the btm of the play slider, but that is just empty space not being used anyway).
-    intraRowSpacingConstraint.animateToConstant(-bottomMargin)
     hStackView_BottomMarginConstraint.animateToConstant(bottomMargin)
 
     // Restore enforcement of consraints now that we're done. Do not use .required: the superiew may not be updated at
     // exactly the same time and can result in constraint conflict errors.
     hStackView_BottomMarginConstraint.priority = .init(901)
     intraRowSpacingConstraint.priority = .init(901)
-
-    // [Re-]add views to hstack
-    var views: [NSView] = [pwc.fragPlaybackBtnsView, centralSpacerView, pwc.fragVolumeView]
-    if let toolbarView = pwc.fragToolbarView {
-      views.append(toolbarView)
-    }
-    hStackView.setViews(views, in: .leading)
-
-    // Set visibility priorities
-    hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
-    if let toolbarView = pwc.fragToolbarView {
-      hStackView.setVisibilityPriority(.detachEarlier, for: toolbarView)
-    }
   }
 
   func relaxConstraints() {

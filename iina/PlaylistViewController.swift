@@ -190,6 +190,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
+    player.log.verbose{"PlaylistView viewDidLoad done"}
   }
 
   override func viewDidAppear() {

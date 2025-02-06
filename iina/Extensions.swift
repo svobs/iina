@@ -2043,7 +2043,11 @@ extension NSView {
   }
 
   var frameInWindowCoords: NSRect {
-    return convert(frame, to: nil)
+    // For some reason, convert(NSRect) sometimes returns 0 origin.
+    // Use convert(NSPoint) instead.
+    let myFrame = frame
+    let newOrigin = convert(myFrame.origin, to: nil)
+    return NSRect(origin: newOrigin, size: myFrame.size)
   }
 
   var idString: String {
@@ -2062,6 +2066,15 @@ extension NSView {
 
   func isInsideViewFrame(pointInWindow: CGPoint) -> Bool {
     return isMousePoint(convert(pointInWindow, from: nil), in: bounds)
+  }
+
+  func containsAllSubviews(_ views: [NSView]) -> Bool {
+    for view in views {
+      if !subviews.contains(view) {
+        return false
+      }
+    }
+    return true
   }
 
   /// Recursive func which configures all views in the given subtree for smoother animation.

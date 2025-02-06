@@ -163,6 +163,7 @@ struct Preference {
     /// Blended gray, or clear-black gradient. Only applies to top & bottom OSCs which are `.insideViewport`
     static let oscOverlayStyle = Key("oscOverlayStyle")
     static let oscForceSingleRow = Key("oscForceSingleRow")
+    static let oscPutTimesInRow2 = Key("oscPutTimesInRow2")
 
     /// Which buttons to display in the OSC, stored as `Array` of `Integer`s
     static let controlBarToolbarButtons = Key("controlBarToolbarButtons")
@@ -279,8 +280,8 @@ struct Preference {
 
     // - Seek Preview
 
-    static let showTimeDeltaInSeekPreview = Key("showTimeDeltaInSeekPreview")
-    static let showChapterInSeekPreview = Key("showChapterInSeekPreview")
+    static let seekPreviewHasTimeDelta = Key("seekPreviewHasTimeDelta")
+    static let seekPreviewHasChapter = Key("seekPreviewHasChapter")
 
     // - Music mode
 
@@ -1232,6 +1233,7 @@ struct Preference {
     .oscPosition: OSCPosition.floating.rawValue,
     .oscOverlayStyle: OSCOverlayStyle.clearGradient.rawValue,
     .oscForceSingleRow: false,
+    .oscPutTimesInRow2: false,
     .hideFadeableViewsWhenOutsideWindow: true,
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,
@@ -1307,9 +1309,9 @@ struct Preference {
     .thumbnailDisplayedSizePercentage: 25,
     .maxThumbnailPreviewCacheSize: 500,
 
-      .showTimeDeltaInSeekPreview: true,
-    .showChapterInSeekPreview: true,
-
+      .seekPreviewHasTimeDelta: true,
+    .seekPreviewHasChapter: true,
+    
       .autoSwitchToMusicMode: true,
     .musicModeShowPlaylist: false,
     .musicModePlaylistHeight: 300,

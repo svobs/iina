@@ -295,6 +295,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
+    player.log.verbose{"QuickSettings viewDidLoad done"}
   }
 
   // MARK: - Right to Left Constraints

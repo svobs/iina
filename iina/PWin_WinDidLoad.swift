@@ -114,12 +114,14 @@ extension PlayerWindowController {
       playSlider.action = #selector(playSliderAction(_:))
 
       // Apply theme after all views are hooked up
+      log.verbose{"Done connecting views. Applying theme"}
       applyThemeMaterial()
 
       bufferIndicatorView.roundCorners()
       additionalInfoView.roundCorners()
       osdVisualEffectView.roundCorners()
 
+      log.verbose{"Configuring for CoreAnimation: window"}
       contentView.configureSubtreeForCoreAnimation()
 
       // Make sure to set this inside the animation task! See note above
@@ -536,6 +538,10 @@ extension PlayerWindowController {
   }
 
   func addSubviewsToPlaySliderAndTimeLabelsView() {
+    // Assume that if all subviews are inside, the constraints are properly configured as well,
+    // and no more work is needed.
+    guard !playSliderAndTimeLabelsView.containsAllSubviews([leftTimeLabel, playSlider, rightTimeLabel]) else { return }
+
     playSliderAndTimeLabelsView.removeAllSubviews()
     playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
     playSliderAndTimeLabelsView.addSubview(playSlider)

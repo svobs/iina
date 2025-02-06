@@ -155,6 +155,7 @@ class CustomTitleBarViewController: NSViewController {
     initConstraints()
 
     view.configureSubtreeForCoreAnimation()
+    windowController.log.verbose{"CustomTitleBar viewDidLoad done"}
   }
 
   private func initConstraints() {

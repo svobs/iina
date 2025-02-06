@@ -667,7 +667,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Set material & theme (light or dark mode) for OSC and title bar.
   func applyThemeMaterial(using layoutSpec: LayoutSpec? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let window else { return }
+    guard let window, let screen = window.screen else {
+      log.debug{"Cannot apply theme: no window or screen!"}
+      return
+    }
     animationPipeline.submitInstantTask { [self] in
       let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
       // Can be nil, which means dynamic system appearance:
@@ -695,7 +698,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         playSlider.abLoopA.updateKnobImage(to: .loopKnob)
         playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 
-         let scaleFactor = window.screen!.backingScaleFactor
+         let scaleFactor = screen.backingScaleFactor
           if let hoverIndicator = playSlider.hoverIndicator {
             hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
           } else {
@@ -712,6 +715,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       animationPipeline.submitInstantTask { [self] in
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
+        log.verbose{"Applying theme from UpdateTitleBarAndOSC"}
         applyThemeMaterial(using: newLayoutSpec)
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }

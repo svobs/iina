@@ -579,6 +579,7 @@ extension PlayerWindowController {
         playlistView.addAllConstraintsToFillSuperview()
 
         // move playback position slider & time labels
+        addSubviewsToPlaySliderAndTimeLabelsView()
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         // Expand slider bounds so that hovers are more likely to register
@@ -715,8 +716,10 @@ extension PlayerWindowController {
           textAlpha = 0.8
           timeLabelTextColor = .white
 
-          leftTimeLabel.addShadow(blurRadiusConstant: 1.0)
-          rightTimeLabel.addShadow(blurRadiusConstant: 1.0)
+          let blurRadiusConstant = 1.0
+          leftTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
+          rightTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
+          oscTwoRowView.timeSlashLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
 
           KnobFactory.shared.mainKnobColor = NSColor.controlForClearBG
         } else {
@@ -726,14 +729,17 @@ extension PlayerWindowController {
 
           leftTimeLabel.shadow = nil
           rightTimeLabel.shadow = nil
+          oscTwoRowView.timeSlashLabel.shadow = nil
 
           KnobFactory.shared.mainKnobColor = NSColor.mainSliderKnob
         }
 
         leftTimeLabel.textColor = timeLabelTextColor
         rightTimeLabel.textColor = timeLabelTextColor
+        oscTwoRowView.timeSlashLabel.textColor = timeLabelTextColor
         leftTimeLabel.alphaValue = textAlpha
         rightTimeLabel.alphaValue = textAlpha
+        oscTwoRowView.timeSlashLabel.alphaValue = textAlpha
 
         // Invalidate all cached knob images so they are rebuilt with new style
         KnobFactory.shared.invalidateCachedKnobs()
@@ -742,6 +748,7 @@ extension PlayerWindowController {
       let timeLabelFont: NSFont = oscGeo.timeLabelFont
       leftTimeLabel.font = timeLabelFont
       rightTimeLabel.font = timeLabelFont
+      oscTwoRowView.timeSlashLabel.font = timeLabelFont
 
       // Not floating OSC!
       if !transition.outputLayout.hasFloatingOSC {
@@ -916,6 +923,7 @@ extension PlayerWindowController {
 
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
+        addSubviewsToPlaySliderAndTimeLabelsView()
         oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 

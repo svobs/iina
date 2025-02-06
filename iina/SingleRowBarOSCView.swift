@@ -38,13 +38,15 @@ class SingleRowBarOSCView: ClickThroughStackView {
   }
 
   func updateSubviews(from pwc: PlayerWindowController) {
-    var views: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView]
+    pwc.addSubviewsToPlaySliderAndTimeLabelsView()
+    
+    var newViews: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView]
 
     if let fragToolbarView = pwc.fragToolbarView {
-      views.append(fragToolbarView)
+      newViews.append(fragToolbarView)
     }
 
-    setViews(views, in: .leading)
+    setViews(newViews, in: .leading)
 
     setVisibilityPriority(.mustHold, for: pwc.fragPlaybackBtnsView)
     setVisibilityPriority(.detachLessEarly, for: pwc.playSliderAndTimeLabelsView)

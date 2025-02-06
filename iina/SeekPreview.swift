@@ -7,6 +7,8 @@
 //
 
 extension PlayerWindowController {
+  // TODO: PK.seekPreviewHasTimeDelta
+  // TODO: PK.seekPreviewHasChapter
 
   /// Encapsulates state & objects needed for seek preview UI.
   /// This class is not a view in itself.
