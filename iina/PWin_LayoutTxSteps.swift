@@ -625,7 +625,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       let oscGeo = outputLayout.controlBarGeo
-      log.verbose("[\(transition.name)] Setting up control bar: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
+      log.verbose("[\(transition.name)] Setting up control bar: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
 
       fragToolbarView = rebuildOSCToolbar(transition)
 
