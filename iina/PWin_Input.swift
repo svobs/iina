@@ -245,7 +245,7 @@ extension PlayerWindowController {
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
 
-    if isMouseEvent(event, inAnyOf: [controlBarFloating]) {
+    if !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
     }

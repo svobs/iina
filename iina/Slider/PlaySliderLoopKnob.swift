@@ -37,6 +37,8 @@ final class PlaySliderLoopKnob: NSImageView {
 
   private let slider: PlaySlider
   private var centerXConstraint: NSLayoutConstraint!
+  private var widthConstraint: NSLayoutConstraint!
+  private var heightConstraint: NSLayoutConstraint!
 
   /// The knob's x coordinate associated with the current value.
   ///
@@ -79,6 +81,8 @@ final class PlaySliderLoopKnob: NSImageView {
     self.toolTip = toolTip
     // It gets called to be redrawn by the parent slider anyway
     layerContentsRedrawPolicy = .never
+    imageAlignment = .alignCenter
+    imageScaling = .scaleNone
     // This knob is hidden unless the mpv A-B loop feature is activated.
     isHidden = true
     // Set the size of the frame to match the size of the slider's knob. The frame origin will be
@@ -90,9 +94,11 @@ final class PlaySliderLoopKnob: NSImageView {
                                                  constant: slider.customCell.knobWidth * 0.5)
     centerXConstraint.isActive = true
 
-    updateKnobImage(to: .loopKnob, initConstraints: true)
-    imageAlignment = .alignCenter
-    imageScaling = .scaleNone
+    widthConstraint = widthAnchor.constraint(equalToConstant: 0)
+    widthConstraint.isActive = true
+    heightConstraint = heightAnchor.constraint(equalToConstant: 0)
+    heightConstraint.isActive = true
+    updateKnobImage(to: .loopKnob)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -113,8 +119,8 @@ final class PlaySliderLoopKnob: NSImageView {
 
   // MARK:- Drawing
 
-  func updateKnobImage(to knobType: KnobFactory.KnobType, initConstraints: Bool = false) {
-    guard let scaleFactor = window?.screen?.backingScaleFactor else { return }
+  func updateKnobImage(to knobType: KnobFactory.KnobType) {
+    guard let scaleFactor: CGFloat = window?.screen?.backingScaleFactor else { return }
     let cell = slider.customCell
     let knob = KnobFactory.shared.getKnob(knobType,
                                           darkMode: cell.isDarkMode, clearBG: cell.hasClearBG,
@@ -123,11 +129,8 @@ final class PlaySliderLoopKnob: NSImageView {
     let knobImage = knob.image
     let imgSize = knob.imageSize(knobType)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
-    if initConstraints {
-      widthAnchor.constraint(equalToConstant: imgSize.width).isActive = true
-      heightAnchor.constraint(equalToConstant: imgSize.height).isActive = true
-      setFrameSize(imgSize)
-    }
+    widthConstraint.constant = imgSize.width
+    heightConstraint.constant = imgSize.height
     needsDisplay = true
   }
 
@@ -191,7 +194,7 @@ final class PlaySliderLoopKnob: NSImageView {
 
     let newDragLocationConstrained = slider.convert(NSPoint(x: constrainedX, y: newDragLocation.y), to: nil)
     pwc?.refreshSeekPreviewAsync(forWindowCoordX: newDragLocationConstrained.x)
-    
+
     NotificationCenter.default.post(Notification(name: .iinaPlaySliderLoopKnobChanged, object: self))
   }
 

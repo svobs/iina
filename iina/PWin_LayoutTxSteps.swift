@@ -697,8 +697,6 @@ extension PlayerWindowController {
       let oscGeo = outputLayout.controlBarGeo
       playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
       updateArrowButtons(oscGeo: oscGeo)
-      playSlider.needsDisplay = true
-      volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging {
         let hasClearBG = transition.outputLayout.oscHasClearBG
@@ -758,9 +756,14 @@ extension PlayerWindowController {
       let sliderKnobHeight = oscGeo.sliderKnobHeight
       playSlider.customCell.knobWidth = sliderKnobWidth
       playSlider.customCell.knobHeight = sliderKnobHeight
+      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
+      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+      playSlider.needsDisplay = true
+      
       let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
       volumeSliderCell.knobWidth = sliderKnobWidth
       volumeSliderCell.knobHeight = sliderKnobHeight
+      volumeSlider.needsDisplay = true
     }
 
     // Interactive mode

@@ -61,6 +61,7 @@ class KnobFactory {
 
   func getKnob(_ knobType: KnobType, darkMode: Bool, clearBG: Bool,
                knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) -> Knob {
+
     if let cachedKnob = cachedKnobs[knobType.rawValue], cachedKnob.isDarkMode == darkMode,
        cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight,
        cachedKnob.scaleFactor == scaleFactor {

@@ -2058,10 +2058,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let b = player.abLoopB
 
     DispatchQueue.main.async { [self] in
-      playSlider.abLoopA.isHidden = a == 0
+      log.verbose{"Syncing AB loop: a=\(a), b=\(b)"}
+      let hideA = a == 0
+      playSlider.abLoopA.isHidden = hideA
       playSlider.abLoopA.posInSliderPercent = secondsToPercent(a)
-      playSlider.abLoopB.isHidden = b == 0
+
+      let hideB = b == 0
+      playSlider.abLoopB.isHidden = hideB
       playSlider.abLoopB.posInSliderPercent = secondsToPercent(b)
+
       playSlider.needsDisplay = true
     }
   }
