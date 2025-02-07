@@ -684,7 +684,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let oscGeo = layoutSpec.controlBarGeo
 
       seekPreview.thumbnailPeekView.updateColors()
-      
+
       if playlistView.isViewLoaded {
         playlistView.updateTableColors()
       }
@@ -2337,14 +2337,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func seekFromPlaySlider(playbackPositionSec absoluteSecond: CGFloat, forceExactSeek: Bool) {
-    guard !isInInteractiveMode, let playSliderFrameInWindowCoords = playSlider.frameInWindowCoords else { return }
+    guard !isInInteractiveMode else { return }
 
     // Update player.info & UI proactively
     player.info.playbackPositionSec = absoluteSecond
     updatePlaybackTimeUI()
-    // Make fake point in window to position seek time & thumbnail
-    let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: playSliderFrameInWindowCoords.midY)
-    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+
+    refreshSeekPreviewAsync(forWindowCoordX: playSlider.centerOfKnobInWindowCoordX())
 
     player.sliderSeekDebouncer.run { [self] in
       guard player.info.isFileLoaded else { return }

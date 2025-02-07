@@ -209,8 +209,7 @@ class Logger: NSObject {
 
     func trace(_ rawMessage: String) {
       guard isTraceEnabled else { return }
-      /// trace is not a "real" level yet. Just use `verbose` for now
-      Logger.log(rawMessage, level: .verbose, subsystem: self)
+      Logger.log(rawMessage, level: .trace, subsystem: self)
     }
 
     func verbose(_ rawMessage: String) {
@@ -485,7 +484,7 @@ class Logger: NSObject {
     $logs.withLock() { logs in
       if logs.isEmpty {
         DispatchQueue.main.async {
-          Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { timer in
+          Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { timer in
             AppDelegate.shared.logWindow.syncLogs()
           }
         }

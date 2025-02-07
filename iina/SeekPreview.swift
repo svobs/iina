@@ -361,11 +361,6 @@ extension PlayerWindowController {
 
   /// Called by `seekPreview.hideTimer`.
   func seekPreviewTimeout() {
-    if isScrollingOrDraggingPlaySlider {
-      log.trace{"SeekPreview timed out, but still actively seeking: restarting timer"}
-      seekPreview.hideTimer.restart()
-      return
-    }
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
     log.trace{"SeekPreview timed out: current mouseLoc=\(pointInWindow)"}
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: true)
@@ -406,6 +401,13 @@ extension PlayerWindowController {
     playSlider.hoverIndicator.isHidden = true
   }
 
+  /// Makes fake point in window to position seek time & thumbnail
+  func refreshSeekPreviewAsync(forWindowCoordX windowCoordX: CGFloat, animateHide: Bool = false) {
+    guard let playSliderFrameInWindowCoords = playSlider.frameInWindowCoords else { return }
+    let pointInWindow = CGPoint(x: windowCoordX, y: playSliderFrameInWindowCoords.midY)
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: animateHide)
+  }
+
   /// Display time label & thumbnail when mouse over slider
   func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint, animateHide: Bool = false) {
     thumbDisplayDebouncer.run { [self] in
@@ -441,7 +443,7 @@ extension PlayerWindowController {
 
     let showThumbnail = Preference.bool(for: .enableThumbnailPreview)
     let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
-    if isShowingThumbnailForSeek && (!Preference.bool(for: .enableThumbnailPreview) || !Preference.bool(for: .showThumbnailDuringSliderSeek)) {
+    if (isShowingThumbnailForSeek || playSlider.isDraggingLoopKnob) && !(Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek)) {
       // Do not show any preview if preview for seeking is disabled
       return false
     }

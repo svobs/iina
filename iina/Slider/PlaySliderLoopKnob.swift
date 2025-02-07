@@ -186,7 +186,12 @@ final class PlaySliderLoopKnob: NSImageView {
   override func mouseDragged(with event: NSEvent) {
     let newDragLocation = slider.convert(event.locationInWindow, from: nil)
     x += newDragLocation.x - lastDragLocation
-    lastDragLocation = constrainX(newDragLocation.x)
+    let constrainedX = constrainX(newDragLocation.x)
+    lastDragLocation = constrainedX
+
+    let newDragLocationConstrained = slider.convert(NSPoint(x: constrainedX, y: newDragLocation.y), to: nil)
+    pwc?.refreshSeekPreviewAsync(forWindowCoordX: newDragLocationConstrained.x)
+    
     NotificationCenter.default.post(Notification(name: .iinaPlaySliderLoopKnobChanged, object: self))
   }
 
