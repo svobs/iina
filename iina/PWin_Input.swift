@@ -158,9 +158,21 @@ extension PlayerWindowController {
     guard let window = self.window, let cv = window.contentView else { return }
 
     if cv.trackingAreas.isEmpty {
-      cv.addTrackingArea(NSTrackingArea(rect: cv.bounds,
-                                        options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
-                                        owner: self, userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
+      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved]
+      cv.addTrackingArea(NSTrackingArea(rect: cv.bounds, options: options, owner: self,
+                                        userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
+    }
+
+    if playSlider.trackingAreas.isEmpty {
+      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .cursorUpdate]
+      playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds, options: options, owner: self,
+                                                userInfo: [TrackingArea.key: TrackingArea.playSlider]))
+    }
+
+    if volumeSlider.trackingAreas.isEmpty {
+      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .cursorUpdate]
+      volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds, options: options, owner: self,
+                                                  userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
     }
   }
 
@@ -565,6 +577,40 @@ extension PlayerWindowController {
     restartHideCursorTimer()
   }
 
+  func isMouseActuallyInside(view: NSView) -> Bool {
+    return isPoint(mouseLocationInWindow, inAnyOf: [view])
+  }
+
+  // assumes mouse is in window
+  private func isMouseInTopBarArea(_ mouseLocInWindow: NSPoint) -> Bool {
+    guard currentLayout.topBarView.isShowable else {
+      // e.g. music mode
+      return false
+    }
+    guard let window = window, let contentView = window.contentView else { return false }
+    let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
+    return mouseLocInWindow.y >= heightThreshold
+  }
+
+  @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
+    magnificationHandler.handleMagnifyGesture(recognizer: recognizer)
+  }
+
+  @objc func handleRotationGesture(recognizer: NSRotationGestureRecognizer) {
+    rotationHandler.handleRotationGesture(recognizer: recognizer)
+  }
+
+  func updateIsMoveableByWindowBackground(disableWindowDrag: Bool = false) {
+    if disableWindowDrag || currentLayout.isFullScreen {
+      window?.isMovableByWindowBackground = false
+    } else {
+      // Enable this so that user can drag from title bar with first mouse
+      window?.isMovableByWindowBackground = true
+    }
+  }
+
+  // MARK: - Cursor
+
   func applyCustomCursor(_ newCursorType: CursorType) {
     let newCursor: NSCursor
     switch newCursorType {
@@ -599,46 +645,48 @@ extension PlayerWindowController {
     // Not sure if this is a kludge, but it works great so far for MacOS 15.3.
     // - Need to push at least 1 cursor onto the stack, just so we can get the previous cursor back with NSCursor.current.pop().
     // - Cannot keep pushing onto stack - it destroys performance.
-    // - Need to keep calling set() for each mouseMoved event - otherwise PlaySlider stays with pointer cursor during hover.
+    // - Doesn't work well with sliders though - they keep resetting to pointer cursor during hover (but only while window is main).
     // The solution Apple seems to prefer for hover is to set up for .cursorUpdate events. But those only work when the window is main!
-    // This solution at least works for any window while the app is frontmost.
+    // This solution works for any non-main window while the app is frontmost, and works for regular dead NSViews for main window.
+    // Combined, using cursorUpdate works for sliders when window is main, and this method picks up the work for them when non-main.
     if customCursor == .normalCursor {
       newCursor.push()
-    } else {
+    } else if customCursor != newCursorType {
       newCursor.set()
     }
     customCursor = newCursorType
   }
 
-  func isMouseActuallyInside(view: NSView) -> Bool {
-    return isPoint(mouseLocationInWindow, inAnyOf: [view])
+  // Currently only used for hover over sliders
+  override func cursorUpdate(with event: NSEvent) {
+    let newCursor = NSCursor.pointingHand
+    newCursor.set()
   }
 
-  // assumes mouse is in window
-  private func isMouseInTopBarArea(_ mouseLocInWindow: NSPoint) -> Bool {
-    guard currentLayout.topBarView.isShowable else {
-      // e.g. music mode
-      return false
+  func restartHideCursorTimer() {
+    hideCursorTimer?.invalidate()
+    hideCursorTimer = Timer.scheduledTimer(timeInterval: max(0, Preference.double(for: .cursorAutoHideTimeout)), target: self, selector: #selector(hideCursor), userInfo: nil, repeats: false)
+  }
+
+  /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
+  /// bounds of the window's real estate.
+  @objc func hideCursor() {
+    hideCursorTimer?.invalidate()
+    hideCursorTimer = nil
+    guard let window else { return }
+
+    switch currentLayout.mode {
+    case .windowedNormal:
+      let isCursorInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
+      guard isCursorInWindow else { return }
+    case .fullScreenNormal:
+      let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
+      guard isCursorInScreen else { return }
+    case .musicMode, .windowedInteractive, .fullScreenInteractive:
+      return
     }
-    guard let window = window, let contentView = window.contentView else { return false }
-    let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
-    return mouseLocInWindow.y >= heightThreshold
+    log.trace("Hiding cursor")
+    NSCursor.setHiddenUntilMouseMoves(true)
   }
 
-  @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
-    magnificationHandler.handleMagnifyGesture(recognizer: recognizer)
-  }
-
-  @objc func handleRotationGesture(recognizer: NSRotationGestureRecognizer) {
-    rotationHandler.handleRotationGesture(recognizer: recognizer)
-  }
-
-  func updateIsMoveableByWindowBackground(disableWindowDrag: Bool = false) {
-    if disableWindowDrag || currentLayout.isFullScreen {
-      window?.isMovableByWindowBackground = false
-    } else {
-      // Enable this so that user can drag from title bar with first mouse
-      window?.isMovableByWindowBackground = true
-    }
-  }
 }

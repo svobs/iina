@@ -10,7 +10,6 @@ import Foundation
 
 /// This file encapsulates logic to:
 /// - Show/hide fadeable views
-/// - Hide mouse cursor
 /// - Show/hide default album art
 extension PlayerWindowController {
 
@@ -268,34 +267,6 @@ extension PlayerWindowController {
     if hideFadeableViews() {
       hideCursor()
     }
-  }
-
-  // MARK: - Cursor visibility
-
-  func restartHideCursorTimer() {
-    hideCursorTimer?.invalidate()
-    hideCursorTimer = Timer.scheduledTimer(timeInterval: max(0, Preference.double(for: .cursorAutoHideTimeout)), target: self, selector: #selector(hideCursor), userInfo: nil, repeats: false)
-  }
-
-  /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
-  /// bounds of the window's real estate.
-  @objc func hideCursor() {
-    hideCursorTimer?.invalidate()
-    hideCursorTimer = nil
-    guard let window else { return }
-
-    switch currentLayout.mode {
-    case .windowedNormal:
-      let isCursorInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
-      guard isCursorInWindow else { return }
-    case .fullScreenNormal:
-      let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
-      guard isCursorInScreen else { return }
-    case .musicMode, .windowedInteractive, .fullScreenInteractive:
-      return
-    }
-    log.trace("Hiding cursor")
-    NSCursor.setHiddenUntilMouseMoves(true)
   }
 
   // MARK: - Default album art visibility
