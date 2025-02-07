@@ -889,9 +889,15 @@ extension PlayerWindowController {
     return false
   }
 
-  /// Returns new or existing `PWinGeometry` if handled; `nil` if not
-  func resizeSidebar(with dragEvent: NSEvent) -> Bool {
-    guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return false }
+  enum SidebarResizeResult {
+    case notResizing
+    case resized_AtLeftMin
+    case resized_AtRightMax
+    case resizing_BothDirections
+  }
+
+  func resizeSidebar(with dragEvent: NSEvent) -> SidebarResizeResult {
+    guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return .notResizing }
 
     let oldGeo: PWinGeometry
     switch currentLayout.mode {
@@ -906,18 +912,19 @@ extension PlayerWindowController {
     return IINAAnimation.disableAnimation { [self] in
       videoView.videoLayer.enterAsynchronousMode()
       
-      let newGeo: PWinGeometry?
+      let (result, newGeo): (SidebarResizeResult, PWinGeometry?)
 
       if leadingSidebarIsResizing {
         let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
         window!.frame.width - dragEvent.locationInWindow.x : dragEvent.locationInWindow.x) - 2
-        newGeo = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth)
+        (result, newGeo) = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth)
       } else if trailingSidebarIsResizing {
         let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
         dragEvent.locationInWindow.x : window!.frame.width - dragEvent.locationInWindow.x) - 2
-        newGeo = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
+        (result, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
       } else {
-        return false
+        // should be already handled above
+        return .notResizing
       }
 
       if let newGeo {
@@ -941,11 +948,11 @@ extension PlayerWindowController {
         let newSpec = currentLayout.spec.clone(moreSidebarState: newSidebarState)
         currentLayout = LayoutState.buildFrom(newSpec)
       }
-      return true
+      return result
     }
   }
 
-  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> PWinGeometry? {
+  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (SidebarResizeResult, PWinGeometry?) {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
@@ -959,7 +966,7 @@ extension PlayerWindowController {
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {
         // should not happen in theory, because playlist shouldn't have been shown when resize started
         log.error("Cannot resize playlist: desired width \(desiredPlaylistWidth) is below minimum!")
-        return nil
+        return (.resized_AtLeftMin, nil)
       }
     } else {  /// `placement == .outsideViewport`
       newPlaylistWidth = desiredPlaylistWidth
@@ -994,10 +1001,16 @@ extension PlayerWindowController {
     updateLeadingSidebarWidthConstraints(to: newPlaylistWidth, visible: true,
                                          placement: currentLayout.leadingSidebarPlacement,
                                          ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
-    return newGeo
+
+    if (newPlaylistWidth < desiredPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.maxPlaylistWidth) {
+      return (.resized_AtRightMax, nil)
+    } else if (desiredPlaylistWidth > newPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.minPlaylistWidth) {
+      return (.resized_AtLeftMin, nil)
+    }
+    return (.resizing_BothDirections, newGeo)
   }
 
-  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> PWinGeometry? {
+  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (SidebarResizeResult, PWinGeometry?) {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
@@ -1010,7 +1023,7 @@ extension PlayerWindowController {
       newPlaylistWidth = desiredPlaylistWidth + negativeDeficit
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {
         log.error("Cannot resize playlist: desired width \(desiredPlaylistWidth) is below minimum!")
-        return nil
+        return (.resized_AtRightMax, nil)
       }
     } else {  /// `placement == .outsideViewport`
       newPlaylistWidth = desiredPlaylistWidth
@@ -1047,11 +1060,18 @@ extension PlayerWindowController {
                                           placement: currentLayout.trailingSidebarPlacement,
                                           ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
 
-    return newGeo
+    if (newPlaylistWidth < desiredPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.maxPlaylistWidth) {
+      return (.resized_AtLeftMin, nil)
+    } else if (desiredPlaylistWidth > newPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.minPlaylistWidth) {
+      return (.resized_AtRightMax, nil)
+    }
+    return (.resizing_BothDirections, newGeo)
   }
 
   func finishResizingSidebar(with dragEvent: NSEvent) -> Bool {
-    guard resizeSidebar(with: dragEvent) else { return false }
+    let sidebarResizeResult = resizeSidebar(with: dragEvent)
+    guard sidebarResizeResult != .notResizing else { return false }
+    applySidebarResizeCursor(.notResizing)
 
     if leadingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
@@ -1066,6 +1086,43 @@ extension PlayerWindowController {
     }
 
     return true
+  }
+
+  func applySidebarResizeCursor(_ result: SidebarResizeResult) {
+    let newCursor: NSCursor
+    switch result {
+    case .notResizing:
+      if sidebarResizeCursor != nil {
+        NSCursor.current.pop()
+      }
+      sidebarResizeCursor = nil
+      return
+    case .resized_AtLeftMin:
+      if #available(macOS 15.0, *) {
+        newCursor = NSCursor.columnResize(directions: .right)
+      } else {
+        newCursor = NSCursor.resizeRight
+      }
+    case .resized_AtRightMax:
+      if #available(macOS 15.0, *) {
+        newCursor = NSCursor.columnResize(directions: .left)
+      } else {
+        newCursor = NSCursor.resizeLeft
+      }
+    case .resizing_BothDirections:
+      if #available(macOS 15.0, *) {
+        newCursor = NSCursor.columnResize(directions: .all)
+      } else {
+        newCursor = NSCursor.resizeLeftRight
+      }
+    }
+
+    if sidebarResizeCursor == nil {
+      newCursor.push()
+    } else {
+      newCursor.set()
+    }
+    sidebarResizeCursor = newCursor
   }
 
   // MARK: - Other mouse events

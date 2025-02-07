@@ -52,6 +52,11 @@ final class PlaySlider: ScrollableSlider {
     cell = PlaySliderCell()
     abLoopAKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop A")
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
+    addCursorRect(bounds, cursor: .crosshair)
+  }
+
+  override func resetCursorRects() {
+    addCursorRect(bounds, cursor: .crosshair)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

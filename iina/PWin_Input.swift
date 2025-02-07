@@ -248,7 +248,7 @@ extension PlayerWindowController {
     // we don't call super here because before adding the plugin system,
     // PlayerWindowController didn't call super at all
   }
-  
+
   override func mouseDragged(with event: NSEvent) {
     log.trace{"PWin MouseDragged @ \(event.locationInWindow)"}
 
@@ -257,8 +257,10 @@ extension PlayerWindowController {
       currentDragObject.mouseDragged(with: event)
       return
     }
-    let didResizeSidebar = resizeSidebar(with: event)
-    if didResizeSidebar {
+    let sidebarResizeResult = resizeSidebar(with: event)
+    applySidebarResizeCursor(sidebarResizeResult)
+    let isResizingSidebar = sidebarResizeResult != .notResizing
+    if isResizingSidebar {
       return
     }
 
@@ -454,6 +456,7 @@ extension PlayerWindowController {
   }
 
   override func mouseEntered(with event: NSEvent) {
+    guard currentDragObject == nil else { return }
     guard !isInInteractiveMode else { return }
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("No data for tracking area")
@@ -479,7 +482,8 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
-      if currentDragObject != nil { return }
+      guard currentDragObject == nil else { return }
+
       if !isAnimating && Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
         hideFadeableViews()
       } else {
@@ -494,6 +498,7 @@ extension PlayerWindowController {
   }
 
   override func mouseMoved(with event: NSEvent) {
+    guard currentDragObject == nil else { return }
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
     
     if isInInteractiveMode {
@@ -508,19 +513,11 @@ extension PlayerWindowController {
     /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
-      if sidebarResizeCursor == nil {
-        let newCursor = NSCursor.resizeLeftRight
-        newCursor.push()
-        sidebarResizeCursor = newCursor
-      }
+      applySidebarResizeCursor(.resizing_BothDirections)
       // Kludge to prevent window drag if trying to drag sidebar. Do not drag the window!
       updateIsMoveableByWindowBackground(disableWindowDrag: true)
     } else {
-      if let currentCursor = sidebarResizeCursor {
-        currentCursor.pop()
-        sidebarResizeCursor = nil
-      }
-
+      applySidebarResizeCursor(.notResizing)
       // Kludge to prevent window drag if trying to drag floating OSC.
       let disableWindowDragging = isMouseEvent(event, inAnyOf: [controlBarFloating])
       updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
@@ -548,7 +545,7 @@ extension PlayerWindowController {
 
   // assumes mouse is in window
   private func isMouseInTopBarArea(_ mouseLocInWindow: NSPoint) -> Bool {
-    if !currentLayout.topBarView.isShowable {
+    guard currentLayout.topBarView.isShowable else {
       // e.g. music mode
       return false
     }
@@ -572,6 +569,12 @@ extension PlayerWindowController {
       // Enable this so that user can drag from title bar with first mouse
       window?.isMovableByWindowBackground = true
     }
+  }
 
+  override func cursorUpdate(with event: NSEvent) {
+    if isMouseActuallyInside(view: playSlider) {
+      let newCursor = NSCursor.iBeam
+      newCursor.set()
+    }
   }
 }

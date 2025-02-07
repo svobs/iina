@@ -216,14 +216,15 @@ class CropBoxView: NSView {
   }
 
   private func updateCursorRects() {
+    // FIXME: these are actually half their stated values because the cursor rects cannot go outside the bounds of this view
     let x = boxRect.origin.x
     let y = boxRect.origin.y
     let w = boxRect.size.width
     let h = boxRect.size.height
-    rectTop = NSMakeRect(x, y-2, w, 4).standardized
-    rectBottom = NSMakeRect(x, y+h-2, w, 4).standardized
-    rectLeft = NSMakeRect(x-2, y+2, 4, h-4).standardized
-    rectRight = NSMakeRect(x+w-2, y+2, 4, h-4).standardized
+    rectTop = NSMakeRect(x, y-4, w, 8).standardized
+    rectBottom = NSMakeRect(x, y+h-4, w, 8).standardized
+    rectLeft = NSMakeRect(x-4, y+4, 8, h-8).standardized
+    rectRight = NSMakeRect(x+w-4, y+4, 8, h-8).standardized
 
     window?.invalidateCursorRects(for: self)
   }

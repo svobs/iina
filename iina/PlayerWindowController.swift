@@ -800,14 +800,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     window.title = "Window"
 
     // start tracking mouse event
+    /// See `PWin_Input.swift`
     if cv.trackingAreas.isEmpty {
       cv.addTrackingArea(NSTrackingArea(rect: cv.bounds,
                                         options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
                                         owner: self, userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
     }
     if playSlider.trackingAreas.isEmpty {
+      // Not needed for now: enabledDuringMouseDrag
       playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds,
-                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved],
+                                                options: [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate],
                                                 owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
     }
     // Track the thumbs on the progress bar representing the A-B loop points and treat them as part
@@ -820,8 +822,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     if volumeSlider.trackingAreas.isEmpty {
+      // Not needed for now: enabledDuringMouseDrag
       volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds,
-                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved],
+                                                options: [.activeAlways, .inVisibleRect, .mouseMoved],
                                                   owner: self, userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
     }
     // truncate middle for title
