@@ -799,11 +799,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // rather disturbing this works as a workaround, but it does.
     window.title = "Window"
 
+    /// See `PWin_Input.swift` for handling of these events.
+    
     // start tracking mouse event
-    /// See `PWin_Input.swift`
     if cv.trackingAreas.isEmpty {
       cv.addTrackingArea(NSTrackingArea(rect: cv.bounds,
-                                        options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                        options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
                                         owner: self, userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
     }
     if playSlider.trackingAreas.isEmpty {

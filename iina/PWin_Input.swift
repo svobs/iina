@@ -571,10 +571,9 @@ extension PlayerWindowController {
     }
   }
 
+  // Currently only used for hover over sliders
   override func cursorUpdate(with event: NSEvent) {
-    if isMouseActuallyInside(view: playSlider) || isMouseActuallyInside(view: volumeSlider) {
-      let newCursor = NSCursor.iBeam
-      newCursor.set()
-    }
+    let newCursor = NSCursor.pointingHand
+    newCursor.set()
   }
 }
