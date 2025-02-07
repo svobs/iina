@@ -610,7 +610,7 @@ extension PlayerWindowController {
 
   /**
    Resizes and repositions the window, attempting to match `desiredViewportSize`, but the actual resulting
-   video size will be scaled if needed so it is`>= Constants.minVideoSize` and `<= screen.visibleFrame`.
+   video size will be scaled if needed so it is `<= screen.visibleFrame`.
    The window's position will also be updated to maintain its current center if possible, but also to
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
@@ -619,8 +619,7 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
-      let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingViewport(to: desiredViewportSize,
-                                                                           screenFit: .noConstraints)
+      let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
       if currentLayout.mode == .windowedNormal {
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize

@@ -150,9 +150,6 @@ struct Constants {
   // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
   static let maxConfFileLinesAccepted = 10000
 
-  /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
-  static let minVideoSize = NSSize(width: 8, height: 8)
-
   static let symButtonImageTransitionSpeed = 2.0
 
   // Should PlaySlider height be capped at 2x its minimum?
@@ -284,6 +281,7 @@ struct Constants {
 
   struct WindowedMode {
     static let minViewportSize = CGSize(width: 285, height: 120)
+    static let minWindowSize = CGSize(width: 285, height: 160)
   }
   struct InteractiveMode {
     // Need enough space to display all the buttons and field at the bottom:
