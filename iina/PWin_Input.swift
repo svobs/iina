@@ -489,8 +489,6 @@ extension PlayerWindowController {
     switch area {
     case .playerWindow:
       showFadeableViews(duration: 0)
-    case .customTitleBar:
-      customTitleBar?.leadingStackView.mouseEntered(with: event)
     default:
       break
     }
@@ -518,8 +516,6 @@ extension PlayerWindowController {
         // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
         fadeableViews.hideTimer.restart()
       }
-    case .customTitleBar:
-      customTitleBar?.leadingStackView.mouseExited(with: event)
     default:
       break
     }

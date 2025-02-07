@@ -93,7 +93,8 @@ class CustomTitleBarViewController: NSViewController {
       for btn in trafficLightButtons {
         /// This solution works better than using `window` as owner, because with that the green button would get stuck with highlight
         /// when menu was shown.
-        btn.addTrackingArea(NSTrackingArea(rect: btn.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: leadingStackView, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.customTitleBar]))
+        let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseEnteredAndExited]
+        btn.addTrackingArea(NSTrackingArea(rect: btn.bounds, options: options, owner: leadingStackView, userInfo: nil))
       }
     }
 

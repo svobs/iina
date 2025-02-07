@@ -96,7 +96,8 @@ final class PlaySlider: ScrollableSlider {
 
   func showHoverIndicator(atSliderCoordX x: CGFloat) {
     guard let scaleFactor = window?.screen?.backingScaleFactor,
-          let sliderAppearance = customCell.sliderAppearance else { return }
+          let sliderAppearance = customCell.sliderAppearance,
+          let pwc else { return }
 
     // Do not draw over the main knob, or AB loop knobs
     if customCell.wantsKnob {
@@ -107,6 +108,10 @@ final class PlaySlider: ScrollableSlider {
       }
     }
     if !abLoopA.isHidden {
+      guard pwc.currentDragObject != abLoopA else {
+        hoverIndicator.isHidden = true
+        return
+      }
       let knobCenterX = abLoopA.x
       let kf = KnobFactory.shared
       let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
@@ -116,6 +121,11 @@ final class PlaySlider: ScrollableSlider {
       }
     }
     if !abLoopB.isHidden {
+      guard pwc.currentDragObject != abLoopB else {
+        hoverIndicator.isHidden = true
+        return
+      }
+
       let knobCenterX = abLoopB.x
       let kf = KnobFactory.shared
       let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5

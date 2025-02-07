@@ -20,6 +20,35 @@ import Foundation
 ///     that method will attempt to report it using the logger. If the logger is still being initialized this will result in a crash. For that reason
 ///     the logger uses its own similar method.
 class Logger: NSObject {
+
+  // MARK: - Level
+
+  enum Level: Int, Comparable, CustomStringConvertible {
+    static func < (lhs: Level, rhs: Level) -> Bool {
+      return lhs.rawValue < rhs.rawValue
+    }
+
+    static var preferred: Level = .error
+
+    case trace = -1
+    case verbose
+    case debug
+    case warning
+    case error
+
+    var description: String {
+      switch self {
+      case .trace: return "T"
+      case .verbose: return "V"
+      case .debug: return "D"
+      case .warning: return "W"
+      case .error: return "E"
+      }
+    }
+  }
+
+  // MARK: Vars & More!
+
   static var isTraceEnabled: Bool {
     return Logger.isEnabled(.trace)
   }
@@ -70,6 +99,66 @@ class Logger: NSObject {
     }
   }
 
+  /// Default log
+  static let log = Subsystem.general
+
+  @Atomic static var logs: [Logger.Log] = []
+
+  private static let loggerSubsystem = Logger.makeSubsystem("logger")
+  @Atomic static var subsystems: [Subsystem] = [.general, .input, .restore]
+
+  fileprivate static var piiDict: [String: Int] = [:]
+
+  // Must coordinate closing of the log file to avoid writing to a closed file handle.
+  private static let lock = Lock()
+
+  /// Global flag for all logs.
+  ///
+  /// If running in DEBUG mode, this flag is ignored, and logging is always enabled.
+  /// If not running in DEBUG, and this flag is `false`, then all logging is disabled.
+  static private(set) var enabled: Bool = false
+
+  /// Updates global enablement flag
+  static func updateEnablement() {
+    let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
+    if enabled && !newValue {
+      Logger.log("Logging disabled")
+      enabled = newValue
+    } else if !enabled && newValue {
+      enabled = newValue
+      Logger.log("Logging enabled")
+    }
+
+    let newLogLevel = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
+    if Level.preferred != newLogLevel {
+      Logger.log("Log level updated to \(newLogLevel)")
+    }
+    Level.preferred = newLogLevel
+  }
+
+  static func isEnabled(_ level: Logger.Level) -> Bool {
+#if !DEBUG
+    guard enabled else { return false }
+#endif
+
+    return Logger.Level.preferred <= level
+  }
+
+  private static let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm:ss.SSS"
+    return formatter
+  }()
+
+  static func initLogging() {
+    updateEnablement()
+
+    // Mask library URL in subsequent logging
+    _ = getOrCreatePII(for: libraryDirectory.path)
+  }
+
+  // MARK: - Log Class
+
   class Log: NSObject {
     @objc dynamic let subsystem: String
     @objc dynamic let level: Int
@@ -90,7 +179,7 @@ class Logger: NSObject {
     }
   }
 
-  @Atomic static var logs: [Logger.Log] = []
+  // MARK: - Subsystem
 
   class Subsystem: RawRepresentable {
     let rawValue: String
@@ -188,12 +277,7 @@ class Logger: NSObject {
       guard Logger.enabled else { return }
       Logger.log(msgFunc(), level: .error, subsystem: self)
     }
-  }
-
-  @Atomic static var subsystems: [Subsystem] = [.general, .input, .restore]
-
-  /// Default log
-  static let log = Subsystem.general
+  }  // end class Subsystem
 
   static func makeSubsystem(_ rawValue: String) -> Subsystem {
     $subsystems.withLock() { subsystems in
@@ -214,31 +298,7 @@ class Logger: NSObject {
     }
   }
 
-  enum Level: Int, Comparable, CustomStringConvertible {
-    static func < (lhs: Level, rhs: Level) -> Bool {
-      return lhs.rawValue < rhs.rawValue
-    }
-
-    static var preferred: Level = .error
-
-    case trace = -1
-    case verbose
-    case debug
-    case warning
-    case error
-
-    var description: String {
-      switch self {
-      case .trace: return "T"
-      case .verbose: return "V"
-      case .debug: return "D"
-      case .warning: return "W"
-      case .error: return "E"
-      }
-    }
-  }
-
-  fileprivate static var piiDict: [String: Int] = [:]
+  // MARK: - PII Masking
 
   static func getOrCreatePII(for privateString: String) -> String {
     guard enabled && enablePiiMasking && !privateString.isEmpty && privateString.count >= minMatchLength else {
@@ -282,32 +342,19 @@ class Logger: NSObject {
     return String(format: piiFormat, paddedInt)
   }
 
-  /// Global flag for all logs.
-  ///
-  /// If running in DEBUG mode, this flag is ignored, and logging is always enabled.
-  /// If not running in DEBUG, and this flag is `false`, then all logging is disabled.
-  static private(set) var enabled: Bool = false
+  static private func maskAnyPII(_ rawMessage: String) -> String {
+    guard enablePiiMasking else { return rawMessage }
 
-  static func updateEnablement() {
-    let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
-    if enabled && !newValue {
-      Logger.log("Logging disabled")
-      enabled = newValue
-    } else if !enabled && newValue {
-      enabled = newValue
-      Logger.log("Logging enabled")
+    var maskedMessage: String = rawMessage
+    lock.withLock {
+      for (piiString, piiID) in piiDict {
+        maskedMessage = maskedMessage.replacingOccurrences(of: piiString, with: formatPIIToken(piiID))
+      }
     }
-
-    Level.preferred = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
+    return maskedMessage
   }
 
-  static func isEnabled(_ level: Logger.Level) -> Bool {
-#if !DEBUG
-    guard enabled else { return false }
-#endif
-
-    return Logger.Level.preferred <= level
-  }
+  // MARK: - File System
 
   static let libraryDirectory: URL = {
     let libraryURLs = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
@@ -338,8 +385,6 @@ class Logger: NSObject {
   // File for personally identifiable information lookup
   private static let piiFile: URL = logDirectory.appendingPathComponent("pii.txt")
 
-  private static let loggerSubsystem = Logger.makeSubsystem("logger")
-
   private static var logFileHandle: FileHandle? = {
     FileManager.default.createFile(atPath: logFile.path, contents: nil, attributes: nil)
     do {
@@ -357,15 +402,6 @@ class Logger: NSObject {
       fatalDuringInit("Cannot open log file \(piiFile.path) for writing: \(error.localizedDescription)")
     }
   }()
-
-  private static let dateFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "HH:mm:ss.SSS"
-    return formatter
-  }()
-
-  // Must coordinate closing of the log file to avoid writing to a closed file handle.
-  private static let lock = Lock()
 
   /// Closes the log file, if logging is enabled,
   /// - Important: Currently IINA does not coordinate threads during termination. This results in a race condition as to whether
@@ -415,12 +451,6 @@ class Logger: NSObject {
     }
   }
 
-  private static func formatMessage(_ message: String, _ level: Level, _ subsystem: Subsystem,
-                                    _ appendNewlineAtTheEnd: Bool, _ date: Date = Date()) -> String {
-    let time = dateFormatter.string(from: date)
-    return "\(time) |\(subsystem.rawValue) \(level.description)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
-  }
-
   private static func writeToFile(_ fileHandle: FileHandle?, _ data: Data) {
     // The logger may be called after it has been closed.
     guard let fileHandle = fileHandle else { return }
@@ -436,23 +466,12 @@ class Logger: NSObject {
     }
   }
 
-  static private func maskAnyPII(_ rawMessage: String) -> String {
-    guard enablePiiMasking else { return rawMessage }
+  // MARK: - Message Formatting
 
-    var maskedMessage: String = rawMessage
-    lock.withLock {
-      for (piiString, piiID) in piiDict {
-        maskedMessage = maskedMessage.replacingOccurrences(of: piiString, with: formatPIIToken(piiID))
-      }
-    }
-    return maskedMessage
-  }
-
-  static func initLogging() {
-    updateEnablement()
-
-    // Mask library URL in subsequent logging
-    _ = getOrCreatePII(for: libraryDirectory.path)
+  private static func formatMessage(_ message: String, _ level: Level, _ subsystem: Subsystem,
+                                    _ appendNewlineAtTheEnd: Bool, _ date: Date = Date()) -> String {
+    let time = dateFormatter.string(from: date)
+    return "\(time) |\(subsystem.rawValue) \(level.description)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
   }
 
   static func log(_ rawMessage: String, level: Level = .debug, subsystem: Subsystem = .general) {
@@ -485,6 +504,8 @@ class Logger: NSObject {
       writeToFile(logFileHandle, data)
     }
   }
+
+  // MARK: - Failure
 
   static func ensure(_ condition: @autoclosure () -> Bool, _ errorMessage: String = "Assertion failed in \(#line):\(#file)", _ cleanup: () -> Void = {}) {
     guard condition() else {

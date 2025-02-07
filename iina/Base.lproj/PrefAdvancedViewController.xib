@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -96,25 +96,26 @@
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Moa-ah-XjY">
                     <rect key="frame" x="64" y="36" width="89" height="25"/>
-                    <popUpButtonCell key="cell" type="push" title="Debug" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="hGq-ek-VHd" id="gTP-IE-Lyn">
+                    <popUpButtonCell key="cell" type="push" title="Trace" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" tag="-1" imageScaling="proportionallyDown" inset="2" selectedItem="pkg-Kg-F56" id="gTP-IE-Lyn">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" usesAppearanceFont="YES"/>
                         <menu key="menu" id="lA1-jW-Eyv">
                             <items>
+                                <menuItem title="Trace" tag="-1" id="pkg-Kg-F56"/>
                                 <menuItem title="Verbose" id="S9M-yY-q0w"/>
-                                <menuItem title="Debug" state="on" id="hGq-ek-VHd"/>
-                                <menuItem title="Warning" id="exP-JC-h7t">
+                                <menuItem title="Debug" state="on" tag="1" id="hGq-ek-VHd"/>
+                                <menuItem title="Warning" tag="2" id="exP-JC-h7t">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Error" id="sl8-Df-vbX">
+                                <menuItem title="Error" tag="3" id="sl8-Df-vbX">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
                             </items>
                         </menu>
                     </popUpButtonCell>
                     <connections>
+                        <binding destination="nyg-fH-Pug" name="selectedTag" keyPath="values.logLevel" id="WhX-vg-Gen"/>
                         <binding destination="nyg-fH-Pug" name="enabled" keyPath="values.enableAdvancedSettings" id="FeD-g7-qB0"/>
-                        <binding destination="nyg-fH-Pug" name="selectedIndex" keyPath="values.logLevel" id="xvA-i4-5B0"/>
                     </connections>
                 </popUpButton>
                 <button identifier="FunctionalButtonShowLog" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XBa-zS-RVU">
@@ -237,7 +238,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aYw-Un-OIE">
-                                                <rect key="frame" x="2" y="1" width="123" height="18"/>
+                                                <rect key="frame" x="2" y="1" width="122" height="18"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="1" width="132" height="16"/>
@@ -394,7 +395,7 @@
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hbF-n4-jl3">
-                    <rect key="frame" x="338" y="27" width="148" height="32"/>
+                    <rect key="frame" x="395" y="28" width="91" height="32"/>
                     <buttonCell key="cell" type="push" title="Choose…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MRT-u8-xTX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>

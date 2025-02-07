@@ -2325,7 +2325,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// - clicking inside it
   /// - dragging inside it
   /// Scroll wheel seek should call `seekFromPlaySlider` directly.
-  @IBAction func playSliderAction(_ slider: PlaySlider) {
+  @objc func playSliderAction(_ slider: PlaySlider) {
     // Update player.info & UI proactively
     let playbackPositionAbsSec = player.info.playbackDurationSec! * slider.progressRatio
     let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
