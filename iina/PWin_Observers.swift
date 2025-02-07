@@ -342,12 +342,6 @@ extension PlayerWindowController {
       cachedEffectiveAppearanceName = effectiveAppearanceName
 
       applyThemeMaterial()
-
-      if playlistView.isViewLoaded {
-        playlistView.updateTableColors()
-      }
-      // Need to regenerate colors in BarFactory & redraw slider:
-      updateTitleBarAndOSC()
     default:
       return
     }

@@ -683,6 +683,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let layoutSpec: LayoutSpec = layoutSpec ?? currentLayout.spec
       let oscGeo = layoutSpec.controlBarGeo
 
+      seekPreview.thumbnailPeekView.updateColors()
+      
+      if playlistView.isViewLoaded {
+        playlistView.updateTableColors()
+      }
+
       let sliderAppearance = layoutSpec.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
       sliderAppearance.applyAppearanceFor {
         // This only needs to be run once, but doing it here will multiply the work by the number of player windows
@@ -691,20 +697,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
         BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance, oscGeo: oscGeo)
 
-        // Need to set .appearance on thumbnailPeekView, or else it will fall back to superview appearance
-        seekPreview.thumbnailPeekView.appearance = sliderAppearance
         playSlider.appearance = sliderAppearance
         volumeSlider.appearance = sliderAppearance
         playSlider.abLoopA.updateKnobImage(to: .loopKnob)
         playSlider.abLoopB.updateKnobImage(to: .loopKnob)
-
-         let scaleFactor = screen.backingScaleFactor
-          if let hoverIndicator = playSlider.hoverIndicator {
-            hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
-          } else {
-            playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
-                                                             scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
-          }
+        
+        let scaleFactor = screen.backingScaleFactor
+        if let hoverIndicator = playSlider.hoverIndicator {
+          hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
+        } else {
+          playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
+                                                           scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
+        }
       }
     }
   }

@@ -33,7 +33,6 @@ class ThumbnailPeekView: NSImageView {
     shadow.shadowOffset = .zero
     self.shadow = shadow
 
-    // Need to call this initially; viewDidChangeEffectiveAppearance will only be called on change
     updateColors()
 
     translatesAutoresizingMaskIntoConstraints = false
@@ -96,10 +95,6 @@ class ThumbnailPeekView: NSImageView {
     // Set shadow radius to between 0 and 10 based on frame height
     // shadow is set in xib
     return min(10, 2 + (frameHeight * 0.005))
-  }
-
-  override func viewDidChangeEffectiveAppearance() {
-    updateColors()
   }
 
   func updateColors() {
