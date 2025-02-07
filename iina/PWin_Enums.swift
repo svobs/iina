@@ -161,6 +161,14 @@ extension PlayerWindowController {
     case customTitleBar
   }
 
+  enum CursorType {
+    case normalCursor
+    case resized_AtLeftMin
+    case resized_AtRightMax
+    case resizing_BothDirections
+    case hoveringInSlider
+  }
+
   /// Animation state. Used for fadeable views, OSD.
   enum UIAnimationState {
     case shown, hidden, willShow, willHide

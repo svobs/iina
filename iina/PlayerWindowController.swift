@@ -232,7 +232,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var trailingSidebarIsResizing = false
 
   // Is non-nil if within the activation rect of one of the sidebars
-  var sidebarResizeCursor: NSCursor? = nil
+  var customCursor: CursorType = .normalCursor
 
   // - Fadeable Views
   var fadeableViews = FadeableViewsHandler()
@@ -780,7 +780,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func _openWindow() {
-    guard let window = self.window, let cv = window.contentView else { return }
+    guard let window = self.window else { return }
 
     log.verbose("PlayerWindow openWindow starting")
 
@@ -799,35 +799,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // rather disturbing this works as a workaround, but it does.
     window.title = "Window"
 
-    /// See `PWin_Input.swift` for handling of these events.
-    
-    // start tracking mouse event
-    if cv.trackingAreas.isEmpty {
-      cv.addTrackingArea(NSTrackingArea(rect: cv.bounds,
-                                        options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
-                                        owner: self, userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
-    }
-    if playSlider.trackingAreas.isEmpty {
-      // Not needed for now: enabledDuringMouseDrag
-      playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds,
-                                                options: [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate],
-                                                owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
-    }
-    // Track the thumbs on the progress bar representing the A-B loop points and treat them as part
-    // of the slider.
-    if playSlider.abLoopA.trackingAreas.count <= 1 {
-      playSlider.abLoopA.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopA.bounds, options:  [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
-    }
-    if playSlider.abLoopB.trackingAreas.count <= 1 {
-      playSlider.abLoopB.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopB.bounds, options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseMoved], owner: self, userInfo: [TrackingArea.key: TrackingArea.playSlider]))
-    }
+    /// See `PWin_Input.swift` for handling of tracking area events.
+    updateWindowTrackingAreas()
 
-    if volumeSlider.trackingAreas.isEmpty {
-      // Not needed for now: enabledDuringMouseDrag
-      volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds,
-                                                  options: [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate],
-                                                  owner: self, userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
-    }
     // truncate middle for title
     if let attrTitle = titleTextField?.attributedStringValue.mutableCopy() as? NSMutableAttributedString, attrTitle.length > 0 {
       let p = attrTitle.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as! NSMutableParagraphStyle

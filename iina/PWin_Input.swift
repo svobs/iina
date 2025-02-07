@@ -153,6 +153,17 @@ extension PlayerWindowController {
 
   // MARK: - Mouse / Trackpad event handling
 
+  /// Called at window open. Set up mouse tracking areas
+  func updateWindowTrackingAreas() {
+    guard let window = self.window, let cv = window.contentView else { return }
+
+    if cv.trackingAreas.isEmpty {
+      cv.addTrackingArea(NSTrackingArea(rect: cv.bounds,
+                                        options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                        owner: self, userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
+    }
+  }
+
   /// This method is provided soly for invoking plugin input handlers.
   func informPluginMouseDragged(with event: NSEvent) {
     PluginInputManager.handle(
@@ -217,7 +228,6 @@ extension PlayerWindowController {
 
   override func mouseDown(with event: NSEvent) {
     guard event.eventNumber != lastMouseDownEventID else { return }
-    
     lastMouseDownEventID = event.eventNumber
     log.verbose{"PWin MouseDown @ \(event.locationInWindow)"}
 
@@ -237,8 +247,9 @@ extension PlayerWindowController {
       return
     }
 
-    // Else: could be dragging window.
+    // Else: could be dragging window. Start tracking mouse:
     mouseDownLocationInWindow = event.locationInWindow
+
     restartHideCursorTimer()
 
     PluginInputManager.handle(
@@ -258,8 +269,8 @@ extension PlayerWindowController {
       return
     }
     let sidebarResizeResult = resizeSidebar(with: event)
-    applySidebarResizeCursor(sidebarResizeResult)
-    let isResizingSidebar = sidebarResizeResult != .notResizing
+    applyCustomCursor(sidebarResizeResult)
+    let isResizingSidebar = sidebarResizeResult != .normalCursor
     if isResizingSidebar {
       return
     }
@@ -475,6 +486,11 @@ extension PlayerWindowController {
 
   override func mouseExited(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
+
+    // Call this out of an abundance of caution. Custom cursors are set via mouseMoved, which only fires while
+    // actually inside the window! May need to reset the cursor if mouse exited the window too quickly.
+    mouseInWindow()
+
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("MouseExited: no data for tracking area!")
       return
@@ -498,30 +514,40 @@ extension PlayerWindowController {
   }
 
   override func mouseMoved(with event: NSEvent) {
+    // Disable hover actions if first mouse is disabled & window not in focus:
+    guard let window, (Preference.bool(for: .videoViewAcceptsFirstMouse) || window.isKeyWindow) else { return }
+
+    mouseInWindow()
+  }
+
+  func mouseInWindow() {
     guard currentDragObject == nil else { return }
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-    
-    if isInInteractiveMode {
-      let disableWindowDragging = isMouseEvent(event, inAnyOf: [viewportView])
-      updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
-      return
-    }
 
     // Do not use `event.locationInWindow`: it can be stale
     let pointInWindow = mouseLocationInWindow
 
-    /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
-    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
+
+    // Kludge to prevent window drag if trying to drag sidebar or other widget. Do not drag the window!
+    var disableWindowDrag = true
+
+    if isInInteractiveMode {
+      disableWindowDrag = isPoint(pointInWindow, inAnyOf: [viewportView])
+      updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDrag)
+      return
+    } else if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
-      applySidebarResizeCursor(.resizing_BothDirections)
-      // Kludge to prevent window drag if trying to drag sidebar. Do not drag the window!
-      updateIsMoveableByWindowBackground(disableWindowDrag: true)
+      /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
+      applyCustomCursor(.resizing_BothDirections)
+    } else if isPoint(pointInWindow, inAnyOf: [playSlider, volumeSlider]) {
+      applyCustomCursor(.hoveringInSlider)
     } else {
-      applySidebarResizeCursor(.notResizing)
+      applyCustomCursor(.normalCursor)
       // Kludge to prevent window drag if trying to drag floating OSC.
-      let disableWindowDragging = isMouseEvent(event, inAnyOf: [controlBarFloating])
-      updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDragging)
+      disableWindowDrag = isPoint(pointInWindow, inAnyOf: [controlBarFloating])
     }
+
+    updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDrag)
 
     // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
     // preview to ensure that the "hover" preview here will not activate:
@@ -537,6 +563,51 @@ extension PlayerWindowController {
 
     // Always hide after timeout even if OSD fade time is longer
     restartHideCursorTimer()
+  }
+
+  func applyCustomCursor(_ newCursorType: CursorType) {
+    let newCursor: NSCursor
+    switch newCursorType {
+    case .normalCursor:
+      if customCursor != .normalCursor {
+        NSCursor.current.pop()
+        customCursor = .normalCursor
+      }
+      return
+    case .resized_AtLeftMin:
+      if #available(macOS 15.0, *) {
+        newCursor = NSCursor.columnResize(directions: .right)
+      } else {
+        newCursor = NSCursor.resizeRight
+      }
+    case .resized_AtRightMax:
+      if #available(macOS 15.0, *) {
+        newCursor = NSCursor.columnResize(directions: .left)
+      } else {
+        newCursor = NSCursor.resizeLeft
+      }
+    case .resizing_BothDirections:
+      if #available(macOS 15.0, *) {
+        newCursor = NSCursor.columnResize(directions: .all)
+      } else {
+        newCursor = NSCursor.resizeLeftRight
+      }
+    case .hoveringInSlider:
+      newCursor = NSCursor.pointingHand
+    }
+
+    // Not sure if this is a kludge, but it works great so far for MacOS 15.3.
+    // - Need to push at least 1 cursor onto the stack, just so we can get the previous cursor back with NSCursor.current.pop().
+    // - Cannot keep pushing onto stack - it destroys performance.
+    // - Need to keep calling set() for each mouseMoved event - otherwise PlaySlider stays with pointer cursor during hover.
+    // The solution Apple seems to prefer for hover is to set up for .cursorUpdate events. But those only work when the window is main!
+    // This solution at least works for any window while the app is frontmost.
+    if customCursor == .normalCursor {
+      newCursor.push()
+    } else {
+      newCursor.set()
+    }
+    customCursor = newCursorType
   }
 
   func isMouseActuallyInside(view: NSView) -> Bool {
@@ -569,11 +640,5 @@ extension PlayerWindowController {
       // Enable this so that user can drag from title bar with first mouse
       window?.isMovableByWindowBackground = true
     }
-  }
-
-  // Currently only used for hover over sliders
-  override func cursorUpdate(with event: NSEvent) {
-    let newCursor = NSCursor.pointingHand
-    newCursor.set()
   }
 }

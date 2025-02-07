@@ -869,6 +869,7 @@ extension PlayerWindowController {
     return false
   }
 
+  /// Returns `true` if mouse was within sidebar resize rect, and resize was started.
   func startResizingSidebar(with event: NSEvent) -> Bool {
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
       log.verbose("User started resize of leading sidebar")
@@ -889,15 +890,8 @@ extension PlayerWindowController {
     return false
   }
 
-  enum SidebarResizeResult {
-    case notResizing
-    case resized_AtLeftMin
-    case resized_AtRightMax
-    case resizing_BothDirections
-  }
-
-  func resizeSidebar(with dragEvent: NSEvent) -> SidebarResizeResult {
-    guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return .notResizing }
+  func resizeSidebar(with dragEvent: NSEvent) -> CursorType {
+    guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return .normalCursor }
 
     let oldGeo: PWinGeometry
     switch currentLayout.mode {
@@ -912,7 +906,7 @@ extension PlayerWindowController {
     return IINAAnimation.disableAnimation { [self] in
       videoView.videoLayer.enterAsynchronousMode()
       
-      let (result, newGeo): (SidebarResizeResult, PWinGeometry?)
+      let (result, newGeo): (CursorType, PWinGeometry?)
 
       if leadingSidebarIsResizing {
         let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
@@ -924,7 +918,7 @@ extension PlayerWindowController {
         (result, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
       } else {
         // should be already handled above
-        return .notResizing
+        return .normalCursor
       }
 
       if let newGeo {
@@ -952,7 +946,7 @@ extension PlayerWindowController {
     }
   }
 
-  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (SidebarResizeResult, PWinGeometry?) {
+  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (CursorType, PWinGeometry?) {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
@@ -1010,7 +1004,7 @@ extension PlayerWindowController {
     return (.resizing_BothDirections, newGeo)
   }
 
-  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (SidebarResizeResult, PWinGeometry?) {
+  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (CursorType, PWinGeometry?) {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
@@ -1070,8 +1064,7 @@ extension PlayerWindowController {
 
   func finishResizingSidebar(with dragEvent: NSEvent) -> Bool {
     let sidebarResizeResult = resizeSidebar(with: dragEvent)
-    guard sidebarResizeResult != .notResizing else { return false }
-    applySidebarResizeCursor(.notResizing)
+    guard sidebarResizeResult != .normalCursor else { return false }
 
     if leadingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
@@ -1085,44 +1078,9 @@ extension PlayerWindowController {
       log.verbose("Finished resize of trailing sidebar; playlist is now \(width)")
     }
 
+    // Call this to refresh cursor
+    mouseInWindow()
     return true
-  }
-
-  func applySidebarResizeCursor(_ result: SidebarResizeResult) {
-    let newCursor: NSCursor
-    switch result {
-    case .notResizing:
-      if sidebarResizeCursor != nil {
-        NSCursor.current.pop()
-      }
-      sidebarResizeCursor = nil
-      return
-    case .resized_AtLeftMin:
-      if #available(macOS 15.0, *) {
-        newCursor = NSCursor.columnResize(directions: .right)
-      } else {
-        newCursor = NSCursor.resizeRight
-      }
-    case .resized_AtRightMax:
-      if #available(macOS 15.0, *) {
-        newCursor = NSCursor.columnResize(directions: .left)
-      } else {
-        newCursor = NSCursor.resizeLeft
-      }
-    case .resizing_BothDirections:
-      if #available(macOS 15.0, *) {
-        newCursor = NSCursor.columnResize(directions: .all)
-      } else {
-        newCursor = NSCursor.resizeLeftRight
-      }
-    }
-
-    if sidebarResizeCursor == nil {
-      newCursor.push()
-    } else {
-      newCursor.set()
-    }
-    sidebarResizeCursor = newCursor
   }
 
   // MARK: - Other mouse events
