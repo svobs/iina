@@ -572,7 +572,7 @@ extension PlayerWindowController {
   }
 
   override func cursorUpdate(with event: NSEvent) {
-    if isMouseActuallyInside(view: playSlider) {
+    if isMouseActuallyInside(view: playSlider) || isMouseActuallyInside(view: volumeSlider) {
       let newCursor = NSCursor.iBeam
       newCursor.set()
     }

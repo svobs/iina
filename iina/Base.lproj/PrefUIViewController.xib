@@ -1519,14 +1519,14 @@ For smoothest results, also enable custom full screen.</string>
                                         <constraint firstAttribute="height" constant="20" id="e72-Ol-hHg"/>
                                     </constraints>
                                     <connections>
-                                        <action selector="oscOverlayStyleAction:" target="-2" id="azx-pS-sFL"/>
+                                        <action selector="oscColorSchemeAction:" target="-2" id="azx-pS-sFL"/>
                                         <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSC" id="2Uz-ET-ap6"/>
                                         <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSC" previousBinding="2Uz-ET-ap6" id="YWJ-vN-E2X">
                                             <dictionary key="options">
                                                 <string key="NSValueTransformerName">NSNegateBoolean</string>
                                             </dictionary>
                                         </binding>
-                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.oscOverlayStyle" id="RiY-FE-DEv"/>
+                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.oscColorScheme" id="RiY-FE-DEv"/>
                                     </connections>
                                 </popUpButton>
                             </subviews>

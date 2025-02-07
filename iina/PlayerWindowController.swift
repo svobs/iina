@@ -824,7 +824,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if volumeSlider.trackingAreas.isEmpty {
       // Not needed for now: enabledDuringMouseDrag
       volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds,
-                                                options: [.activeAlways, .inVisibleRect, .mouseMoved],
+                                                  options: [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate],
                                                   owner: self, userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
     }
     // truncate middle for title
