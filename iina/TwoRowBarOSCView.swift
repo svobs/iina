@@ -14,7 +14,7 @@ class TwoRowBarOSCView: ClickThroughView {
   /// This subtracts from the height of the icons, but is needed to balance out the space above
   var hStackView_BottomMarginConstraint: NSLayoutConstraint!
 
-  /// Used only if `PK.oscPutTimesInRow2` is enabled.
+  /// Used only if `PK.oscTimeLabelsAlwaysWrapSlider` is enabled.
   let timeSlashLabel = ClickThroughTextField()
 
   init() {
@@ -77,36 +77,34 @@ class TwoRowBarOSCView: ClickThroughView {
 
     // Choose either playSlider or playSliderAndTimeLabelsView based on pref
     let playSliderTypeView: NSView
-    if Preference.bool(for: .oscPutTimesInRow2) {
+    if oscGeo.timeLabelsWrapSlider {
+      // Option 2: Both PlaySlider & time labels go in Row 1 (via playSliderAndTimeLabelsView)
+      pwc.addSubviewsToPlaySliderAndTimeLabelsView()
+      playSliderTypeView = pwc.playSliderAndTimeLabelsView
+    } else {
       // Option 1: PlaySlider goes in Row 1; time labels in Row 2
-      pwc.playSliderAndTimeLabelsView.removeAllSubviews()
-      playSliderTypeView = pwc.playSlider
+      pwc.removeSubviewsFromPlaySliderAndTimeLabelsView()
+      pwc.playSliderAndTimeLabelsView.removeFromSuperview()
       if !Preference.bool(for: .showRemainingTime) {
         viewsForRow2.append(pwc.leftTimeLabel)
         viewsForRow2.append(timeSlashLabel)
       }
       viewsForRow2.append(pwc.rightTimeLabel)
-    } else {
-      // Option 2: Both PlaySlider & time labels go in Row 1 (via playSliderAndTimeLabelsView)
-      pwc.addSubviewsToPlaySliderAndTimeLabelsView()
-      playSliderTypeView = pwc.playSliderAndTimeLabelsView
+      playSliderTypeView = pwc.playSlider
     }
 
-    if !subviews.contains(playSliderTypeView) {
-      // just to be sure
-      intraRowSpacingConstraint?.isActive = false
-      // Make sure to put PlaySlider below other controls. Older MacOS versions may clip overlapping views
-      addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
-      playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
-                                                       trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
-      // Negative number here means overlapping:
-      intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderTypeView.bottomAnchor, constant: -bottomMargin)
-      intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"
-      intraRowSpacingConstraint.priority = .defaultLow  // for now
-      intraRowSpacingConstraint.isActive = true
-    } else if let middleSpaceConstraint = intraRowSpacingConstraint, intraRowSpacingConstraint.isActive {
-      middleSpaceConstraint.animateToConstant(-bottomMargin)
-    }
+    playSliderTypeView.removeFromSuperview()
+    // just to be sure
+    intraRowSpacingConstraint?.isActive = false
+    // Make sure to put PlaySlider below other controls. Older MacOS versions may clip overlapping views
+    addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
+    playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
+                                                     trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
+    // Negative number here means overlapping:
+    intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderTypeView.bottomAnchor, constant: -bottomMargin)
+    intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"
+    intraRowSpacingConstraint.priority = .defaultLow  // for now
+    intraRowSpacingConstraint.isActive = true
 
     // - [Re-]add views to hStack
 

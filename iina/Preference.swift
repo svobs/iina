@@ -163,7 +163,7 @@ struct Preference {
     /// Blended gray, or clear-black gradient. Only applies to top & bottom OSCs which are `.insideViewport`
     static let oscColorScheme = Key("oscColorScheme")
     static let oscForceSingleRow = Key("oscForceSingleRow")
-    static let oscPutTimesInRow2 = Key("oscPutTimesInRow2")
+    static let oscTimeLabelsAlwaysWrapSlider = Key("oscTimeLabelsAlwaysWrapSlider")
 
     /// Which buttons to display in the OSC, stored as `Array` of `Integer`s
     static let controlBarToolbarButtons = Key("controlBarToolbarButtons")
@@ -1233,7 +1233,7 @@ struct Preference {
     .oscPosition: OSCPosition.floating.rawValue,
     .oscColorScheme: OSCColorScheme.clearGradient.rawValue,
     .oscForceSingleRow: false,
-    .oscPutTimesInRow2: true,
+    .oscTimeLabelsAlwaysWrapSlider: false,
     .hideFadeableViewsWhenOutsideWindow: true,
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,

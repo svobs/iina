@@ -2075,6 +2075,10 @@ extension NSView {
     return true
   }
 
+  func removeAllConstraints() {
+    removeConstraints(constraints)
+  }
+
   /// Recursive func which configures all views in the given subtree for smoother animation.
   ///
   /// By configuring each view to use a layer with the correct redraw policy, AppKit will use Core Animation to draw

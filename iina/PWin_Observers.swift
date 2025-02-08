@@ -48,7 +48,7 @@ extension PlayerWindowController {
       .oscPosition,
       .oscColorScheme,
       .showRemainingTime,
-      .oscPutTimesInRow2,
+      .oscTimeLabelsAlwaysWrapSlider,
       .topBarPlacement,
       .bottomBarPlacement,
       .oscBarHeight,
@@ -230,7 +230,7 @@ extension PlayerWindowController {
         .useLegacyWindowedMode,
         .arrowButtonAction,
         .showRemainingTime,
-        .oscPutTimesInRow2,
+        .oscTimeLabelsAlwaysWrapSlider,
       // These need calls to BarFactory.current.updateBarStylesFromPrefs():
         .roundSliderBarRects,
         .sliderBarDoneColor:

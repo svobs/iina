@@ -42,10 +42,12 @@ struct ControlBarGeometry {
   let position: Preference.OSCPosition
 
   let arrowButtonAction: Preference.ArrowButtonAction
-  /// If true, always use single-line style OSC, even if qualifying for multi-line OSC.
-  ///
+
+  /// If true, always use single-row style OSC, even if qualifying for multi-line OSC.
   /// (Only applies to top & bottom OSCs).
   let forceSingleRowStyle: Bool
+  /// Only used if two-row OSC
+  let oscTimeLabelsAlwaysWrapSlider: Bool
 
   /// Preferred height for "full-width" OSCs (i.e. top or bottom, not floating or music mode)
   let barHeight: CGFloat
@@ -87,12 +89,14 @@ struct ControlBarGeometry {
        arrowButtonAction: Preference.ArrowButtonAction? = nil,
        barHeight desiredBarHeight: CGFloat? = nil,
        forceSingleRowStyle: Bool? = nil,
+       oscTimeLabelsAlwaysWrapSlider: Bool? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
     let forceSingleRowStyle = forceSingleRowStyle ?? (Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .oscForceSingleRow))
     self.forceSingleRowStyle = forceSingleRowStyle
+    self.oscTimeLabelsAlwaysWrapSlider = oscTimeLabelsAlwaysWrapSlider ?? Preference.bool(for: .oscTimeLabelsAlwaysWrapSlider)
 
     // Actual cardinal sizes should be downstream from tick values
     let playIconSizeTicks = playIconSizeTicks ?? Preference.integer(for: .oscBarPlayIconSizeTicks)
@@ -276,14 +280,16 @@ struct ControlBarGeometry {
     return NSSize(width: width, height: height)
   }
 
+  /// Elapsed & current time labels are placed to left & right of slider, respectively?
+  var timeLabelsWrapSlider: Bool {
+    return !isTwoRowBarOSC || oscTimeLabelsAlwaysWrapSlider
+  }
+
   // MARK: Computed props: Playback Controls
 
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
     let timeLabelFontSize = timeLabelFontSize
-    if isTwoRowBarOSC {
-      return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .light)
-    }
     return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .light)
   }
 
@@ -296,7 +302,8 @@ struct ControlBarGeometry {
     case .floating:
       return 11.0
     case .top, .bottom:
-      if isTwoRowBarOSC && Preference.bool(for: .oscPutTimesInRow2) {
+      if isTwoRowBarOSC && !oscTimeLabelsAlwaysWrapSlider {
+        // Time labels go under slider; plenty of space
         let normalSize = 13.0
         return (sliderScale * normalSize).rounded().clamped(to:13...39)
       }
