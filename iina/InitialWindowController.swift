@@ -114,7 +114,8 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     Logger.log("WelcomeWindow windowDidLoad starting", level: .verbose)
     super.windowDidLoad()
 
-    window?.animationBehavior = .documentWindow
+    // "utility" style doesn't animate well with VisualEffectView. No good options
+    window?.animationBehavior = .default
     window?.isMovableByWindowBackground = true
 
     appIcon.unregisterDraggedTypes()

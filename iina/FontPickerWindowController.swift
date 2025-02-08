@@ -47,7 +47,7 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
 
   override func windowDidLoad() {
     super.windowDidLoad()
-    window?.animationBehavior = .utilityWindow
+    window?.animationBehavior = .default
 
     let manager = NSFontManager.shared
 
