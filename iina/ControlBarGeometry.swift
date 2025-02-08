@@ -32,6 +32,7 @@ fileprivate let musicModeToolbarIconSpacing: CGFloat = 12
 
 fileprivate let stepIconScaleFactor: CGFloat = 0.85
 fileprivate let systemArrowSymbolScaleFactor: CGFloat = 0.85
+fileprivate let volumeIconTwoRowScaleFactor: CGFloat = 0.85
 
 // TODO: reimplement OSC title bar feature
 
@@ -135,7 +136,7 @@ struct ControlBarGeometry {
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
-      if !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, oscPosition) {
+      if !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition) {
         // Is 2-row OSC
         let playSliderHeight: CGFloat
         if Constants.twoRowOSC_LimitPlaySliderHeight {
@@ -221,7 +222,7 @@ struct ControlBarGeometry {
     return true
   }
 
-  var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.canUseMultiLineOSC(barHeight: barHeight, position) }
+  var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, position) }
 
   // MARK: - Sliders
 
@@ -257,9 +258,12 @@ struct ControlBarGeometry {
   var volumeIconHeight: CGFloat {
     if position == .floating {
       return floatingVolumeIconSize
-    } else {
-      return playIconSize
     }
+    let isConfiguredForTwoRow = !forceSingleRowStyle && position == .bottom
+    if isConfiguredForTwoRow {
+      return playIconSize * volumeIconTwoRowScaleFactor
+    }
+    return playIconSize
   }
 
   var volumeSliderWidth: CGFloat {
@@ -426,7 +430,7 @@ struct ControlBarGeometry {
     }
   }
 
-  static func canUseMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
+  private static func qualifiesForMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
     guard position == .bottom else { return false }
     return barHeight >= Constants.Distance.TwoRowOSC.minQualifyingBarHeight
   }
