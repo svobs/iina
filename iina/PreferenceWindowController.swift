@@ -202,12 +202,11 @@ class PreferenceWindowController: IINAWindowController {
 
   override func windowDidLoad() {
     super.windowDidLoad()
-    window?.animationBehavior = .default
     // Set this to true temporarily, so that table doesn't fire selectionChanged events while setting up
     tableView.allowsEmptySelection = true
 
     if let undoManager = window?.undoManager {
-      Logger.log("PreferenceWindow loaded: setting UndoManager", level: .verbose)
+      Logger.log.verbose{"PreferenceWindow loaded: setting UndoManager"}
       // Make more easily accessible for other components
       PreferenceWindowController.undoManager = undoManager
     }
@@ -273,7 +272,7 @@ class PreferenceWindowController: IINAWindowController {
     searchField.stringValue = PreferenceWindowController.getSearchStringFromPrefs() ?? ""
     searchFieldAction(self)
 
-    Logger.log("PreferenceWindowController windowDidLoad done", level: .verbose)
+    Logger.log.verbose{"PreferenceWindowController windowDidLoad done"}
   }
 
   override func mouseDown(with event: NSEvent) {

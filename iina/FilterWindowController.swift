@@ -58,7 +58,6 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   override func windowDidLoad() {
     Logger.log("WindowDidLoad: \(windowFrameAutosaveName): \(window!.frame.origin)", level: .verbose)
     super.windowDidLoad()
-    window?.animationBehavior = .documentWindow
     window?.delegate = self
 
     keyRecordView.delegate = self

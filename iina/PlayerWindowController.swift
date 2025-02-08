@@ -802,6 +802,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // This is the default title AppKit assigns to a window when it is first created. Surprising and
     // rather disturbing this works as a workaround, but it does.
     window.title = "Window"
+    
+    window.refreshWindowOpenCloseAnimation()
 
     /// See `PWin_Input.swift` for handling of tracking area events.
     updateWindowTrackingAreas()

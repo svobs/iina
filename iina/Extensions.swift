@@ -1738,6 +1738,70 @@ extension NSWindow {
     return frameAutosaveName
   }
 
+  /// Changes opening & closing animations of window based on app lifecycle state & other variables
+  func refreshWindowOpenCloseAnimation() {
+    guard savedStateName != "" else {
+      Logger.log.verbose{"refreshWindowOpenCloseAnimation: empty savedStateName for window; skipping"}
+      return
+    }
+    guard IINAAnimation.isAnimationEnabled else {
+      Logger.log.verbose{"refreshWindowOpenCloseAnimation: animation disabled or motion reduction enabled. Using .default for \(savedStateName.quoted)"}
+      animationBehavior = .default
+      return
+    }
+
+    if !AppDelegate.shared.isDoneLaunching {
+      // Use zoom effect for initial open
+      let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .windowLaunchAnimation)
+      switch animationType {
+      case .useDefault, .zoomIn:
+        animationBehavior = .documentWindow
+      case .none:
+        animationBehavior = .default
+      }
+      return
+    }
+
+    guard var autosaveEnum = WindowAutosaveName(savedStateName) else {
+      assert(false, "Expected guaranteed match for savedStateName \(savedStateName)")
+      Logger.log.error{"refreshWindowOpenCloseAnimation: no match for savedStateName \(savedStateName). Skipping"}
+      return
+    }
+
+    if autosaveEnum.isPlayerWindow {
+      let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .playerWindowOpenCloseAnimation)
+      switch animationType {
+      case .zoomIn:
+        animationBehavior = .documentWindow
+        return
+      case .none:
+        animationBehavior = .default
+        return
+      case .useDefault:
+        // a little kludgey, but makes the matching logic work for the array below
+        autosaveEnum = .anyPlayerWindow
+      }
+    } else {
+      let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .auxWindowOpenCloseAnimation)
+      switch animationType {
+      case .zoomIn:
+        animationBehavior = .documentWindow
+        return
+      case .none:
+        animationBehavior = .default
+        return
+      case .useDefault:
+        break
+      }
+    }
+    guard let behavior = UIState.shared.windowOpenCloseAnimations[autosaveEnum] else {
+      assert(false, "Expected guaranteed match for WindowAutosaveName \(autosaveEnum)")
+      Logger.log.error{"refreshWindowOpenCloseAnimation: no match for WindowAutosaveName \(autosaveEnum); skipping"}
+      return
+    }
+    animationBehavior = behavior
+  }
+
   /// Return the screen to use by default for this window.
   ///
   /// This method searches for a screen to use in this order:
@@ -1817,6 +1881,10 @@ class IINAWindowController: NSWindowController {
       Logger.log("Cannot open window: no window object!", level: .error)
       return
     }
+    assert(window.windowController as? PlayerWindowController == nil,
+           "IINAWindowController.openWindow should be overriden for player windows!")
+
+    window.refreshWindowOpenCloseAnimation()
 
     let windowName = window.savedStateName
     if !Preference.bool(for: .isRestoreInProgress), !windowName.isEmpty {

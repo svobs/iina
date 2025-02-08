@@ -102,6 +102,20 @@ class UIState {
 
   var cachedScreens: [UInt32: ScreenMeta] = [:]
 
+  let windowOpenCloseAnimations: [WindowAutosaveName: NSWindow.AnimationBehavior] = [
+    .anyPlayerWindow : .documentWindow,
+    .inspector : .documentWindow,
+    .videoFilter : .documentWindow,
+    .audioFilter : .documentWindow,
+    .openURL : .alertPanel,
+    .openFile : .default,
+    .playbackHistory : .utilityWindow,
+    .welcome : .documentWindow,
+    .guide : .documentWindow,
+    .logViewer : .utilityWindow,
+    .preferences : .default,
+  ]
+
   init() {
     let nextID = Preference.integer(for: .launchCount) + 1
     Preference.set(nextID, for: .launchCount)

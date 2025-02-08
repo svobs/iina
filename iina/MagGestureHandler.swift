@@ -161,7 +161,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       var newMusicModeGeometry = windowController.musicModeGeo.scalingVideo(to: newWidth)!
       windowController.log.verbose("Scaling pinched video in music mode, result: \(newMusicModeGeometry)")
 
-      IINAAnimation.disableAnimation{
+      IINAAnimation.disableAnimation {
         newMusicModeGeometry = windowController.applyMusicModeGeo(newMusicModeGeometry, updateCache: false)
       }
       // Kind of clunky to convert to PWinGeometry, just to fit the function signature, then convert it back. But...could be worse.

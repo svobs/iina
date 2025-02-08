@@ -16,7 +16,7 @@ import Cocoa
 class OutlineView: NSOutlineView {
 
   override func collapseItem(_ item: Any?, collapseChildren: Bool) {
-    guard Preference.bool(for: .disableAnimations) else {
+    guard IINAAnimation.isAnimationEnabled else {
       super.collapseItem(item, collapseChildren: collapseChildren)
       return
     }
@@ -27,7 +27,7 @@ class OutlineView: NSOutlineView {
   }
 
   override func expandItem(_ item: Any?, expandChildren: Bool) {
-    guard Preference.bool(for: .disableAnimations) else {
+    guard IINAAnimation.isAnimationEnabled else {
       super.expandItem(item, expandChildren: expandChildren)
       return
     }

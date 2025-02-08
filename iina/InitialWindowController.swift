@@ -100,12 +100,12 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
           let sw = Utility.Stopwatch()
           self.reloadData()
           self.isFirstLoad = false
-          Logger.log("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window", level: .verbose)
+          Logger.log.verbose("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window")
           super.openWindow(sender)
         }
       }
     } else {
-      Logger.log("Opening WelcomeWindow", level: .verbose)
+      Logger.log.verbose("Opening WelcomeWindow")
       super.openWindow(sender)
     }
   }
@@ -115,7 +115,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     super.windowDidLoad()
 
     // "utility" style doesn't animate well with VisualEffectView. No good options
-    window?.animationBehavior = .default
     window?.isMovableByWindowBackground = true
 
     appIcon.unregisterDraggedTypes()
@@ -185,7 +184,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
 
   private func openRecentItemFromTable(_ rowIndex: Int) {
     if let url = recentDocuments[at: rowIndex] {
-      Logger.log("Opening recentDocuments[\(rowIndex)] in new player window", level: .verbose)
+      Logger.log.verbose("Opening recentDocuments[\(rowIndex)] in new player window")
       openInNewPlayer(url)
     }
   }
@@ -215,7 +214,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     guard FileManager.default.fileExists(atPath: lastFile.path) else {
-      Logger.log("File does not exist at lastPlaybackURL: \(lastFile.path.pii.quoted)")
+      Logger.log.debug{"File does not exist at lastPlaybackURL: \(lastFile.path.pii.quoted)"}
       return nil
     }
     return lastFile
@@ -241,7 +240,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
       recentDocuments = recentsUnfiltered
     }
 
-    Logger.log("[ReloadWelcomeWindow] finished resolving \(recentDocuments.count) recentDocuments in \(sw) ms")
+    Logger.log.verbose{"[ReloadWelcomeWindow] finished resolving \(self.recentDocuments.count) recentDocuments in \(sw) ms"}
 
     // Refresh UI:
 
@@ -255,10 +254,10 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     // Debug logging:
     if Logger.isEnabled(.verbose) {
       let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
-      Logger.log("[ReloadWelcomeWindow] Recents displayed: \(recentDocuments.count) of \(recentsUnfiltered.count); lastPlaybackURL=\(last)", level: .verbose)
+      Logger.log.verbose{"[ReloadWelcomeWindow] Recents displayed: \(recentDocuments.count) of \(recentsUnfiltered.count); lastPlaybackURL=\(last)"}
 
       for (index, url) in recentDocuments.enumerated() {
-        Logger.log("Recents[\(index)]: \(url.path.pii.quoted)", level: .verbose)
+        Logger.log.verbose{"Recents[\(index)]: \(url.path.pii.quoted)"}
       }
     }
   }
@@ -268,7 +267,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
   // Video is about to start playing in a new window, but welcome window needs to be closed first.
   // Need to add special logic around `close()` so that it doesn't think the last window is being closed, and decide to quit.
   func closePriorToOpeningPlayerWindow() {
-    Logger.log("Welcome window closing prior to opening player window", level: .verbose)
+    Logger.log.verbose{"Welcome window closing prior to opening player window"}
     self.close()
   }
 }
@@ -334,7 +333,7 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
           openRecentItemFromTable(recentFilesTableView.selectedRow)
         } else if let lastURL = lastPlaybackURL {
           // If no row selected in table, most recent file button is selected. Use that if it exists
-          Logger.log("Opening lastPlaybackURL in new player window", level: .verbose)
+          Logger.log.debug("Opening lastPlaybackURL in new player window")
           openInNewPlayer(lastURL)
         } else if recentFilesTableView.numberOfRows > 0 {
           // Most recent file no longer exists? Try to load next one

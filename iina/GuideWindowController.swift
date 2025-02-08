@@ -27,9 +27,18 @@ class GuideWindowController: IINAWindowController {
   @IBOutlet weak var highlightsLoadingIndicator: NSProgressIndicator!
   @IBOutlet weak var highlightsLoadingFailedBox: NSBox!
 
+  init() {
+    super.init(window: nil)
+    // Not actually saved. This is useful as an identifier for reference purposes.
+    self.windowFrameAutosaveName = WindowAutosaveName.guide.string
+  }
+
+  @MainActor required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  
   override func windowDidLoad() {
     super.windowDidLoad()
-    window?.animationBehavior = .documentWindow
   }
 
   func show(pages: [Page]) {

@@ -31,7 +31,7 @@ class IINAAnimation {
   private static var disableAllAnimation = false
 
   static var isAnimationEnabled: Bool {
-    return !disableAllAnimation && !AccessibilityPreferences.motionReductionEnabled
+    return !disableAllAnimation && !Preference.bool(for: .disableAnimations) && !AccessibilityPreferences.motionReductionEnabled
   }
 
   // Wrap a block of code inside this function to disable its animations

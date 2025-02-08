@@ -43,8 +43,6 @@ extension PlayerWindowController {
     // Registers this window for didChangeScreenProfileNotification
     window.displaysWhenScreenProfileChanges = true
 
-    window.animationBehavior = .documentWindow
-
     leftTimeLabel.mode = .current
     rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 

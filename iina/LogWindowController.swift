@@ -37,7 +37,6 @@ class LogWindowController: IINAWindowController, NSMenuDelegate {
   
   override func windowDidLoad() {
     super.windowDidLoad()
-    window?.animationBehavior = .utilityWindow
 
     logTableView.sizeLastColumnToFit()
     let tableViewMenu = NSMenu()

@@ -17,10 +17,6 @@ class StartupHandler {
     case stillEnqueuing = 1
     case doneEnqueuing
     case doneOpening
-
-    var isDone: Bool {
-      return self == .doneOpening
-    }
   }
 
   // MARK: Properties
@@ -29,14 +25,16 @@ class StartupHandler {
 
   var state: OpenWindowsState = .stillEnqueuing
 
+  var isDoneLaunching: Bool { state == .doneOpening }
+
   /**
    Mainly used to distinguish normal launches from others triggered by drag & drop or double-click from Finder.
 
    Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called with file(s).
    See also `wcsForOpenFiles` which is expected be set to a non-nil (and non-empty) value after this variable
-   becomes true. If needing to abort the new windows, `isOpeningNewWindows` should be set to false again.
+   becomes true. If needing to abort the new windows, `isOpeningNewWindowsForOpenedFiles` should be set to false again.
    */
-  var isOpeningNewWindows = false
+  var isOpeningNewWindowsForOpenedFiles = false
   var wcsForOpenFiles: [PlayerWindowController]? = nil
   var wcsDoneWithFileOpen: [PlayerWindowController] = []
 
@@ -66,7 +64,7 @@ class StartupHandler {
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
   var shouldIgnoreOpenFile: Bool {
     guard isCommandLine else { return false }
-    return !state.isDone
+    return !isDoneLaunching
   }
 
   // MARK: Init
@@ -199,6 +197,7 @@ class StartupHandler {
         log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
         continue
       default:
+        // Note: Guide is not saved
         log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
         continue
       }
@@ -365,7 +364,7 @@ class StartupHandler {
   /// (for example if it couldn't be opened).
   func abortWaitForOpenFilePlayerStartup() {
     Logger.log.verbose("Aborting wait for open files")
-    isOpeningNewWindows = false
+    isOpeningNewWindowsForOpenedFiles = false
     wcsForOpenFiles = nil
     wcsDoneWithFileOpen.removeAll()
     showWindowsIfReady()
@@ -380,8 +379,8 @@ class StartupHandler {
       return
     }
     // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
-    if isOpeningNewWindows {
-      // If isOpeningNewWindows is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
+    if isOpeningNewWindowsForOpenedFiles {
+      // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
       guard let wcsForOpenFiles else { return }
 
       // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
@@ -471,7 +470,7 @@ class StartupHandler {
     }
     let savedStateName = window.savedStateName
 
-    if state.isDone {
+    if isDoneLaunching {
       if window.isMiniaturized {
         log.verbose("OpenWindow: deminiaturizing window \(window.savedStateName.quoted)")
         // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)

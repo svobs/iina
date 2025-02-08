@@ -62,6 +62,9 @@ struct SavedWindow: Equatable, Hashable {
 }
 
 enum WindowAutosaveName: Equatable, Hashable {
+  // special kludge for open/close window array identity check
+  static let anyPlayerWindow = WindowAutosaveName.playerWindow(id: "ANY")
+
   static let playerWindowPrefix = "PWin-"
   static let playerWindowFmt = "\(playerWindowPrefix)%@"
 
@@ -76,7 +79,6 @@ enum WindowAutosaveName: Equatable, Hashable {
   case about
   case inspector  // not always treated like a real window
   case playbackHistory
-  // TODO: what about Guide?
   case videoFilter
   case audioFilter
   case fontPicker
@@ -85,6 +87,7 @@ enum WindowAutosaveName: Equatable, Hashable {
   case editFilter  // sheet window, parent: videoFilter/audioFilter
   case saveFilter  // sheet window, parent: videoFilter/audioFilter
   case logViewer
+  case guide
 
   var string: String {
     switch self {
@@ -118,7 +121,16 @@ enum WindowAutosaveName: Equatable, Hashable {
       return "SaveFilter"
     case .logViewer:
       return "LogViewer"
+    case .guide:
+      return "Guide"
     }
+  }
+
+  var isPlayerWindow: Bool {
+    if case .playerWindow = self {
+      return true
+    }
+    return false
   }
 
   init?(_ string: String) {
@@ -145,6 +157,8 @@ enum WindowAutosaveName: Equatable, Hashable {
       self = .fontPicker
     case WindowAutosaveName.logViewer.string:
       self = .logViewer
+    case WindowAutosaveName.guide.string:
+      self = .guide
     default:
       if let id = WindowAutosaveName.parseID(from: string, mustStartWith: WindowAutosaveName.playerWindowPrefix) {
         self = .playerWindow(id: id)

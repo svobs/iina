@@ -143,8 +143,8 @@ class TableUIChange {
         tableView.endUpdates()
       }
 
-      if AccessibilityPreferences.motionReductionEnabled {
-        Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
+      if !IINAAnimation.isAnimationEnabled {
+        Logger.log.verbose{"Animation disabled: nulling out animation"}
         context.duration = 0.0
         context.allowsImplicitAnimation = false
       }
@@ -230,8 +230,8 @@ class TableUIChange {
   }
 
   private func executeRowUpdates(on tableView: EditableTableView) {
-    let insertAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowInsertAnimation ?? tableView.rowInsertAnimation)
-    let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
+    let insertAnimation = IINAAnimation.isAnimationEnabled ? (self.rowInsertAnimation ?? tableView.rowInsertAnimation) : []
+    let removeAnimation = IINAAnimation.isAnimationEnabled ? (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
 
     Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves, \(self.toUpdate?.count ?? 0) updates; reloadExisting: \(self.reloadAllExistingRows), \(self.newSelectedRowIndexes?.count ?? -1) selectedRows", level: .verbose)
 

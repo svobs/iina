@@ -301,6 +301,9 @@ struct Preference {
     static let togglePipWhenSwitchingSpaces = Key("togglePipWhenSwitchingSpaces")
 
     static let disableAnimations = Key("disableAnimations")
+    static let windowLaunchAnimation = Key("windowLaunchAnimation")
+    static let playerWindowOpenCloseAnimation = Key("playerWindowOpenCloseAnimation")
+    static let auxWindowOpenCloseAnimation = Key("auxWindowOpenCloseAnimation")
 
     // MARK: - Keys: Codec
 
@@ -606,6 +609,19 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
   }
+
+  enum WindowOpenCloseAnimation: Int, InitializingFromKey {
+    case none = 0
+    case useDefault = 1
+    case zoomIn = 2
+
+    static var defaultValue = WindowOpenCloseAnimation.useDefault
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+  }
+
 
   enum Theme: Int, InitializingFromKey {
     case dark = 0
@@ -1324,6 +1340,9 @@ struct Preference {
     .togglePipByMinimizingWindow: false,
     .togglePipWhenSwitchingSpaces: false,
     .disableAnimations: false,
+    .windowLaunchAnimation: WindowOpenCloseAnimation.useDefault.rawValue,
+    .playerWindowOpenCloseAnimation: WindowOpenCloseAnimation.useDefault.rawValue,
+    .auxWindowOpenCloseAnimation: WindowOpenCloseAnimation.useDefault.rawValue,
 
       .videoThreads: 0,
     .hardwareDecoder: HardwareDecoderOption.autoCopy.rawValue,

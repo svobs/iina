@@ -100,7 +100,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   override func windowDidLoad() {
     super.windowDidLoad()
-    window?.animationBehavior = .documentWindow
 
     // Watch table
 
@@ -586,7 +585,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
       // Append row to end of table, with animation if preferred
       let insertIndexSet = IndexSet(integer: watchTableView.numberOfRows)
-      watchTableView.insertRows(at: insertIndexSet, withAnimation: AccessibilityPreferences.motionReductionEnabled ? [] : .slideDown)
+      watchTableView.insertRows(at: insertIndexSet, withAnimation: IINAAnimation.isAnimationEnabled ? .slideDown : [])
       watchTableView.selectRowIndexes(insertIndexSet, byExtendingSelection: false)
       tableHeightConstraint?.constant = computeMinTableHeight()
       watchTableContainerView.layout()

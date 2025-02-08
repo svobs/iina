@@ -144,7 +144,6 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   override func windowDidLoad() {
     super.windowDidLoad()
-    window?.animationBehavior = .utilityWindow
     historySearchField.stringValue = searchString
     outlineView.delegate = self
     outlineView.dataSource = self
