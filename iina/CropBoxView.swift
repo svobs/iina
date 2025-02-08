@@ -169,7 +169,7 @@ class CropBoxView: NSView {
       // free selecting
       let startingMousePos = lastMousePos!
       let newBoxRect: NSRect
-      if startingMousePos.distance(to: mousePos) <= Constants.Distance.windowControllerMinInitialDragThreshold {
+      if startingMousePos.distance(to: mousePos) <= Constants.WindowedMode.minInitialDragThreshold {
         // snap to no selection if min distance not met
         newBoxRect = NSRect(origin: startingMousePos, size: CGSizeZero)
       } else {

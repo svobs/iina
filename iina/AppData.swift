@@ -279,9 +279,12 @@ struct Constants {
     static let aspectLabel = "4:3"
   }
 
+  // TODO: Rename to simply "Window"
   struct WindowedMode {
     static let minViewportSize = CGSize(width: 285, height: 120)
     static let minWindowSize = CGSize(width: 285, height: 160)
+    // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
+    static let minInitialDragThreshold: CGFloat = 4.0
   }
   struct InteractiveMode {
     // Need enough space to display all the buttons and field at the bottom:
@@ -301,9 +304,6 @@ struct Constants {
   struct Distance {
     // TODO: change to % of window width
     static let floatingControllerSnapToCenterThreshold = 20.0
-
-    // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
-    static let windowControllerMinInitialDragThreshold: CGFloat = 2.0
 
     struct Slider {
       /// May be overridden

@@ -244,23 +244,19 @@ extension PlayerWindowController {
     log.verbose{"PWin MouseDown @ \(event.locationInWindow)"}
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
+    denyWindowResizeIntervalStartTime = Date()
+    mouseDownLocationInWindow = event.locationInWindow
 
     if !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
-    }
-    if let cbView = cropSettingsView?.cropBoxView, !cbView.isHidden && isMouseEvent(event, inAnyOf: [cbView]) {
+    } else if let cbView = cropSettingsView?.cropBoxView, !cbView.isHidden && isMouseEvent(event, inAnyOf: [cbView]) {
       log.error("PWin MouseDown: ignoring; should be handled by CropBoxView")
       return
-    }
-
-    // Start resize if applicable
-    if startResizingSidebar(with: event) {
+    } else if startResizingSidebar(with: event) {
+      // Start resize if applicable
       return
     }
-
-    // Else: could be dragging window. Start tracking mouse:
-    mouseDownLocationInWindow = event.locationInWindow
 
     restartHideCursorTimer()
 
@@ -294,8 +290,8 @@ extension PlayerWindowController {
         /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
         /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
         let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
-        guard dragDistance > Constants.Distance.windowControllerMinInitialDragThreshold else { return }
-        log.verbose{"PWin MouseDrag: minimum dragging distance was met"}
+        guard dragDistance > Constants.WindowedMode.minInitialDragThreshold else { return }
+        log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
         isDragging = true
       }
       window?.performDrag(with: event)
@@ -308,6 +304,14 @@ extension PlayerWindowController {
     lastMouseUpEventID = event.eventNumber
     log.verbose{"PWin MouseUp @ \(event.locationInWindow) dragging=\(isDragging.yn) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
+    // Always do these:
+    restartHideCursorTimer()
+    mouseDownLocationInWindow = nil
+    // In case WindowDidChangeScreen already timed out, or another event put the window in a "metastable" state.
+    // Need to figure out how to
+    denyWindowResizeIntervalStartTime = Date()
+
+
     if let currentDragObject {
       defer {
         self.currentDragObject = nil
@@ -315,21 +319,12 @@ extension PlayerWindowController {
       log.verbose("PWin MouseUp: finished drag of object")
       currentDragObject.mouseUp(with: event)
       return
-    }
-
-    restartHideCursorTimer()
-    mouseDownLocationInWindow = nil
-
-    if isDragging {
+    } else if isDragging {
       // if it's a mouseup after dragging window
       log.verbose("PWin MouseUp: finished drag of window")
       isDragging = false
-      // In case WindowDidChangeScreen already timed out
-      denyWindowResizeIntervalStartTime = Date()
       return
-    }
-
-    if finishResizingSidebar(with: event) {
+    } else if finishResizingSidebar(with: event) {
       log.verbose("PWin MouseUp: finished resizing sidebar")
       return
     }
@@ -347,8 +342,8 @@ extension PlayerWindowController {
         return
       }
     }
-    let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
     if isDoubleClick {
+      let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
       if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
         if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
           log.verbose{"Double-click occurred in title bar. Executing \(userDefault.quoted)"}

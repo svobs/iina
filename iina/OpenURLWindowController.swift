@@ -42,6 +42,7 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
 
   override func windowDidLoad() {
     super.windowDidLoad()
+    window?.animationBehavior = .utilityWindow
     window?.isMovableByWindowBackground = true
     window?.titlebarAppearsTransparent = true
     window?.titleVisibility = .hidden

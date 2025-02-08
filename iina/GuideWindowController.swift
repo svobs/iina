@@ -29,6 +29,7 @@ class GuideWindowController: IINAWindowController {
 
   override func windowDidLoad() {
     super.windowDidLoad()
+    window?.animationBehavior = .documentWindow
   }
 
   func show(pages: [Page]) {

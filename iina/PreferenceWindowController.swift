@@ -202,6 +202,7 @@ class PreferenceWindowController: IINAWindowController {
 
   override func windowDidLoad() {
     super.windowDidLoad()
+    window?.animationBehavior = .documentWindow
     // Set this to true temporarily, so that table doesn't fire selectionChanged events while setting up
     tableView.allowsEmptySelection = true
 

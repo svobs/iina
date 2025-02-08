@@ -114,6 +114,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     Logger.log("WelcomeWindow windowDidLoad starting", level: .verbose)
     super.windowDidLoad()
 
+    window?.animationBehavior = .documentWindow
     window?.isMovableByWindowBackground = true
 
     appIcon.unregisterDraggedTypes()

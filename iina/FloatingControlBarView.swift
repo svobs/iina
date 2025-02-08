@@ -143,7 +143,7 @@ class FloatingControlBarView: NSVisualEffectView {
     }
 
     if !isDragging {
-      if mouseDownLocationInWindow.distance(to: event.locationInWindow) <= Constants.Distance.windowControllerMinInitialDragThreshold {
+      if mouseDownLocationInWindow.distance(to: event.locationInWindow) <= Constants.WindowedMode.minInitialDragThreshold {
         return
       }
       if Logger.enabled && Logger.Level.preferred >= .verbose {

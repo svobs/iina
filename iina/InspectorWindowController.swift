@@ -100,6 +100,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   override func windowDidLoad() {
     super.windowDidLoad()
+    window?.animationBehavior = .documentWindow
 
     // Watch table
 
