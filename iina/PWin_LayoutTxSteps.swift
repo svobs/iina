@@ -638,7 +638,7 @@ extension PlayerWindowController {
         } else {
           oscContentView = oscOneRowView
           log.verbose{"[\(transition.name)] Adding subviews to oscOneRowView for top bar"}
-          oscOneRowView.updateSubviews(from: self)
+          oscOneRowView.updateSubviews(from: self, oscGeo)
         }
 
         if !controlBarTop.subviews.contains(oscContentView) {
@@ -659,7 +659,7 @@ extension PlayerWindowController {
         } else {
           oscContentView = oscOneRowView
           log.verbose{"[\(transition.name)] Adding subviews to oscOneRowView for bottom bar"}
-          oscOneRowView.updateSubviews(from: self)
+          oscOneRowView.updateSubviews(from: self, oscGeo)
         }
 
         if !bottomBarView.subviews.contains(oscContentView) {

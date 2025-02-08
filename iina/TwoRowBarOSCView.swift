@@ -30,7 +30,6 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView.translatesAutoresizingMaskIntoConstraints = false
     hStackView.detachesHiddenViews = true
     hStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-    hStackView.spacing = Constants.Distance.oscSectionHSpacing_MultiLine
 
     addSubview(hStackView)
     hStackView.addConstraintsToFillSuperview(leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
@@ -71,6 +70,8 @@ class TwoRowBarOSCView: ClickThroughView {
     relaxConstraints()
 
     let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
+
+    hStackView.spacing = oscGeo.hStackSpacing
 
     // Start building replacement views list
     var viewsForRow2: [NSView] = [pwc.fragPlaybackBtnsView]
@@ -121,7 +122,7 @@ class TwoRowBarOSCView: ClickThroughView {
     if let toolbarView = pwc.fragToolbarView {
       hStackView.setVisibilityPriority(.detachEarlier, for: toolbarView)
     }
-    
+
     hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
 
     if viewsForRow2.contains(pwc.leftTimeLabel) {

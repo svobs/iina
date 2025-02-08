@@ -578,6 +578,7 @@ extension PlayerWindowController {
   private func initVolumeView() {
     // We are early in the loading process. Don't trust cached ControlBarGeometry too much...
     let oscGeo = ControlBarGeometry(mode: currentLayout.mode)
+    let hSpacing: CGFloat = 2
 
     // Volume view
     fragVolumeView.identifier = .init("fragVolumeView")
@@ -615,8 +616,8 @@ extension PlayerWindowController {
     volumeSliderWidthConstraint.identifier = .init("VolumeSlider-WidthConstraint")
     volumeSliderWidthConstraint.isActive = true
     volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true
-    volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: 4).isActive = true
-    volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor, constant: 6).isActive = true
+    volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: hSpacing).isActive = true
+    volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor).isActive = true
     volumeSlider.target = self
     volumeSlider.action = #selector(volumeSliderAction(_:))
   }

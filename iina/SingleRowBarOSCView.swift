@@ -17,7 +17,6 @@ class SingleRowBarOSCView: ClickThroughStackView {
 
     /// `oscOneRowView`
     idString = SingleRowBarOSCView.id
-    spacing = Constants.Distance.oscSectionHSpacing_SingleLine
     orientation = .horizontal
     alignment = .centerY
     distribution = .gravityAreas
@@ -37,7 +36,9 @@ class SingleRowBarOSCView: ClickThroughStackView {
     removeFromSuperview()
   }
 
-  func updateSubviews(from pwc: PlayerWindowController) {
+  func updateSubviews(from pwc: PlayerWindowController, _ oscGeo: ControlBarGeometry) {
+    spacing = oscGeo.hStackSpacing
+
     pwc.addSubviewsToPlaySliderAndTimeLabelsView()
     
     var newViews: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView]

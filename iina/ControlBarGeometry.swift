@@ -291,6 +291,14 @@ struct ControlBarGeometry {
 
   // MARK: Computed props: Playback Controls
 
+  var hStackSpacing: CGFloat {
+    if isTwoRowBarOSC {
+      return Constants.Distance.oscSectionHSpacing_MultiLine
+    } else {
+      return (Constants.Distance.oscSectionHSpacing_SingleLine + barHeight / 5).rounded()
+    }
+  }
+
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
     let timeLabelFontSize = timeLabelFontSize
