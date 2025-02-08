@@ -356,7 +356,7 @@ extension PlayerWindowController {
           currentLayout.hasControlBar else {
       return false
     }
-    return isScrollingOrDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
+    return isScrollingOrDraggingPlaySlider || isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow)
   }
 
   /// Called by `seekPreview.hideTimer`.

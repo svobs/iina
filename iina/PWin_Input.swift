@@ -549,10 +549,8 @@ extension PlayerWindowController {
       applyCustomCursor(.resizing_BothDirections)
 
     } else if isPoint(pointInWindow, inAnyOf: [volumeSlider]) {
-      log.verbose("IN VOLUME SLIDER: \(pointInWindow)")
       applyCustomCursor(.hoveringInSlider)
     } else if isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow) {
-      log.verbose("IN PLAY SLIDER: \(pointInWindow)")
       applyCustomCursor(.hoveringInSlider)
     } else {
       applyCustomCursor(.normalCursor)
