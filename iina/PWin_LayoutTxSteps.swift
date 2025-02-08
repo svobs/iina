@@ -557,11 +557,12 @@ extension PlayerWindowController {
 
     // Music mode
 
-    if transition.isTogglingMusicMode {
+    // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
+    if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
 
-      if transition.isEnteringMusicMode {
+      if transition.outputLayout.isMusicMode {
         log.verbose{"[\(transition.name)] Entering music mode: adding views to bottomBarView"}
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
@@ -997,10 +998,6 @@ extension PlayerWindowController {
       videoView.apply(transition.outputGeometry)
     }
 
-    if transition.isEnteringMusicMode {
-      playlistView.scrollPlaylistToCurrentItem()
-    }
-
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
@@ -1217,6 +1214,7 @@ extension PlayerWindowController {
       /// Need to toggle music metadata due to music mode switch.
       /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
       playlistView.reloadPlaylistRows()
+      playlistView.scrollPlaylistToCurrentItem()
     }
 
     refreshHidesOnDeactivateStatus()
@@ -1581,7 +1579,7 @@ extension PlayerWindowController {
 
   /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
   private func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
-    log.verbose("Removing sidebar tab group view for \(group)")
+    log.verbose{"Removing sidebar tab group view for \(group)"}
     let viewController: NSViewController
     switch group {
     case .playlist:
