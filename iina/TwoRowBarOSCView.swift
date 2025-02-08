@@ -118,10 +118,17 @@ class TwoRowBarOSCView: ClickThroughView {
 
     // - Set visibility priorities
 
-    hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
     if let toolbarView = pwc.fragToolbarView {
       hStackView.setVisibilityPriority(.detachEarlier, for: toolbarView)
     }
+    
+    hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
+
+    if viewsForRow2.contains(pwc.leftTimeLabel) {
+      hStackView.setVisibilityPriority(.detachLessEarly, for: pwc.leftTimeLabel)
+      hStackView.setVisibilityPriority(.detachLessEarly, for: timeSlashLabel)
+    }
+
 
     pwc.log.verbose{"TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) toolIconH=\(oscGeo.toolIconSize)"}
     // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top

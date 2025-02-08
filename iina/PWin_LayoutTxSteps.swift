@@ -694,6 +694,10 @@ extension PlayerWindowController {
       updateArrowButtons(oscGeo: oscGeo)
       rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
+      let hideArrowBtns = oscGeo.arrowIconWidth == 0
+      leftArrowButton.isHidden = hideArrowBtns
+      rightArrowButton.isHidden = hideArrowBtns
+
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging {
         let hasClearBG = transition.outputLayout.oscHasClearBG
         log.verbose{"[\(transition.name)] Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}

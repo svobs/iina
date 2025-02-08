@@ -373,18 +373,18 @@ extension PlayerWindowController {
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
-    let playbackBtnsVStackView = ClickThroughStackView()
-    playbackBtnsVStackView.identifier = .init("PlaybackBtnsVStackView")
-    playbackBtnsVStackView.orientation = .vertical
-    playbackBtnsVStackView.alignment = .centerX
-    playbackBtnsVStackView.detachesHiddenViews = true
-    playbackBtnsVStackView.spacing = 0
-    playbackBtnsVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    playbackBtnsVStackView.addView(speedLabel, in: .center)
-    playbackBtnsVStackView.addView(playButton, in: .center)
-    playbackBtnsVStackView.setHuggingPriority(.init(250), for: .vertical)
-    playbackBtnsVStackView.setHuggingPriority(.init(250), for: .horizontal)
-    playbackBtnsVStackView.translatesAutoresizingMaskIntoConstraints = false
+    let playBtnSpeedVStackView = ClickThroughStackView()
+    playBtnSpeedVStackView.identifier = .init("PlayBtnSpeedVStackView")
+    playBtnSpeedVStackView.orientation = .vertical
+    playBtnSpeedVStackView.alignment = .centerX
+    playBtnSpeedVStackView.detachesHiddenViews = true
+    playBtnSpeedVStackView.spacing = 0
+    playBtnSpeedVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    playBtnSpeedVStackView.addView(speedLabel, in: .center)
+    playBtnSpeedVStackView.addView(playButton, in: .center)
+    playBtnSpeedVStackView.setHuggingPriority(.init(250), for: .vertical)
+    playBtnSpeedVStackView.setHuggingPriority(.init(250), for: .horizontal)
+    playBtnSpeedVStackView.translatesAutoresizingMaskIntoConstraints = false
 
     let enableAcceleration = Preference.bool(for: .useForceTouchForSpeedArrows)
     // Left Arrow button
@@ -407,10 +407,10 @@ extension PlayerWindowController {
 
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
     fragPlaybackBtnsView.addSubview(leftArrowButton)
-    fragPlaybackBtnsView.addSubview(playbackBtnsVStackView)
+    fragPlaybackBtnsView.addSubview(playBtnSpeedVStackView)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
 
-    playbackBtnsVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
+    playBtnSpeedVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
     fragPlaybackBtnsView.setContentHuggingPriority(.init(rawValue: 249), for: .vertical)  // hug superview more than default
@@ -432,7 +432,7 @@ extension PlayerWindowController {
     let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     playBtnVertOffsetConstraint.isActive = true
 
-    let playBtnHorizOffsetConstraint = playbackBtnsVStackView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
+    let playBtnHorizOffsetConstraint = playBtnSpeedVStackView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
     playBtnHorizOffsetConstraint.isActive = true
 
     speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor).isActive = true
@@ -554,7 +554,7 @@ extension PlayerWindowController {
     guard !playSliderAndTimeLabelsView.containsAllSubviews([leftTimeLabel, playSlider, rightTimeLabel]) else { return }
 
     removeSubviewsFromPlaySliderAndTimeLabelsView()
-    
+
     playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
     playSliderAndTimeLabelsView.addSubview(playSlider)
     playSliderAndTimeLabelsView.addSubview(rightTimeLabel)
