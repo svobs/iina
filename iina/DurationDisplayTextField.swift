@@ -8,8 +8,6 @@
 
 import Foundation
 
-fileprivate let monoSystemFontSmall = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize(for: .small), weight: .regular)
-
 class DurationDisplayTextField: ClickThroughTextField {
   enum DisplayMode {
     case current
@@ -24,22 +22,10 @@ class DurationDisplayTextField: ClickThroughTextField {
 
   override init(frame frameRect: NSRect) {
     super.init(frame: frameRect)
-    font = monoSystemFontSmall
   }
   
   @MainActor required init?(coder: NSCoder) {
     super.init(coder: coder)
-    font = monoSystemFontSmall
-  }
-
-  /** Switches the display mode between duration and remaining time */
-  private func switchMode() {
-    switch mode {
-    case .duration:
-      mode = .remaining
-    default:
-      mode = .duration
-    }
   }
 
   func updateText(with duration: Double, given current: Double) {
@@ -77,8 +63,7 @@ class DurationDisplayTextField: ClickThroughTextField {
       return
     }
 
-    self.switchMode()
-    Preference.set(mode == .remaining, for: .showRemainingTime)
+    Preference.set(mode != .remaining, for: .showRemainingTime)
   }
 
   override func scrollWheel(with event: NSEvent) {
@@ -105,6 +90,16 @@ class DurationDisplayTextField: ClickThroughTextField {
     guard mode != .current else { return }
     self.switchMode()
     Preference.set(mode == .remaining, for: .touchbarShowRemainingTime)
+  }
+
+  /** Switches the display mode between duration and remaining time */
+  private func switchMode() {
+    switch mode {
+    case .duration:
+      mode = .remaining
+    default:
+      mode = .duration
+    }
   }
 
   @objc func setPrecision(_ sender: NSMenuItem) {

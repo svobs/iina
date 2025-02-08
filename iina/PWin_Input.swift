@@ -582,7 +582,7 @@ extension PlayerWindowController {
       let isOSCTwoRowViewAttached = oscTwoRowView.superview != nil
       if isOSCTwoRowViewAttached {
         if let frontmostView = findView(atPoint: pointInWindow, fromParent: oscTwoRowView.hStackView),
-           frontmostView != oscTwoRowView.hStackView {
+           frontmostView != oscTwoRowView.hStackView, frontmostView != oscTwoRowView.centralSpacerView {
           // Skip over duration if it is clickable
           if let durationField = frontmostView as? DurationDisplayTextField, durationField.handlesMouseDown {
             return false

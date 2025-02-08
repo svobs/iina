@@ -25,7 +25,6 @@ extension PlayerWindowController {
       .playlistAutoPlayNext,
       .themeMaterial,
       .playerWindowOpacity,
-      .showRemainingTime,
       .maxVolume,
 
       .showCachedRangesInSlider,
@@ -48,6 +47,8 @@ extension PlayerWindowController {
       .controlBarAutoHideTimeout,
       .oscPosition,
       .oscColorScheme,
+      .showRemainingTime,
+      .oscPutTimesInRow2,
       .topBarPlacement,
       .bottomBarPlacement,
       .oscBarHeight,
@@ -181,10 +182,6 @@ extension PlayerWindowController {
       animationPipeline.submitTask({ [self] in
         updateWindowBorderAndOpacity()
       })
-    case .showRemainingTime:
-      if let newValue = newValue as? Bool {
-        rightTimeLabel.mode = newValue ? .remaining : .duration
-      }
     case .showCachedRangesInSlider:
       if let newValue = newValue as? Bool, !newValue {
         player.info.cachedRanges = []
@@ -232,6 +229,8 @@ extension PlayerWindowController {
         .allowVideoToOverlapCameraHousing,
         .useLegacyWindowedMode,
         .arrowButtonAction,
+        .showRemainingTime,
+        .oscPutTimesInRow2,
       // These need calls to BarFactory.current.updateBarStylesFromPrefs():
         .roundSliderBarRects,
         .sliderBarDoneColor:
