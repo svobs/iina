@@ -122,7 +122,7 @@ extension VideoView {
     if let geometry, geometry.isVideoVisible {
       margins = geometry.viewportMargins
       videoAspect = geometry.videoViewAspect
-      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
+      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect\(videoAspect)"}
     } else {
       margins = .zero
       videoAspect = -1

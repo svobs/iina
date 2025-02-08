@@ -72,11 +72,11 @@ extension VideoView {
       }
 
       if abs(actualFps - nominalFps) > 1 {
-        log.debug("Falling back to nominal display refresh rate: \(nominalFps) from \(actualFps)")
+        log.debug{"Switching to nominal display refresh rate: \(actualFps) → \(nominalFps)"}
         actualFps = nominalFps
       }
     } else {
-      log.debug("Falling back to standard display refresh rate: 60 from \(actualFps)")
+      log.debug{"Switching standard display refresh rate: \(actualFps) → 60"}
       actualFps = 60
     }
     player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)

@@ -751,7 +751,7 @@ fileprivate let fmtDecimalNoGroupingMaxFractionDigits15: NumberFormatter = {
 
 extension CGRect: @retroactive CustomStringConvertible {
   public var description: String {
-    return "(\(origin.x.logStr), \(origin.y.logStr), \(size))"
+    return "(\(origin.x.logStr), \(origin.y.logStr) \(size))"
   }
 }
 

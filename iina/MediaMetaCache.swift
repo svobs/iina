@@ -51,12 +51,12 @@ class MediaMetaCache {
   private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
   func fillInVideoSizes(_ videoFiles: [FileInfo], onBehalfOf player: PlayerCore) {
-    log.verbose("Filling in video sizes for \(videoFiles.count) files for player \(player.label)...")
+    log.verbose{"Filling in video sizes for \(videoFiles.count) files for player \(player.label)…"}
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
       guard player.state.isNotYet(.stopping) else {
-        log.verbose("Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player \(player.label) stopping")
+        log.verbose{"Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player \(player.label) stopping"}
         return
       }
       if getCachedVideoMeta(forURL: fileInfo.url) == nil {
@@ -65,7 +65,7 @@ class MediaMetaCache {
         }
       }
     }
-    log.verbose("Filled in \(updateCount)/\(videoFiles.count) video sizes in \(sw) ms")
+    log.verbose{"Filled in \(updateCount)/\(videoFiles.count) video sizes in \(sw) ms"}
   }
 
 
@@ -155,7 +155,7 @@ class MediaMetaCache {
       let newMeta = oldMeta.clone(duration: duration, progress: progress,
                                   title: title, album: album, artist: artist)
       cachedMeta[url] = newMeta
-      log.verbose("Cache reloaded for \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)")
+      log.verbose{"Cache reloaded for \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)"}
       return newMeta
     }
   }
@@ -182,7 +182,7 @@ class MediaMetaCache {
     guard url.isFileURL else { return nil }
     guard url.absoluteString != "stdin" else { return nil }  // do not cache stdin!
     guard FileManager.default.fileExists(atPath: url.path) else {
-      log.verbose("Skipping ffMeta update, file does not exist: \(url.path.pii.quoted)")
+      log.verbose{"Skipping ffMeta update, file does not exist: \(url.path.pii.quoted)"}
       return nil
     }
 
@@ -191,14 +191,15 @@ class MediaMetaCache {
       metaLock.withLock {
         // Don't let this get too big
         if cachedFFMeta.count > Constants.maxCachedVideoSizes {
-          log.debug("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta...")
+          log.debug{"Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta..."}
           cachedFFMeta.removeAll()
         }
         cachedFFMeta[url] = ffMeta
       }
       return ffMeta
     } else {
-      log.error("Failed to read video size for file \(url.path.pii.quoted)")
+      // Not a serious error. Can happen for audio files.
+      log.debug{"Failed to read video size for file \(url.path.pii.quoted)"}
     }
     return nil
   }
@@ -210,12 +211,12 @@ class MediaMetaCache {
   func getOrReadVideoMeta(forURL url: URL?, _ log: Logger.Subsystem) -> FFVideoMeta? {
     guard let url else { return nil }
     guard url.isFileURL else {
-      log.verbose("Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)")
+      log.verbose{"Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)"}
       return nil
     }
     let path = Playback.path(from: url)
     guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
-      log.verbose("Skipping ffMeta check; not a playable file: \(path.pii.quoted)")
+      log.verbose{"Skipping ffMeta check; not a playable file: \(path.pii.quoted)"}
       return nil
     }
 
@@ -227,10 +228,10 @@ class MediaMetaCache {
     }
 
     guard let ffMeta else {
-      log.error("Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)")
+      log.error{"Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)"}
       return nil
     }
-    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)")
+    log.debug{"Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)"}
     return ffMeta
   }
 

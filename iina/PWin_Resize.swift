@@ -44,20 +44,20 @@ extension PlayerWindowController {
 
     if !currentLayout.isFullScreen && !inLiveResize {
       guard !denyWindowResize else {
-        log.verbose{"WinWillResize: denying request=\(requestedSize) as it was inside denial period; will stay at \(window.frame.size)"}
+        log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
         return window.frame.size
       }
       // If the window size has been previously set by accessibility APIs or zoom, on the next mouseDown AppKit will snap it back to its
       // previous size. Try to detect this and stop it.
       let leftMouseButtonDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0
       guard !leftMouseButtonDown else {
-        log.verbose{"WinWillResize: denying request=\(requestedSize): left mouse button is down; will stay at \(window.frame.size)"}
+        log.verbose{"[WinWillResize] Denying request=\(requestedSize): left mouse button is down; will stay at \(window.frame.size)"}
         return window.frame.size
       }
     }
 
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) liveResize=\(inLiveResize.yn) lockViewPort=\(lockViewportToVideoSize.yn)"}
+    log.verbose{"[WinWillResize] Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()
     if lockViewportToVideoSize && inLiveResize {
@@ -78,7 +78,7 @@ extension PlayerWindowController {
           isLiveResizingWidth = true
         }
       }
-      log.verbose{"WinWillResize: choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")"}
+      log.verbose{"[WinWillResize] choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")"}
     }
 
     let newWindowSize: NSSize
@@ -88,12 +88,12 @@ extension PlayerWindowController {
     case .windowedNormal, .windowedInteractive:
 
       guard !sessionState.isRestoring else {
-        log.error{"WinWillResize was fired while restoring! Returning existing geometry: \(windowedModeGeo.windowFrame.size)"}
+        log.error{"[WinWillResize] Still restoring; returning existing geo=\(windowedModeGeo.windowFrame.size)"}
         return windowedModeGeo.windowFrame.size
       }
       let currentGeo = windowedGeoForCurrentFrame()
       assert(currentGeo.mode == currentLayout.mode,
-             "WinWillResize: currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
+             "[WinWillResize] currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
 
       let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
                                                   inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
@@ -127,7 +127,7 @@ extension PlayerWindowController {
 
     case .musicMode:
       guard !sessionState.isRestoring else {
-        log.error{"WinWillResize was fired while restoring! Returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)"}
+        log.error{"[WinWillResize] Still restoring; returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)"}
         return musicModeGeo.windowFrame.size
       }
 
@@ -142,7 +142,7 @@ extension PlayerWindowController {
     }
 
     IINAAnimation.runAsync(resizeSubviewsTask)
-    log.verbose{"WinWillResize: returning window size=\(newWindowSize) for \(currentLayout.mode)"}
+    log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
     return newWindowSize
   }
 
@@ -168,7 +168,7 @@ extension PlayerWindowController {
     let layout = currentLayout
     let isTransientResize = newGeometry != nil
     let isFullScreen = layout.isFullScreen
-    log.verbose{"ResizeWindowImmediately: fs=\(isFullScreen.yn) isLive=\(window.inLiveResize.yn) newGeo=\(newGeometry?.description ?? "nil")"}
+    log.verbose{"[ResizeWindImmediately] fs=\(isFullScreen.yn) live=\(window.inLiveResize.yn) geo=\(newGeometry?.description ?? "nil")"}
 
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
@@ -188,7 +188,7 @@ extension PlayerWindowController {
     if !isFullScreen && !isTransientResize {
       player.saveState()
       if layout.mode == .windowedNormal {
-        log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
+        log.verbose{"[ResizeWindImmediately] calling updateMPVWindowScale"}
         player.updateMPVWindowScale(using: windowedModeGeo)
       }
     }

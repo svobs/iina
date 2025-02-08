@@ -306,7 +306,7 @@ extension PlayerWindowController {
   override func mouseUp(with event: NSEvent) {
     guard event.eventNumber != lastMouseUpEventID else { return }
     lastMouseUpEventID = event.eventNumber
-    log.verbose{"PWin MouseUp @ \(event.locationInWindow), dragging=\(isDragging.yn), clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
+    log.verbose{"PWin MouseUp @ \(event.locationInWindow) dragging=\(isDragging.yn) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     if let currentDragObject {
       defer {
@@ -405,7 +405,7 @@ extension PlayerWindowController {
   }
 
   override func otherMouseUp(with event: NSEvent) {
-    log.verbose("PWin.otherMouseUp!")
+    log.verbose("PWin OtherMouseUp!")
     restartHideCursorTimer()
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
@@ -430,7 +430,7 @@ extension PlayerWindowController {
   override func rightMouseDown(with event: NSEvent) {
     guard event.eventNumber != lastRightMouseDownEventID else { return }
     lastRightMouseDownEventID = event.eventNumber
-    log.verbose("PWin.rightMouseDown!")
+    log.verbose("PWin RightMouseDown!")
 
     defer {
       /// Apple note (https://developer.apple.com/documentation/appkit/nsview):
@@ -448,7 +448,7 @@ extension PlayerWindowController {
   override func rightMouseUp(with event: NSEvent) {
     guard event.eventNumber != lastRightMouseUpEventID else { return }
     lastRightMouseUpEventID = event.eventNumber
-    log.verbose("PWin.rightMouseUp!")
+    log.verbose("PWin RightMouseUp!")
     restartHideCursorTimer()
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
@@ -705,8 +705,8 @@ extension PlayerWindowController {
 
   // Currently only used for hover over sliders
   override func cursorUpdate(with event: NSEvent) {
-    if !isPointInPlaySliderAndNotOtherViews(pointInWindow: event.locationInWindow) ||
-        !isPoint(event.locationInWindow, inAnyOf: [volumeSlider]) {
+    guard isPointInPlaySliderAndNotOtherViews(pointInWindow: event.locationInWindow) ||
+        isPoint(event.locationInWindow, inAnyOf: [volumeSlider]) else {
       return
     }
     let newCursor = NSCursor.pointingHand
