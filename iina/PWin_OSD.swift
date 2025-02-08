@@ -302,6 +302,10 @@ extension PlayerWindowController {
         return
       }
     case .pause, .resume:
+      // do not show pause/resume when done for seek
+      // TODO: this does not cover resume after slider seek ended. Need better solution
+      if isScrollingOrDraggingPlaySlider { return }
+
       if osd.didShowLastMsgRecently() {
         if case .speed = osd.lastDisplayedMsg, case .resume = msg { return }
         if case .frameStep = osd.lastDisplayedMsg { return }
