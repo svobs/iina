@@ -80,7 +80,7 @@ class PlayerWindow: NSWindow {
     if !event.isARepeat {
       keyDownCount += 1
     }
-    log.verbose{"KEYDOWN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)"}
+    log.verbose{"KEYDN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)"}
 
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
@@ -170,7 +170,7 @@ class PlayerWindow: NSWindow {
     if let pwc, !event.modifierFlags.contains(.command) {
       let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
       let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-      log.verbose{"KEY EQUIV: \(normalizedKeyCode.quoted)"}
+      log.verbose{"KEY Equiv: \(normalizedKeyCode.quoted)"}
       return pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode)
     }
     return super.performKeyEquivalent(with: event)

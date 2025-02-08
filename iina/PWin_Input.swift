@@ -547,7 +547,12 @@ extension PlayerWindowController {
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
       /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
       applyCustomCursor(.resizing_BothDirections)
-    } else if isPoint(pointInWindow, inAnyOf: [playSlider, volumeSlider]) {
+
+    } else if isPoint(pointInWindow, inAnyOf: [volumeSlider]) {
+      log.verbose("IN VOLUME SLIDER: \(pointInWindow)")
+      applyCustomCursor(.hoveringInSlider)
+    } else if isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow) {
+      log.verbose("IN PLAY SLIDER: \(pointInWindow)")
       applyCustomCursor(.hoveringInSlider)
     } else {
       applyCustomCursor(.normalCursor)
@@ -571,6 +576,53 @@ extension PlayerWindowController {
 
     // Always hide after timeout even if OSD fade time is longer
     restartHideCursorTimer()
+  }
+
+  // Do not show hover cursor if over a button or other view which overlaps PlaySlider.
+  func isPointInPlaySliderAndNotOtherViews(pointInWindow: NSPoint) -> Bool {
+    if isPoint(pointInWindow, inAnyOf: [playSlider]) {
+      let isOSCTwoRowViewAttached = oscTwoRowView.superview != nil
+      if isOSCTwoRowViewAttached {
+        if let frontmostView = findView(atPoint: pointInWindow, fromParent: oscTwoRowView.hStackView),
+           frontmostView != oscTwoRowView.hStackView {
+          // Skip over duration if it is clickable
+          if let durationField = frontmostView as? DurationDisplayTextField, durationField.handlesMouseDown {
+            return false
+          }
+          // But treat non-clickable text fields as part of PlaySlider if they click through to it
+          return frontmostView as? ClickThroughTextField != nil
+        }
+      }
+      return true
+    }
+    return false
+  }
+
+  func findView(atPoint pointInWindow: NSPoint, fromParent parentViewParam: NSView? = nil) -> NSView? {
+    let parentView: NSView
+    if let parentViewParam {
+      parentView = parentViewParam
+    } else if let contentView = window?.contentView {
+      parentView = contentView
+    } else {
+      return nil
+    }
+
+    for view in parentView.subviews {
+      if view.superview != nil && !view.isHidden && view.alphaValue > 0.0 {
+        if view.isInsideViewFrame(pointInWindow: pointInWindow) {
+          return findView(atPoint: pointInWindow, fromParent: view)
+        }
+      }
+    }
+
+    return parentView
+  }
+
+  func visibleViewAtPoint(_ pt: NSPoint) -> NSView? {
+    var visibleView: NSView?
+    visibleView = findView(atPoint: pt, fromParent: nil)
+    return visibleView
   }
 
   func isMouseActuallyInside(view: NSView) -> Bool {
@@ -655,6 +707,10 @@ extension PlayerWindowController {
 
   // Currently only used for hover over sliders
   override func cursorUpdate(with event: NSEvent) {
+    if !isPointInPlaySliderAndNotOtherViews(pointInWindow: event.locationInWindow) ||
+        !isPoint(event.locationInWindow, inAnyOf: [volumeSlider]) {
+      return
+    }
     let newCursor = NSCursor.pointingHand
     newCursor.set()
   }

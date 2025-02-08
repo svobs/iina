@@ -67,10 +67,16 @@ class DurationDisplayTextField: ClickThroughTextField {
     self.stringValue = stringValue
   }
 
-  override func mouseDown(with event: NSEvent) {
-    super.mouseDown(with: event)
+  var handlesMouseDown: Bool {
+    mode != .current
+  }
 
-    guard mode != .current else { return }
+  override func mouseDown(with event: NSEvent) {
+    guard handlesMouseDown else {
+      super.mouseDown(with: event)
+      return
+    }
+
     self.switchMode()
     Preference.set(mode == .remaining, for: .showRemainingTime)
   }

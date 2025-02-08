@@ -751,13 +751,13 @@ fileprivate let fmtDecimalNoGroupingMaxFractionDigits15: NumberFormatter = {
 
 extension CGRect: @retroactive CustomStringConvertible {
   public var description: String {
-    return "(\(origin.x.logStr), \(origin.y.logStr), \(size.width.logStr)x\(size.height.logStr))"
+    return "(\(origin.x.logStr), \(origin.y.logStr), \(size))"
   }
 }
 
 extension CGSize: @retroactive CustomStringConvertible {
   public var description: String {
-    return "(\(width.logStr)x\(height.logStr))"
+    return "\(width.logStr)⨉\(height.logStr)"
   }
 
   var widthInt: Int { Int(width) }
@@ -2062,7 +2062,8 @@ extension NSView {
   }
 
   func isInsideViewFrame(pointInWindow: CGPoint) -> Bool {
-    return isMousePoint(convert(pointInWindow, from: nil), in: bounds)
+    let pointInView = convert(pointInWindow, from: nil)
+    return isMousePoint(pointInView, in: bounds)
   }
 
   func containsAllSubviews(_ views: [NSView]) -> Bool {
