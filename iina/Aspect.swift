@@ -130,6 +130,10 @@ class Aspect: NSObject {
     return size.aspect
   }
 
+  var doubleValue: Double {
+    return Double(value)
+  }
+
   var mpvAspect: CGFloat {
     return size.mpvAspect
   }

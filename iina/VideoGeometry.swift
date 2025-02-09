@@ -54,12 +54,10 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
     self.codecAspectLabel = codecAspectLabel
-    if let aspectRatio = Aspect(string: userAspectLabel) {
+    if Aspect.isValid(userAspectLabel) {
       self.userAspectLabel = userAspectLabel
-      self.aspectRatioOverride = aspectRatio.value
     } else {
       self.userAspectLabel = Aspect.defaultIdentifier
-      self.aspectRatioOverride = nil
     }
     self.codecRotation = codecRotation
     self.userRotation = userRotation
@@ -190,9 +188,10 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// use square pixels.
   let userAspectLabel: String
 
-  // TODO: remove this field. It's not needed
-  /// Optional aspect ratio override (mpv property `video-aspect-override`). Truncates aspect to the first 2 digits after decimal.
-  let aspectRatioOverride: Double?
+  /// Same as `userAspectLabel`, but in Double format, or `nil` if no change from codec aspect.
+  private var aspectRatioOverride: Double? {
+    Aspect(string: userAspectLabel)?.doubleValue
+  }
 
   /// The video size, after crop + aspect override applied, but before rotation or final scaling.
   ///
