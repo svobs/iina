@@ -102,15 +102,23 @@ class UIState {
 
   var cachedScreens: [UInt32: ScreenMeta] = [:]
 
+  /// Animation configurations for opening & closing windows, by window type. Scope does not include application launch.
+  ///
+  /// - `.documentWindow` == zoom in effect.
+  /// - `.utilityWindow` == fade effect.
+  /// - `.default == .none` (?)
+  ///
+  /// Frequently opened windows should use `.utilityWindow` instead of `.documentWindow`, because the zoom can become dizzying.
+  /// But `.utilityWindow` effect looks bad with VisualEffectViews in dark mode, so fall back to `.default` for windows with those.
   let windowOpenCloseAnimations: [WindowAutosaveName: NSWindow.AnimationBehavior] = [
     .anyPlayerWindow : .documentWindow,
     .inspector : .documentWindow,
     .videoFilter : .documentWindow,
     .audioFilter : .documentWindow,
-    .openURL : .alertPanel,
+    .openURL : .default,
     .openFile : .default,
     .playbackHistory : .utilityWindow,
-    .welcome : .documentWindow,
+    .welcome : .default,
     .guide : .documentWindow,
     .logViewer : .utilityWindow,
     .preferences : .default,
