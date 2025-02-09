@@ -24,7 +24,7 @@ extension PlayerWindowController {
   }
 
   func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame newFrame: NSRect) -> NSRect {
-    log.verbose{"WindowWillZoom to: \(newFrame)"}
+    log.verbose{"WindowWillZoom: \(window.frame) → \(newFrame)"}
     return newFrame
   }
 

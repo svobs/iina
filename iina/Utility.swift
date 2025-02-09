@@ -414,7 +414,7 @@ class Utility {
     // check exist
     if !FileManager.default.fileExists(atPath: path) {
       do {
-        Logger.log("Creating directory: \(url.path.pii.quoted)")
+        Logger.log.debug{"Creating directory: \(url.path.pii.quoted)"}
       try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
       } catch {
         Logger.fatal("Cannot create directory: \(url)")
@@ -486,7 +486,7 @@ class Utility {
   static let thumbnailCacheURL: URL = {
     let appThumbnailCacheUrl = cacheURL.appendingPathComponent(AppData.thumbnailCacheFolder, isDirectory: true)
     createDirIfNotExist(url: appThumbnailCacheUrl)
-    Logger.log("Thumbnail cache directory: \(appThumbnailCacheUrl.path.pii.quoted)")
+    Logger.log.debug{"Using thumb cache dir: \(appThumbnailCacheUrl.path.pii.quoted)"}
     return appThumbnailCacheUrl
   }()
 

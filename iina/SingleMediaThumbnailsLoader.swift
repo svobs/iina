@@ -100,7 +100,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
     let cacheName = mediaFilePathMD5
     if ThumbnailCache.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
-      log.debug("Found matching thumbnail cache \(cacheName.quoted), width: \(thumbnailWidth)px for media \(mediaFilePath.pii.quoted)")
+      log.debug{"Found matching thumbnail cache \(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)"}
       if let thumbnails = ThumbnailCache.read(forName: cacheName, forWidth: thumbnailWidth) {
         if thumbnails.count >= AppData.minThumbnailsPerFile {
           addThumbnails(thumbnails)
@@ -151,7 +151,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     }
 
     if rotationDegrees != 0 {
-      log.verbose("Rotated \(addedCount) thumbnails in \(sw) ms")
+      log.verbose{"Rotated \(addedCount) thumbnails in \(sw) ms"}
     }
   }
 

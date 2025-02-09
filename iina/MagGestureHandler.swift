@@ -15,11 +15,11 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return NSMagnificationGestureRecognizer(target: self, action: #selector(PlayerWindowController.handleMagnifyGesture(recognizer:)))
   }()
 
-  unowned var windowController: PlayerWindowController! = nil
+  unowned var pwc: PlayerWindowController! = nil
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
-    guard !windowController.isInInteractiveMode else { return }
-    guard !(windowController.isInMiniPlayer && !windowController.miniPlayer.isVideoVisible) else { return }
+    guard !pwc.isInInteractiveMode else { return }
+    guard !pwc.isInMiniPlayer && !pwc.miniPlayer.isVideoVisible else { return }
     let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
     guard pinchAction != .none else { return }
 
@@ -28,13 +28,13 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       return
     case .fullScreen:
       // enter/exit fullscreen
-      guard !windowController.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
-      guard !windowController.isAnimatingLayoutTransition else { return }
+      guard !pwc.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
+      guard !pwc.isAnimatingLayoutTransition else { return }
       if recognizer.state == .began {
         let isEnlarge = recognizer.magnification > 0
-        if isEnlarge != windowController.isFullScreen {
+        if isEnlarge != pwc.isFullScreen {
           recognizer.state = .recognized
-          windowController.toggleWindowFullScreen()
+          pwc.toggleWindowFullScreen()
         }
       }
     case .windowSize:
@@ -42,44 +42,44 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         scaleWindow(recognizer: recognizer)
       }
     case .windowSizeOrFullScreen:
-      guard !windowController.isAnimatingLayoutTransition else { return }
-      guard let window = windowController.window, let screen = window.screen else { return }
+      guard !pwc.isAnimatingLayoutTransition else { return }
+      guard let window = pwc.window, let screen = window.screen else { return }
 
       // Check for full screen toggle conditions first
-      if !windowController.isInMiniPlayer, recognizer.state != .ended {  // Disallow full screen toggle from pinch while in music mode
+      if !pwc.isInMiniPlayer, recognizer.state != .ended {  // Disallow full screen toggle from pinch while in music mode
         let scale = recognizer.magnification + 1.0
-        if windowController.isFullScreen, scale < 1.0 {
+        if pwc.isFullScreen, scale < 1.0 {
           /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
-          windowController.windowedModeGeo = windowController.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
+          pwc.windowedModeGeo = pwc.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
           // Set this to disable window resize listeners immediately instead of waiting for the transitionn to set it
           // (seems to prevent hiccups in the animation):
-          windowController.isAnimatingLayoutTransition = true
+          pwc.isAnimatingLayoutTransition = true
           // Exit FS:
-          windowController.toggleWindowFullScreen()
+          pwc.toggleWindowFullScreen()
           /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
           // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
           recognizer.state = .ended
-          windowController.isMagnifying = false  // really need to work hard to stop future events
+          pwc.isMagnifying = false  // really need to work hard to stop future events
           // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
           // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
           DispatchQueue.main.async { [self] in
-            windowController.animationPipeline.submitInstantTask({ [self] in
-              windowController.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25)
+            pwc.animationPipeline.submitInstantTask({ [self] in
+              pwc.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25)
             })
           }
           return
-        } else if !windowController.isFullScreen, scale > 1.0 {
+        } else if !pwc.isFullScreen, scale > 1.0 {
           let screenFrame = screen.visibleFrame
           let heightIsMax = window.frame.height >= screenFrame.height
           let widthIsMax = window.frame.width >= screenFrame.width
           // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
           // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
           if (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax)) {
-            windowController.isAnimatingLayoutTransition = true
-            windowController.toggleWindowFullScreen()
+            pwc.isAnimatingLayoutTransition = true
+            pwc.toggleWindowFullScreen()
             /// See note above
             recognizer.state = .ended
-            windowController.isMagnifying = false
+            pwc.isMagnifying = false
             return
           }
         }
@@ -93,46 +93,46 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   private func scaleWindow(recognizer: NSMagnificationGestureRecognizer) {
-    guard !windowController.isFullScreen else { return }
+    guard !pwc.isFullScreen else { return }
 
-    var finalGeometry: PWinGeometry? = nil
+    var finalGeo: PWinGeometry? = nil
     // adjust window size
     switch recognizer.state {
     case .began:
-      windowController.isMagnifying = true
+      pwc.isMagnifying = true
 
-      if windowController.currentLayout.isMusicMode {
-        windowController.musicModeGeo = windowController.musicModeGeoForCurrentFrame()
+      if pwc.currentLayout.isMusicMode {
+        pwc.musicModeGeo = pwc.musicModeGeoForCurrentFrame()
       } else {
-        windowController.windowedModeGeo = windowController.windowedGeoForCurrentFrame()
+        pwc.windowedModeGeo = pwc.windowedGeoForCurrentFrame()
       }
       scaleVideoFromPinchGesture(to: recognizer.magnification)
     case .changed:
-      guard windowController.isMagnifying else { return }
+      guard pwc.isMagnifying else { return }
       scaleVideoFromPinchGesture(to: recognizer.magnification)
     case .ended:
-      guard windowController.isMagnifying else { return }
-      finalGeometry = scaleVideoFromPinchGesture(to: recognizer.magnification)
-      windowController.isMagnifying = false
+      guard pwc.isMagnifying else { return }
+      finalGeo = scaleVideoFromPinchGesture(to: recognizer.magnification)
+      pwc.isMagnifying = false
     case .cancelled, .failed:
-      guard windowController.isMagnifying else { return }
-      finalGeometry = scaleVideoFromPinchGesture(to: 1.0)
-      windowController.isMagnifying = false
+      guard pwc.isMagnifying else { return }
+      finalGeo = scaleVideoFromPinchGesture(to: 1.0)
+      pwc.isMagnifying = false
     default:
       return
     }
 
-    if let finalGeometry {
-      if windowController.currentLayout.isMusicMode {
-        windowController.log.verbose("Updating musicModeGeo from mag gesture state \(recognizer.state.rawValue)")
-        let musicModeGeo = windowController.musicModeGeo.clone(windowFrame: finalGeometry.windowFrame)
-        windowController.applyMusicModeGeo(musicModeGeo, setFrame: false, updateCache: true)
+    if let finalGeo {
+      if pwc.currentLayout.isMusicMode {
+        pwc.log.verbose("Updating musicModeGeo from mag gesture state \(recognizer.state.rawValue)")
+        let musicModeGeo = pwc.musicModeGeo.clone(windowFrame: finalGeo.windowFrame)
+        pwc.applyMusicModeGeo(musicModeGeo, setFrame: false, updateCache: true)
       } else {
-        windowController.log.verbose("Updating windowedModeGeo & calling updateMPVWindowScale from mag gesture state \(recognizer.state.rawValue)")
-        windowController.windowedModeGeo = finalGeometry
-        windowController.player.updateMPVWindowScale(using: finalGeometry)
-        windowController.player.info.intendedViewportSize = finalGeometry.viewportSize
-        windowController.player.saveState()
+        pwc.log.verbose{"Updating windowedModeGeo & calling updateMPVWindowScale from mag gesture state \(recognizer.state.rawValue)"}
+        pwc.windowedModeGeo = finalGeo
+        pwc.player.updateMPVWindowScale(using: finalGeo)
+        pwc.player.info.intendedViewportSize = finalGeo.viewportSize
+        pwc.player.saveState()
       }
     }
   }
@@ -141,47 +141,47 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   private func scaleVideoFromPinchGesture(to magnification: CGFloat) -> PWinGeometry? {
     /// For best experience for the user, do not check `isAnimatingLayoutTransition` at state `began` (i.e., allow it to start keeping track
     /// of pinch), but do not allow this method to execute (i.e. do not respond) until after layout transitions are complete.
-    guard !windowController.isAnimatingLayoutTransition else { return nil }
+    guard !pwc.isAnimatingLayoutTransition else { return nil }
 
     // avoid zero and negative numbers because they will cause problems
     let scale = max(0.0001, magnification + 1.0)
-    windowController.log.verbose("Scaling pinched video, target scale: \(scale)")
-    let currentLayout = windowController.currentLayout
+    pwc.log.verbose{"Scaling pinched video, target scale: \(scale)"}
+    let currentLayout = pwc.currentLayout
 
     // If in music mode but playlist is not visible, allow scaling up to screen size like regular windowed mode.
     // If playlist is visible, do not resize window beyond current window height
     if currentLayout.isMusicMode {
-      windowController.miniPlayer.loadIfNeeded()
+      pwc.miniPlayer.loadIfNeeded()
 
-      guard windowController.miniPlayer.isVideoVisible || windowController.miniPlayer.isPlaylistVisible else {
-        windowController.log.verbose("Window is in music mode but neither video nor playlist is visible. Ignoring pinch gesture")
+      guard pwc.miniPlayer.isVideoVisible || pwc.miniPlayer.isPlaylistVisible else {
+        pwc.log.verbose("Window is in music mode but neither video nor playlist is visible. Ignoring pinch gesture")
         return nil
       }
-      let newWidth = round(windowController.musicModeGeo.windowFrame.width * scale)
-      var newMusicModeGeometry = windowController.musicModeGeo.scalingVideo(to: newWidth)!
-      windowController.log.verbose("Scaling pinched video in music mode, result: \(newMusicModeGeometry)")
+      let newWidth = round(pwc.musicModeGeo.windowFrame.width * scale)
+      var newMusicModeGeo = pwc.musicModeGeo.scalingVideo(to: newWidth)!
+      pwc.log.verbose{"Scaling pinched video in music mode → \(newMusicModeGeo)"}
 
       IINAAnimation.disableAnimation {
-        newMusicModeGeometry = windowController.applyMusicModeGeo(newMusicModeGeometry, updateCache: false)
+        newMusicModeGeo = pwc.applyMusicModeGeo(newMusicModeGeo, updateCache: false)
       }
       // Kind of clunky to convert to PWinGeometry, just to fit the function signature, then convert it back. But...could be worse.
-      return newMusicModeGeometry.toPWinGeometry()
+      return newMusicModeGeo.toPWinGeometry()
     }
     // Else: not music mode
 
-    let originalGeometry = windowController.windowedModeGeo
+    let originalGeo = pwc.windowedModeGeo
 
-    let newViewportSize = originalGeometry.viewportSize.multiplyThenRound(scale)
+    let newViewportSize = originalGeo.viewportSize.multiplyThenRound(scale)
 
     /// Using `noConstraints` here has the bonus effect of allowing viewport to be resized via pinch when the video is already maximized
     /// (only useful when in windowed mode and `lockViewportToVideoSize` is disabled)
-    let intendedGeo = originalGeometry.scalingViewport(to: newViewportSize, screenFit: .noConstraints, mode: currentLayout.mode)
+    let intendedGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .noConstraints, mode: currentLayout.mode)
     // User has actively resized the video. Assume this is the new intended resolution, even if it is outside the current screen size.
     // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.
-    windowController.player.info.intendedViewportSize = intendedGeo.viewportSize
+    pwc.player.info.intendedViewportSize = intendedGeo.viewportSize
 
-    let newGeometry = intendedGeo.refitted(using: .stayInside)
-    windowController.resizeWindowImmediately(using: newGeometry)
-    return newGeometry
+    let newGeo = intendedGeo.refitted(using: .stayInside)
+    pwc.resizeWindowImmediately(using: newGeo)
+    return newGeo
   }
 }
