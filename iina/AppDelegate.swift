@@ -727,7 +727,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func doLaunchOrReopenAction() {
-    guard startupHandler.state == .doneOpening else {
+    guard startupHandler.isDoneLaunching else {
       Logger.log.verbose("Still starting up; skipping actionAfterLaunch")
       return
     }

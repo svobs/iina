@@ -430,6 +430,8 @@ class StartupHandler {
     if Preference.bool(for: .isRestoreInProgress) {
       log.verbose("Done restoring windows (\(wcsToRestore.count))")
       Preference.set(false, for: .isRestoreInProgress)
+    } else {
+      log.verbose("Done opening windows")
     }
 
     state = .doneOpening
@@ -446,7 +448,7 @@ class StartupHandler {
     // Init MediaPlayer integration
     MediaPlayerIntegration.shared.update()
 
-    Logger.log("Activating app")
+    log.debug("Activating app")
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
 

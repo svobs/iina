@@ -1750,7 +1750,13 @@ extension NSWindow {
       return
     }
 
-    if !AppDelegate.shared.isDoneLaunching {
+    guard var autosaveEnum = WindowAutosaveName(savedStateName) else {
+      assert(false, "Expected guaranteed match for savedStateName \(savedStateName)")
+      Logger.log.error{"refreshWindowOpenCloseAnimation: no match for savedStateName \(savedStateName). Skipping"}
+      return
+    }
+
+    if !AppDelegate.shared.isDoneLaunching || (autosaveEnum == .welcome && AppDelegate.shared.initialWindow.isFirstLoad) {
       // Use zoom effect for initial open
       let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .windowLaunchAnimation)
       switch animationType {
@@ -1759,12 +1765,6 @@ extension NSWindow {
       case .none:
         animationBehavior = .default
       }
-      return
-    }
-
-    guard var autosaveEnum = WindowAutosaveName(savedStateName) else {
-      assert(false, "Expected guaranteed match for savedStateName \(savedStateName)")
-      Logger.log.error{"refreshWindowOpenCloseAnimation: no match for savedStateName \(savedStateName). Skipping"}
       return
     }
 

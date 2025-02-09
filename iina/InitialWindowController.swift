@@ -99,9 +99,10 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
           guard !AppDelegate.shared.isTerminating else { return }
           let sw = Utility.Stopwatch()
           self.reloadData()
-          self.isFirstLoad = false
-          Logger.log.verbose("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window")
+          Logger.log.verbose{"Total time for WelcomeWindow initial reload: \(sw) ms. Showing window"}
           super.openWindow(sender)
+          // Do this after super.openWindow, to ensure zoom animation is activated
+          self.isFirstLoad = false
         }
       }
     } else {
