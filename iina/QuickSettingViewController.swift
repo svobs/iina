@@ -1116,7 +1116,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func searchOnlineAction(_ sender: AnyObject) {
-    windowController.menuFindOnlineSub(.dummy)
+    windowController.menuFindOnlineSub(self)
   }
 
   @IBAction func subSegmentedControlAction(_ sender: NSSegmentedControl) {

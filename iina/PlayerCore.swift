@@ -3060,7 +3060,7 @@ class PlayerCore: NSObject {
     if Preference.bool(for: .autoSearchOnlineSub) &&
       !info.isNetworkResource && info.subTracks.isEmpty &&
       (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
-      windowController.menuFindOnlineSub(.dummy)
+      windowController.menuFindOnlineSub(windowController)
     }
   }
 

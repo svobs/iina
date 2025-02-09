@@ -135,17 +135,17 @@ extension PlayerWindowController {
     case .openURL:
       AppDelegate.shared.openURL(self)
     case .flip:
-      menuToggleFlip(.dummy)
+      menuToggleFlip(self)
     case .mirror:
-      menuToggleMirror(.dummy)
+      menuToggleMirror(self)
     case .saveCurrentPlaylist:
-      menuSavePlaylist(.dummy)
+      menuSavePlaylist(self)
     case .deleteCurrentFile:
-      menuDeleteCurrentFile(.dummy)
+      menuDeleteCurrentFile(self)
     case .findOnlineSubs:
-      menuFindOnlineSub(.dummy)
+      menuFindOnlineSub(self)
     case .saveDownloadedSub:
-      saveDownloadedSub(.dummy)
+      saveDownloadedSub(self)
     default:
       break
     }
@@ -465,7 +465,7 @@ extension PlayerWindowController {
     case .hideOSC:
       hideFadeableViewsAndCursor()
     case .togglePIP:
-      menuTogglePIP(.dummy)
+      menuTogglePIP(self)
     case .contextMenu:
       showContextMenu()
     default:

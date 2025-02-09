@@ -14,7 +14,7 @@ extension PlayerWindowController {
     AppDelegate.shared.showInspectorWindow()
   }
 
-  @objc func menuSavePlaylist(_ sender: NSMenuItem) {
+  @objc func menuSavePlaylist(_ sender: AnyObject) {
     Utility.quickSavePanel(title: "Save to playlist", allowedFileExtensions: ["m3u8"],
                            sheetWindow: player.window) { [self] (url) in
       if url.isFileURL {
@@ -39,7 +39,7 @@ extension PlayerWindowController {
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
 
-  @objc func menuDeleteCurrentFile(_ sender: NSMenuItem) {
+  @objc func menuDeleteCurrentFile(_ sender: AnyObject) {
     guard let url = player.info.currentURL, !player.info.isNetworkResource else { return }
     do {
       let index = player.mpv.getInt(MPVProperty.playlistPos)
@@ -212,7 +212,7 @@ extension PlayerWindowController {
     }
   }
 
-  @objc func menuToggleFlip(_ sender: NSMenuItem) {
+  @objc func menuToggleFlip(_ sender: AnyObject) {
     if player.info.flipFilter == nil {
       player.setFlip(true)
     } else {
@@ -220,7 +220,7 @@ extension PlayerWindowController {
     }
   }
 
-  @objc func menuToggleMirror(_ sender: NSMenuItem) {
+  @objc func menuToggleMirror(_ sender: AnyObject) {
     if player.info.mirrorFilter == nil {
       player.setMirror(true)
     } else {
@@ -232,8 +232,7 @@ extension PlayerWindowController {
     player.toggleDeinterlace(sender.state != .on)
   }
 
-  @objc
-  func menuToggleVideoFilterString(_ sender: NSMenuItem) {
+  @objc func menuToggleVideoFilterString(_ sender: NSMenuItem) {
     if let string = (sender.representedObject as? String) {
       menuToggleFilterString(string, forType: MPVProperty.vf)
     }
@@ -382,7 +381,7 @@ extension PlayerWindowController {
     }
   }
 
-  @objc func menuFindOnlineSub(_ sender: NSMenuItem) {
+  @objc func menuFindOnlineSub(_ sender: AnyObject) {
     // return if last search is not finished
     guard let url = player.info.currentURL, !player.isSearchingOnlineSubtitle else { return }
 
@@ -404,7 +403,7 @@ extension PlayerWindowController {
     }
   }
 
-  @objc func saveDownloadedSub(_ sender: NSMenuItem) {
+  @objc func saveDownloadedSub(_ sender: AnyObject) {
     guard let sub = player.info.selectedSub else {
       Utility.showAlert("sub.no_selected")
 
@@ -502,7 +501,7 @@ extension PlayerWindowController {
     toggleOnTop(sender)
   }
 
-  @objc func menuTogglePIP(_ sender: NSMenuItem) {
+  @objc func menuTogglePIP(_ sender: AnyObject) {
     switch pip.status {
     case .notInPIP:
       enterPIP()

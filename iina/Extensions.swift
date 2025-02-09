@@ -8,8 +8,33 @@
 
 import Cocoa
 import UniformTypeIdentifiers
+import CryptoKit
 
 infix operator %%
+
+// MARK: Simple data types
+
+extension Bool {
+  var yn: String {
+    self ? "Y" : "N"
+  }
+
+  var yesno: String {
+    self ? "YES" : "NO"
+  }
+
+  static func yn(_ yn: String?) -> Bool? {
+    guard let yn = yn else { return nil }
+    switch yn {
+    case "Y", "y":
+      return true
+    case "N", "n":
+      return false
+    default:
+      return nil
+    }
+  }
+}
 
 extension Int {
   /** Modulo operator. Swift's remainder operator (%) can return negative values, which is rarely what we want. */
@@ -27,107 +52,97 @@ extension Int {
   func isBetweenInclusive(_ lowerBound: Int, and upperBound: Int) -> Bool {
     return self >= lowerBound && self <= upperBound
   }
-
-}
-import CryptoKit
-
-extension NSSlider {
-
-  /// Range of values the slider is configured to return.
-  var range: ClosedRange<Double> { minValue...maxValue }
-
-  /// Span of the range of values the slider is configured to return.
-  var span: Double { maxValue - minValue }
-
-  var progressRatio: Double {
-    (doubleValue - minValue) / span
-  }
-
-  /**
-   Returns the position of the knob's center point along the slider's track in window coordinates.
-
-   This method calculates the horizontal position of the center of the slider's knob based on the slider's current value (`doubleValue`), the minimum and maximum values, and the slider's dimensions. It can be useful for custom drawing, animations, or hit detection related to the knob's position.
-
-   - Returns: A `CGFloat` representing the x-coordinate of the knob's center along the slider's width.
-
-   - Important: Ensure that the slider's `maxValue` is greater than `minValue`. An assertion is used to validate this.
-
-   Example usage:
-   ```swift
-   let slider = NSSlider(value: 50, minValue: 0, maxValue: 100, target: nil, action: nil)
-   let knobPosition = slider.centerOfKnobInWindowCoordX()
-   print("The knob is positioned at x-coordinate: \(knobPosition)")
-   ```
-   */
-  func centerOfKnobInWindowCoordX() -> CGFloat {
-    let knobCenterInSliderCoordX = centerOfKnobInSliderCoordX()
-    let knobCenterInWindowCoordX = self.convert(NSPoint(x: knobCenterInSliderCoordX, y: 0), to: nil).x
-    return knobCenterInWindowCoordX
-  }
-
-  /// Returns the position of the knob's center point along the slider's track.
-  /// See also `centerOfKnobInWindowX()`.
-  func centerOfKnobInSliderCoordX() -> CGFloat {
-    // The knob must always be within the bounds of the slider. With respect to the center of the knob,
-    // this means that there is a space of (knobThickness / 2) at both sides where the center can never go.
-    let knobCenterMinX = knobThickness / 2
-    let knobRangeWidth = frame.width - knobThickness
-    assert(maxValue > minValue)
-    let knobPosX = knobCenterMinX + knobRangeWidth * CGFloat((doubleValue - minValue) / span)
-    assert(knobPosX.clamped(to: knobCenterMinX...(knobCenterMinX + knobRangeWidth)) == knobPosX,
-           "Invalid calculated centerOfKnobInSliderCoordX for slider: \(knobPosX)")
-    return knobPosX
-  }
-
-  func computeProgressRatioGiven(centerOfKnobInSliderCoordX: CGFloat) -> CGFloat {
-    let knobCenterMinX = knobThickness / 2
-    let knobRangeWidth = frame.width - knobThickness
-    let knobCenterMaxX = knobCenterMinX + knobRangeWidth
-    // It's valid for the given X value to be in the (knobThickness / 2) regions near minX & maxX where the
-    // knob can't go. This can happen if the user clicks near in this area. Just check & clamp to valid values.
-    let centerOfKnobCorrected = centerOfKnobInSliderCoordX.clamped(to: knobCenterMinX...knobCenterMaxX)
-    let ratio = Double((centerOfKnobCorrected - knobCenterMinX) / knobRangeWidth)
-    assert(ratio.clamped(to: 0...1) == ratio, "Invalid calculated ratio for slider: \(ratio)")
-    return ratio
-  }
-
-  func computeValueGiven(centerOfKnobInSliderCoordX: CGFloat) -> CGFloat {
-    let ratio = computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
-    let val = (ratio * span) + minValue
-    assert(val.clamped(to: minValue...maxValue) == val,
-           "Invalid calculated value for slider: \(val)")
-    return val
-  }
-
-  func computeCenterOfKnobInSliderCoordXGiven(pointInWindow: NSPoint) -> CGFloat {
-    let xOffsetInSlider = convert(pointInWindow, from: nil).x
-    let knobCenterMinX = knobThickness / 2
-    let knobRangeWidth = frame.width - knobThickness
-    let knobCenterMaxX = knobCenterMinX + knobRangeWidth
-    return xOffsetInSlider.clamped(to: knobCenterMinX...knobCenterMaxX)
-  }
 }
 
-extension NSSegmentedControl {
-  @discardableResult
-  func selectSegment(withLabel label: String) -> Bool {
-    for i in 0..<segmentCount {
-      if self.label(forSegment: i) == label {
-        self.selectedSegment = i
-        return true
-      }
+extension NSInteger {
+  func clamped(to range: Range<Self>) -> Self {
+    if self < range.lowerBound {
+      return range.lowerBound
+    } else if self >= range.upperBound {
+      return range.upperBound - 1
+    } else {
+      return self
     }
-    Logger.log("Could not find segment with label \(label.quoted). Setting selection to -1", level: .verbose)
-    self.selectedSegment = -1
-    return false
   }
 }
 
-func - (lhs: NSPoint, rhs: NSPoint) -> NSPoint {
-  return NSMakePoint(lhs.x - rhs.x, lhs.y - rhs.y)
+
+extension Array {
+  subscript(at index: Index) -> Element? {
+    if indices.contains(index) {
+      return self[index]
+    } else {
+      return nil
+    }
+  }
 }
+
+extension Comparable {
+
+  func clamped(to range: ClosedRange<Self>) -> Self {
+    if self < range.lowerBound {
+      return range.lowerBound
+    } else if self > range.upperBound {
+      return range.upperBound
+    } else {
+      return self
+    }
+  }
+}
+
+
+extension URL {
+  var creationDate: Date? {
+    (try? resourceValues(forKeys: [.creationDateKey]))?.creationDate
+  }
+
+  var isExistingDirectory: Bool {
+    return (try? self.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+  }
+}
+
+
+extension Date {
+  var timeIntervalToNow: TimeInterval {
+    return Date().timeIntervalSince(self)
+  }
+}
+
+
+extension NSColor {
+  var mpvColorString: String {
+    get {
+      return "\(self.redComponent)/\(self.greenComponent)/\(self.blueComponent)/\(self.alphaComponent)"
+    }
+  }
+
+  convenience init?(mpvColorString: String) {
+    let splitted = mpvColorString.split(separator: "/").map { (seq) -> Double? in
+      return Double(String(seq))
+    }
+    // check nil
+    if (!splitted.contains {$0 == nil}) {
+      if splitted.count == 3 {  // if doesn't have alpha value
+        self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(1))
+      } else if splitted.count == 4 {  // if has alpha value
+        self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(splitted[3]!))
+      } else {
+        return nil
+      }
+    } else {
+      return nil
+    }
+  }
+}
+
+
+// MARK: - Basic geometery types
 
 extension CGPoint {
+  func constrained(to rect: NSRect) -> NSPoint {
+    return NSMakePoint(x.clamped(to: rect.minX...rect.maxX), y.clamped(to: rect.minY...rect.maxY))
+  }
+
   /**
    Uses the Pythagorean theorem to calculate the distance between two points.
 
@@ -149,7 +164,20 @@ extension CGPoint {
   }
 }
 
-extension NSSize {
+
+extension CGSize: @retroactive CustomStringConvertible {
+  public var description: String {
+    return "\(width.logStr)⨉\(height.logStr)"
+  }
+
+  var widthInt: Int { Int(width) }
+  var heightInt: Int { Int(height) }
+
+  /// Returns a new `CGSize` which equals this `CGSize` but with both `width` &
+  /// `height` rounded to the the nearest integer.
+  func rounded() -> CGSize {
+    return CGSize(width: width.rounded(), height: height.rounded())
+  }
 
   var area: CGFloat {
     return width * height
@@ -351,6 +379,41 @@ extension NSSize {
   static func - (minuend: NSSize, subtrahend: NSSize) -> NSSize {
     return NSSize(width: minuend.width - subtrahend.width, height: minuend.height - subtrahend.height)
   }
+
+  /// Finds the smallest box whose size matches the given `aspect` but with width >= `minWidth` & height >= `minHeight`.
+  /// Note: `minWidth` & `minHeight` can be any positive integers. They do not need to match `aspect`.
+  static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
+    let sizeKeepingMinWidth = CGSize(width: minWidth, height: round(minWidth / aspect))
+    if sizeKeepingMinWidth.height >= minHeight {
+      return sizeKeepingMinWidth
+    }
+
+    let sizeKeepingMinHeight = NSSize(width: round(minHeight * aspect), height: minHeight)
+    if sizeKeepingMinHeight.width >= minWidth {
+      return sizeKeepingMinHeight
+    }
+
+    // Negative aspect, but just barely?
+    if minWidth < minHeight {
+      let width = round(minWidth * aspect)
+      let sizeScalingUpWidth = NSSize(width: width, height: round(width / aspect))
+      if sizeScalingUpWidth.width >= minWidth, sizeScalingUpWidth.height >= minHeight {
+        return sizeScalingUpWidth
+      }
+    }
+    let scaledUpHeight = round(minHeight * aspect)
+    let sizeScalingUpHeight = NSSize(width: round(scaledUpHeight * aspect), height: scaledUpHeight)
+    assert(sizeScalingUpHeight.width >= minWidth && sizeScalingUpHeight.height >= minHeight, "sizeScalingUpHeight \(sizeScalingUpHeight) < \(minWidth)x\(minHeight)")
+    return sizeScalingUpHeight
+  }
+
+}
+
+
+extension CGRect: @retroactive CustomStringConvertible {
+  public var description: String {
+    return "(\(origin.x.logStr), \(origin.y.logStr) \(size))"
+  }
 }
 
 
@@ -416,96 +479,8 @@ extension NSRect {
   }
 }
 
-extension NSPoint {
-  func constrained(to rect: NSRect) -> NSPoint {
-    return NSMakePoint(x.clamped(to: rect.minX...rect.maxX), y.clamped(to: rect.minY...rect.maxY))
-  }
-}
 
-extension Array {
-  subscript(at index: Index) -> Element? {
-    if indices.contains(index) {
-      return self[index]
-    } else {
-      return nil
-    }
-  }
-}
-
-class ContextMenuItem: NSMenuItem {
-  let targetRows: IndexSet
-
-  init(targetRows: IndexSet, title: String, action: Selector?, keyEquivalent: String) {
-    self.targetRows = targetRows
-    super.init(title: title, action: action, keyEquivalent: keyEquivalent)
-  }
-
-  required init(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented for ContextMenuItem")
-  }
-}
-
-extension NSMenu {
-  @discardableResult
-  func addItem(forRows targetRows: IndexSet? = nil, withTitle string: String, action selector: Selector? = nil, target: AnyObject? = nil,
-               tag: Int? = nil, obj: Any? = nil, stateOn: Bool = false, enabled: Bool = true) -> NSMenuItem {
-    let menuItem: NSMenuItem
-    if let targetRows = targetRows {
-      menuItem = ContextMenuItem(targetRows: targetRows, title: string, action: selector, keyEquivalent: "")
-    } else {
-      menuItem = NSMenuItem(title: string, action: selector, keyEquivalent: "")
-    }
-    menuItem.tag = tag ?? -1
-    menuItem.representedObject = obj
-    menuItem.target = target
-    menuItem.state = stateOn ? .on : .off
-    menuItem.isEnabled = enabled
-    self.addItem(menuItem)
-    return menuItem
-  }
-}
-
-extension CGFloat {
-  var string: String {
-    return Double(self).string
-  }
-
-  /// Formats the decimal for logging. Omits trailing zeroes & grouping separator.
-  var logStr: String {
-    return Double(self).logStr
-  }
-
-  var isInteger: Bool {
-    return CGFloat(Int(self)) == self
-  }
-
-  func isBetweenInclusive(_ lowerBound: CGFloat, and upperBound: CGFloat) -> Bool {
-    return self >= lowerBound && self <= upperBound
-  }
-
-}
-
-extension Bool {
-  var yn: String {
-    self ? "Y" : "N"
-  }
-
-  var yesno: String {
-    self ? "YES" : "NO"
-  }
-
-  static func yn(_ yn: String?) -> Bool? {
-    guard let yn = yn else { return nil }
-    switch yn {
-    case "Y", "y":
-      return true
-    case "N", "n":
-      return false
-    default:
-      return nil
-    }
-  }
-}
+// MARK: - Floating point types
 
 // Try to use Double instead of CGFloat as declared type - more compatible
 extension Double {
@@ -623,29 +598,24 @@ extension Double {
   }
 }
 
-extension NSInteger {
-  func clamped(to range: Range<Self>) -> Self {
-    if self < range.lowerBound {
-      return range.lowerBound
-    } else if self >= range.upperBound {
-      return range.upperBound - 1
-    } else {
-      return self
-    }
+extension CGFloat {
+  var string: String {
+    return Double(self).string
   }
-}
 
-extension Comparable {
-
-  func clamped(to range: ClosedRange<Self>) -> Self {
-    if self < range.lowerBound {
-      return range.lowerBound
-    } else if self > range.upperBound {
-      return range.upperBound
-    } else {
-      return self
-    }
+  /// Formats the decimal for logging. Omits trailing zeroes & grouping separator.
+  var logStr: String {
+    return Double(self).logStr
   }
+
+  var isInteger: Bool {
+    return CGFloat(Int(self)) == self
+  }
+
+  func isBetweenInclusive(_ lowerBound: CGFloat, and upperBound: CGFloat) -> Bool {
+    return self >= lowerBound && self <= upperBound
+  }
+
 }
 
 /// All the formatters here use "standardized" punctuation across locales. The formatted numbers:
@@ -749,55 +719,6 @@ fileprivate let fmtDecimalNoGroupingMaxFractionDigits15: NumberFormatter = {
   return fmt
 }()
 
-extension CGRect: @retroactive CustomStringConvertible {
-  public var description: String {
-    return "(\(origin.x.logStr), \(origin.y.logStr) \(size))"
-  }
-}
-
-extension CGSize: @retroactive CustomStringConvertible {
-  public var description: String {
-    return "\(width.logStr)⨉\(height.logStr)"
-  }
-
-  var widthInt: Int { Int(width) }
-  var heightInt: Int { Int(height) }
-
-  /// Returns a new `CGSize` which equals this `CGSize` but with both `width` &
-  /// `height` rounded to the the nearest integer.
-  func rounded() -> CGSize {
-    return CGSize(width: width.rounded(), height: height.rounded())
-  }
-
-  /// Finds the smallest box whose size matches the given `aspect` but with width >= `minWidth` & height >= `minHeight`.
-  /// Note: `minWidth` & `minHeight` can be any positive integers. They do not need to match `aspect`.
-  static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
-    let sizeKeepingMinWidth = CGSize(width: minWidth, height: round(minWidth / aspect))
-    if sizeKeepingMinWidth.height >= minHeight {
-      return sizeKeepingMinWidth
-    }
-
-    let sizeKeepingMinHeight = NSSize(width: round(minHeight * aspect), height: minHeight)
-    if sizeKeepingMinHeight.width >= minWidth {
-      return sizeKeepingMinHeight
-    }
-
-    // Negative aspect, but just barely?
-    if minWidth < minHeight {
-      let width = round(minWidth * aspect)
-      let sizeScalingUpWidth = NSSize(width: width, height: round(width / aspect))
-      if sizeScalingUpWidth.width >= minWidth, sizeScalingUpWidth.height >= minHeight {
-        return sizeScalingUpWidth
-      }
-    }
-    let scaledUpHeight = round(minHeight * aspect)
-    let sizeScalingUpHeight = NSSize(width: round(scaledUpHeight * aspect), height: scaledUpHeight)
-    assert(sizeScalingUpHeight.width >= minWidth && sizeScalingUpHeight.height >= minHeight, "sizeScalingUpHeight \(sizeScalingUpHeight) < \(minWidth)x\(minHeight)")
-    return sizeScalingUpHeight
-  }
-
-}
-
 extension FloatingPoint {
   // TODO: replace with "bounded"
   func clamped(to range: Range<Self>) -> Self {
@@ -856,38 +777,8 @@ extension FloatingPoint {
   }
 }
 
-extension Date {
-  var timeIntervalToNow: TimeInterval {
-    return Date().timeIntervalSince(self)
-  }
-}
 
-extension NSColor {
-  var mpvColorString: String {
-    get {
-      return "\(self.redComponent)/\(self.greenComponent)/\(self.blueComponent)/\(self.alphaComponent)"
-    }
-  }
-
-  convenience init?(mpvColorString: String) {
-    let splitted = mpvColorString.split(separator: "/").map { (seq) -> Double? in
-      return Double(String(seq))
-    }
-    // check nil
-    if (!splitted.contains {$0 == nil}) {
-      if splitted.count == 3 {  // if doesn't have alpha value
-        self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(1))
-      } else if splitted.count == 4 {  // if has alpha value
-        self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(splitted[3]!))
-      } else {
-        return nil
-      }
-    } else {
-      return nil
-    }
-  }
-}
-
+// MARK: - Text types
 
 extension NSMutableAttributedString {
   convenience init?(linkTo url: String, text: String, font: NSFont) {
@@ -920,63 +811,6 @@ extension NSMutableAttributedString {
   }
 }
 
-
-extension NSData {
-  var md5: String { Insecure.MD5.hash(data: self).map { String(format: "%02x", $0) }.joined() }
-}
-
-extension Data {
-  init<T> (bytesOf thing: T) where T: FixedWidthInteger {
-    var copyOfThing = thing
-    self.init(bytes: &copyOfThing, count: MemoryLayout<T>.size)
-  }
-
-  init(bytesOf num: Double) {
-    var numCopy = num
-    self.init(bytes: &numCopy, count: MemoryLayout<Double>.size)
-  }
-
-  init(bytesOf ts: timespec) {
-    var mutablePointer = ts
-    self.init(bytes: &mutablePointer, count: MemoryLayout<timespec>.size)
-  }
-
-  var md5: String {
-    get {
-      return (self as NSData).md5
-    }
-  }
-
-  var chksum64: UInt64 {
-    return withUnsafeBytes {
-      $0.bindMemory(to: UInt64.self).reduce(0, &+)
-    }
-  }
-
-  func saveToFolder(_ url: URL, filename: String) -> URL? {
-    let fileUrl = url.appendingPathComponent(filename)
-    do {
-      try self.write(to: fileUrl)
-    } catch {
-      Utility.showAlert("error_saving_file", arguments: ["data", filename])
-      return nil
-    }
-    return fileUrl
-  }
-}
-
-extension FileHandle {
-  func read<T>(type: T.Type /* To prevent unintended specializations */) -> T? {
-    let size = MemoryLayout<T>.size
-    let data = readData(ofLength: size)
-    guard data.count == size else {
-      return nil
-    }
-    return data.withUnsafeBytes {
-      $0.bindMemory(to: T.self).first!
-    }
-  }
-}
 
 extension String {
   init(_ optionalInt: Int?) {
@@ -1061,81 +895,93 @@ extension CharacterSet {
 }
 
 
-extension NSMenuItem {
-  static let dummy = NSMenuItem(title: "Dummy", action: nil, keyEquivalent: "")
-
-  var menuPathDescription: String {
-    var ancestors: [String] = [self.title]
-    var parent = self.parent
-    while let parentItem = parent {
-      ancestors.append(parentItem.title)
-      parent = parentItem.parent
-    }
-    return ancestors.reversed().joined(separator: " → ")
-  }
-
-}
-
-
-extension URL {
-  var creationDate: Date? {
-    (try? resourceValues(forKeys: [.creationDateKey]))?.creationDate
-  }
-
-  var isExistingDirectory: Bool {
-    return (try? self.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-  }
-}
-
 extension RangeExpression where Bound == String.Index  {
   func nsRange<S: StringProtocol>(in string: S) -> NSRange { .init(self, in: string) }
 }
 
-extension NSTextField {
+// MARK: - Data
 
-  func setHTMLValue(_ html: String) {
-    let font = self.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
-    let color = self.textColor ?? NSColor.labelColor
-    if let data = html.data(using: .utf8), let str = NSMutableAttributedString(html: data,
-                                                                               options: [.textEncodingName: "utf8"],
-                                                                               documentAttributes: nil) {
-      str.addAttributes([.font: font, .foregroundColor: color], range: NSMakeRange(0, str.length))
-      self.attributedStringValue = str
-    }
-  }
-
-  func setText(_ textContent: String, textColor: NSColor) {
-    setFormattedText(stringValue: textContent, textColor: textColor)
-    stringValue = textContent
-    toolTip = textContent
-  }
-
-  func setFormattedText(stringValue: String, textColor: NSColor? = nil,
-                        strikethrough: Bool = false, italic: Bool = false) {
-    let attrString = NSMutableAttributedString(string: stringValue)
-
-    let fgColor: NSColor
-    if let textColor = textColor {
-      // If using custom text colors, need to make sure `EditableTextFieldCell` is specified
-      // as the class of the child cell in Interface Builder.
-      fgColor = textColor
-    } else {
-      fgColor = NSColor.controlTextColor
-    }
-    self.textColor = fgColor
-
-    if strikethrough {
-      attrString.addAttrib(NSAttributedString.Key.strikethroughStyle, NSUnderlineStyle.single.rawValue)
-    }
-
-    if italic {
-      attrString.addItalic(using: self.font)
-    }
-    self.attributedStringValue = attrString
-  }
-  
-
+extension NSData {
+  var md5: String { Insecure.MD5.hash(data: self).map { String(format: "%02x", $0) }.joined() }
 }
+
+extension Data {
+  init<T> (bytesOf thing: T) where T: FixedWidthInteger {
+    var copyOfThing = thing
+    self.init(bytes: &copyOfThing, count: MemoryLayout<T>.size)
+  }
+
+  init(bytesOf num: Double) {
+    var numCopy = num
+    self.init(bytes: &numCopy, count: MemoryLayout<Double>.size)
+  }
+
+  init(bytesOf ts: timespec) {
+    var mutablePointer = ts
+    self.init(bytes: &mutablePointer, count: MemoryLayout<timespec>.size)
+  }
+
+  var md5: String {
+    get {
+      return (self as NSData).md5
+    }
+  }
+
+  var chksum64: UInt64 {
+    return withUnsafeBytes {
+      $0.bindMemory(to: UInt64.self).reduce(0, &+)
+    }
+  }
+
+  func saveToFolder(_ url: URL, filename: String) -> URL? {
+    let fileUrl = url.appendingPathComponent(filename)
+    do {
+      try self.write(to: fileUrl)
+    } catch {
+      Utility.showAlert("error_saving_file", arguments: ["data", filename])
+      return nil
+    }
+    return fileUrl
+  }
+}
+
+extension FileHandle {
+  func read<T>(type: T.Type /* To prevent unintended specializations */) -> T? {
+    let size = MemoryLayout<T>.size
+    let data = readData(ofLength: size)
+    guard data.count == size else {
+      return nil
+    }
+    return data.withUnsafeBytes {
+      $0.bindMemory(to: T.self).first!
+    }
+  }
+}
+
+
+// MARK: - Drawing
+
+
+extension CALayer {
+
+  /// Get `NSImage` representation of the layer.
+  ///
+  /// - Returns: `NSImage` of the layer.
+  /// Original source: https://stackoverflow.com/a/41387514/1347529
+  func image() -> NSImage {
+    let width = Int(bounds.width * contentsScale)
+    let height = Int(bounds.height * contentsScale)
+    let imageRepresentation = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+    imageRepresentation.size = bounds.size
+
+    let context = NSGraphicsContext(bitmapImageRep: imageRepresentation)!
+
+    render(in: context.cgContext)
+
+    return NSImage(cgImage: imageRepresentation.cgImage!, size: bounds.size)
+  }
+}
+
 
 extension CGContext {
   /// Decorator which encloses `closure` with `saveGState` at start and `restoreGState` at end
@@ -1478,26 +1324,183 @@ extension NSImage {
 }
 
 
-extension NSVisualEffectView {
-  func roundCorners(withRadius cornerRadius: CGFloat) {
-    layer?.cornerRadius = cornerRadius
+// MARK: - Menus
+
+extension NSMenu {
+  @discardableResult
+  func addItem(forRows targetRows: IndexSet? = nil, withTitle string: String, action selector: Selector? = nil, target: AnyObject? = nil,
+               tag: Int? = nil, obj: Any? = nil, stateOn: Bool = false, enabled: Bool = true) -> NSMenuItem {
+    let menuItem: NSMenuItem
+    if let targetRows = targetRows {
+      menuItem = ContextMenuItem(targetRows: targetRows, title: string, action: selector, keyEquivalent: "")
+    } else {
+      menuItem = NSMenuItem(title: string, action: selector, keyEquivalent: "")
+    }
+    menuItem.tag = tag ?? -1
+    menuItem.representedObject = obj
+    menuItem.target = target
+    menuItem.state = stateOn ? .on : .off
+    menuItem.isEnabled = enabled
+    self.addItem(menuItem)
+    return menuItem
+  }
+}
+
+extension NSMenuItem {
+
+  var menuPathDescription: String {
+    var ancestors: [String] = [self.title]
+    var parent = self.parent
+    while let parentItem = parent {
+      ancestors.append(parentItem.title)
+      parent = parentItem.parent
+    }
+    return ancestors.reversed().joined(separator: " → ")
   }
 
-  func roundCorners() {
-    let radius = suggestedRoundedCornerRadius()
-    roundCorners(withRadius: radius)
+}
+
+class ContextMenuItem: NSMenuItem {
+  let targetRows: IndexSet
+
+  init(targetRows: IndexSet, title: String, action: Selector?, keyEquivalent: String) {
+    self.targetRows = targetRows
+    super.init(title: title, action: action, keyEquivalent: keyEquivalent)
+  }
+
+  required init(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented for ContextMenuItem")
   }
 }
 
 
-extension NSBox {
-  static func horizontalLine() -> NSBox {
-    let box = NSBox(frame: NSRect(origin: .zero, size: NSSize(width: 100, height: 1)))
-    box.boxType = .separator
-    return box
+// MARK: - AppKit - Various
+
+extension NSTextField {
+
+  func setHTMLValue(_ html: String) {
+    let font = self.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    let color = self.textColor ?? NSColor.labelColor
+    if let data = html.data(using: .utf8), let str = NSMutableAttributedString(html: data,
+                                                                               options: [.textEncodingName: "utf8"],
+                                                                               documentAttributes: nil) {
+      str.addAttributes([.font: font, .foregroundColor: color], range: NSMakeRange(0, str.length))
+      self.attributedStringValue = str
+    }
+  }
+
+  func setText(_ textContent: String, textColor: NSColor) {
+    setFormattedText(stringValue: textContent, textColor: textColor)
+    stringValue = textContent
+    toolTip = textContent
+  }
+
+  func setFormattedText(stringValue: String, textColor: NSColor? = nil,
+                        strikethrough: Bool = false, italic: Bool = false) {
+    let attrString = NSMutableAttributedString(string: stringValue)
+
+    let fgColor: NSColor
+    if let textColor = textColor {
+      // If using custom text colors, need to make sure `EditableTextFieldCell` is specified
+      // as the class of the child cell in Interface Builder.
+      fgColor = textColor
+    } else {
+      fgColor = NSColor.controlTextColor
+    }
+    self.textColor = fgColor
+
+    if strikethrough {
+      attrString.addAttrib(NSAttributedString.Key.strikethroughStyle, NSUnderlineStyle.single.rawValue)
+    }
+
+    if italic {
+      attrString.addItalic(using: self.font)
+    }
+    self.attributedStringValue = attrString
+  }
+
+}
+
+
+extension NSSlider {
+
+  /// Range of values the slider is configured to return.
+  var range: ClosedRange<Double> { minValue...maxValue }
+
+  /// Span of the range of values the slider is configured to return.
+  var span: Double { maxValue - minValue }
+
+  var progressRatio: Double {
+    (doubleValue - minValue) / span
+  }
+
+  /**
+   Returns the position of the knob's center point along the slider's track in window coordinates.
+
+   This method calculates the horizontal position of the center of the slider's knob based on the slider's current value (`doubleValue`), the minimum and maximum values, and the slider's dimensions. It can be useful for custom drawing, animations, or hit detection related to the knob's position.
+
+   - Returns: A `CGFloat` representing the x-coordinate of the knob's center along the slider's width.
+
+   - Important: Ensure that the slider's `maxValue` is greater than `minValue`. An assertion is used to validate this.
+
+   Example usage:
+   ```swift
+   let slider = NSSlider(value: 50, minValue: 0, maxValue: 100, target: nil, action: nil)
+   let knobPosition = slider.centerOfKnobInWindowCoordX()
+   print("The knob is positioned at x-coordinate: \(knobPosition)")
+   ```
+   */
+  func centerOfKnobInWindowCoordX() -> CGFloat {
+    let knobCenterInSliderCoordX = centerOfKnobInSliderCoordX()
+    let knobCenterInWindowCoordX = self.convert(NSPoint(x: knobCenterInSliderCoordX, y: 0), to: nil).x
+    return knobCenterInWindowCoordX
+  }
+
+  /// Returns the position of the knob's center point along the slider's track.
+  /// See also `centerOfKnobInWindowX()`.
+  func centerOfKnobInSliderCoordX() -> CGFloat {
+    // The knob must always be within the bounds of the slider. With respect to the center of the knob,
+    // this means that there is a space of (knobThickness / 2) at both sides where the center can never go.
+    let knobCenterMinX = knobThickness / 2
+    let knobRangeWidth = frame.width - knobThickness
+    assert(maxValue > minValue)
+    let knobPosX = knobCenterMinX + knobRangeWidth * CGFloat((doubleValue - minValue) / span)
+    assert(knobPosX.clamped(to: knobCenterMinX...(knobCenterMinX + knobRangeWidth)) == knobPosX,
+           "Invalid calculated centerOfKnobInSliderCoordX for slider: \(knobPosX)")
+    return knobPosX
+  }
+
+  func computeProgressRatioGiven(centerOfKnobInSliderCoordX: CGFloat) -> CGFloat {
+    let knobCenterMinX = knobThickness / 2
+    let knobRangeWidth = frame.width - knobThickness
+    let knobCenterMaxX = knobCenterMinX + knobRangeWidth
+    // It's valid for the given X value to be in the (knobThickness / 2) regions near minX & maxX where the
+    // knob can't go. This can happen if the user clicks near in this area. Just check & clamp to valid values.
+    let centerOfKnobCorrected = centerOfKnobInSliderCoordX.clamped(to: knobCenterMinX...knobCenterMaxX)
+    let ratio = Double((centerOfKnobCorrected - knobCenterMinX) / knobRangeWidth)
+    assert(ratio.clamped(to: 0...1) == ratio, "Invalid calculated ratio for slider: \(ratio)")
+    return ratio
+  }
+
+  func computeValueGiven(centerOfKnobInSliderCoordX: CGFloat) -> CGFloat {
+    let ratio = computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
+    let val = (ratio * span) + minValue
+    assert(val.clamped(to: minValue...maxValue) == val,
+           "Invalid calculated value for slider: \(val)")
+    return val
+  }
+
+  func computeCenterOfKnobInSliderCoordXGiven(pointInWindow: NSPoint) -> CGFloat {
+    let xOffsetInSlider = convert(pointInWindow, from: nil).x
+    let knobCenterMinX = knobThickness / 2
+    let knobRangeWidth = frame.width - knobThickness
+    let knobCenterMaxX = knobCenterMinX + knobRangeWidth
+    return xOffsetInSlider.clamped(to: knobCenterMinX...knobCenterMaxX)
   }
 }
 
+
+// For scrolling
 extension NSEvent.Phase {
   var name: String {
     if self.contains(.began) {
@@ -1526,34 +1529,43 @@ extension NSEvent.Phase {
   }
 }
 
-extension NSPasteboard {
 
-  func getStringItems() -> [String] {
-    guard let pasteboardItems else { return [] }
-    return pasteboardItems.compactMap{$0.string(forType: .string)}
+extension NSSegmentedControl {
+  @discardableResult
+  func selectSegment(withLabel label: String) -> Bool {
+    for i in 0..<segmentCount {
+      if self.label(forSegment: i) == label {
+        self.selectedSegment = i
+        return true
+      }
+    }
+    Logger.log("Could not find segment with label \(label.quoted). Setting selection to -1", level: .verbose)
+    self.selectedSegment = -1
+    return false
   }
 }
 
 
-extension NSPasteboard.PasteboardType {
-  static let nsURL = NSPasteboard.PasteboardType("NSURL")
-  static let nsFilenames = NSPasteboard.PasteboardType("NSFilenamesPboardType")
-  static let iinaPlaylistItem = NSPasteboard.PasteboardType("IINAPlaylistItem")
+extension NSVisualEffectView {
+  func roundCorners(withRadius cornerRadius: CGFloat) {
+    layer?.cornerRadius = cornerRadius
+  }
+
+  func roundCorners() {
+    let radius = suggestedRoundedCornerRadius()
+    roundCorners(withRadius: radius)
+  }
 }
 
 
-extension NSWindow.Level {
-  static let iinaFloating = NSWindow.Level(NSWindow.Level.floating.rawValue - 1)
-  static let iinaBlackScreen = NSWindow.Level(NSWindow.Level.mainMenu.rawValue + 1)
+extension NSBox {
+  static func horizontalLine() -> NSBox {
+    let box = NSBox(frame: NSRect(origin: .zero, size: NSSize(width: 100, height: 1)))
+    box.boxType = .separator
+    return box
+  }
 }
 
-extension NSUserInterfaceItemIdentifier {
-  static let isChosen = NSUserInterfaceItemIdentifier("IsChosen")
-  static let trackId = NSUserInterfaceItemIdentifier("TrackId")
-  static let trackName = NSUserInterfaceItemIdentifier("TrackName")
-  static let key = NSUserInterfaceItemIdentifier("Key")
-  static let value = NSUserInterfaceItemIdentifier("Value")
-}
 
 extension NSAppearance {
   convenience init?(iinaTheme theme: Preference.Theme) {
@@ -1836,104 +1848,6 @@ extension NSScrollView {
   }
 }
 
-extension Process {
-  @discardableResult
-  static func run(_ cmd: [String], at currentDir: URL? = nil) -> (process: Process, stdout: Pipe, stderr: Pipe) {
-    guard cmd.count > 0 else {
-      fatalError("Process.launch: the command should not be empty")
-    }
-
-    let (stdout, stderr) = (Pipe(), Pipe())
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: cmd[0])
-    process.currentDirectoryURL = currentDir
-    process.arguments = [String](cmd.dropFirst())
-    process.standardOutput = stdout
-    process.standardError = stderr
-    process.launch()
-    process.waitUntilExit()
-
-    return (process, stdout, stderr)
-  }
-}
-
-/**
- Adds functionality to detect & report which queue the calling thread is in.
- From: https://stackoverflow.com/questions/17475002/get-current-dispatch-queue
- */
-extension DispatchQueue {
-
-  private struct QueueReference { weak var queue: DispatchQueue? }
-
-  private static let key: DispatchSpecificKey<QueueReference> = {
-    let key = DispatchSpecificKey<QueueReference>()
-    setupSystemQueuesDetection(key: key)
-    return key
-  }()
-
-  private static func _registerDetection(of queues: [DispatchQueue], key: DispatchSpecificKey<QueueReference>) {
-    queues.forEach { $0.setSpecific(key: key, value: QueueReference(queue: $0)) }
-  }
-
-  private static func setupSystemQueuesDetection(key: DispatchSpecificKey<QueueReference>) {
-    let queues: [DispatchQueue] = [
-      .main,
-      .global(qos: .background),
-      .global(qos: .default),
-      .global(qos: .unspecified),
-      .global(qos: .userInitiated),
-      .global(qos: .userInteractive),
-      .global(qos: .utility)
-    ]
-    _registerDetection(of: queues, key: key)
-  }
-
-  // MARK: public functionality
-
-  static func newDQ(label: String, qos: DispatchQoS) -> DispatchQueue {
-    let q = DispatchQueue(label: label, qos: qos)
-    registerDetection(of: q)
-    return q
-  }
-
-  public static func registerDetection(of queue: DispatchQueue) {
-    _registerDetection(of: [queue], key: key)
-  }
-
-  public static var currentQueueLabel: String? { current?.label }
-  public static var current: DispatchQueue? { getSpecific(key: key)?.queue }
-
-  /**
-   USE THIS instead of `DispatchQueue.isExecutingIn(...))`: this will at least show an error msg.
-   To work, the desired queue must first be registered with `registerDetection()` (or use `newDQ` to init)
-   */
-  public static func isExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
-    let isExpected = DispatchQueue.current == dq
-    if !isExpected && logError {
-      Logger.log.error{"ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))"}
-    }
-    return isExpected
-  }
-
-  public static func isNotExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
-    let isExpected = DispatchQueue.current != dq
-    if !isExpected && logError {
-      Logger.log.error("ERROR We should not be executing in: '\(DispatchQueue.currentQueueLabel ?? "nil")'")
-    }
-    return isExpected
-  }
-
-  public static func execSyncOrAsyncIfNotIn(_ dq: DispatchQueue, execute work: @escaping @Sendable @convention(block) () -> Void) {
-    if DispatchQueue.isExecutingIn(dq, logError: false) {
-      work()
-    } else {
-      dq.async {
-        work()
-      }
-    }
-  }
-}
-
 extension NSViewController {
   /// Polyfill for MacOS 14.0's `loadViewIfNeeded()`.
   /// Load XIB if not already loaded. Prevents unboxing nils for `@IBOutlet` properties.
@@ -1971,7 +1885,7 @@ extension NSView {
   var pwc: PlayerWindowController? {
     window?.windowController as? PlayerWindowController
   }
-  
+
   var associatedPlayer: PlayerCore? {
     return pwc?.player
   }
@@ -2109,22 +2023,135 @@ extension NSView {
 }
 
 
-extension CALayer {
+extension NSPasteboard {
+  func getStringItems() -> [String] {
+    guard let pasteboardItems else { return [] }
+    return pasteboardItems.compactMap{$0.string(forType: .string)}
+  }
+}
 
-  /// Get `NSImage` representation of the layer.
-  ///
-  /// - Returns: `NSImage` of the layer.
-  /// Original source: https://stackoverflow.com/a/41387514/1347529
-  func image() -> NSImage {
-    let width = Int(bounds.width * contentsScale)
-    let height = Int(bounds.height * contentsScale)
-    let imageRepresentation = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-    imageRepresentation.size = bounds.size
 
-    let context = NSGraphicsContext(bitmapImageRep: imageRepresentation)!
+extension NSPasteboard.PasteboardType {
+  static let nsURL = NSPasteboard.PasteboardType("NSURL")
+  static let nsFilenames = NSPasteboard.PasteboardType("NSFilenamesPboardType")
+  static let iinaPlaylistItem = NSPasteboard.PasteboardType("IINAPlaylistItem")
+}
 
-    render(in: context.cgContext)
 
-    return NSImage(cgImage: imageRepresentation.cgImage!, size: bounds.size)
+extension NSWindow.Level {
+  static let iinaFloating = NSWindow.Level(NSWindow.Level.floating.rawValue - 1)
+  static let iinaBlackScreen = NSWindow.Level(NSWindow.Level.mainMenu.rawValue + 1)
+}
+
+
+extension NSUserInterfaceItemIdentifier {
+  static let isChosen = NSUserInterfaceItemIdentifier("IsChosen")
+  static let trackId = NSUserInterfaceItemIdentifier("TrackId")
+  static let trackName = NSUserInterfaceItemIdentifier("TrackName")
+  static let key = NSUserInterfaceItemIdentifier("Key")
+  static let value = NSUserInterfaceItemIdentifier("Value")
+}
+
+
+// MARK: - DispatchQueue
+
+/**
+ Adds functionality to detect & report which queue the calling thread is in.
+ From: https://stackoverflow.com/questions/17475002/get-current-dispatch-queue
+ */
+extension DispatchQueue {
+
+  private struct QueueReference { weak var queue: DispatchQueue? }
+
+  private static let key: DispatchSpecificKey<QueueReference> = {
+    let key = DispatchSpecificKey<QueueReference>()
+    setupSystemQueuesDetection(key: key)
+    return key
+  }()
+
+  private static func _registerDetection(of queues: [DispatchQueue], key: DispatchSpecificKey<QueueReference>) {
+    queues.forEach { $0.setSpecific(key: key, value: QueueReference(queue: $0)) }
+  }
+
+  private static func setupSystemQueuesDetection(key: DispatchSpecificKey<QueueReference>) {
+    let queues: [DispatchQueue] = [
+      .main,
+      .global(qos: .background),
+      .global(qos: .default),
+      .global(qos: .unspecified),
+      .global(qos: .userInitiated),
+      .global(qos: .userInteractive),
+      .global(qos: .utility)
+    ]
+    _registerDetection(of: queues, key: key)
+  }
+
+  // MARK: public functionality
+
+  static func newDQ(label: String, qos: DispatchQoS) -> DispatchQueue {
+    let q = DispatchQueue(label: label, qos: qos)
+    registerDetection(of: q)
+    return q
+  }
+
+  public static func registerDetection(of queue: DispatchQueue) {
+    _registerDetection(of: [queue], key: key)
+  }
+
+  public static var currentQueueLabel: String? { current?.label }
+  public static var current: DispatchQueue? { getSpecific(key: key)?.queue }
+
+  /**
+   USE THIS instead of `DispatchQueue.isExecutingIn(...))`: this will at least show an error msg.
+   To work, the desired queue must first be registered with `registerDetection()` (or use `newDQ` to init)
+   */
+  public static func isExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
+    let isExpected = DispatchQueue.current == dq
+    if !isExpected && logError {
+      Logger.log.error{"ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))"}
+    }
+    return isExpected
+  }
+
+  public static func isNotExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
+    let isExpected = DispatchQueue.current != dq
+    if !isExpected && logError {
+      Logger.log.error("ERROR We should not be executing in: '\(DispatchQueue.currentQueueLabel ?? "nil")'")
+    }
+    return isExpected
+  }
+
+  public static func execSyncOrAsyncIfNotIn(_ dq: DispatchQueue, execute work: @escaping @Sendable @convention(block) () -> Void) {
+    if DispatchQueue.isExecutingIn(dq, logError: false) {
+      work()
+    } else {
+      dq.async {
+        work()
+      }
+    }
+  }
+}
+
+
+// MARK: - Other
+
+extension Process {
+  @discardableResult
+  static func run(_ cmd: [String], at currentDir: URL? = nil) -> (process: Process, stdout: Pipe, stderr: Pipe) {
+    guard cmd.count > 0 else {
+      fatalError("Process.launch: the command should not be empty")
+    }
+
+    let (stdout, stderr) = (Pipe(), Pipe())
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: cmd[0])
+    process.currentDirectoryURL = currentDir
+    process.arguments = [String](cmd.dropFirst())
+    process.standardOutput = stdout
+    process.standardError = stderr
+    process.launch()
+    process.waitUntilExit()
+
+    return (process, stdout, stderr)
   }
 }

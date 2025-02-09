@@ -208,7 +208,7 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
   }
 
   @objc func touchBarTogglePIP(_ sender: NSButton) {
-    player.windowController.menuTogglePIP(.dummy)
+    player.windowController.menuTogglePIP(sender)
   }
 
   private func buttonTouchBarItem(withIdentifier identifier: NSTouchBarItem.Identifier, imageName: NSImage.Name, tag: Int, customLabel: String, action: Selector) -> NSCustomTouchBarItem {
