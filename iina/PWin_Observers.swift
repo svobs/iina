@@ -235,7 +235,7 @@ extension PlayerWindowController {
         .roundSliderBarRects,
         .sliderBarDoneColor:
 
-      log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
+      log.verbose{"Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)"}
       updateTitleBarAndOSC()
     case .alwaysShowSliderKnob:
       playSlider.needsDisplay = true
@@ -245,8 +245,8 @@ extension PlayerWindowController {
       fadeableViews.hideTimer.restart()
     case .lockViewportToVideoSize:
       if let isLocked = newValue as? Bool, isLocked {
-        log.debug("Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space")
-        resizeViewport()
+        log.debug{"Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space"}
+        resizeViewport(nil)
       }
     case .hideWindowsWhenInactive:
       animationPipeline.submitInstantTask({ [self] in
@@ -262,7 +262,7 @@ extension PlayerWindowController {
         .enableThumbnailForRemoteFiles,
         .enableThumbnailForMusicMode:
 
-      log.verbose("Pref \(key.rawValue.quoted) changed: requesting thumbs regen")
+      log.verbose{"Pref \(key.rawValue.quoted) changed: requesting thumbs regen"}
       // May need to remove thumbs or generate new ones: let method below figure it out:
       player.reloadThumbnails()
 
@@ -334,7 +334,7 @@ extension PlayerWindowController {
       guard let window else { return }
       let effectiveAppearanceName = window.effectiveAppearance.name.rawValue
       guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
-      log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
+      log.verbose{"Window appearance changed to: \(effectiveAppearanceName)"}
       cachedEffectiveAppearanceName = effectiveAppearanceName
 
       applyThemeMaterial()

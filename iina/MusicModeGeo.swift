@@ -218,8 +218,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return fittedGeo
   }
 
-  func scalingViewport(to desiredSize: NSSize? = nil,
-                     screenID: String? = nil) -> MusicModeGeometry? {
+  func scalingViewport(to desiredSize: NSSize? = nil, screenID: String? = nil) -> MusicModeGeometry? {
     return scalingVideo(to: desiredSize?.width, screenID: screenID)
   }
 

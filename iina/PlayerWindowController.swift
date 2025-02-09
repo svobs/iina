@@ -31,6 +31,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     window?.screen ?? NSScreen.main!
   }
 
+  var resizeWidthAmount: CGFloat = 0
+
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
 
