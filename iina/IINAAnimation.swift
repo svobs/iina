@@ -15,7 +15,7 @@ class IINAAnimation {
 
   // FIXME: put in Constants.AnimationDuration enum. Add Task constructor with enum param. Change names to camel case
   static var DefaultDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationDefault)) }()
-  static var VideoReconfigDuration: CGFloat = { DefaultDuration * 0.25 }()
+  static var VideoReconfigDuration: CGFloat = { DefaultDuration * 0.5 }()
   static var InitialVideoReconfigDuration: CGFloat = { DefaultDuration }()
   static var FullScreenTransitionDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationFullScreen)) }()
   static var NativeFullScreenTransitionDuration: CGFloat = 0.5

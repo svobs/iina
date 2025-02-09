@@ -440,7 +440,7 @@ extension PlayerWindowController {
 
       let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
 
-      log.debug("[applyVideoGeo \(cxt.name)] Will apply windowed result (newSessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
+      log.debug{"[applyVideoGeo \(cxt.name)] Will apply windowed result (newSessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)"}
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreenNormal:
@@ -503,7 +503,7 @@ extension PlayerWindowController {
 
     // Seems that this looks better if done before updating the window frame...
     // FIXME: this isn't perfect - a bad frame briefly appears during transition
-    log.verbose("Resetting videoView rotation")
+    log.verbose{"Resetting videoView rotation"}
     rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
   }
 
@@ -514,10 +514,10 @@ extension PlayerWindowController {
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
     case .always:
-      log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='Always' → will resize window")
+      log.verbose{"[applyVideoGeo C-1] FileOpened & resizeTiming='Always' → will resize window"}
     case .onlyWhenOpen:
       if !cxt.sessionState.isOpeningFileManually {
-        log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='OnlyWhenOpen', but isOpeningFileManually=N → will resize minimally")
+        log.verbose{"[applyVideoGeo C-1] FileOpened & resizeTiming='OnlyWhenOpen', but isOpeningFileManually=N → will resize minimally"}
         return nil
       }
     case .never:
@@ -525,7 +525,7 @@ extension PlayerWindowController {
         log.verbose("[applyVideoGeo C-1] FileOpened (not manually) & resizeTiming='Never' → will resize minimally")
         return nil
       }
-      log.verbose("[applyVideoGeo C-1] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
+      log.verbose{"[applyVideoGeo C-1] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)"}
       return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                        video: newVidGeo, keepFullScreenDimensions: true,
                                                        applyOffsetIndex: player.openedWindowsSetIndex)
