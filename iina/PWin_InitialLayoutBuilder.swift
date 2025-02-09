@@ -111,7 +111,7 @@ extension PlayerWindowController {
       defer {
         /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
         log.verbose("Posting windowIsReadyToShow")
-        window.postWindowIsReadyToShow()
+        postWindowIsReadyToShow()
       }
 
       player.refreshSyncUITimer()

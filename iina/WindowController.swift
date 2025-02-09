@@ -29,7 +29,7 @@ class WindowController: NSWindowController {
       UIState.shared.windowsOpen.insert(windowName)
     }
 
-    window.postWindowIsReadyToShow()
+    postWindowIsReadyToShow()
   }
 
   /// Changes opening & closing animations of window based on app lifecycle state & other variables
@@ -95,6 +95,14 @@ class WindowController: NSWindowController {
       return
     }
     window.animationBehavior = behavior
+  }
+
+  func postWindowIsReadyToShow() {
+    NotificationCenter.default.post(Notification(name: .windowIsReadyToShow, object: window))
+  }
+
+  func postWindowMustCancelShow() {
+    NotificationCenter.default.post(Notification(name: .windowMustCancelShow, object: window))
   }
 
 }

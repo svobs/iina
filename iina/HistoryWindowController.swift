@@ -50,7 +50,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     return NSNib.Name("HistoryWindowController")
   }
 
-  @IBOutlet weak var outlineView: NSOutlineView!
+  @IBOutlet weak var outlineView: OutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
 
   private let log: Logger.Subsystem

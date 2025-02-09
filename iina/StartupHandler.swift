@@ -43,8 +43,8 @@ class StartupHandler {
   /// The enqueued list of windows to restore, when restoring at launch.
   /// Try to wait until all windows are ready so that we can show all of them at once (compare with `wcsDoneWithRestore`).
   /// Make sure order of `wcsToRestore` is from back to front to restore the order properly.
-  var wcsToRestore: [NSWindowController] = []
-  var wcsDoneWithRestore = Set<NSWindowController>()
+  var wcsToRestore: [WindowController] = []
+  var wcsDoneWithRestore = Set<WindowController>()
   /// Special case for Open File window when restoring. Because it is a panel, not a window, it will not have
   /// an `NSWindowController`.
   var restoreOpenFileWindow = false
@@ -228,7 +228,7 @@ class StartupHandler {
   }
 
 
-  private func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: NSWindowController) {
+  private func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
     // Rebuild UIState window sets as we go:
     if savedWindow.isMinimized {
       // No need to worry about partial show, so skip wcsToRestore
@@ -276,7 +276,7 @@ class StartupHandler {
     }
 
     let namesReady = wcsDoneWithRestore.compactMap{$0.window?.savedStateName}
-    let wcsStalled: [NSWindowController] = wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
+    let wcsStalled: [WindowController] = wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
     var namesStalled: [String] = []
     for (index, wc) in wcsStalled.enumerated() {
       let winID = wc.window!.savedStateName
@@ -333,7 +333,7 @@ class StartupHandler {
         } else {
           wcStalled.close()
           // explicitly call this, as the line above may fail
-          wcStalled.window?.postWindowMustCancelShow()
+          wcStalled.postWindowMustCancelShow()
         }
       }
 
@@ -466,29 +466,29 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     guard let window = notification.object as? NSWindow else { return }
-    guard let wc = window.windowController else {
-      log.error("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!")
+    guard let wc = window.windowController as? WindowController else {
+      log.error{"Restored window is ready, but no WindowController for window: \(window.savedStateName.quoted)!"}
       return
     }
     let savedStateName = window.savedStateName
 
     if isDoneLaunching {
       if window.isMiniaturized {
-        log.verbose("OpenWindow: deminiaturizing window \(window.savedStateName.quoted)")
+        log.verbose{"OpenWindow: deminiaturizing window \(window.savedStateName.quoted)"}
         // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)
         window.deminiaturize(self)
       } else {
-        log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
+        log.verbose{"OpenWindow: showing window \(window.savedStateName.quoted)"}
         wc.showWindow(window)
       }
 
     } else { // Not done launching
       if Preference.bool(for: .isRestoreInProgress), wcsToRestore.contains(wc) {
         wcsDoneWithRestore.insert(wc)
-        log.verbose("Restored window is ready: \(savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
+        log.verbose{"Restored window is ready: \(savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
       } else if let wcsForOpenFiles, wcsForOpenFiles.contains(where: {$0.window!.savedStateName == savedStateName}) {
         wcsDoneWithFileOpen.append(wc as! PlayerWindowController)
-        log.verbose("OpenedFile window is ready: \(savedStateName.quoted)")
+        log.verbose{"OpenedFile window is ready: \(savedStateName.quoted)"}
       }
       // Else may be multiple files opened at launch
 
@@ -504,7 +504,7 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     guard Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
+    log.verbose{"Restored window cancelled: \(window.savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
 
     // No longer waiting for this window
     wcsToRestore.removeAll(where: { wc in
