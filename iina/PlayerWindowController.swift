@@ -950,7 +950,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       // Just like at window restore, do all the layout in one block
       animationPipeline.submit(.instantTask { [self] in
-        log.verbose("Resetting window geometry for close")
+        log.trace("Resetting window geometry for close")
         pendingVideoGeoUpdateTasks = []
         do {
           for task in resetTransition.tasks {
@@ -966,7 +966,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
 
-        log.verbose{"Done: window cleanup on main DQ"}
+        log.trace{"Done: windowWillClose cleanup on main DQ"}
       })
     }
 
@@ -978,7 +978,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       player.info.currentPlayback = nil
       osd.clearQueuedOSDs()
-      log.verbose{"Done: window cleanup on mpv DQ"}
+      log.trace{"Done: windowWillClose cleanup on mpv DQ"}
     }
   }
 

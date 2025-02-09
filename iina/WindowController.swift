@@ -7,6 +7,7 @@
 //
 
 
+/// All window controllers in the app are expected to inherit from this class.
 class WindowController: NSWindowController {
 
   var mouseLocationInWindow: NSPoint {

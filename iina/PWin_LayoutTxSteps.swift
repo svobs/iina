@@ -750,7 +750,7 @@ extension PlayerWindowController {
 
       // Not floating OSC!
       if !transition.outputLayout.hasFloatingOSC {
-        addSpeedLabelToControlBar(transition)
+        updateSpeedLabelFont(for: transition)
       }
 
       let sliderKnobWidth = oscGeo.sliderKnobWidth
@@ -932,7 +932,7 @@ extension PlayerWindowController {
 
         controlBarFloating.addMarginConstraints()
       }
-      addSpeedLabelToControlBar(transition)
+      updateSpeedLabelFont(for: transition)
 
       // Update floating control bar position
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
@@ -1276,7 +1276,7 @@ extension PlayerWindowController {
   // - Top bar
 
   func updateTopBarHeight(to topBarHeight: CGFloat, topBarPlacement: Preference.PanelPlacement, cameraHousingOffset: CGFloat) {
-    log.verbose{"Updating topBar height: \(topBarHeight), placement: \(topBarPlacement), cameraOffset: \(cameraHousingOffset)"}
+    log.trace{"Updating topBar height to: \(topBarHeight) for placement=\(topBarPlacement) cameraOffset=\(cameraHousingOffset)"}
 
     switch topBarPlacement {
     case .insideViewport:
@@ -1309,14 +1309,14 @@ extension PlayerWindowController {
         }
       }
     }
-    log.verbose{"Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)"}
+    log.trace{"Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)"}
     osdTopToTopBarConstraint.animateToConstant(newOffsetFromTop)
   }
 
   // - Bottom bar
 
   private func updateBottomBarPlacement(placement: Preference.PanelPlacement) {
-    log.verbose{"Updating bottomBar placement to: \(placement)"}
+    log.trace{"Updating bottomBar placement to: \(placement)"}
     guard let window = window, let contentView = window.contentView else { return }
     contentView.removeConstraint(bottomBarLeadingSpaceConstraint)
     contentView.removeConstraint(bottomBarTrailingSpaceConstraint)
@@ -1336,7 +1336,7 @@ extension PlayerWindowController {
   }
 
   func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement) {
-    log.verbose{"Updating bottomBar height to: \(bottomBarHeight), placement: \(bottomBarPlacement)"}
+    log.trace{"Updating bottomBar height to \(bottomBarHeight) for placement=\(bottomBarPlacement)"}
 
     switch bottomBarPlacement {
     case .insideViewport:
@@ -1449,12 +1449,10 @@ extension PlayerWindowController {
     rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
   }
 
-  func addSpeedLabelToControlBar(_ transition: LayoutTransition) {
-    guard transition.outputLayout.hasControlBar else { return }
-
+  func updateSpeedLabelFont(for transition: LayoutTransition) {
     let oscGeo = transition.outputLayout.controlBarGeo
     let speedLabelFontSize = oscGeo.speedLabelFontSize
-    log.verbose("Updating speed label fontSize=\(speedLabelFontSize)")
+    log.trace{"Updating speed label fontSize=\(speedLabelFontSize)"}
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
   }
 
