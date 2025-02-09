@@ -258,7 +258,7 @@ extension PlayerWindowController {
       return
     }
 
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
 
     PluginInputManager.handle(
       input: PluginInputManager.Input.mouse, event: .mouseDown,
@@ -271,7 +271,7 @@ extension PlayerWindowController {
   override func mouseDragged(with event: NSEvent) {
     log.trace{"PWin MouseDragged @ \(event.locationInWindow)"}
 
-    hideCursorTimer?.invalidate()
+    hideCursorTimer.cancel()
     if let currentDragObject {
       currentDragObject.mouseDragged(with: event)
       return
@@ -305,7 +305,7 @@ extension PlayerWindowController {
     log.verbose{"PWin MouseUp @ \(event.locationInWindow) dragging=\(isDragging.yn) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     // Always do these:
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
     mouseDownLocationInWindow = nil
     // In case WindowDidChangeScreen already timed out, or another event put the window in a "metastable" state.
     // Need to figure out how to
@@ -395,13 +395,13 @@ extension PlayerWindowController {
   }
 
   override func otherMouseDown(with event: NSEvent) {
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
     super.otherMouseDown(with: event)
   }
 
   override func otherMouseUp(with event: NSEvent) {
     log.verbose("PWin OtherMouseUp!")
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
     PluginInputManager.handle(
@@ -433,7 +433,7 @@ extension PlayerWindowController {
       super.rightMouseDown(with: event)
     }
 
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
     PluginInputManager.handle(
       input: PluginInputManager.Input.rightMouse, event: .mouseDown,
       player: player, arguments: mouseEventArgs(event)
@@ -444,7 +444,7 @@ extension PlayerWindowController {
     guard event.eventNumber != lastRightMouseUpEventID else { return }
     lastRightMouseUpEventID = event.eventNumber
     log.verbose("PWin RightMouseUp!")
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
     PluginInputManager.handle(
@@ -568,7 +568,7 @@ extension PlayerWindowController {
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
 
     // Always hide after timeout even if OSD fade time is longer
-    restartHideCursorTimer()
+    hideCursorTimer.restart()
   }
 
   // Do not show hover cursor if over a button or other view which overlaps PlaySlider.
@@ -708,16 +708,10 @@ extension PlayerWindowController {
     newCursor.set()
   }
 
-  func restartHideCursorTimer() {
-    hideCursorTimer?.invalidate()
-    hideCursorTimer = Timer.scheduledTimer(timeInterval: max(0, Preference.double(for: .cursorAutoHideTimeout)), target: self, selector: #selector(hideCursor), userInfo: nil, repeats: false)
-  }
-
   /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
   /// bounds of the window's real estate.
   @objc func hideCursor() {
-    hideCursorTimer?.invalidate()
-    hideCursorTimer = nil
+    hideCursorTimer.cancel()
     guard let window else { return }
 
     switch currentLayout.mode {

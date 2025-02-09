@@ -238,7 +238,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var fadeableViews = FadeableViewsHandler()
 
   // Other visibility
-  var hideCursorTimer: Timer?
+  var hideCursorTimer = TimeoutTimer(timeout: 0, startFunction: { timer in
+    timer.timeout = max(0, Preference.double(for: .cursorAutoHideTimeout))
+    return true
+  })
 
   // - OSD
 

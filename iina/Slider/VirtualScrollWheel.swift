@@ -111,8 +111,8 @@ class ScrollSession {
 ///
 /// Non-Apple scroll wheels are limited to a more discrete "step"-like behavior, and do not support momentum.
 /// But this class tries to map them into the same model as smooth scrolling, by starting a scroll session when transitioning
-/// from the `notScrolling` state to the `didStepScroll` state, then keeping a `Timer` so that the session ends when no events
-/// are received for `stepScrollSessionTimeout` seconds.
+/// from the `notScrolling` state to the `didStepScroll` state, then keeping a `TimeoutTimer` so that the session ends when no
+/// events are received for `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
   var log: Logger.Subsystem = Logger.log
 

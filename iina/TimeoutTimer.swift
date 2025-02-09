@@ -13,10 +13,13 @@ class TimeoutTimer {
   var action: (() -> Void)?
   /// If not nil, is executed before starting or restarting the timer.
   /// If it returns false, the timer will not be started.
-  var startFunction: (() -> Bool)?
+  var startFunction: ((TimeoutTimer) -> Bool)?
 
-  init(timeout: TimeInterval, action: (() -> Void)? = nil) {
+  init(timeout: TimeInterval,
+       startFunction: ((TimeoutTimer) -> Bool)? = nil,
+       action: (() -> Void)? = nil) {
     self.timeout = timeout
+    self.startFunction = startFunction
     self.action = action
   }
 
@@ -28,7 +31,7 @@ class TimeoutTimer {
     }
 
     if let startFunction {
-      let canProceed = startFunction()
+      let canProceed = startFunction(self)
       guard canProceed else {
         return
       }

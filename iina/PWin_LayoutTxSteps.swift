@@ -1112,8 +1112,8 @@ extension PlayerWindowController {
 
     if transition.isEnteringFullScreen {
       // Entered FS
-
-      restartHideCursorTimer()
+      
+      hideCursorTimer.restart()
 
       if transition.outputLayout.isNativeFullScreen {
         /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
