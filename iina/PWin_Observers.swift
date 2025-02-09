@@ -303,12 +303,9 @@ extension PlayerWindowController {
         self.moveTabGroup(.plugins, toSidebarLocation: newLocationID)
       }
     case .osdAutoHideTimeout, .enableControlBarAutoHide:
-      if let newTimeout = newValue as? Double {
-        if osd.animationState == .shown, let hideOSDTimer = osd.hideOSDTimer, hideOSDTimer.isValid {
-          // Reschedule timer to prevent prev long timeout from lingering
-          osd.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(newTimeout), target: self,
-                                                  selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
-        }
+      if osd.animationState == .shown, osd.hideOSDTimer.isValid {
+        // Reschedule timer to prevent prev long timeout from lingering
+        osd.hideOSDTimer.restart(withNewTimeout: OSDState.osdTimeoutFromPrefs())
       }
     case .osdPosition:
       // If OSD is showing, it will move over as a neat animation:

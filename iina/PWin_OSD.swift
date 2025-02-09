@@ -16,7 +16,8 @@ class OSDState {
   /// Whether current OSD needs user interaction to be dismissed.
   var isShowingPersistentOSD = false
   var animationState: PlayerWindowController.UIAnimationState = .hidden
-  var hideOSDTimer: Timer?
+  /// Timeout action is `pwc.hideOSD()`
+  let hideOSDTimer = TimeoutTimer(timeout: OSDState.osdTimeoutFromPrefs())
   var nextSeekIcon: NSImage? = nil
   var currentSeekIcon: NSImage? = nil
   var lastPlaybackPosition: Double? = nil
@@ -58,6 +59,12 @@ class OSDState {
   init(log: Logger.Subsystem) {
     self.log = log
   }
+
+  static func osdTimeoutFromPrefs() -> Double {
+    // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
+    return max(IINAAnimation.OSDAnimationDuration, Double(Preference.float(for: .osdAutoHideTimeout)))
+  }
+
 }
 
 // PlayerWindow UI: OSD
@@ -375,7 +382,7 @@ extension PlayerWindowController {
     }
 
     // Restart timer
-    osd.hideOSDTimer?.invalidate()
+    osd.hideOSDTimer.cancel()
     if osd.animationState != .shown {
       osd.animationState = .shown  /// set this before calling `refreshSyncUITimer()`
       DispatchQueue.main.async { [self] in  /// launch async task to avoid recursion, which `osdQueueLock` doesn't like
@@ -386,16 +393,9 @@ extension PlayerWindowController {
     }
 
     if autoHide {
-      let timeout: Double
-      if let forcedTimeout = forcedTimeout {
-        timeout = forcedTimeout
-        log.verbose("Showing OSD '\(msg)' forcedTimeout=\(timeout)")
-      } else {
-        // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
-        timeout = max(IINAAnimation.OSDAnimationDuration, Double(Preference.float(for: .osdAutoHideTimeout)))
-        log.verbose("Showing OSD '\(msg)' timeout=\(timeout)")
-      }
-      osd.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self, selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
+      let timeout: Double = forcedTimeout ?? OSDState.osdTimeoutFromPrefs()
+      log.verbose{"Showing OSD '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")"}
+      osd.hideOSDTimer.restart(withNewTimeout: timeout)
     } else {
       log.verbose("Showing OSD '\(msg)', no timeout")
     }
@@ -433,7 +433,7 @@ extension PlayerWindowController {
     osd.animationState = .willHide
     osd.isShowingPersistentOSD = false
     osd.context = nil
-    osd.hideOSDTimer?.invalidate()
+    osd.hideOSDTimer.cancel()
 
     if refreshSyncUITimer {
       player.refreshSyncUITimer()

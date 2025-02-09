@@ -610,7 +610,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                            musicMode: PlayerWindowController.musicModeGeoLastClosed,
                            video: VideoGeometry.defaultGeometry(player.log))
     super.init(window: nil)
-    log.verbose("PlayerWindowController init")
+    osd.hideOSDTimer.action = { self.hideOSD() }
+    log.verbose("PlayerWindowController init done")
   }
 
   required init?(coder: NSCoder) {

@@ -20,8 +20,12 @@ class TimeoutTimer {
     self.action = action
   }
 
-  func restart() {
+  func restart(withNewTimeout newTimeout: TimeInterval? = nil) {
     cancel()
+
+    if let newTimeout {
+      timeout = newTimeout
+    }
 
     if let startFunction {
       let canProceed = startFunction()

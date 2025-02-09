@@ -1156,7 +1156,7 @@ extension PWinGeometry {
     /// Version 2 removes `videoAspect` field and adds 6 `videoGeometry` fields.
     let pwinGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: PWinGeometry.expectedCSVTokenCount,
                                                           expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                                          targetObjName: "PWinGeometry(v2)") { errPreamble, iter in
+                                                          targetObjName: "PWinGeometry(v2)") { errPreamble, iter ->  PWinGeometry? in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -1218,7 +1218,7 @@ extension PWinGeometry {
     // Fall back to v1, which did not include embedded VideoGeometry CSV.
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
                                     expectedVersion: "1",
-                                    targetObjName: "PWinGeometry(v1)") { errPreamble, iter in
+                                    targetObjName: "PWinGeometry(v1)") { errPreamble, iter -> PWinGeometry? in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -1321,7 +1321,7 @@ extension LayoutSpec {
       Logger.log.debug("CSV is empty; returning nil for LayoutSpec")
       return nil
     }
-    let parsingFunc: (String, inout IndexingIterator<[String]>) throws -> LayoutSpec? = { errPreamble, iter in
+    let parsingFunc: (String, inout IndexingIterator<[String]>) throws -> LayoutSpec? = { errPreamble, iter -> LayoutSpec? in
 
       let leadingSidebarTab = Sidebar.Tab(name: iter.next())
       let traillingSidebarTab = Sidebar.Tab(name: iter.next())
