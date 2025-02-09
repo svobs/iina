@@ -1590,13 +1590,6 @@ extension NSAppearance {
   }
 }
 
-extension NSApplication {
-  /// Returns `PlayerWindowController` array for all open player windows.
-  static var playerWindows: [PlayerWindowController] {
-    return NSApp.windows.compactMap{ $0.windowController as? PlayerWindowController }.filter{ $0.isOpen }
-  }
-}
-
 extension NSScreen {
   static func getOwnerScreenID(forPoint point: NSPoint) -> String? {
     for screen in NSScreen.screens {
@@ -1765,7 +1758,7 @@ extension NSWindow {
   }
 
   var isAnotherWindowInFullScreen: Bool {
-    for winCon in NSApplication.playerWindows {
+    for winCon in AppDelegate.shared.playerWindows {
       if winCon.window != self, winCon.isFullScreen {
         return true
       }
@@ -1863,6 +1856,7 @@ extension Process {
     return (process, stdout, stderr)
   }
 }
+
 /**
  Adds functionality to detect & report which queue the calling thread is in.
  From: https://stackoverflow.com/questions/17475002/get-current-dispatch-queue
@@ -1893,11 +1887,9 @@ extension DispatchQueue {
     ]
     _registerDetection(of: queues, key: key)
   }
-}
 
-// MARK: public functionality
+  // MARK: public functionality
 
-extension DispatchQueue {
   static func newDQ(label: String, qos: DispatchQoS) -> DispatchQueue {
     let q = DispatchQueue(label: label, qos: qos)
     registerDetection(of: q)

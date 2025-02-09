@@ -27,7 +27,7 @@ class ShutdownHandler {
     }
 
     // Save UI state first:
-    for playerWindowController in NSApplication.playerWindows {
+    for playerWindowController in AppDelegate.shared.playerWindows {
       PlayerSaveState.saveSynchronously(playerWindowController.player)
     }
     UIState.shared.saveCurrentOpenWindowList()

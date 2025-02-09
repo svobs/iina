@@ -74,6 +74,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return shutdownHandler.isTerminating
   }
 
+  /// Returns a `PlayerWindowController` array containing all currently open player windows.
+  var playerWindows: [PlayerWindowController] {
+    return NSApp.windows.compactMap{ $0.windowController as? PlayerWindowController }.filter{ $0.isOpen }
+  }
+
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
