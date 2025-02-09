@@ -401,7 +401,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// the user closes a window which is not in the foreground.
     UIState.shared.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
 
-    window.refreshWindowOpenCloseAnimation()
+    (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
 
     if let player = (window.windowController as? PlayerWindowController)?.player {
       player.windowController.windowWillClose()

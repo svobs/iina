@@ -11,7 +11,7 @@ import Cocoa
 
 fileprivate let highlightsLink = "https://iina.io/highlights"
 
-class GuideWindowController: IINAWindowController {
+class GuideWindowController: WindowController {
   override var windowNibName: NSNib.Name {
     return NSNib.Name("GuideWindowController")
   }

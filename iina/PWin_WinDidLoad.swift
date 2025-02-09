@@ -48,7 +48,7 @@ extension PlayerWindowController {
 
     // gesture recognizers
     rotationHandler.windowController = self
-    magnificationHandler.windowController = self
+    magnificationHandler.pwc = self
     contentView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
     contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
 

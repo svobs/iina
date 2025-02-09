@@ -21,7 +21,7 @@ struct Contributor: Decodable {
   }
 }
 
-class AboutWindowController: IINAWindowController, NSWindowDelegate {
+class AboutWindowController: WindowController, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("AboutWindowController")

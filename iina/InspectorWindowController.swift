@@ -11,7 +11,7 @@ import Cocoa
 fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
 
-class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
+class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("InspectorWindowController")

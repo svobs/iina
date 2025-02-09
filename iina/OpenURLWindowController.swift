@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFieldDelegate, NSControlTextEditingDelegate {
+class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDelegate, NSControlTextEditingDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("OpenURLWindowController")

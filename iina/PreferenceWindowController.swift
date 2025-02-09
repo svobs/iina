@@ -54,7 +54,7 @@ class CustomCellView: NSTableCellView {
 }
 
 
-class PreferenceWindowController: IINAWindowController {
+class PreferenceWindowController: WindowController {
   static unowned var undoManager: UndoManager? = nil
 
   class Trie {

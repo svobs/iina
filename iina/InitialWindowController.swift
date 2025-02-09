@@ -35,7 +35,7 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
   }
 }
 
-class InitialWindowController: IINAWindowController, NSWindowDelegate {
+class InitialWindowController: WindowController, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("InitialWindowController")

@@ -43,7 +43,7 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .parentFolder: 145
 ]
 
-class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
+class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
                                NSMenuDelegate, NSMenuItemValidation {
 
   override var windowNibName: NSNib.Name {

@@ -13,7 +13,7 @@ fileprivate var circleDict: [NSColor: NSImage] = [:]
 fileprivate let kIconSize = 17.0
 fileprivate let kBorderWidth = 1.25
 
-class LogWindowController: IINAWindowController, NSMenuDelegate {
+class LogWindowController: WindowController, NSMenuDelegate {
   override var windowNibName: NSNib.Name {
     return NSNib.Name("LogWindowController")
   }

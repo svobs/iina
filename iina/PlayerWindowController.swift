@@ -13,7 +13,7 @@ import Cocoa
 // TODO: support parent playlist
 // TODO: stick window to individual side of screen
 // TODO: auto-adjust window size when Dock shown/hidden
-class PlayerWindowController: IINAWindowController, NSWindowDelegate {
+class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {
     return player.log
@@ -802,8 +802,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // This is the default title AppKit assigns to a window when it is first created. Surprising and
     // rather disturbing this works as a workaround, but it does.
     window.title = "Window"
-    
-    window.refreshWindowOpenCloseAnimation()
+
+    // Need to call this here because super.openWindow() is not called
+    refreshWindowOpenCloseAnimation()
 
     /// See `PWin_Input.swift` for handling of tracking area events.
     updateWindowTrackingAreas()
