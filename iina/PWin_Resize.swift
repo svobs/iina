@@ -582,47 +582,26 @@ extension PlayerWindowController {
   func changeVideoScale(to desiredVideoScale: Double) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
-    guard currentLayout.mode == .windowedNormal else { return }
-
+    guard currentLayout.mode == .windowedNormal else {
+      log.error{"SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)"}
+      return
+    }
     guard desiredVideoScale > 0.0 else {
-      log.verbose("SetVideoScale: requested scale is invalid: \(desiredVideoScale)")
+      log.error{"SetVideoScale: requested scale is invalid: \(desiredVideoScale)"}
       return
     }
 
-    /*
-     TODO: refactor applyVideoGeoTransform so it can include this
-
-     applyVideoGeoTransform("VideoScale", { [self] videoGeo in
-     // Not supported in music mode at this time. Need to resolve backing scale bugs
-     guard currentLayout.mode == .windowedNormal else { return nil }
-
-     // TODO: if Preference.bool(for: .usePhysicalResolution) {}
-
-     // FIXME: regression: viewport keeps expanding when video runs into screen boundary
-     let videoSizeScaled = videoGeo.videoSizeCAR * desiredVideoScale
-     return nil
-     })
-
-
-     */
-
-    player.mpv.queue.async { [self] in
-      let oldVideoGeo = player.videoGeo
-
-      DispatchQueue.main.async { [self] in
-        // TODO: if Preference.bool(for: .usePhysicalResolution) {}
-
-        // FIXME: regression: viewport keeps expanding when video runs into screen boundary
-        let videoSizeScaled = (oldVideoGeo.videoSizeCAR * desiredVideoScale).rounded()
-        let newGeoUnconstrained = windowedGeoForCurrentFrame().scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
-        player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-        let screenFit: ScreenFit = .stayInside
-        let newGeometry = newGeoUnconstrained.refitted(using: screenFit)
-
-        log.verbose("SetVideoScale: reqScale=\(desiredVideoScale)x, oldVideoSize=\(oldVideoGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
-        buildApplyWindowGeoTasks(newGeometry, thenRun: true)
-      }
-    }
+    applyVideoGeoTransform("SetVideoScale", windowed: { [self] cxt -> PWinGeometry? in
+      log.error{"SetVideoScale: desired=\(desiredVideoScale)"}
+      let oldWindowedGeo = cxt.oldGeo.windowed
+      // TODO: if Preference.bool(for: .usePhysicalResolution) {}
+      // Not supported in music mode at this time. Need to resolve backing scale bugs
+      // FIXME: regression: viewport keeps expanding when video runs into screen boundary
+      let videoSizeScaled = (oldWindowedGeo.video.videoSizeCAR * desiredVideoScale).rounded()
+      let newGeoUnconstrained = oldWindowedGeo.scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
+      player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+      return newGeoUnconstrained.refitted(using: .stayInside)
+    })
   }
 
   /**
@@ -663,6 +642,7 @@ extension PlayerWindowController {
   // FIXME: interpolate this
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
+
     func scale(_ viewportSize: CGSize, widthStep: CGFloat) -> CGSize {
       let heightStep = widthStep / viewportSize.mpvAspect
       return CGSize(width: round(viewportSize.width + widthStep),
