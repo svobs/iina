@@ -26,8 +26,8 @@ class VideoView: NSView {
 
   // cached indicator to prevent unnecessary updates of DisplayLink
   var currentDisplay: UInt32?
-
-  var displayIdleTimer: Timer?
+  
+  let displayIdleTimer = TimeoutTimer(timeout: Constants.TimeInterval.displayIdleTimeout)
 
   var videoViewConstraints: VideoViewConstraints? = nil
 
@@ -41,6 +41,8 @@ class VideoView: NSView {
     self.logHDR = Logger.makeSubsystem("hdr-\(player.label)")
     self.player = player
     super.init(frame: frame)
+
+    displayIdleTimer.action = makeDisplayIdle
 
     translatesAutoresizingMaskIntoConstraints = false
     setContentCompressionResistancePriority(.required, for: .horizontal)

@@ -187,6 +187,10 @@ struct Constants {
 
     // TimeoutTimer timeouts
 
+    /// The time of 6 seconds was picked to match up with the time QuickTime delays once playback is
+    /// paused before stopping audio. As mpv does not provide an event indicating a frame step has
+    /// completed the time used must not be too short or will catch mpv still drawing when stepping.
+    static let displayIdleTimeout = 6.0
     static let seekPreviewHideTimeout = 0.2
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0

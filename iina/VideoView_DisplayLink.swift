@@ -92,7 +92,7 @@ extension VideoView {
     log.trace("VideoView displayActive")
     assert(DispatchQueue.isExecutingIn(.main))
     if !temporary {
-      displayIdleTimer?.invalidate()
+      displayIdleTimer.cancel()
     }
     startDisplayLink()
     if temporary {
@@ -117,14 +117,7 @@ extension VideoView {
   func displayIdle() {
     log.trace("VideoView displayIdle")
     assert(DispatchQueue.isExecutingIn(.main))
-    displayIdleTimer?.invalidate()
-    // The time of 6 seconds was picked to match up with the time QuickTime delays once playback is
-    // paused before stopping audio. As mpv does not provide an event indicating a frame step has
-    // completed the time used must not be too short or will catch mpv still drawing when stepping.
-    displayIdleTimer = Timer(timeInterval: 6.0, target: self, selector: #selector(makeDisplayIdle), userInfo: nil, repeats: false)
-    // Not super picky about timeout; favor efficiency
-    displayIdleTimer?.tolerance = 0.5
-    RunLoop.current.add(displayIdleTimer!, forMode: .default)
+    displayIdleTimer.restart()
   }
 
   @objc func makeDisplayIdle() {
