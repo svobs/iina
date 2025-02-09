@@ -87,13 +87,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
   var isAnimatingLayoutTransition: Bool = false {
     didSet {
-      log.verbose("Updated isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)")
+      log.verbose{"Updated isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)"}
     }
   }
 
   var sessionState: PWinSessionState = .noSession {
     willSet {
-      log.verbose("Changing sessionState: \(sessionState) → \(newValue)")
+      log.verbose{"Changing sessionState: \(sessionState) → \(newValue)"}
       assert(sessionState.isRestoring || DispatchQueue.isExecutingIn(DispatchQueue.main))
     }
   }
@@ -286,7 +286,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return geo.windowed
     } set {
       geo = geo.clone(windowed: newValue)
-      log.verbose("Updated windowedModeGeo ≔ \(newValue)")
+      log.verbose{"Updated windowedModeGeo ≔ \(newValue)"}
       assert(newValue.mode.isWindowed, "windowedModeGeo has unexpected mode: \(newValue.mode)")
       assert(!newValue.screenFit.isFullScreen, "windowedModeGeo has invalid screenFit: \(newValue.screenFit)")
     }
@@ -297,7 +297,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return geo.musicMode
     } set {
       geo = geo.clone(musicMode: newValue)
-      log.verbose("Updated musicModeGeo ≔ \(newValue)")
+      log.verbose{"Updated musicModeGeo ≔ \(newValue)"}
     }
   }
 
@@ -306,13 +306,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   static var windowedModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
-      Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry")
+      Logger.log.debug{"Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry"}
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.screenFit.isFullScreen {
-        Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)")
+        Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)"}
         return savedGeo
       } else {
-        Logger.log.error("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))")
+        Logger.log.error{"Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))"}
       }
     }
     // Compute default geometry for main screen
@@ -321,11 +321,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
-        Logger.log.error("Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)")
+        Logger.log.error{"Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)"}
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
-      Logger.log.verbose("Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) ≔ \(windowedModeGeoLastClosed)")
+      Logger.log.verbose{"Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) ≔ \(windowedModeGeoLastClosed)"}
     }
   }
 
@@ -334,11 +334,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   static var musicModeGeoLastClosed: MusicModeGeometry = {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
     if let savedGeo = MusicModeGeometry.fromCSV(csv, Logger.log) {
-      Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)")
+      Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)"}
       return savedGeo
     }
-    Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry",
-               level: .debug)
+    Logger.log.debug{"Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry"}
     let defaultScreen = NSScreen.screens[0]
     let defaultGeo = MiniPlayerViewController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
                                                                               video: VideoGeometry.defaultGeometry())
@@ -346,7 +345,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }() {
     didSet {
       Preference.set(musicModeGeoLastClosed.toCSV(), for: .uiLastClosedMusicModeGeometry)
-      Logger.log.verbose("Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)")
+      Logger.log.verbose{"Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)"}
     }
   }
 
@@ -1004,7 +1003,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let oldLayout = currentLayout
 
     let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreenNormal
-    log.verbose("Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "")\(newMode)")
+    log.verbose{"Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "")\(newMode)"}
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
     let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
 

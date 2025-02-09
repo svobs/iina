@@ -160,11 +160,11 @@ class VideoView: NSView {
     let oldScaleFactor = videoLayer.contentsScale
     let newScaleFactor = window.backingScaleFactor
     if oldScaleFactor != newScaleFactor {
-      log.verbose("Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)")
+      log.verbose{"Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)"}
       videoLayer.contentsScale = newScaleFactor
       return true
     }
-    log.verbose("No change to window backingScaleFactor (\(oldScaleFactor))")
+    log.verbose{"No change to window backingScaleFactor (\(oldScaleFactor))"}
     return false
   }
 
@@ -184,7 +184,7 @@ class VideoView: NSView {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
       let name = screenColorSpace.localizedName ?? "unnamed"
-      logHDR.verbose("Using the ICC profile of color space \(name.quoted)")
+      logHDR.verbose{"Using the ICC profile of color space \(name.quoted)"}
       // This MUST be locked via openGLContext
 
       guard player.mpv.lockAndSetOpenGLContext() else { return }
@@ -201,7 +201,7 @@ class VideoView: NSView {
     let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
     if videoLayer.colorspace != sdrColorSpace {
       let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
-      logHDR.debug("Setting layer color space to \(name)")
+      logHDR.verbose{"Setting layer color space to \(name.quoted)"}
       videoLayer.colorspace = sdrColorSpace
       videoLayer.wantsExtendedDynamicRangeContent = false
     }
@@ -230,7 +230,7 @@ class VideoView: NSView {
     guard let renderContext = player.mpv.mpvRenderContext else { return }
     guard var iccData = profile.iccProfileData else {
       let name = profile.localizedName ?? "unnamed"
-      player.log.warn("Color space \(name) does not contain ICC profile data")
+      player.log.warn{"Color space \(name) does not contain ICC profile data"}
       return
     }
     iccData.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
@@ -254,7 +254,7 @@ class VideoView: NSView {
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 
-    log.debug("Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil")")
+    log.debug{"Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil")"}
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
     if player.info.hdrAvailable != edrAvailable {
@@ -267,12 +267,12 @@ class VideoView: NSView {
     guard let mpv = player.mpv else { return false }
 
     guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-      logHDR.debug("Video gamma and primaries not available")
+      logHDR.debug{"Video gamma and primaries not available"}
       return false
     }
   
     let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
-    logHDR.debug("Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
+    logHDR.debug{"Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)"}
 
     // HDR videos use a Hybrid Log Gamma (HLG) or a Perceptual Quantization (PQ) transfer function.
     guard gamma == "hlg" || gamma == "pq" else { return false }
@@ -299,19 +299,19 @@ class VideoView: NSView {
       return false // SDR
 
     default:
-      logHDR.warn("Unsupported color space: gamma=\(gamma) primaries=\(primaries)")
+      logHDR.warn{"Unsupported color space: gamma=\(gamma) primaries=\(primaries)"}
       return false
     }
 
     let maxRangeEDR = window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
     guard maxRangeEDR > 1.0 else {
-      logHDR.debug("HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))")
+      logHDR.debug{"HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))"}
       return false
     }
 
     guard player.info.hdrEnabled else { return nil }
 
-    logHDR.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
+    logHDR.debug{"Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))"}
     videoLayer.wantsExtendedDynamicRangeContent = true
     videoLayer.colorspace = CGColorSpace(name: name)
     mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)

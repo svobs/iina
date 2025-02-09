@@ -176,7 +176,7 @@ class ThumbnailCache {
       log.error("Cannot open file: \(pathURL.path.pii.quoted)")
       return nil
     }
-    log.debug("Reading from \(pathURL.path.pii.quoted)")
+    log.verbose{"Reading from \(pathURL.path.pii.quoted)"}
 
     defer {
       file.closeFile()
@@ -196,14 +196,14 @@ class ThumbnailCache {
       // length and timestamp
       guard let blockLength = file.read(type: Int64.self),
             let timestamp = file.read(type: Double.self) else {
-        log.warn("Cannot read image header. Cache file will be deleted: \(pathURL.absoluteString.pii.quoted)")
+        log.warn{"Cannot read image header. Cache file will be deleted: \(pathURL.absoluteString.pii.quoted)"}
         deleteCacheFile(at: pathURL)
         return nil
       }
       // jpeg
       let jpegData = file.readData(ofLength: Int(blockLength) - MemoryLayout.size(ofValue: timestamp))
       guard let image = NSImage(data: jpegData) else {
-        log.warn("Cannot read image. Cache file will be deleted: \(pathURL.absoluteString.pii.quoted)")
+        log.warn{"Cannot read image. Cache file will be deleted: \(pathURL.absoluteString.pii.quoted)"}
         deleteCacheFile(at: pathURL)
         return nil
       }
@@ -214,7 +214,7 @@ class ThumbnailCache {
       result.append(tb)
     }
 
-    log.debug("Finished reading thumbnail cache: read \(result.count) thumbs in \(sw) ms")
+    log.debug{"Finished reading thumbnail cache: read \(result.count) thumbs in \(sw) ms"}
     return result
   }
 
@@ -224,7 +224,7 @@ class ThumbnailCache {
       try FileManager.default.removeItem(at: pathURL)
       NotificationCenter.default.post(Notification(name: .iinaThumbnailCacheDidUpdate, object: nil, userInfo: nil))
     } catch {
-      log.error("Cannot delete corrupted cache: \(pathURL.absoluteString.pii.quoted)")
+      log.error{"Cannot delete corrupted cache: \(pathURL.absoluteString.pii.quoted)"}
     }
   }
 

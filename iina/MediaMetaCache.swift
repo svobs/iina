@@ -199,7 +199,7 @@ class MediaMetaCache {
       return ffMeta
     } else {
       // Not a serious error. Can happen for audio files.
-      log.debug{"Could not read video size for file \(url.path.pii.quoted)"}
+      log.debug{"FFmpeg could not read video size for \(url.path.pii.quoted)"}
     }
     return nil
   }
