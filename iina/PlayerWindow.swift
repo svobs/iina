@@ -53,7 +53,7 @@ class PlayerWindow: NSWindow {
     pwc?.resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
     guard !frame.equalTo(geometry.windowFrame) else {
-      log.verbose("[PWin.setFrame] No change to windowFrame; returning")
+      log.verbose("[PWin.setFrame] No change to windowFrame. Returning")
       return
     }
 
