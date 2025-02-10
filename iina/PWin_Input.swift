@@ -241,7 +241,7 @@ extension PlayerWindowController {
   override func mouseDown(with event: NSEvent) {
     guard event.eventNumber != lastMouseDownEventID else { return }
     lastMouseDownEventID = event.eventNumber
-    log.verbose{"PWin MouseDown @ \(event.locationInWindow)"}
+    log.verbose{"PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
     denyWindowResizeIntervalStartTime = Date()
@@ -302,7 +302,7 @@ extension PlayerWindowController {
   override func mouseUp(with event: NSEvent) {
     guard event.eventNumber != lastMouseUpEventID else { return }
     lastMouseUpEventID = event.eventNumber
-    log.verbose{"PWin MouseUp @ \(event.locationInWindow) dragging=\(isDragging.yn) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
+    log.verbose{"PWin MouseUp @ \(event.locationInWindow) clickCount=\(event.clickCount) dragging=\(isDragging.yn) eventNum=\(event.eventNumber)"}
 
     // Always do these:
     hideCursorTimer.restart()

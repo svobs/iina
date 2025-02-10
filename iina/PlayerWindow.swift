@@ -252,9 +252,9 @@ class PlayerWindow: NSWindow {
     self.miniaturize(self)
   }
 
+  /// See `windowWillUseStandardFrame` in `PlayerWindowController` for resize handling.
   override func zoom(_ sender: Any?) {
     super.zoom(sender)
-    // Need to update VideoView constraints and other things
-    pwc?.resizeWindowImmediately()
   }
+  
 }

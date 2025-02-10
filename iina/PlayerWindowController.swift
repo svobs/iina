@@ -163,7 +163,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var floatingOSCCenterRatioH = CGFloat(Preference.float(for: .controlBarPositionHorizontal))
   var floatingOSCOriginRatioV = CGFloat(Preference.float(for: .controlBarPositionVertical))
 
-  // - Mouse
+  // - Mouse: see PWin_Input.swift
 
   /// When the speed arrow buttons were last clicked.
   var lastForceTouchClick = Date()
