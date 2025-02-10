@@ -714,7 +714,7 @@ extension PlayerWindowController {
           textAlpha = 0.8
           timeLabelTextColor = .white
 
-          let blurRadiusConstant = 1.0
+          let blurRadiusConstant = Constants.Distance.oscClearBG_TextShadowBlurRadius
           leftTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
           rightTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
           oscTwoRowView.timeSlashLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
@@ -1112,7 +1112,7 @@ extension PlayerWindowController {
 
     if transition.isEnteringFullScreen {
       // Entered FS
-      
+
       hideCursorTimer.restart()
 
       if transition.outputLayout.isNativeFullScreen {

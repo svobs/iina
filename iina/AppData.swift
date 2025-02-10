@@ -315,7 +315,7 @@ struct Constants {
       static let defaultKnobHeight: CGFloat = 15
 
       /// Note: doubling this value must result in a whole integer because it influences CGImage size.
-      static let shadowBlurRadius: CGFloat = 1.5
+      static let shadowBlurRadius: CGFloat = 1.0
 
       static let musicModeKnobHeight: CGFloat = 12
 
@@ -362,7 +362,12 @@ struct Constants {
 
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).
-    static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 2
+    static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 2.0
+    static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
+    static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
+    static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.5
+    static let oscClearBG_TextShadowBlurRadius: CGFloat = 0.5
+    // See also: Constants.Distance.Slider.shadowBlurRadius
 
     /**
      `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for

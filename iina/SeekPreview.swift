@@ -73,7 +73,9 @@ extension PlayerWindowController {
     }
 
     func addShadow() {
-      timeLabel.addShadow(blurRadiusConstant: Constants.Distance.seekPreviewTimeLabel_ShadowRadiusConstant)
+      timeLabel.addShadow(blurRadiusConstant: Constants.Distance.seekPreviewTimeLabel_ShadowRadiusConstant,
+                          xOffsetConstant: Constants.Distance.seekPreviewTimeLabel_xOffsetConstant,
+                          yOffsetConstant: Constants.Distance.seekPreviewTimeLabel_yOffsetConstant)
     }
 
     /// This is expected to be called at first layout
