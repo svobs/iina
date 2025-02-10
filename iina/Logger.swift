@@ -276,6 +276,16 @@ class Logger: NSObject {
       guard Logger.enabled else { return }
       Logger.log(msgFunc(), level: .error, subsystem: self)
     }
+
+    func errorDebugAlert(_ msgFunc: LogMsgFunc) {
+      guard Logger.enabled else { return }
+      let msg = msgFunc()
+#if DEBUG
+      Utility.showAlert(msg, style: .warning)
+#endif
+      Logger.log(msg, level: .error, subsystem: self)
+    }
+
   }  // end class Subsystem
 
   static func makeSubsystem(_ rawValue: String) -> Subsystem {

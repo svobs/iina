@@ -37,23 +37,27 @@ struct GeometrySet {
 }
 
 extension PlayerWindowController {
-  func getLatestWindowFrameAndScreenID() -> (NSRect, String)? {
+  func getLatestWindowFrameAndScreenID(force: Bool = false) -> (NSRect, String)? {
     guard DispatchQueue.isExecutingIn(.main, logError: false) else {
       log.debug("Not executing in main queue; will use cached window frame & screenID")
       return nil
     }
-    // Need to check state of current playback to avoid race conditions
-    guard loaded, player.isActive, player.info.isFileLoaded,
-          let window, window.isOpen else {
-      return nil
-    }
-    guard !sessionState.isRestoring else {
-      // Log this. It can sometimes indicate a bug during launch
-      log.debug("Still restoring; will use cached window frame & screenID")
-      if !Preference.bool(for: .isRestoreInProgress) {
-        log.error("Window still has sessionState==restoring, but isRestoreInProgress==NO. This is a bug!")
+    guard let window else { return nil }
+    if !force {
+      // Need to check state of current playback to avoid race conditions
+      guard loaded, player.isActive, player.info.isFileLoaded,
+            window.isOpen else {
+        log.trace{"Will use cached windowFrame/screenID instead of latest: playerActive=\(player.isActive) fileLoaded=\(player.info.isFileLoaded) wndOpen=\(window.isOpen.yn)"}
+        return nil
       }
-      return nil
+      guard !sessionState.isRestoring else {
+        // Log this. It can sometimes indicate a bug during launch
+        log.debug("Still restoring; will use cached window frame & screenID")
+        if !Preference.bool(for: .isRestoreInProgress) {
+          log.error("Window still has sessionState==restoring, but isRestoreInProgress==NO. This is a bug!")
+        }
+        return nil
+      }
     }
     return (window.frame, bestScreen.screenID)
   }
@@ -89,22 +93,24 @@ extension PlayerWindowController {
     return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: video ?? geo.video)
   }
 
-  func windowedGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> PWinGeometry {
+  /// If `force=true`, then skip validation checks for latest frame & always use current frame
+  func windowedGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> PWinGeometry {
     let geo = geo
-    if currentLayout.mode.isWindowed, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() {
+    if currentLayout.mode.isWindowed, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace{"Cloning windowed geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}
       // If user moved the window recently, window frame might not be completely up to date. Update it & return:
       return geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
     // Doesn't make sense to update window if currently in FS or some other mode. But update video
+    log.trace{"Cloning windowed geometry, updating only videoGeo=\(newVidGeo?.description ?? "nil")"}
     return geo.windowed.clone(video: newVidGeo)
   }
 
 
   /// See also `windowedGeoForCurrentFrame`
-  func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> MusicModeGeometry {
+  func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> MusicModeGeometry {
     let geo = geo
-    if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() {
+    if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace{"Cloning musicMode geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}
       return geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }

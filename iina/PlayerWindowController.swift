@@ -326,11 +326,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
-        Logger.log.error{"Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)"}
+        Logger.log.errorDebugAlert{"Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)"}
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
-      Logger.log.verbose{"Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) ≔ \(windowedModeGeoLastClosed)"}
+      Logger.log.verbose{"Updated pref uiLastClosedWindowedModeGeometry ≔ \(windowedModeGeoLastClosed)"}
     }
   }
 
@@ -940,11 +940,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     /// Use value of `sessionState.hasOpenSession` to prevent from saving when there was an error loading video
     if wasSessionFinishedOpening {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
+      /// Need to use `force` to bypass the normal checks for player state, etc, because we're closing.
+      /// Setting these vars is especially important for copying to windowedModeGeoLastClosed, etc, below.
       if currentLayout.mode == .musicMode {
-        musicModeGeo = musicModeGeoForCurrentFrame()
+        musicModeGeo = musicModeGeoForCurrentFrame(force: true)
       } else if currentLayout.mode.isWindowed {
         // Update frame since it may have moved
-        windowedModeGeo = windowedGeoForCurrentFrame()
+        windowedModeGeo = windowedGeoForCurrentFrame(force: true)
       }
 
       // CLOSE SIDEBARS for reopen

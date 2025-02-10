@@ -68,7 +68,7 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug("Got all media files, video=\(videoFiles.count), audio=\(audioFiles.count)")
+    log.debug{"Got all media files: video=\(videoFiles.count), audio=\(audioFiles.count)"}
 
     // natural sort
     videoFiles.sort { $0.filename.localizedStandardCompare($1.filename) == .orderedAscending }
@@ -177,7 +177,7 @@ class AutoFileMatcher {
       }
       closestVideoForSub[sp] = minVideo
     }
-    log.debug("Calculated editing distance")
+    log.verbose("Calculated editing distance")
 
     var matchedPrefixes: [String: String] = [:]  // video: sub
     for (vp, vl) in videosGroupedBySeries {

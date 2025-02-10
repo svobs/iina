@@ -476,7 +476,7 @@ struct PlayerSaveState: CustomStringConvertible {
         // Older than IINA 1.2
         log.debug("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties). Will attempt to build it from legacy properties instead")
       } else {
-        log.error("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)! Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run. Will attempt to build VideoGeometry from legacy properties instead...")
+        log.errorDebugAlert{"Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)! Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run. Will attempt to build VideoGeometry from legacy properties instead..."}
       }
       let defaultGeo = VideoGeometry.defaultGeometry(log)
       let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
@@ -496,7 +496,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if let savedWindowedGeo {
       windowedGeo = savedWindowedGeo
     } else {
-      log.error("Failed to restore PWinGeometry from CSV! Will fall back to last closed geometry")
+      log.errorDebugAlert{"Failed to restore PWinGeometry from CSV! Will fall back to last closed geometry"}
       windowedGeo = PlayerWindowController.windowedModeGeoLastClosed
     }
 
@@ -506,7 +506,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if let savedMusicModeGeo {
       musicModeGeo = savedMusicModeGeo
     } else {
-      log.error("Failed to restore MusicModeGeometry from CSV! Will fall back to last closed geometry")
+      log.errorDebugAlert{"Failed to restore MusicModeGeometry from CSV! Will fall back to last closed geometry"}
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
     return GeometrySet(windowed: windowedGeo, musicMode: musicModeGeo, video: videoGeo)
