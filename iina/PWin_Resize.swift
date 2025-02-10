@@ -52,13 +52,6 @@ extension PlayerWindowController {
         log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
         return window.frame.size
       }
-      // If the window size has been previously set by accessibility APIs or zoom, on the next mouseDown AppKit will snap it back to its
-      // previous size. Try to detect this and stop it.
-      let leftMouseButtonDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0
-      guard !leftMouseButtonDown else {
-        log.verbose{"[WinWillResize] Denying request=\(requestedSize): left mouse button is down; will stay at \(window.frame.size)"}
-        return window.frame.size
-      }
     }
 
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize

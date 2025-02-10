@@ -14,6 +14,10 @@ class WindowController: NSWindowController {
     return window!.convertPoint(fromScreen: NSEvent.mouseLocation)
   }
 
+  var isLeftMouseButtonDown: Bool {
+    (NSEvent.pressedMouseButtons & (1 << 0)) != 0
+  }
+
   func openWindow(_ sender: Any?) {
     guard let window else {
       Logger.log("Cannot open window: no window object!", level: .error)
