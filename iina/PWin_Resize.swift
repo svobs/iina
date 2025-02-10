@@ -15,12 +15,12 @@ extension PlayerWindowController {
   /// NSWindowDelegate: start live resize
   func windowWillStartLiveResize(_ notification: Notification) {
     guard !isAnimatingLayoutTransition else { return }
-    log.verbose{"WindowWillStartLiveResize"}
+    log.trace{"WindowWillStartLiveResize"}
     isLiveResizingWidth = nil  // reset this
   }
 
   func windowDidEndLiveResize(_ notification: Notification) {
-    log.verbose{"WindowDidEndLiveResize"}
+    log.trace{"WindowDidEndLiveResize"}
   }
 
   func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame: NSRect) -> NSRect {
@@ -55,7 +55,7 @@ extension PlayerWindowController {
     }
 
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"[WinWillResize] Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
+    log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()
     if lockViewportToVideoSize && inLiveResize {
@@ -226,18 +226,26 @@ extension PlayerWindowController {
     }
   }
 
-  /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
+  /// Applies changes to window geometry, possibly animating any changes.
   ///
   /// # Arguments:
-  /// - `stateChange`: if non-nil, this function takes the current window's `sessionState` and outputs the state which should be applied
-  /// at the end of the transform if it succeeds. If it returns `nil`, the transform will be cancelled. If `stateChange` is `nil`, the transform
-  /// will proceed with the existing `sessionState`.
-  /// - `videoTransform`: if non-`nil`, this function is run in the mpv queue. It is given the current window's `VideoGeometry` (and other context),
-  /// and is expected to output a new, possibly transformed ` VideoGeometry`. If it returns `nil`, then transform will be cancelled and no state will be changed.
-  /// If `videoTransform` is `nil`, the transform will proceed with the existing `VideoGeometry`.
-  /// - `musicModeTransform`:  if non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
-  /// is expected to output a ` MusicModeGeometry` containing further transforms which should be applied.
-  /// If `musicModeTransform` is `nil` or returns `nil`, the transform will ignore it and will proceed with its calculated values.
+  /// - `stateChange`: optional operator function for transforming `sessionState` and/or cancelling the transform.
+  ///   - If `nil`, the transform will proceed with the existing `sessionState`.
+  ///   - If non-nil, this function will be run in the mpv queue. It is given the current window's `sessionState` & is expected
+  ///     to output a new value of `sessionState` to set at the end of the transform if it succeeds.
+  ///     But if it returns `nil`, the transform will be cancelled.
+  /// - `videoTransform`: optional operator function which, if provided, will run in the mpv queue.
+  ///   - If `nil`, the transform will proceed with the existing `VideoGeometry`.
+  ///   - If non-`nil`: t is given the current window's `VideoGeometry` (and other context), & is expected to output a new, possibly
+  ///     transformed ` VideoGeometry`. But if it returns `nil`, then transform will be cancelled and no state will be changed.
+  /// - `windowedTransform`: optional operator function which if provided, will run in the main queue.
+  ///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
+  ///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
+  ///     the transform will ignore it and will proceed with its calculated values.
+  /// - `musicModeTransform`: optional operator function which if provided, will run in the main queue.
+  ///   - If non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
+  ///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
+  ///     the transform will ignore it and will proceed with its calculated values.
   func applyVideoGeoTransform(_ transformName: String,
                               stateChange: ((GeometryTransform.Context) -> PWinSessionState?)? = nil,
                               video videoTransform: VideoGeometry.Transform? = nil,
@@ -277,6 +285,7 @@ extension PlayerWindowController {
                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus,
                                            player: player)
 
+        /// Apply `stateChange` if present
         if let stateChange {
           guard let newSessionState = stateChange(cxt) else {
             return abort("state change func returned nil from sessionState=\(sessionState)")
@@ -286,6 +295,7 @@ extension PlayerWindowController {
           log.verbose{"[applyVideoGeo \(transformName)] Reusing current sessionState: \(cxt.sessionState)"}
         }
 
+        /// Apply `videoTransform` if present
         let newVidGeo: VideoGeometry
         if let videoTransform {
           guard let resultGeo = videoTransform(cxt) else {
@@ -301,11 +311,11 @@ extension PlayerWindowController {
 
           let doAfterTask = buildEndTask(cxt, newVidGeo: newVidGeo, onSuccess: onSuccess)
 
-          var imminentTasks: [IINAAnimation.Task] = []
+          var imminentTasks: [IINAAnimation.Task]
 
           if cxt.sessionState.isStartingSession {
             let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(cxt, newVidGeo: newVidGeo)
-            imminentTasks.append(contentsOf: windowOpenLayoutTasks)
+            imminentTasks = windowOpenLayoutTasks
 
             /// These tasks should not execute until *after* `super.showWindow` is called.
             var videoGeoUpdateTasks = buildGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: initialLayout, cxt,
@@ -325,7 +335,7 @@ extension PlayerWindowController {
                                                           windowedTransform, musicModeTransform)
             videoGeoUpdateTasks.append(doAfterTask)
 
-            imminentTasks.append(contentsOf: videoGeoUpdateTasks)
+            imminentTasks = videoGeoUpdateTasks
           }
 
           animationPipeline.submit(imminentTasks)
