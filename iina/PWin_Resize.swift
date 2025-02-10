@@ -23,8 +23,13 @@ extension PlayerWindowController {
     log.verbose{"WindowDidEndLiveResize"}
   }
 
-  func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame newFrame: NSRect) -> NSRect {
-    log.verbose{"WindowWillZoom: \(window.frame) → \(newFrame)"}
+  func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame: NSRect) -> NSRect {
+    // Need to explicitly bypass the denial mechanism
+    denyWindowResizeIntervalStartTime = Date(timeIntervalSince1970: 0)
+    // FIXME: aspect ratio change animation needs improvement
+    let newSize = windowWillResize(window, to: defaultFrame.size)
+    let newFrame = NSRect(origin: defaultFrame.origin, size: newSize)
+    log.verbose{"WindowWillZoom: \(window.frame) → \(defaultFrame) → \(newFrame)"}
     return newFrame
   }
 
