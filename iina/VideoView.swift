@@ -8,7 +8,14 @@
 
 import Cocoa
 
-
+/// This is the video canvas. It is usually a child view of `ViewportView`, though not in some
+/// states such as PiP.
+///
+/// `VideoView.swift`: mouse events, drag & drop, color & EDR configuration.
+/// See also:
+/// `VideoView_DisplayLink.swift`: for managing the Core Video DisplayLink.
+/// `VideoView_Constraints.swift`: for enforcing aspect ratio & other AutoLayout constraints.
+/// `GLVideoLayer.swift`: the OpenGL video layer for this view.
 class VideoView: NSView {
 
   weak var player: PlayerCore!

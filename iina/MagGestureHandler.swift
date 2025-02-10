@@ -64,7 +64,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
           DispatchQueue.main.async { [self] in
             pwc.animationPipeline.submitInstantTask({ [self] in
-              pwc.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25, nil)
+              pwc.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25)
             })
           }
           return

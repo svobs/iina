@@ -13,6 +13,8 @@ import Cocoa
 // TODO: support parent playlist
 // TODO: stick window to individual side of screen
 // TODO: auto-adjust window size when Dock shown/hidden
+// TODO: intelligently move video if possible so that bottom/top inside bars don't overlap it
+// TODO: merge Music Mode geometry with PWin, and add .mini to OSC layout types
 class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {
@@ -30,8 +32,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var bestScreen: NSScreen {
     window?.screen ?? NSScreen.main!
   }
-
-  var resizeWidthAmount: CGFloat = 0
 
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
@@ -847,8 +847,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Don't wait for load for network stream; open immediately & show loading msg
     player.mpv.queue.async { [self] in
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-        log.verbose("Current playback is network resource: calling applyVideoGeoTransform now")
-        applyVideoGeoTransform("OpenNetStreamWindow", video: GeometryTransform.trackChanged)
+        log.verbose("Current playback is network resource: calling transformGeometry now")
+        transformGeometry("OpenNetStreamWindow", video: GeometryTransform.trackChanged)
       }
     }
   }
@@ -861,7 +861,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
 
-    /// Need this as a kludge to ensure it runs after tasks in `applyVideoGeoTransform`
+    /// Need this as a kludge to ensure it runs after tasks in `transformGeometry`
     DispatchQueue.main.async { [self] in
       var animationTasks: [IINAAnimation.Task] = []
 
@@ -1766,7 +1766,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // It's not perfect but better than before
         if let cropController = cropSettingsView {
           let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
-          /// Set the filter. This will result in `applyVideoGeoTransform` getting called, which will trigger an exit from interactive mode.
+          /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
           /// But that task can only happen once we return and relinquish the main queue.
           _ = player.addVideoFilter(newCropFilter)
         }

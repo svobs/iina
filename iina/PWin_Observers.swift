@@ -246,7 +246,7 @@ extension PlayerWindowController {
     case .lockViewportToVideoSize:
       if let isLocked = newValue as? Bool, isLocked {
         log.debug{"Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space"}
-        resizeViewport(nil)
+        resizeViewport()
       }
     case .hideWindowsWhenInactive:
       animationPipeline.submitInstantTask({ [self] in

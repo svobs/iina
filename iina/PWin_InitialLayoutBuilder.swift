@@ -64,13 +64,13 @@ extension PlayerWindowController {
 
       /// `windowFrame` may be slightly off; update it
       if initialLayout.mode == .windowedNormal {
-        /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
+        /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
         PlayerWindowController.windowedModeGeoLastClosed = initialLayout.buildGeometry(windowFrame: window.frame,
                                                                                        screenID: bestScreen.screenID,
                                                                                        video: newVidGeo)
       } else if initialLayout.mode == .musicMode {
-        /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
+        /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame,
                                                                            screenID: bestScreen.screenID,
                                                                            video: newVidGeo)
@@ -273,7 +273,7 @@ extension PlayerWindowController {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
 
     } else {
-      /// Use `minVideoSize` at first when a new window is opened, so that when `applyVideoGeoTransform()` is called shortly after,
+      /// Use `minVideoSize` at first when a new window is opened, so that when `transformGeometry()` is called shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
       let viewportSize = CGSize.computeMinSize(withAspect: videoGeo.videoAspectCAR,
                                                minWidth: Constants.WindowedMode.minViewportSize.width,

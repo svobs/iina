@@ -1360,7 +1360,7 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.applyVideoGeoTransform("UserRotation", video: { [self] cxt in
+    windowController.transformGeometry("UserRotation", video: { [self] cxt in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
       log.verbose{"[applyVideoGeo \(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
@@ -1395,7 +1395,7 @@ class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.applyVideoGeoTransform("AspectOverride", video: { [self] cxt in
+    windowController.transformGeometry("AspectOverride", video: { [self] cxt in
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
@@ -2470,7 +2470,7 @@ class PlayerCore: NSObject {
         mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
       }
 
-      /// Will complete restore when `applyVideoGeoTransform` is done
+      /// Will complete restore when `transformGeometry` is done
     }
     // Set this *before* reloading track selections! They will check state
     currentPlayback.state = .loaded
@@ -2481,9 +2481,9 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    windowController.applyVideoGeoTransform("FileLoaded",
+    windowController.transformGeometry("FileLoaded",
                                             stateChange: { [self] context in
-      log.verbose("Calling applyVideoGeoTransform from fileLoaded; sessionState=\(context.sessionState)")
+      log.verbose("Calling transformGeometry from fileLoaded; sessionState=\(context.sessionState)")
       switch context.sessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
@@ -2897,9 +2897,9 @@ class PlayerCore: NSObject {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
     postNotification(.iinaVIDChanged)
-
+    
     let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt in
-      log.verbose{"Calling applyVideoGeoTransform for vid change (to: \(vid)), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
+      log.verbose{"Calling transformGeometry for vid change (to: \(vid)), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
       if case .existingSession_continuing = cxt.sessionState {
         if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
           return .existingSession_videoTrackChangedForSamePlayback
@@ -2921,15 +2921,15 @@ class PlayerCore: NSObject {
       isShowVideoPendingInMiniPlayer = false
       miniPlayerShowVideoTimer.cancel()
       guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return oldMusicModeGeo }
-      /// `showDefaultArt` should already have been handled by `applyVideoGeoTransform` so do not change here
+      /// `showDefaultArt` should already have been handled by `transformGeometry` so do not change here
       let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
       log.verbose{"MusicMode: changing videoView visibility: \(oldMusicModeGeo.isVideoVisible.yesno) → YES, H=\(newGeo.videoHeight)"}
       return newGeo
     }
-    windowController.applyVideoGeoTransform("VidTrackChanged",
-                                            stateChange: stateChangeFunc,
-                                            video: GeometryTransform.trackChanged,
-                                            musicMode: musicModeTransform)
+    windowController.transformGeometry("VidTrackChanged",
+                                       stateChange: stateChangeFunc,
+                                       video: GeometryTransform.trackChanged,
+                                       musicMode: musicModeTransform)
 
   }
 
