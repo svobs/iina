@@ -674,7 +674,7 @@ struct LayoutState {
   // Converts & updates existing geometry to this layout
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil,
                                    keepFullScreenDimensions: Bool,
-                                   applyOffsetIndex offsetIndex: Int = 0) -> PWinGeometry {
+                                   applyOffsetIndex offsetIndex: Int = 0, _ log: Logger.Subsystem) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
     let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
                                                           outsideTrailing: outsideTrailingBarWidth,
@@ -685,9 +685,9 @@ struct LayoutState {
                                                           insideBottom: insideBottomBarHeight,
                                                           insideLeading: insideLeadingBarWidth,
                                                           video: video,
-                                                          keepFullScreenDimensions: keepFullScreenDimensions)
+                                                          keepFullScreenDimensions: keepFullScreenDimensions).refitted()
 
-    var geo = resizedBarsGeo.refitted()
+    var geo = resizedBarsGeo
     if offsetIndex > 0 {
       let screenVisibleFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: geo.screenID, screenFit: .stayInside)!
       let offsetIncrement = Constants.Distance.multiWindowOpenOffsetIncrement
@@ -695,13 +695,13 @@ struct LayoutState {
         var newWindowFrame = NSRect(origin: NSPoint(x: geo.windowFrame.origin.x + offsetIncrement,
                                                     y: geo.windowFrame.origin.y - offsetIncrement),
                                     size: geo.windowFrame.size)
-        if newWindowFrame.maxX > screenVisibleFrame.maxX || newWindowFrame.minY < screenVisibleFrame.minY {
-          let y = screenVisibleFrame.maxY - newWindowFrame.height
-          newWindowFrame = NSRect(origin: NSPoint(x: 0, y: y), size: geo.windowFrame.size)
-        }
+        let x = newWindowFrame.maxX > screenVisibleFrame.maxX ? 0 : newWindowFrame.minX
+        let y = newWindowFrame.minY < screenVisibleFrame.minY ? screenVisibleFrame.maxY - newWindowFrame.height : newWindowFrame.minY
+        newWindowFrame = NSRect(origin: NSPoint(x: x, y: y), size: geo.windowFrame.size)
         // TODO: be more sophisticated
         geo = geo.clone(windowFrame: newWindowFrame).refitted(using: .stayInside)
       }
+      log.verbose{"Applied windowedGeo offsetIndex=\(offsetIndex) for multi-window open: \(resizedBarsGeo.windowFrame) → \(geo.windowFrame)"}
     }
     return geo
   }

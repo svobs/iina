@@ -320,7 +320,7 @@ extension PlayerWindowController {
         prevWindowedGeo = geo.windowed
       }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, video: inputGeometry.video,
-                                                      keepFullScreenDimensions: !isWindowInitialLayout)
+                                                      keepFullScreenDimensions: !isWindowInitialLayout, log)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {

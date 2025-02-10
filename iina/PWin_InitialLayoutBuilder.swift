@@ -254,7 +254,7 @@ extension PlayerWindowController {
       let windowed: PWinGeometry
       if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
         windowed = initialLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
-                                                             keepFullScreenDimensions: false)
+                                                             keepFullScreenDimensions: false, log)
       } else {
         windowed = initialLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
       }
