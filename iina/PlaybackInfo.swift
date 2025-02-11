@@ -97,6 +97,9 @@ class PlaybackInfo {
   var audioEqFilter: MPVFilter?
   var delogoFilter: MPVFilter?
 
+  var isFlippedVertical: Bool { flipFilter != nil }
+  var isFlippedHorizontal: Bool { mirrorFilter != nil }
+
   /// `[filter.name -> filter]`. Should be used on main thread only
   var videoFiltersDisabled: [String: MPVFilter] = [:]
 

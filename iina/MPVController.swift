@@ -1137,6 +1137,25 @@ class MPVController: NSObject {
     }
   }
 
+  /// Sends a message to the thumbfast script to show a thumbnail with the given timestamp at the given coordinates.
+  func showThumbfast(hoveredSecs: Double, x: Double, y: Double) {
+    sendScriptMessage(to: "thumbfast", args: ["thumb", hoveredSecs, x, y])
+  }
+
+  func sendScriptMessage(to scriptName: String, args: [LosslessStringConvertible]) {
+    var resultNode = mpv_node()
+    defer {
+      mpv_free_node_contents(&resultNode)
+    }
+    let stringArgs: [String] = [MPVCommand.scriptMessageTo.rawValue, scriptName] + args.map{ String($0)}
+    guard var argsNode = try? MPVNode.create(stringArgs) else {
+      log.error{"sendMsgToScript: cannot encode value for \(stringArgs)"}
+      return
+    }
+    log.verbose("Sending to script: \(stringArgs)")
+    mpv_command_node(mpv, &argsNode, &resultNode)
+  }
+
   func getNode(_ name: String) -> Any? {
     var node = mpv_node()
     mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
@@ -1147,10 +1166,10 @@ class MPVController: NSObject {
 
   func setNode(_ name: String, _ value: Any) {
     guard var node = try? MPVNode.create(value) else {
-      log.error("setNode: cannot encode value for \(name)")
+      log.error{"setNode: cannot encode value for \(name)"}
       return
     }
-    log.debug("Set property: \(name)=<a mpv node>")
+    log.debug{"Set property: \(name)=<a mpv node>"}
     mpv_set_property(mpv, name, MPV_FORMAT_NODE, &node)
     MPVNode.free(node)
   }

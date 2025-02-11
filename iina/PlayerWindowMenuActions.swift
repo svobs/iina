@@ -213,18 +213,18 @@ extension PlayerWindowController {
   }
 
   @objc func menuToggleFlip(_ sender: AnyObject) {
-    if player.info.flipFilter == nil {
-      player.setFlip(true)
-    } else {
+    if player.info.isFlippedVertical {
       player.setFlip(false)
+    } else {
+      player.setFlip(true)
     }
   }
 
   @objc func menuToggleMirror(_ sender: AnyObject) {
-    if player.info.mirrorFilter == nil {
-      player.setMirror(true)
-    } else {
+    if player.info.isFlippedHorizontal {
       player.setMirror(false)
+    } else {
+      player.setMirror(true)
     }
   }
 

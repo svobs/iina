@@ -1453,9 +1453,10 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// Vertical flip
   func setFlip(_ enable: Bool) {
     mpv.queue.async { [self] in
-      Logger.log("Setting flip to: \(enable)°", level: .verbose, subsystem: subsystem)
+      log.verbose("Setting flip to: \(enable)°")
       if enable {
         guard info.flipFilter == nil else {
           Logger.log("Cannot enable flip: there is already a filter present", level: .error, subsystem: subsystem)
@@ -1474,9 +1475,10 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// Horizontal flip
   func setMirror(_ enable: Bool) {
     mpv.queue.async { [self] in
-      Logger.log("Setting mirror to: \(enable)°", level: .verbose, subsystem: subsystem)
+      log.verbose("Setting mirror to: \(enable)°")
       if enable {
         guard info.mirrorFilter == nil else {
           Logger.log("Cannot enable mirror: there is already a mirror filter present", level: .error, subsystem: subsystem)

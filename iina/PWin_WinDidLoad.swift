@@ -155,6 +155,7 @@ extension PlayerWindowController {
   // MARK: - Building Components
 
   private func initSeekPreview(in contentView: NSView) {
+    seekPreview.player = player
     contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
     contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
     // This is above the play slider and by default, will swallow clicks. Send events to play slider instead

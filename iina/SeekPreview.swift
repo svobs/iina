@@ -27,6 +27,9 @@ extension PlayerWindowController {
     var timeLabelHorizontalCenterConstraint: NSLayoutConstraint!
     var timeLabelVerticalSpaceConstraint: NSLayoutConstraint!
 
+    unowned var player: PlayerCore!
+    var log: Logger.Subsystem { player.log }
+
     var animationState: UIAnimationState = .shown {
       didSet {
         if animationState == .willHide || animationState == .hidden {
@@ -90,10 +93,9 @@ extension PlayerWindowController {
     // TODO: Investigate using CoreAnimation!
     // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CoreAnimation_guide/CoreAnimationBasics/CoreAnimationBasics.html
     func showPreview(withThumbnail showThumbnail: Bool, forTime previewTimeSec: Double,
-                     posInWindowX: CGFloat, _ player: PlayerCore, currentControlBar: NSView,
+                     posInWindowX: CGFloat, currentControlBar: NSView,
                      _ currentGeo: PWinGeometry) {
 
-      let log = player.log
       let margins = SeekPreview.minThumbMargins
       let thumbStore = player.info.currentPlayback?.thumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
@@ -306,45 +308,65 @@ extension PlayerWindowController {
         let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
         let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
 
-        // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
-        let ffThumbnail = ffThumbnail!
-        let somethingChanged = thumbStore!.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
-        if somethingChanged {
-          thumbStore!.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
-
-          let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
-
-          // Apply crop first. Then aspect
-          let croppedImage: CGImage
-          let rotatedImage = ffThumbnail.image
-          if let normalizedCropRect = currentGeo.video.cropRectNormalized {
-            if currentGeo.video.userRotation != 0 {
-              // FIXME: Need to rotate crop box coordinates to match image rotation
-              log.warn{"Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead"}
-              croppedImage = rotatedImage
-            } else {
-              croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
-            }
-          } else {
-            croppedImage = rotatedImage
-          }
-          let finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
-          thumbnailPeekView.image = NSImage.from(finalImage)
-          thumbnailPeekView.widthConstraint.constant = thumbFrame.width
-          thumbnailPeekView.heightConstraint.constant = thumbFrame.height
+        if false {
+          // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
+          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInWindowX, y: 0)
+          thumbnailPeekView.isHidden = true
+        } else {
+          updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo)
         }
-
-        thumbnailPeekView.frame.origin = thumbFrame.origin
-        log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, frame=\(thumbFrame), in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWindFrame=\(currentGeo.windowFrame)"}
-        thumbnailPeekView.alphaValue = 1.0
       }
-
       thumbnailPeekView.isHidden = !showThumbnail
-
       animationState = .shown
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
       // reliably, so using a timer works well as a failsafe.
       restartHideTimer()
+    }
+
+    private func updateThumbnailPeekView(to ffThumbnail: Thumbnail, thumbFrame: NSRect, _ thumbStore: SingleMediaThumbnailsLoader,
+                                         _ currentGeo: PWinGeometry) {
+      // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
+      let somethingChanged = thumbStore.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
+      if somethingChanged {
+        thumbStore.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
+        let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbWidth: thumbFrame.width, thumbHeight: thumbFrame.height)
+
+        // Apply crop first. Then aspect
+        let croppedImage: CGImage
+        let rotatedImage = ffThumbnail.image
+        if let normalizedCropRect = currentGeo.video.cropRectNormalized {
+          if currentGeo.video.userRotation != 0 {
+            // FIXME: Need to rotate crop box coordinates to match image rotation
+            log.warn{"Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead"}
+            croppedImage = rotatedImage
+          } else {
+            croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
+          }
+        } else {
+          croppedImage = rotatedImage
+        }
+        let finalImage = croppedImage.resized(newWidth: Int(thumbFrame.width), newHeight: Int(thumbFrame.height), cornerRadius: cornerRadius)
+        thumbnailPeekView.image = NSImage.from(finalImage)
+        thumbnailPeekView.widthConstraint.constant = thumbFrame.width
+        thumbnailPeekView.heightConstraint.constant = thumbFrame.height
+
+        thumbnailPeekView.frame.origin = thumbFrame.origin
+      }
+
+      // Apply flip & mirror using CoreAnimation for increased speed
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      // Rotate about center point. Also need to change position because.
+      let centerPoint = CGPointMake(NSMidX(thumbFrame), NSMidY(thumbFrame))
+      thumbnailPeekView.layer?.position = centerPoint
+      thumbnailPeekView.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+      let xFlip: CGFloat = player.info.isFlippedHorizontal ? -1 : 1
+      let yFlip: CGFloat = player.info.isFlippedVertical ? -1 : 1
+      thumbnailPeekView.layer?.transform = CATransform3DMakeScale(xFlip, yFlip, 1)
+      CATransaction.commit()
+
+      log.trace{"Displaying thumbnail: frame=\(thumbFrame) in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWinFrame=\(currentGeo.windowFrame)"}
+      thumbnailPeekView.alphaValue = 1.0
     }
 
   } // end class SeekPreview
@@ -484,7 +506,7 @@ extension PlayerWindowController {
     let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, video: geo.video)
 
     seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x,
-                            player, currentControlBar: currentControlBar, currentGeo)
+                            currentControlBar: currentControlBar, currentGeo)
     return true
   }
 

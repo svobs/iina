@@ -553,8 +553,8 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateFlipAndMirror() {
     guard let info = PlayerCore.active?.info else { return }
-    flip.state = info.flipFilter == nil ? .off : .on
-    mirror.state = info.mirrorFilter == nil ? .off : .on
+    flip.state = info.isFlippedVertical ? .on : .off
+    mirror.state = info.isFlippedHorizontal ? .on : .off
   }
 
   private func updateSubMenu() {
