@@ -148,6 +148,8 @@ class Aspect: NSObject {
   }
 
   init?(string: String) {
+    guard string != Aspect.defaultIdentifier else { return nil }
+    
     // Look up mpv name and translate it to ratio (if applicable)
     let string = Aspect.resolvingMpvName(string)
 

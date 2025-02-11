@@ -16,18 +16,18 @@ extension PlayerCore {
        p["x"] == nil && p["y"] == nil {
       // Probably a selection from the Quick Settings panel. See if there are any matches.
       guard w != 0, h != 0 else {
-        log.error("Cannot get crop from filter \(filter.label?.quoted ?? ""): w or h is 0")
+        log.error{"Cannot get crop from filter \(filter.label?.quoted ?? ""): w or h is 0"}
         return nil
       }
       // Truncate to 2 decimal places precision for comparison.
       let selectedAspect = Aspect(size: NSSize(width: w, height: h))
-      log.verbose("Determined aspect=\(selectedAspect.value) from filter \(filter.label?.quoted ?? "")")
+      log.verbose{"Determined aspect=\(selectedAspect.value) from filter \(filter.label?.quoted ?? "")"}
       if let knownAspectLabel = Aspect.findLabelForAspectRatio(selectedAspect.value, strict: false) {
-        log.verbose("Filter \(filter.label?.quoted ?? "") matches known aspect label \(knownAspectLabel.quoted)")
+        log.verbose{"Filter \(filter.label?.quoted ?? "") matches known aspect label \(knownAspectLabel.quoted)"}
         return knownAspectLabel  // Known aspect-based crop
       }
       let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
-      log.verbose("Unrecognized aspect-based crop for filter \(filter.label?.quoted ?? ""). Generated label: \(customCropBoxLabel.quoted)")
+      log.verbose{"Unrecognized aspect-based crop for filter \(filter.label?.quoted ?? ""). Generated label: \(customCropBoxLabel.quoted)"}
       return customCropBoxLabel  // Custom aspect-based crop
     } else if let p = filter.params,
               let xStr = p["x"], let x = Int(xStr),
@@ -37,7 +37,7 @@ extension PlayerCore {
       // Probably a custom crop. Use mpv formatting
       let cropBoxRect = NSRect(x: x, y: y, width: w, height: h)
       let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropBoxRect)
-      log.verbose("Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)")
+      log.verbose{"Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)"}
       return customCropBoxLabel  // Custom cropBox rect crop
     }
     return nil
@@ -53,7 +53,7 @@ extension PlayerCore {
       /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
       let addSucceeded = addVideoFilter(vf)
       if !addSucceeded {
-        log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
+        log.error{"Failed to add crop filter \(newCropLabel.quoted); setting crop to None"}
         removeCrop()
       }
     }
@@ -72,7 +72,7 @@ extension PlayerCore {
       guard let cropFilter = oldVideoGeo.cropFilter else { return nil }
       guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
 
-      log.verbose("[applyVideoGeo \(cxt.name)] Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
+      log.verbose{"[applyVideoGeo \(cxt.name)] Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter"}
 
       removeVideoFilter(cropFilter, verify: false, notify: false)
       return oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
@@ -80,7 +80,9 @@ extension PlayerCore {
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
-    windowController.transformGeometry("SetCrop", video: { [self] cxt in
+    guard !isRestoring else { return }
+
+    windowController.transformGeometry("SetCrop", video: { [self] cxt -> VideoGeometry? in
       assert(DispatchQueue.isExecutingIn(mpv.queue))
 
       let oldVideoGeo = cxt.oldGeo.video
@@ -94,7 +96,8 @@ extension PlayerCore {
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
 
-      return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
+      guard let updatedVidGeo = cxt.syncVideoParamsFromMpv() else { return nil }
+      return updatedVidGeo.clone(selectedCropLabel: newCropLabel)
     })
   }
 }

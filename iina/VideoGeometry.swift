@@ -203,14 +203,15 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// These have the same values as video-out-params/dw and video-out-params/dh.
   /// ```
   var videoSizeCA: CGSize {
-    var size = videoSizeC
-    
+    var videoSize = videoSizeC
+
+    // FIXME: this is still not consistent with mpv when crop + container aspect are active!
     if let codecAspect = Aspect(string: codecAspectLabel),
        !Aspect.looselyEquals(codecAspect.value, videoSizeRaw.aspect) {
       // mpv uses some fuzzy matching here. Let's do the same
-      size = VideoGeometry.applyAspectOverride(codecAspect.value, to: size)
+      videoSize = VideoGeometry.applyAspectOverride(codecAspect.value, to: videoSize)
     }
-    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: size)
+    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSize)
   }
 
   // MARK: - TRANSFORMATION 3: Rotation

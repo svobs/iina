@@ -1360,7 +1360,7 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.transformGeometry("UserRotation", video: { [self] cxt in
+    windowController.transformGeometry("UserRotation", video: { [self] cxt -> VideoGeometry? in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
       log.verbose{"[applyVideoGeo \(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
@@ -1392,10 +1392,11 @@ class PlayerCore: NSObject {
   func _setVideoAspectOverride(_ aspectString: String) {
     log.verbose{"Got request to set videoAspectOverride to: \(aspectString.quoted)"}
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isRestoring else { return }
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.transformGeometry("AspectOverride", video: { [self] cxt in
+    windowController.transformGeometry("AspectOverride", video: { [self] cxt -> VideoGeometry? in
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
@@ -2479,8 +2480,7 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    windowController.transformGeometry("FileLoaded",
-                                            stateChange: { [self] context in
+    windowController.transformGeometry("FileLoaded", stateChange: { [self] context in
       log.verbose("Calling transformGeometry from fileLoaded; sessionState=\(context.sessionState)")
       switch context.sessionState {
       case .existingSession_continuing:

@@ -140,7 +140,6 @@ class MPVController: NSObject {
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
     MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
-    MPVProperty.videoParamsAspectName: MPV_FORMAT_STRING,
     MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
     MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
     MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
@@ -1688,12 +1687,6 @@ class MPVController: NSObject {
       guard player.isActive else { break }
       guard let aspectName = getString(MPVProperty.videoParamsAspect) else { break }
       player.log.verbose("Δ mpv prop: 'video-params/aspect' = \(aspectName.quoted)")
-
-    case MPVProperty.videoParamsAspectName:
-      guard player.isActive else { break }
-      guard let aspectName = getString(MPVProperty.videoParamsAspectName) else { break }
-      player.log.verbose("Δ mpv prop: 'video-params/aspect-name' = \(aspectName.quoted)")
-      // TODO: use this
 
     case MPVOption.Window.fullscreen:
       player.syncFullScreenState()

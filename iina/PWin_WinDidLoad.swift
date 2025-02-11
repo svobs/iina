@@ -134,11 +134,11 @@ extension PlayerWindowController {
         if let layoutSpec = priorState.layoutSpec {
           // Preemptively set window frames to prevent windows from "jumping" during restore
           if layoutSpec.mode == .musicMode {
-            let geo = priorState.geoSet.musicMode.toPWinGeometry()
-            player.window.setFrameImmediately(geo, notify: false)
+            let pwinGeo = priorState.geoSet.musicMode.toPWinGeometry()
+            player.window.setFrameImmediately(pwinGeo, notify: false)
           } else {
-            let geo = priorState.geoSet.windowed
-            player.window.setFrameImmediately(geo, notify: false)
+            let pwinGeo = priorState.geoSet.windowed
+            player.window.setFrameImmediately(pwinGeo, notify: false)
           }
         }
 

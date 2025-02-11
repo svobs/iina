@@ -611,6 +611,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     self.player = player
     self.osd = OSDState(log: player.log)
     self.pip = PIPState(player)
+    player.log.verbose{"PlayerWindowController init: using lastClosed geometries for now"}
     self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
                            musicMode: PlayerWindowController.musicModeGeoLastClosed,
                            video: VideoGeometry.defaultGeometry(player.log))
