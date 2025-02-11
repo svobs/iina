@@ -65,7 +65,7 @@ class MediaMetaCache {
         }
       }
     }
-    log.verbose{"Filled in \(updateCount)/\(videoFiles.count) video sizes in \(sw) ms"}
+    log.verbose{"Filled in \(updateCount)/\(videoFiles.count) video sizes for \(player.label) in \(sw) ms"}
   }
 
 

@@ -19,7 +19,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else { return }
-    guard !pwc.isInMiniPlayer && !pwc.miniPlayer.isVideoVisible else { return }
+    guard !pwc.isInMiniPlayer || pwc.miniPlayer.isVideoVisible else { return }
     let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
     guard pinchAction != .none else { return }
 

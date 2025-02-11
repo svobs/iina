@@ -20,7 +20,7 @@ class WindowController: NSWindowController {
 
   func openWindow(_ sender: Any?) {
     guard let window else {
-      Logger.log("Cannot open window: no window object!", level: .error)
+      Logger.log.error{"Cannot open window: no window object!"}
       return
     }
     assert(window.windowController as? PlayerWindowController == nil,
@@ -38,6 +38,8 @@ class WindowController: NSWindowController {
   }
 
   /// Changes opening & closing animations of window based on app lifecycle state & other variables
+  ///
+  /// See also: `UIState.shared.windowOpenCloseAnimations`.
   func refreshWindowOpenCloseAnimation() {
     guard let window, window.savedStateName != "" else {
       Logger.log.verbose{"refreshWindowOpenCloseAnimation: empty savedStateName for window; skipping"}
