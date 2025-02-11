@@ -113,6 +113,7 @@ class MPVController: NSObject {
     MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
     MPVOption.Video.hwdec: MPV_FORMAT_STRING,
     MPVOption.Video.videoRotate: MPV_FORMAT_INT64,
+    MPVOption.Video.videoCrop: MPV_FORMAT_STRING,
     MPVOption.Audio.mute: MPV_FORMAT_FLAG,
     MPVOption.Audio.volume: MPV_FORMAT_DOUBLE,
     MPVOption.Audio.audioDelay: MPV_FORMAT_DOUBLE,
@@ -1411,6 +1412,10 @@ class MPVController: NSObject {
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
 
       player.userRotationDidChange(to: userRotation)
+
+    case MPVOption.Video.videoCrop:
+      guard let data = UnsafePointer<String>(OpaquePointer(property.data))?.pointee else { break }
+      player.log.verbose("Δ mpv prop: 'video-crop' ≔ \(data)")
 
     case MPVProperty.videoParamsPrimaries:
       fallthrough
