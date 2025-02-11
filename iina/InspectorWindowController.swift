@@ -562,7 +562,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
   private func computeMinTableHeight() -> CGFloat {
     /// Add `1` to `numberOfRows` because it will scroll if there is not at least 1 empty row
     let contentHeight = CGFloat(watchTableView.numberOfRows + 1) * (watchTableView.rowHeight + watchTableView.intercellSpacing.height)
-    let headerHeight = watchTableView.headerView!.frame.height
+    let headerHeight = watchTableView.headerView?.frame.height ?? 0
     return contentHeight + headerHeight
   }
 

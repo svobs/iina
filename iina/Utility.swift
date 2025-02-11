@@ -59,7 +59,13 @@ class Utility {
     if let stringComment = comment {
       format = NSLocalizedString("alert." + key, comment: stringComment)
     } else {
-      format = NSLocalizedString("alert." + key, comment: key)
+      let alertString = NSLocalizedString("alert." + key, comment: key)
+      if alertString.starts(with: "alert.") {
+        // Kludge to allow printing of non-localized strings. Should be cleaned up at some point...
+        format = key
+      } else {
+        format = alertString
+      }
     }
 
     if let stringArguments = arguments {

@@ -72,6 +72,12 @@ struct GeometryTransform {
         return VideoGeometry.albumArtGeometry(log)
       }
 
+      if Logger.isVerboseEnabled {
+        let videoParams = player.mpv.getString(MPVProperty.videoParams)
+        let videoOutParams = player.mpv.getString(MPVProperty.videoOutParams)
+        log.verbose{"[applyVideoGeo \(name)] Vid \(vidTrackID) has mpv videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParams ?? "nil")"}
+      }
+
       // Sync video's raw dimensions from mpv.
       // This is especially important for streaming videos, which won't have cached ffMeta
       let vidWidth = player.mpv.getInt(MPVProperty.width)
@@ -83,7 +89,7 @@ struct GeometryTransform {
         rawHeight = vidHeight
       } else {
         if vidTrackID != 0 {
-          log.warn("[applyVideoGeo \(name)]: mpv returned 0 for video dimensions, using cached video info instead")
+          log.warn{"[applyVideoGeo \(name)]: mpv returned 0 for video dimensions, using cached video info instead"}
         }
         rawWidth = nil
         rawHeight = nil
@@ -122,7 +128,7 @@ struct GeometryTransform {
         let ours = videoGeo.videoSizeCA
         // Apparently mpv can sometimes add a pixel. Not our fault...
         if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-          player.log.errorDebugAlert{"[applyVideoGeo \(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect ?? "nil")"}
+          player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect ?? "nil")"}
         }
       }
 
