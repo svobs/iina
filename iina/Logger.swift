@@ -281,7 +281,9 @@ class Logger: NSObject {
       guard Logger.enabled else { return }
       let msg = msgFunc()
 #if DEBUG
-      Utility.showAlert(msg, style: .warning)
+      DispatchQueue.main.async {
+        Utility.showAlert(msg, style: .warning, logAlert: false)
+      }
 #endif
       Logger.log(msg, level: .error, subsystem: self)
     }

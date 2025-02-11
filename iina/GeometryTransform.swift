@@ -149,7 +149,7 @@ struct GeometryTransform {
       let ours = videoGeo.videoSizeCA
       // Apparently mpv can sometimes add a pixel. Not our fault...
       if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-        player.log.error{"❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours), videoTrack=\(vidTrackID)|\(context.currentMediaAudioStatus)"}
+        player.log.errorDebugAlert{"❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth) x \(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID)|\(context.currentMediaAudioStatus)"}
       }
     }
 
