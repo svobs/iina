@@ -50,27 +50,12 @@ extension PlayerCore {
     }
 
     mpv.queue.async { [self] in
-      windowController.transformGeometry("SetCrop", video: { [self] cxt in
-        let oldVideoGeo = cxt.oldGeo.video
-        guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
-
-        log.verbose("[applyVideoGeo \(cxt.name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
-
-        let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
-        sendOSD(.crop(osdLabel))
-
-        return oldVideoGeo.clone(selectedCropLabel: newCropLabel)
-
-      }, onSuccess: { [self] in
-        mpv.queue.async { [self] in
-          /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
-          let addSucceeded = addVideoFilter(vf)
-          if !addSucceeded {
-            log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
-            removeCrop()
-          }
-        }
-      })
+      /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
+      let addSucceeded = addVideoFilter(vf)
+      if !addSucceeded {
+        log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
+        removeCrop()
+      }
     }
 
   }
@@ -95,13 +80,16 @@ extension PlayerCore {
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
-    windowController.transformGeometry("UpdateCrop", video: { [self] cxt in
+    windowController.transformGeometry("SetCrop", video: { [self] cxt in
       assert(DispatchQueue.isExecutingIn(mpv.queue))
 
       let oldVideoGeo = cxt.oldGeo.video
-      guard oldVideoGeo.selectedCropLabel != newCropLabel else { return nil }
+      guard oldVideoGeo.selectedCropLabel != newCropLabel else {
+        log.verbose{"[applyVideoGeo \(cxt.name)] No change to selectedCropLabel (\(newCropLabel.quoted))"}
+        return nil
+      }
 
-      log.verbose("[applyVideoGeo \(cxt.name)] Changing selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+      log.verbose{"[applyVideoGeo \(cxt.name)] Changing selectedCropLabel \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)"}
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))

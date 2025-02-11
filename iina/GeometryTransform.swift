@@ -112,14 +112,8 @@ struct GeometryTransform {
 
     // TODO: sync video-crop (actually, add support for video-crop...)
 
-    // Try video-params/aspect-name first, for easier lookup. But always store as ratio or decimal number
-    let mpvVideoParamsAspectName = player.mpv.getString(MPVProperty.videoParamsAspectName)
-    var codecAspect: String?
-    if let mpvVideoParamsAspectName, Aspect.isValid(mpvVideoParamsAspectName) {
-      codecAspect = Aspect.resolvingMpvName(mpvVideoParamsAspectName)
-    } else {
-      codecAspect = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
-    }
+    // Do NOT use video-params/aspect-name! As of mpv 0.39.0 it may not match video-params/aspect!
+    let codecAspect: String? = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
 
     // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
     var userAspectLabelDerived = ""
@@ -149,7 +143,7 @@ struct GeometryTransform {
       let ours = videoGeo.videoSizeCA
       // Apparently mpv can sometimes add a pixel. Not our fault...
       if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-        player.log.errorDebugAlert{"❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth) x \(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID)|\(context.currentMediaAudioStatus)"}
+        player.log.errorDebugAlert{"❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth) x \(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID)|\(context.currentMediaAudioStatus) VidAspect=\(codecAspect ?? "nil")"}
       }
     }
 
