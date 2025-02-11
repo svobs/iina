@@ -602,12 +602,18 @@ extension PlayerWindowController {
     }
 
     transformGeometry("SetVideoScale", windowed: { [self] cxt -> PWinGeometry? in
-      log.error{"SetVideoScale: desired=\(desiredVideoScale)"}
       let oldWindowedGeo = cxt.oldGeo.windowed
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
       // FIXME: regression: viewport keeps expanding when video runs into screen boundary
-      let videoSizeScaled = (oldWindowedGeo.video.videoSizeCAR * desiredVideoScale).rounded()
+
+      // See also: PWinGeometry.mpvVideoScale
+      let screen = NSScreen.getScreenOrDefault(screenID: oldWindowedGeo.screenID)
+      let backingScaleFactor = screen.backingScaleFactor
+      let adjustedVideoScale = desiredVideoScale / backingScaleFactor
+      let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
+      let videoSizeScaled = (videoSizeCAR * adjustedVideoScale).rounded()
+      log.error{"SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoScaled=\(videoSizeScaled)"}
       let newGeoUnconstrained = oldWindowedGeo.scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       return newGeoUnconstrained.refitted(using: .stayInside)

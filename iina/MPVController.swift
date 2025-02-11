@@ -1188,9 +1188,8 @@ class MPVController: NSObject {
   /// "all men have a shoe size of 10 and all women have a shoe size of 8", which is only slightly better than "all humans have a shoe size of 9".
   func getVideoScale() -> Double {
     let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
-    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
     // Use 6 decimals to be consistent with both mpv & IINA calculations
-    return (mpvVideoScale / backingScaleFactor).roundedTo6()
+    return mpvVideoScale.roundedTo6()
   }
 
   // MARK: - Hooks

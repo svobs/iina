@@ -1429,11 +1429,7 @@ class PlayerCore: NSObject {
         // Setting the window-scale property seems to result in a small hiccup during playback.
         // Not sure if this is an mpv limitation
         log.verbose{"Updating mpv window-scale from videoSize=\(windowGeo.videoSize): \(currentVideoScale) → \(desiredVideoScale)"}
-
-        let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeo.screenID).backingScaleFactor
-        let adjustedVideoScale = (desiredVideoScale * backingScaleFactor).roundedTo6()
-        log.verbose{"Adjusted videoScale from windowGeo (\(desiredVideoScale)) * BSF (\(backingScaleFactor)) → sending mpv \(adjustedVideoScale)"}
-        mpv.setDouble(MPVProperty.windowScale, adjustedVideoScale)
+        mpv.setDouble(MPVProperty.windowScale, desiredVideoScale)
 
       } else {
         log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentVideoScale))"}
