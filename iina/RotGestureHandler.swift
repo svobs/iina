@@ -17,6 +17,7 @@ class RotationGestureHandler {
   unowned var windowController: PlayerWindowController! = nil
   private var player: PlayerCore { windowController.player }
   private var videoView: VideoView { windowController.videoView }
+  private var log: Logger.Subsystem { player.log }
 
   lazy var rotationGestureRecognizer: NSRotationGestureRecognizer = {
     return NSRotationGestureRecognizer(target: self, action: #selector(PlayerWindowController.handleRotationGesture(recognizer:)))
@@ -46,7 +47,7 @@ class RotationGestureHandler {
         // Zero degree rotation: no change.
         // Don't "unwind" if more than 360° rotated; just take shortest partial circle back to origin
         cgCurrentRotationDegrees -= completeCircleDegrees(of: cgCurrentRotationDegrees)
-        Logger.log("Rotation gesture of \(recognizer.rotationInDegrees)° will not change video rotation. Snapping back from: \(cgCurrentRotationDegrees)°")
+        log.verbose{"Rotation gesture of \(recognizer.rotationInDegrees)° will not change video rotation. Snapping back from: \(cgCurrentRotationDegrees)°"}
         rotateVideoView(toDegrees: 0)
         self.videoGeo = nil
         return
@@ -59,7 +60,7 @@ class RotationGestureHandler {
 
       // Snap to one of the 4 quarter circle rotations
       let mpvNewRotation = (videoGeo.userRotation + mpvClosestQuarterRotation) %% 360
-      Logger.log("User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Adding it to current mpv rotation (\(videoGeo.userRotation)°) → new rotation will be \(mpvNewRotation)°")
+      log.verbose{"User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Adding it to current mpv rotation (\(videoGeo.userRotation)°) → new rotation will be \(mpvNewRotation)°"}
       // Need to convert snap-to location back to CG, to feed to animation
       let cgSnapToDegrees = findNearestCGQuarterRotation(forCGRotation: recognizer.rotationInDegrees,
                                                          equalToMpvRotation: mpvClosestQuarterRotation)
@@ -107,7 +108,7 @@ class RotationGestureHandler {
       // negative direction:
       cgSnapToDegrees = cgCompleteCirclesTotalDegrees + (cgClosestQuarterRotation - 360)
     }
-    Logger.log("mpvQuarterRotation: \(mpvQuarterRotation) cgCompleteCirclesTotalDegrees: \(cgCompleteCirclesTotalDegrees)° cgLessThanWholeRotation: \(cgLessThanWholeRotation); cgClosestQuarterRotation: \(cgClosestQuarterRotation)° -> cgSnapToDegrees: \(cgSnapToDegrees)°")
+    log.verbose{"mpvQuarterRotation: \(mpvQuarterRotation) cgCompleteCirclesTotalDegrees: \(cgCompleteCirclesTotalDegrees)° cgLessThanWholeRotation: \(cgLessThanWholeRotation); cgClosestQuarterRotation: \(cgClosestQuarterRotation)° -> cgSnapToDegrees: \(cgSnapToDegrees)°"}
     return cgSnapToDegrees
   }
 
@@ -133,7 +134,7 @@ class RotationGestureHandler {
     CATransaction.commit()
 
     if animate {
-      Logger.log("Animating rotation from \(fromDegrees)° to \(toDegrees)°")
+      log.verbose{"Animating rotation from \(fromDegrees)° to \(toDegrees)°"}
 
       CATransaction.begin()
       // This will show an animation but doesn't change its permanent state.

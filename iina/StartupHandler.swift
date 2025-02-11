@@ -102,7 +102,7 @@ class StartupHandler {
     }
 
     let pastLaunches: [UIState.LaunchState] = UIState.shared.collectLaunchStateForRestore()
-    log.verbose("Found \(pastLaunches.count) past launches to restore")
+    log.verbose{"Found \(pastLaunches.count) past launches to restore"}
     if pastLaunches.isEmpty {
       return false
     }
@@ -142,19 +142,19 @@ class StartupHandler {
       if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
           || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
           || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        log.verbose("Nothing to restore: the only open window was identical to launch action (\(action))")
+        log.verbose{"Nothing to restore: the only open window was identical to launch action (\(action))"}
         // Skip the prompts below because they are just unnecessary nagging
         return false
       }
     }
 
-    log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
+    log.verbose{"Starting restore of \(savedWindowsBackToFront.count) windows"}
     Preference.set(true, for: .isRestoreInProgress)
 
     let app = AppDelegate.shared
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
-      log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
+      log.verbose{"Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")"}
 
       switch savedWindow.saveName {
       case .playbackHistory:
@@ -194,11 +194,11 @@ class StartupHandler {
       case .playerWindow(let id):
         restorePlayerWindowFromPriorLaunch(savedWindow, playerID: id)
       case .newFilter, .editFilter, .saveFilter:
-        log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
+        log.debug{"Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping"}
         continue
       default:
         // Note: Guide is not saved
-        log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
+        log.error{"Cannot restore unrecognized autosave enum: \(savedWindow.saveName)"}
         continue
       }
 
@@ -210,10 +210,10 @@ class StartupHandler {
   // Attempt to exactly restore play state & UI from last run of IINA (for given player)
   private func restorePlayerWindowFromPriorLaunch(_ savedWindow: SavedWindow, playerID id: String) {
     let log = UIState.shared.log
-    log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
+    log.debug{"Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
 
     guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
-      log.error("Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
+      log.error{"Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
       return
     }
 
@@ -254,12 +254,12 @@ class StartupHandler {
     if Preference.bool(for: .isRestoreInProgress) {
       // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
       // Let user decide whether to try again or delete saved state.
-      Logger.Subsystem.restore.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
+      Logger.Subsystem.restore.debug{"Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip"}
       return Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
     }
 
     if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
-      Logger.Subsystem.restore.verbose("Prompting user whether to restore app state, per pref")
+      Logger.Subsystem.restore.verbose{"Prompting user whether to restore app state, per pref"}
       return Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
     }
     return true
@@ -271,7 +271,7 @@ class StartupHandler {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
     guard state == .doneEnqueuing else {
-      log.error("Restore timed out but state is \(state)")
+      log.error{"Restore timed out but state is \(state)"}
       return
     }
 
@@ -293,8 +293,8 @@ class StartupHandler {
       namesStalled.append(str)
     }
 
-    log.debug("Restore timed out. Progress: \(namesReady.count)/\(wcsToRestore.count). Stalled: \(namesStalled)")
-    log.debug("Prompting user whether to discard them & continue, or quit")
+    log.debug{"Restore timed out. Progress: \(namesReady.count)/\(wcsToRestore.count). Stalled: \(namesStalled)"}
+    log.debug{"Prompting user whether to discard them & continue, or quit"}
 
     let countFailed = "\(wcsStalled.count)"
     let countTotal = "\(wcsToRestore.count)"
@@ -389,7 +389,7 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     let newWindCount = wcsForOpenFiles?.count ?? 0
-    log.verbose("All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")")
+    log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
     restoreTimer.cancel()
 
     var prevWindowNumber: Int? = nil
@@ -428,7 +428,7 @@ class StartupHandler {
     let didRestoreSomething = !wcsToRestore.isEmpty
 
     if Preference.bool(for: .isRestoreInProgress) {
-      log.verbose("Done restoring windows (\(wcsToRestore.count))")
+      log.verbose{"Done restoring windows (\(wcsToRestore.count))"}
       Preference.set(false, for: .isRestoreInProgress)
     } else {
       log.verbose("Done opening windows")
@@ -453,7 +453,7 @@ class StartupHandler {
     NSApplication.shared.servicesProvider = self
 
     let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime
-    Logger.log.verbose("Done with startup (\(timeElapsed.stringMaxFrac2)s)")
+    Logger.log.verbose{"Done with startup (\(timeElapsed.stringMaxFrac2)s)"}
   }
 
 
