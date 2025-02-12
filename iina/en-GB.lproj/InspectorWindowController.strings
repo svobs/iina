@@ -151,8 +151,8 @@
 /* Class = "NSTextFieldCell"; title = "Total A/V Sync:"; ObjectID = "sbO-Cn-gpI"; */
 "sbO-Cn-gpI.title" = "Total A/V Sync:";
 
-/* Class = "NSTextFieldCell"; title = "Watch Properties"; ObjectID = "tNS-gW-PcC"; */
-"tNS-gW-PcC.title" = "Watch Properties";
+/* Class = "NSTextFieldCell"; title = "Watch Properties:"; ObjectID = "tNS-gW-PcC"; */
+"tNS-gW-PcC.title" = "Watch Properties:";
 
 /* Class = "NSTextFieldCell"; title = "Sample Rate:"; ObjectID = "vrP-XL-Weg"; */
 "vrP-XL-Weg.title" = "Sample Rate:";
