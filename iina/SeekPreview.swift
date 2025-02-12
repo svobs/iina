@@ -353,30 +353,29 @@ extension PlayerWindowController {
         thumbnailPeekView.frame.origin = thumbFrame.origin
       }
 
-      // Apply flip & mirror using CoreAnimation for increased speed
-      CATransaction.begin()
-      CATransaction.setDisableActions(true)
+      // Apply flip, mirror, & rotate using CoreAnimation for blazing fast transformations
+      if player.info.isFlippedHorizontal || player.info.isFlippedVertical || currentGeo.video.userRotation != 0 {
+        let xFlip: CGFloat = player.info.isFlippedHorizontal ? -1 : 1
+        let yFlip: CGFloat = player.info.isFlippedVertical ? -1 : 1
+        var sumTF = CATransform3DMakeScale(xFlip, yFlip, 1)
 
-      // Rotate about center point. Also need to change position because.
-      let centerPoint = CGPointMake(NSMidX(thumbFrame), NSMidY(thumbFrame))
-      let layer = thumbnailPeekView.layer!
-      layer.position = centerPoint
-      layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-      let xFlip: CGFloat = player.info.isFlippedHorizontal ? -1 : 1
-      let yFlip: CGFloat = player.info.isFlippedVertical ? -1 : 1
-      let flipTransform = CATransform3DMakeScale(xFlip, yFlip, 1)
-//      layer.transform = CATransform3DConcat(
-//      CATransaction.commit()
+        if currentGeo.video.userRotation != 0 {
+          let rotationRadians = CGFloat.degToRad(CGFloat(-currentGeo.video.userRotation))
+          let rotateTF = CATransform3DMakeRotation(rotationRadians, 0, 0, 1)
+          sumTF = CATransform3DConcat(sumTF, rotateTF)
+        }
 
-      if currentGeo.video.userRotation != 0 {
-        let rotationRadians = CGFloat.degToRad(CGFloat(-currentGeo.video.userRotation))
-//        CATransaction.begin()
-//        CATransaction.setDisableActions(true)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        let layer = thumbnailPeekView.layer!
+        let centerPoint = CGPointMake(NSMidX(thumbFrame), NSMidY(thumbFrame))
         layer.position = centerPoint
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        layer.transform = CATransform3DMakeRotation(rotationRadians, 0, 0, 1)
+        layer.transform = sumTF
+        
+        CATransaction.commit()
       }
-      CATransaction.commit()
 
       log.trace{"Displaying thumbnail: frame=\(thumbFrame) in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWinFrame=\(currentGeo.windowFrame)"}
       thumbnailPeekView.alphaValue = 1.0
