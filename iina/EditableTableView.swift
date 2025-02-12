@@ -14,7 +14,8 @@ class EditableTableView: NSTableView {
   var rowInsertAnimation: NSTableView.AnimationOptions = .slideUp
   var rowRemoveAnimation: NSTableView.AnimationOptions = .slideDown
 
-  // Must provide this for editCell() to work
+  /// Must provide this for editCell() to work, as well as setting `editableDelegate`, & using `EditableTextField` for each
+  /// text field.
   var editableTextColumnIndexes: [Int] = []
   /// `selectNextRowAfterDelete` = after removal of rows, select the next single row after the last one removed
   var selectNextRowAfterDelete = true
@@ -143,6 +144,10 @@ class EditableTableView: NSTableView {
     return true
   }
 
+  var isEditInProgress: Bool {
+    cellEditTracker?.isEditInProgress ?? false
+  }
+
   // Convenience method
   func editCell(row rowIndex: Int, column columnIndex: Int) {
     guard let cellEditTracker = cellEditTracker else {
@@ -173,8 +178,8 @@ class EditableTableView: NSTableView {
     self.scrollRowToVisible(rowIndex)
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
 
-    if self.selectedRow != rowIndex {
-      Logger.log("Selecting edit row: \(rowIndex)", level: .verbose)
+    if selectedRow != rowIndex {
+      Logger.log("EditableTableView: selectedRow (\(selectedRow)) does not match target row; selecting row: \(rowIndex)", level: .verbose)
       self.selectApprovedRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 

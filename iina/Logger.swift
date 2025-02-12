@@ -282,7 +282,7 @@ class Logger: NSObject {
       let msg = msgFunc()
 #if DEBUG
       DispatchQueue.main.async {
-        Utility.showAlert(msg, style: .warning, logAlert: false)
+        Utility.showAlert(msg, style: .critical, logAlert: false)
       }
 #endif
       Logger.log(msg, level: .error, subsystem: self)

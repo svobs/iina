@@ -108,6 +108,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     watchTableView.dataSource = self
     watchTableView.editableDelegate = self
     watchTableView.selectNextRowAfterDelete = false
+    watchTableView.editableTextColumnIndexes = [0]
 
     tableDragDelegate = TableDragDelegate<String>("Watch", watchTableView,
                                                   acceptableDraggedTypes: [.string],
@@ -340,6 +341,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
   }
 
   @objc func dynamicUpdate() {
+    guard !watchTableView.isEditInProgress else { return }
+
     updateInfo(dynamic: true)
     /// Do not call `reloadData()` (no arg version) because it will clear the selection. Also, because we know the number of rows will not change,
     /// calling `reloadData(forRowIndexes:)` will get the same result but much more efficiently
@@ -466,8 +469,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   // MARK: - Watch Table CRUD
 
-  func insertWatchRows(_ stringList: [String], at targetRowIndex: Int) {
-    let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
+  func insertWatchRows(_ rowList: [String], at targetRowIndex: Int) {
+    let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: rowList, at: targetRowIndex, in: watchProperties,
                                                                   completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
       watchTableContainerView.layout()
@@ -630,6 +633,39 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 }
 
 extension InspectorWindowController: EditableTableViewDelegate {
+
+  func controlTextDidEndEditing(_ obj: Notification) {
+    Logger.log.verbose("Hello")
+  }
+
+  func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
+    // only first column can be edited
+    Logger.log.verbose("Double-click: Edit requested for row \(rowIndex) in Watch table")
+    watchTableView.editCell(row: rowIndex, column: 0)
+    return true
+  }
+
+  func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
+    Logger.log.verbose{"Enter key: Edit requested for row \(rowIndex) in Watch table"}
+    watchTableView.editCell(row: rowIndex, column: 0)
+    return true
+  }
+
+  func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
+    Logger.log.verbose{"Watch table: user finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)"}
+    guard columnIndex == 0 else { return false }
+    guard rowIndex < watchProperties.count else { return false }
+
+    var watchProperties = watchProperties
+    watchProperties[rowIndex] = newValue
+    self.watchProperties = watchProperties
+    saveWatchList()
+
+    DispatchQueue.main.async { [self] in
+      watchTableView.reloadRow(rowIndex)
+    }
+    return true
+  }
 
   func isDeleteEnabled() -> Bool {
     !watchTableView.selectedRowIndexes.isEmpty

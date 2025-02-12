@@ -22,9 +22,9 @@ class EditableTextField: NSTextField {
         return
       }
 
-      Logger.log("EditableTextField: Got a double-cick", level: .verbose)
+      Logger.log.verbose{"EditableTextField: Got a double-cick"}
       let approved = editTracker.askUserToApproveDoubleClickEdit()
-      Logger.log("Double-click approved: \(approved)", level: .verbose)
+      Logger.log.verbose{"Double-click approved: \(approved.yesno)"}
       if approved {
         self.window?.makeFirstResponder(self)
       }

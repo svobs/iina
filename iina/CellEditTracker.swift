@@ -30,6 +30,10 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     self.delegate = delegate
   }
 
+  var isEditInProgress: Bool {
+    current?.editInProgress ?? false
+  }
+
   private func getTextMovementName(from notification: Notification) -> String {
     guard let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int else {
       return "nil"
@@ -168,11 +172,13 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     if let current = current {
       guard self.parentTable.isEnabled else {
         // deselect rows
+        Logger.log.verbose{"Table is not enabled, deselecting row(s)"}
         self.parentTable.selectApprovedRowIndexes(IndexSet())
         return false
       }
       return self.delegate.userDidDoubleClickOnCell(row: current.row, column: current.column)
     }
+    Logger.log.verbose{"No current focused cell; auto-denying double-click"}
     return false
   }
 
