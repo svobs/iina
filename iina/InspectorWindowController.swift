@@ -8,7 +8,8 @@
 
 import Cocoa
 
-fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
+//fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
+fileprivate let watchTableBackgroundColor = NSColor(red: 1, green: 1, blue: 1, alpha: 0.05)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
 /*
 class InspectorTabButtonGroup: NSSegmentedControl {

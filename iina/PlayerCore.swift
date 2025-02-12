@@ -3495,7 +3495,7 @@ class PlayerCore: NSObject {
       /// Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
       thumbReloadDebouncer.run { [self] in
         guard !isStopping else { return }
-        log.debug{"Reloading thumbnails"}
+        log.trace{"Thumbnails reload requested"}
 
         var queueTicket: Int = 0
         $thumbnailQueueTicket.withLock {
@@ -3513,9 +3513,8 @@ class PlayerCore: NSObject {
         if let oldThumbs = currentPlayback.thumbnails {
           if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
              oldThumbs.videoTrackID == videoTrackID,
-             thumbnailWidth == oldThumbs.thumbnailWidth,
-             videoGeo.totalRotation == oldThumbs.rotationDegrees {
-            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) (\(thumbnailWidth)px, \(videoGeo.totalRotation)°). Nothing to do"}
+             thumbnailWidth == oldThumbs.thumbnailWidth {
+            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) (\(thumbnailWidth)px). Nothing to do"}
             return
           } else {
             clearExistingThumbnails(for: currentPlayback)
@@ -3523,7 +3522,7 @@ class PlayerCore: NSObject {
         }
 
         let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: currentPlayback.url.path, mediaFilePathMD5: currentPlayback.mpvMD5,
-                                                                  videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth, rotationDegrees: videoGeo.totalRotation)
+                                                                  videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
         currentPlayback.thumbnails = newMediaThumbnailLoader
         guard queueTicket == thumbnailQueueTicket else { return }
         newMediaThumbnailLoader.loadThumbnails()

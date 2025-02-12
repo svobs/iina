@@ -616,6 +616,9 @@ extension CGFloat {
     return self >= lowerBound && self <= upperBound
   }
 
+  static func degToRad(_ degrees: CGFloat) -> CGFloat {
+    return degrees * CGFloat.pi / 180
+  }
 }
 
 /// All the formatters here use "standardized" punctuation across locales. The formatted numbers:

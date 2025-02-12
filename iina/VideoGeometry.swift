@@ -214,6 +214,10 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSize)
   }
 
+  var videoAspectCA: Double {
+    return videoSizeCA.mpvAspect
+  }
+
   // MARK: - TRANSFORMATION 3: Rotation
   // (Crop + Aspect + Rotation)
 

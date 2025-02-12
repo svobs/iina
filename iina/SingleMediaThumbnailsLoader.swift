@@ -24,7 +24,6 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   let mediaFilePathMD5: String
   let videoTrackID: Int
   let thumbnailWidth: Int
-  let rotationDegrees: Int
 
   private(set) var isCancelled = false
   var thumbnailsProgress: Double = 0
@@ -42,14 +41,13 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     return player.log
   }
 
-  init(_ player: PlayerCore, queueTicket: Int, mediaFilePath: String, mediaFilePathMD5: String, videoTrackID: Int, thumbnailWidth: Int, rotationDegrees: Int) {
+  init(_ player: PlayerCore, queueTicket: Int, mediaFilePath: String, mediaFilePathMD5: String, videoTrackID: Int, thumbnailWidth: Int) {
     self.player = player
     self.queueTicket = queueTicket
     self.mediaFilePath = mediaFilePath
     self.mediaFilePathMD5 = mediaFilePathMD5
     self.videoTrackID = videoTrackID
     self.thumbnailWidth = thumbnailWidth
-    self.rotationDegrees = rotationDegrees
   }
 
   /// We want the requested length of thumbnail to correspond to whichever video dimension is longer, and then get the corresponding width.
@@ -123,9 +121,6 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
   private func addThumbnails(_ ffThumbnails: [FFThumbnail]) {
     let sw = Utility.Stopwatch()
-    if rotationDegrees != 0 {
-      log.verbose{"Rotating \(ffThumbnails.count) thumbnails by \(rotationDegrees)° clockwise"}
-    }
 
     // FFmpegController can send duplicates. Weed them out by timestamp
     var existingTimestamps = Set(self.thumbnails.compactMap{ $0.timestamp })
@@ -135,23 +130,11 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
       guard !existingTimestamps.contains(ffThumbnail.realTime) else { continue }
       guard let rawImage = ffThumbnail.image?.cgImage else { continue }
 
-      let image: CGImage
-      if rotationDegrees != 0 {
-        // Rotation is an expensive procedure. Do it up front so that thumbnail display is snappier.
-        // Reverse the rotation direction because mpv is opposite direction of Core Graphics
-        image = rawImage.rotated(degrees: -rotationDegrees)
-      } else {
-        image = rawImage
-      }
       self.ffThumbnails.append(ffThumbnail)
-      let thumb = Thumbnail(image: image, timestamp: ffThumbnail.realTime)
+      let thumb = Thumbnail(image: rawImage, timestamp: ffThumbnail.realTime)
       self.thumbnails.append(thumb)
       existingTimestamps.insert(ffThumbnail.realTime)
       addedCount += 1
-    }
-
-    if rotationDegrees != 0 {
-      log.verbose{"Rotated \(addedCount) thumbnails in \(sw) ms"}
     }
   }
 

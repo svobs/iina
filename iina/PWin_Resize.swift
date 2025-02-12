@@ -387,10 +387,6 @@ extension PlayerWindowController {
       // Always do this in case the video geometry changed:
       player.reloadQuickSettingsView()
 
-      if newVidGeo.totalRotation != cxt.currentPlayback.thumbnails?.rotationDegrees {
-        player.reloadThumbnails()
-      }
-
       if let onSuccess {
         onSuccess()
       }

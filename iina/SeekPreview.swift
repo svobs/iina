@@ -141,9 +141,8 @@ extension PlayerWindowController {
       var thumbAspect = showThumbnail ? (thumbWidth / thumbHeight) : 1.0
 
       if showThumbnail {
-        // The aspect ratio of some videos is different at display time. May need to resize these videos
-        // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
-        // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
+        // The aspect ratio of some videos is different at display time. Resize thumbs on-the-fly
+        // once the actual aspect ratio is known.
         let videoAspectCAR = currentGeo.video.videoAspectCAR
         if thumbAspect != videoAspectCAR {
           thumbHeight = (thumbWidth / videoAspectCAR).rounded()
@@ -326,29 +325,30 @@ extension PlayerWindowController {
     private func updateThumbnailPeekView(to ffThumbnail: Thumbnail, thumbFrame: NSRect, _ thumbStore: SingleMediaThumbnailsLoader,
                                          _ currentGeo: PWinGeometry) {
       // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
-      let somethingChanged = thumbStore.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
+      let somethingChanged = true //thumbStore.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
       if somethingChanged {
         thumbStore.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
         let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbWidth: thumbFrame.width, thumbHeight: thumbFrame.height)
 
         // Apply crop first. Then aspect
         let croppedImage: CGImage
-        let rotatedImage = ffThumbnail.image
         if let normalizedCropRect = currentGeo.video.cropRectNormalized {
-          if currentGeo.video.userRotation != 0 {
-            // FIXME: Need to rotate crop box coordinates to match image rotation
-            log.warn{"Thumbnail generation with crop + rotation is currently broken! Using uncropped image instead"}
-            croppedImage = rotatedImage
-          } else {
-            croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
-          }
+          croppedImage = ffThumbnail.image.cropped(normalizedCropRect: normalizedCropRect)
         } else {
-          croppedImage = rotatedImage
+          croppedImage = ffThumbnail.image
         }
-        let finalImage = croppedImage.resized(newWidth: Int(thumbFrame.width), newHeight: Int(thumbFrame.height), cornerRadius: cornerRadius)
-        thumbnailPeekView.image = NSImage.from(finalImage)
-        thumbnailPeekView.widthConstraint.constant = thumbFrame.width
-        thumbnailPeekView.heightConstraint.constant = thumbFrame.height
+        // The calculations for thumbFrame reflect the final image coordinates. But for faster speed we are going
+        // to use the unflipped, unrotated thumbnail & apply rotation & mirroring/flipping via CoreAnimation transformations.
+        let unrotatedImageSize: CGSize
+        if currentGeo.video.isWidthSwappedWithHeightByRotation {
+          unrotatedImageSize = CGSize(width: thumbFrame.height, height: thumbFrame.width)
+        } else {
+          unrotatedImageSize = thumbFrame.size
+        }
+        let affineImage = croppedImage.resized(newWidth: Int(unrotatedImageSize.width), newHeight: Int(unrotatedImageSize.height), cornerRadius: cornerRadius)
+        thumbnailPeekView.image = NSImage.from(affineImage)
+        thumbnailPeekView.widthConstraint.constant = unrotatedImageSize.width
+        thumbnailPeekView.heightConstraint.constant = unrotatedImageSize.height
 
         thumbnailPeekView.frame.origin = thumbFrame.origin
       }
@@ -356,13 +356,26 @@ extension PlayerWindowController {
       // Apply flip & mirror using CoreAnimation for increased speed
       CATransaction.begin()
       CATransaction.setDisableActions(true)
+
       // Rotate about center point. Also need to change position because.
       let centerPoint = CGPointMake(NSMidX(thumbFrame), NSMidY(thumbFrame))
-      thumbnailPeekView.layer?.position = centerPoint
-      thumbnailPeekView.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+      let layer = thumbnailPeekView.layer!
+      layer.position = centerPoint
+      layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
       let xFlip: CGFloat = player.info.isFlippedHorizontal ? -1 : 1
       let yFlip: CGFloat = player.info.isFlippedVertical ? -1 : 1
-      thumbnailPeekView.layer?.transform = CATransform3DMakeScale(xFlip, yFlip, 1)
+      let flipTransform = CATransform3DMakeScale(xFlip, yFlip, 1)
+//      layer.transform = CATransform3DConcat(
+//      CATransaction.commit()
+
+      if currentGeo.video.userRotation != 0 {
+        let rotationRadians = CGFloat.degToRad(CGFloat(-currentGeo.video.userRotation))
+//        CATransaction.begin()
+//        CATransaction.setDisableActions(true)
+        layer.position = centerPoint
+        layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        layer.transform = CATransform3DMakeRotation(rotationRadians, 0, 0, 1)
+      }
       CATransaction.commit()
 
       log.trace{"Displaying thumbnail: frame=\(thumbFrame) in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWinFrame=\(currentGeo.windowFrame)"}

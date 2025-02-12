@@ -115,7 +115,7 @@ class RotationGestureHandler {
   // Side effect: sets `cgCurrentRotationDegrees` to `toDegrees` before returning
   func rotateVideoView(toDegrees: CGFloat, animate: Bool = true) {
     let fromDegrees = cgCurrentRotationDegrees
-    let toRadians = degToRad(toDegrees)
+    let toRadians = CGFloat.degToRad(toDegrees)
 
     guard fromDegrees != toDegrees else {
       player.log.trace{"No rotation needed; already at \(fromDegrees)°"}
@@ -127,11 +127,10 @@ class RotationGestureHandler {
     // position change. So put these in an explicitly disabled transaction block:
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    // Rotate about center point. Also need to change position because.
+    // Rotate about center point. Also need to change position so that it pivots around the center
     let centerPoint = CGPointMake(NSMidX(videoView.frame), NSMidY(videoView.frame))
     videoView.videoLayer.position = centerPoint
     videoView.videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-    CATransaction.commit()
 
     if animate {
       log.verbose{"Animating rotation from \(fromDegrees)° to \(toDegrees)°"}
@@ -141,7 +140,7 @@ class RotationGestureHandler {
       // Still need the rotation call down below to do that.
       let rotateAnimation = CABasicAnimation(keyPath: "transform")
       rotateAnimation.valueFunction = CAValueFunction(name: .rotateZ)
-      rotateAnimation.fromValue = degToRad(fromDegrees)
+      rotateAnimation.fromValue = CGFloat.degToRad(fromDegrees)
       rotateAnimation.toValue = toRadians
       rotateAnimation.duration = 0.2
       videoView.videoLayer.add(rotateAnimation, forKey: "transform")
@@ -150,16 +149,11 @@ class RotationGestureHandler {
 
     // This block updates the view's permanent position, but won't animate.
     // Need to call this even if running the animation above, or else layer will revert to its prev appearance after
-    CATransaction.begin()
     CATransaction.setDisableActions(true)
     videoView.videoLayer.transform = CATransform3DMakeRotation(toRadians, 0, 0, 1)
     CATransaction.commit()
 
     cgCurrentRotationDegrees = toDegrees
-  }
-
-  private func degToRad(_ degrees: CGFloat) -> CGFloat {
-    return degrees * CGFloat.pi / 180
   }
 
 }
