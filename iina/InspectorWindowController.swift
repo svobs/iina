@@ -10,6 +10,7 @@ import Cocoa
 
 fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
+fileprivate let maxMinTableHeight: CGFloat = 500
 
 class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
@@ -78,7 +79,6 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
   @IBOutlet weak var deleteButton: NSButton!
 
   @IBOutlet weak var watchTableContainerView: NSView!
-  private var tableHeightConstraint: NSLayoutConstraint? = nil
   private var tableDragDelegate: TableDragDelegate<String>? = nil
 
   init() {
@@ -129,12 +129,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       column.headerCell = headerCell
     }
 
+    watchTableContainerView.wantsLayer = true
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
-
-    tableHeightConstraint = watchTableContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: computeMinTableHeight())
-    tableHeightConstraint!.isActive = true
-    watchTableView.translatesAutoresizingMaskIntoConstraints = false
-    watchTableContainerView.layout()
 
     updateInfo()
     watchTableView.scrollRowToVisible(0)
@@ -470,11 +466,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
   // MARK: - Watch Table CRUD
 
   func insertWatchRows(_ rowList: [String], at targetRowIndex: Int) {
-    let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: rowList, at: targetRowIndex, in: watchProperties,
-                                                                  completionHandler: { [self] _ in
-      tableHeightConstraint?.constant = computeMinTableHeight()
-      watchTableContainerView.layout()
-    })
+    let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: rowList, at: targetRowIndex, in: watchProperties)
 
     // Save model
     watchProperties = allItemsNew
@@ -503,11 +495,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
-    let (tableUIChange, allItemsNew) = watchTableView.buildRemove(rowIndexes, in: watchProperties,
-                                                                 completionHandler: { [self] _ in
-      tableHeightConstraint?.constant = computeMinTableHeight()
-      watchTableContainerView.layout()
-    })
+    let (tableUIChange, allItemsNew) = watchTableView.buildRemove(rowIndexes, in: watchProperties)
 
     // Save model
     watchProperties = allItemsNew
@@ -560,15 +548,6 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     }
   }
 
-  /// Workaround (as of MacOS 13.4): try to ensure `watchTableView` never scrolls vertically, because `NSTableView` will draw rows
-  /// overlapping the header (maybe only a problem for custom `NSTableHeaderCell`s which are not opaque), but looks quite ugly.
-  private func computeMinTableHeight() -> CGFloat {
-    /// Add `1` to `numberOfRows` because it will scroll if there is not at least 1 empty row
-    let contentHeight = CGFloat(watchTableView.numberOfRows + 1) * (watchTableView.rowHeight + watchTableView.intercellSpacing.height)
-    let headerHeight = watchTableView.headerView?.frame.height ?? 0
-    return contentHeight + headerHeight
-  }
-
   // MARK: - IBActions
 
   private let optionNameValidator: Utility.InputValidator<String> = { input in
@@ -590,8 +569,6 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       let insertIndexSet = IndexSet(integer: watchTableView.numberOfRows)
       watchTableView.insertRows(at: insertIndexSet, withAnimation: IINAAnimation.isAnimationEnabled ? .slideDown : [])
       watchTableView.selectRowIndexes(insertIndexSet, byExtendingSelection: false)
-      tableHeightConstraint?.constant = computeMinTableHeight()
-      watchTableContainerView.layout()
     }
   }
 
