@@ -100,6 +100,21 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   override func windowDidLoad() {
     super.windowDidLoad()
+    for textField in [pathField, fileSizeField, fileFormatField,
+                      chaptersField, editionsField, durationField, vformatField,
+                      vcodecField, vdecoderField, vcolorspaceField, vprimariesField,
+                      vPixelFormat, voField, vsizeField, vbitrateField, vfpsField,
+                      aformatField, acodecField, aoField, achannelsField, abitrateField,
+                      asamplerateField, trackIdField, trackDefaultField, trackForcedField,
+                      trackSelectedField, trackExternalField, trackSourceIdField,
+                      trackTitleField, trackLangField, trackFilePathField, trackCodecField,
+                      trackDecoderField, trackFPSField, trackChannelsField, trackSampleRateField,
+                      avsyncField, totalAvsyncField, droppedFramesField, mistimedFramesField,
+                      displayFPSField, voFPSField, edispFPSField
+    ] {
+      guard let textField else { continue }
+      textField.font = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+    }
 
     // Watch table
 
@@ -132,12 +147,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     watchTableContainerView.wantsLayer = true
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
 
-    updateInfo()
-    watchTableView.scrollRowToVisible(0)
-
     // Other UI init
-
-    deleteButton.isEnabled = false
 
     // Restore tab selection
     let selectTabIndex: Int = UIState.shared.getSavedValue(for: .uiInspectorWindowTabIndex)
@@ -147,6 +157,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   override func showWindow(_ sender: Any?) {
     updateInfo()
+    deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
+    watchTableView.scrollRowToVisible(0)
 
     removeTimerAndListeners()
     updateTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(dynamicUpdate), userInfo: nil, repeats: true)
@@ -185,7 +197,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   private func _updateInfo(dynamic: Bool, _ player: PlayerCore) {
     let controller = player.mpv!
-    if !dynamic {
+    if !dynamic || self.pathField.stringValue.isEmpty {
       updateStaticInfo(player)
     }
 
@@ -338,8 +350,9 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   @objc func dynamicUpdate() {
     guard !watchTableView.isEditInProgress else { return }
-
     updateInfo(dynamic: true)
+    guard !watchTableView.isEditInProgress else { return }
+
     /// Do not call `reloadData()` (no arg version) because it will clear the selection. Also, because we know the number of rows will not change,
     /// calling `reloadData(forRowIndexes:)` will get the same result but much more efficiently
     watchTableView.reloadData(forRowIndexes: IndexSet(0..<watchTableView.numberOfRows), columnIndexes: IndexSet(0..<watchTableView.numberOfColumns))
