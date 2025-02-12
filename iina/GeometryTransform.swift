@@ -122,8 +122,8 @@ struct GeometryTransform {
 
       // FIXME: audioStatus==notAudio for playlist which auto-plays audio
       if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
-        let dwidth = player.mpv.getInt(MPVProperty.dwidth)
-        let dheight = player.mpv.getInt(MPVProperty.dheight)
+        let dwidth = player.mpv.getInt(MPVProperty.videoParamsDw)
+        let dheight = player.mpv.getInt(MPVProperty.videoParamsDh)
 
         let ours = videoGeo.videoSizeCA
         // Apparently mpv can sometimes add a pixel. Not our fault...
