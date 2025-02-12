@@ -11,7 +11,11 @@ import Cocoa
 extension PlayerWindowController {
 
   @objc func menuShowInspector(_ sender: AnyObject) {
-    AppDelegate.shared.showInspectorWindow()
+    if AppDelegate.shared.inspector.window?.isOpen ?? false {
+      AppDelegate.shared.inspector.close()
+    } else {
+      AppDelegate.shared.showInspectorWindow()
+    }
   }
 
   @objc func menuSavePlaylist(_ sender: AnyObject) {
