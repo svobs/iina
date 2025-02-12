@@ -3,7 +3,6 @@
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
-        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -158,22 +157,22 @@
                     <rect key="frame" x="0.0" y="861" width="360" height="5"/>
                 </box>
                 <tabView drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="udA-m2-eJb" userLabel="AllTabs Tab View">
-                    <rect key="frame" x="0.0" y="0.0" width="360" height="828"/>
+                    <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                     <font key="font" metaFont="system"/>
                     <tabViewItems>
                         <tabViewItem label="Video" identifier="1" id="CYP-el-A6A" userLabel="VideoTab Tab View Item">
                             <view key="view" id="NRI-ba-KMd" userLabel="VideoTab View">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="828"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="828"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="828"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTab Flipped CONTENT VIEW" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="84" width="360" height="744"/>
+                                                    <rect key="frame" x="0.0" y="119" width="360" height="744"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="HORIZONTAL-INSETS">
                                                             <rect key="frame" x="20" y="744" width="320" height="0.0"/>
@@ -577,7 +576,7 @@
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OvF-ci-44R">
-                                                                        <rect key="frame" x="18" y="101" width="124" height="16"/>
+                                                                        <rect key="frame" x="14" y="101" width="124" height="16"/>
                                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Hardware Decoding" id="rw1-Qb-0RV">
                                                                             <font key="font" usesAppearanceFont="YES"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -585,7 +584,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xJo-hi-ale">
-                                                                        <rect key="frame" x="18" y="15" width="32" height="16"/>
+                                                                        <rect key="frame" x="14" y="15" width="32" height="16"/>
                                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="HDR" id="UW4-by-XRS">
                                                                             <font key="font" usesAppearanceFont="YES"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -602,7 +601,7 @@
                                                                         <rect key="frame" x="12" y="83" width="294" height="5"/>
                                                                     </box>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="m39-41-Kwj">
-                                                                        <rect key="frame" x="18" y="58" width="73" height="16"/>
+                                                                        <rect key="frame" x="14" y="58" width="73" height="16"/>
                                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Deinterlace" id="eqd-nF-8ff">
                                                                             <font key="font" usesAppearanceFont="YES"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -978,7 +977,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl" userLabel="AudioTab Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="311" width="360" height="516"/>
@@ -1004,7 +1003,7 @@
                                                                     <rect key="frame" x="0.0" y="409" width="360" height="75"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq" userLabel="AudioTrackTable Table View">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
@@ -2629,7 +2628,7 @@
         <userDefaultsController representsSharedInstance="YES" id="CE5-Ex-Oo6"/>
     </objects>
     <resources>
-        <image name="NSRefreshFreestandingTemplate" width="19" height="19"/>
+        <image name="NSRefreshFreestandingTemplate" width="20" height="20"/>
         <image name="tab_audio" width="26" height="18"/>
         <image name="tab_sub" width="26" height="18"/>
         <image name="tab_video" width="26" height="18"/>

@@ -10,8 +10,69 @@ import Cocoa
 
 fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
-fileprivate let maxMinTableHeight: CGFloat = 500
+/*
+class InspectorTabButtonGroup: NSSegmentedControl {
 
+  override init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+    configure()
+  }
+
+  required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    configure()
+  }
+
+  private func configure() {
+    let customCell = InspectorTabSegmentedCell()
+    cell = customCell
+
+    let segmentLabels = ["General", "Tracks", "File", "Status"]
+    let totalWidth: CGFloat = 400
+
+    trackingMode = .selectOne
+    segmentDistribution = .fillEqually
+    customCell.controlSize = .large
+    customCell.isBordered = false
+    customCell.isBezeled = false
+    customCell.font = .boldSystemFont(ofSize: 13)
+    segmentStyle = .separated
+    segmentCount = segmentLabels.count
+    customCell.segmentCount = segmentLabels.count
+    for (index, label) in segmentLabels.enumerated() {
+      setLabel(label, forSegment: index)
+      setTag(index, forSegment: index)
+      setWidth((totalWidth * 0.25).rounded(), forSegment: index)
+      setTag(index, forSegment: index)
+      setEnabled(true, forSegment: index)
+      setAlignment(.center, forSegment: index)
+    }
+    needsLayout = true
+    needsDisplay = true
+  }
+
+  override func drawFocusRingMask() {
+    return
+  }
+
+
+}
+
+class InspectorTabSegmentedCell: NSSegmentedCell {
+
+  override func drawSegment(_ segment: Int, inFrame frame: NSRect, with controlView: NSView) {
+    var color: NSColor
+    if selectedSegment == segment {
+      color = NSColor.red
+    } else {
+      color = NSColor.clear
+    }
+    color.setFill()
+    frame.fill()
+    super.drawSegment(segment, inFrame: frame, with: controlView)
+  }
+}
+*/
 class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
@@ -151,6 +212,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
     // Restore tab selection
     let selectTabIndex: Int = UIState.shared.getSavedValue(for: .uiInspectorWindowTabIndex)
+    Logger.log.verbose{"Restoring tab selection to index \(selectTabIndex)"}
     tabButtonGroup.selectSegment(withTag: selectTabIndex)
     tabView.selectTabViewItem(at: selectTabIndex)
   }
