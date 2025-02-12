@@ -469,10 +469,12 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       return cell
     case .value:
       if let textField = cell.textField {
-        if let player = PlayerManager.shared.lastActivePlayer, !player.isStopping, let value = player.mpv.getString(property) {
-          textField.stringValue = value
-          textField.textColor = .labelColor
-        } else {
+        guard let player = PlayerManager.shared.lastActivePlayer else {
+          textField.stringValue = ""
+          return cell
+        }
+        
+        guard !player.isStopping, let value = player.mpv.getString(property) else {
           let errorString = NSLocalizedString("inspector.error", comment: "Error")
 
           let italicDescriptor: NSFontDescriptor = textField.font!.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
@@ -480,7 +482,11 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
           textField.attributedStringValue = NSMutableAttributedString(string: errorString, attributes: [.font: errorFont!])
           textField.textColor = .disabledControlTextColor
+          return cell
         }
+
+        textField.stringValue = value
+        textField.textColor = .labelColor
       }
       return cell
     default:
@@ -686,10 +692,6 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 }
 
 extension InspectorWindowController: EditableTableViewDelegate {
-
-  func controlTextDidEndEditing(_ obj: Notification) {
-    Logger.log.verbose("Hello")
-  }
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     // only first column can be edited

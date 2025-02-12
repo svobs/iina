@@ -230,10 +230,6 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
 extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource, NSControlTextEditingDelegate {
 
-  func controlTextDidEndEditing(_ obj: Notification) {
-    saveToUserDefaults()
-  }
-
   func numberOfRows(in tableView: NSTableView) -> Int {
     return optionsList.count
   }
@@ -278,7 +274,7 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
         useItalic = true
       }
     }
-    textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
+    textField.font = .monospacedSystemFont(ofSize: tableCellFontSize, weight: .regular)
     textField.setFormattedText(stringValue: optionsList[row][colIndex], textColor: textColor, italic: useItalic)
     return cell
   }
