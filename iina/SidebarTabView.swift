@@ -8,7 +8,9 @@
 
 import Cocoa
 
-/// This is only used for IINA plugins
+/// This is only used for IINA plugins. Content view for a given plugin.
+///
+/// See ancestor view: `PluginViewController`.
 class SidebarTabView: NSViewController {
   var name: String!
   var pluginID: String!

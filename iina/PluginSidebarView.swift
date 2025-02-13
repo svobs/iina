@@ -9,6 +9,7 @@
 import Cocoa
 @preconcurrency import WebKit
 
+/// Contains `SidebarTabView`.
 class PluginSidebarView: WKWebView, WKNavigationDelegate {
   weak private var pluginInstance: JavascriptPluginInstance!
 

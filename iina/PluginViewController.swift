@@ -8,6 +8,7 @@
 
 import Cocoa
 
+/// Sidebar tab group for plugins.
 class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private var downshift: CGFloat = 0
 
@@ -66,7 +67,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     // May not be available until after load
     guard isViewLoaded else { return }
     let tabHeight: CGFloat = hasTab ? 36 : 0
-    player.log.verbose("PluginSidebar: updating downshift=\(downshift), tabHeight=\(tabHeight)")
+    player.log.verbose{"PluginSidebar: updating downshift=\(downshift), tabHeight=\(tabHeight)"}
     buttonTopConstraint?.animateToConstant(downshift)
     pluginTabsViewHeightConstraint?.animateToConstant(tabHeight)
     view.layoutSubtreeIfNeeded()
@@ -102,6 +103,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       player.log.verbose("Skipping update of Plugins sidebar; it is not visible")
       return
     }
+    player.log.verbose("Updating Plugins sidebar tabs")
     pluginTabsStackView.arrangedSubviews.forEach {
       pluginTabsStackView.removeArrangedSubview($0)
     }
@@ -109,7 +111,10 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     var selectedPluginTabExists: Bool = false
     let plugins = player.plugins
     for plugin in plugins {
-      guard let name = plugin.plugin.sidebarTabName else { return }
+      guard let name = plugin.plugin.sidebarTabName else {
+        player.log.debug{"Skipping sidebar tab for pluginID=\(plugin.plugin.identifier.quoted) name=\(plugin.plugin.name.quoted): it has no sidebarTabName"}
+        continue
+      }
       let tab = SidebarTabView()
       tab.name = name
       tab.pluginID = plugin.plugin.identifier
@@ -154,7 +159,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     } else {
       let plugins = player.plugins
       guard let plugin = plugins.first(where: { $0.plugin.identifier == tabID }) else {
-        player.log.error("Cannot switch to tab: failed to find plugin with ID \(tabID)")
+        player.log.error{"Cannot switch to tab: failed to find plugin with ID \(tabID)"}
         return
       }
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
