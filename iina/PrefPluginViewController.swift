@@ -245,7 +245,12 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
   }
 
   private func clearPluginPage() {
-    pluginInfoContentView.isHidden = true
+    // Try to keep something selected in table at all times
+    if tableView.numberOfRows > 0 {
+      tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+    } else {
+      pluginInfoContentView.isHidden = true
+    }
   }
 
   private func loadPluginPage(_ plugin: JavascriptPlugin) {

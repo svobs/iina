@@ -256,13 +256,15 @@ class StartupHandler {
       // Let user decide whether to try again or delete saved state.
       Logger.Subsystem.restore.debug{"Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip"}
       return Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
-    }
 
-    if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
+    } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
       Logger.Subsystem.restore.verbose{"Prompting user whether to restore app state, per pref"}
       return Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
+
+    } else {
+      Logger.Subsystem.restore.trace{"No approval for restore required"}
+      return true
     }
-    return true
   }
 
   /// Called by a `TimeoutTimer` if the restore process is taking too long.  Displays a dialog prompting

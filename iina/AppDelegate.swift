@@ -234,8 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
-    Logger.log("App launched")
-
+    Logger.log.verbose{"App did finish launching"}
     startupHandler.doStartup()
   }
 
@@ -257,7 +256,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard let sheetNames = UIState.shared.openSheetsDict[activeWindowName] else { return }
 
       for sheetName in sheetNames {
-        Logger.log("Sheet opened: \(sheetName.quoted)", level: .verbose)
+        Logger.log.verbose{"Sheet opened: \(sheetName.quoted)"}
         UIState.shared.windowsOpen.insert(sheetName)
       }
       UIState.shared.saveCurrentOpenWindowList()
@@ -281,7 +280,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       UIState.shared.removeOpenSheets(fromWindow: activeWindowName)
 
       for sheetName in sheetNames {
-        Logger.log("Sheet closed: \(sheetName.quoted)", level: .verbose)
+        Logger.log.verbose{"Sheet closed: \(sheetName.quoted)"}
         UIState.shared.windowsOpen.remove(sheetName)
       }
 
