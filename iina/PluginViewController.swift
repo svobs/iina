@@ -85,11 +85,14 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   private func initPluginTabs() {
     let container = NSView()
+    container.idString = "PluginTabBtnsScroll-ContentView"
     container.translatesAutoresizingMaskIntoConstraints = false
     pluginTabsStackView.idString = "PluginTabBtns-StackView"
     pluginTabsStackView.translatesAutoresizingMaskIntoConstraints = false
     pluginTabsStackView.alignment = .centerY
-    container.addSubviewAndConstraints(pluginTabsStackView, top: 0, bottom: 0, leading: 0, trailing: 0)
+    pluginTabsStackView.heightAnchor.constraint(equalToConstant: 36).isActive = true
+    container.addSubviewAndConstraints(pluginTabsStackView, bottom: 0, leading: 8, trailing: 8)
+    pluginTabsScrollView.idString = "PluginTabBtns-ScrollView"
     pluginTabsScrollView.documentView = container
     updatePluginTabs()
   }
