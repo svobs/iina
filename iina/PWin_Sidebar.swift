@@ -605,11 +605,7 @@ extension PlayerWindowController {
     }
     let tabGroupView = viewController.view
 
-    tabContainerView.addSubview(tabGroupView)
-    tabGroupView.leadingAnchor.constraint(equalTo: tabContainerView.leadingAnchor).isActive = true
-    tabGroupView.trailingAnchor.constraint(equalTo: tabContainerView.trailingAnchor).isActive = true
-    tabGroupView.topAnchor.constraint(equalTo: tabContainerView.topAnchor).isActive = true
-    tabGroupView.bottomAnchor.constraint(equalTo: tabContainerView.bottomAnchor).isActive = true
+    tabContainerView.addSubviewAndConstraints(tabGroupView, top: 0, bottom: 0, leading: 0, trailing: 0)
 
     sidebarView.isHidden = false
 

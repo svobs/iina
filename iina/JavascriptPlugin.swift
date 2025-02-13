@@ -159,6 +159,7 @@ class JavascriptPlugin: NSObject {
   }
 
   static func loadGlobalInstances() {
+    Logger.log("Loading all plugins")
     plugins.forEach { plugin in
       guard plugin.enabled else { return }
       if plugin.globalEntryPath != nil {

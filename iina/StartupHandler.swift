@@ -436,14 +436,37 @@ class StartupHandler {
 
     state = .doneOpening
 
+    /// Make sure to do this *after* `state = .doneOpening`:
+    dismissTimeoutAlertPanel()
+
+    // other initializations at App level
+    NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+
+    // TODO: try to get tabbing working
+    NSWindow.allowsAutomaticWindowTabbing = false
+    // NSWindow.userTabbingPreference
+
+    JavascriptPlugin.loadGlobalInstances()
+
+    if let menuController = AppDelegate.shared.menuController {
+      menuController.bindMenuItems()
+      menuController.updatePluginMenu()
+      menuController.refreshBuiltInMenuItemBindings()
+    }
+
+    // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
+    // show alpha in color panels
+    NSColorPanel.shared.showsAlpha = true
+
     let didOpenSomething = didRestoreSomething || wcsForOpenFiles != nil
     if !isCommandLine && !didOpenSomething {
       // Fall back to default action:
       AppDelegate.shared.doLaunchOrReopenAction()
     }
 
-    /// Make sure to do this *after* `state = .doneOpening`:
-    dismissTimeoutAlertPanel()
+    // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch
+    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
+    UserDefaults.standard.addObserver(AppDelegate.shared, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
 
     // Init MediaPlayer integration
     MediaPlayerIntegration.shared.update()

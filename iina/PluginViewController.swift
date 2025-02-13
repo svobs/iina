@@ -86,13 +86,11 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private func initPluginTabs() {
     let container = NSView()
     container.translatesAutoresizingMaskIntoConstraints = false
-    pluginTabsStackView.identifier = .init("PluginTabBtns-StackView")
+    pluginTabsStackView.idString = "PluginTabBtns-StackView"
     pluginTabsStackView.translatesAutoresizingMaskIntoConstraints = false
     pluginTabsStackView.alignment = .centerY
-    container.addSubview(pluginTabsStackView)
-    pluginTabsStackView.identifier = .init("PluginTabBtns-HScrollView")
+    container.addSubviewAndConstraints(pluginTabsStackView, top: 0, bottom: 0, leading: 0, trailing: 0)
     pluginTabsScrollView.documentView = container
-    Utility.quickConstraints(["H:|-8-[v]-8-|", "V:|-0-[v(==36)]-0-|"], ["v": pluginTabsStackView])
     updatePluginTabs()
   }
 
@@ -161,6 +159,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
         player.log.error{"Cannot switch to tab: failed to find plugin with ID \(tabID)"}
         return
       }
+      player.log.verbose{"Switching to plugin tab: \(plugin.plugin.identifier)"}
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
       plugin.sidebarTabView.addAllConstraintsToFillSuperview()

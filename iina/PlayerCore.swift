@@ -560,14 +560,13 @@ class PlayerCore: NSObject {
     guard state == .notYetStarted else { return }
 
     log.verbose("Player start")
-
     startMPV()
-    /// This will create & add the `GLVideoLayer` if it was not already init:
-    videoView.wantsLayer = true
-    loadPlugins()
+    
     if isAudioOnly {
-      log.debug("Player is audio only. Will not init video")
+      log.debug("Player is audio only. Will not init video or plugins")
     } else {
+      /// This will create & add the `GLVideoLayer` if it was not already init:
+      videoView.wantsLayer = true
       initVideo()
     }
     state = .started

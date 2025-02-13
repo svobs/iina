@@ -147,6 +147,9 @@ extension PlayerWindowController {
 
       if player.disableUI { hideFadeableViews() }
 
+      // Must wait until *after* loaded==true to load plugins!
+      player.loadPlugins()
+
       log.verbose("PlayerWindow windowDidLoad done")
       player.events.emit(.windowLoaded)
     }
