@@ -134,7 +134,6 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
       }
     }
     updateVerticalConstraints()
-    pluginTabsView.isHidden = !hasTab
     updateTabActiveStatus()
   }
 
@@ -185,7 +184,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   }
 
   private func addNoPluginsLabel() {
-    let attrString = NSMutableAttributedString(string: "No plugins are enabled.")
+    let attrString = NSMutableAttributedString(string: "No plugins with sidebar tabs are enabled.")
     attrString.addItalic(using: .systemFont(ofSize: 13))
     let noPluginsLabel = NSTextField(labelWithAttributedString: attrString)
     noPluginsLabel.identifier = .init("NoPluginsLabel")
