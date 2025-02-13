@@ -7,13 +7,16 @@
 
 import Foundation
 
-fileprivate let minTicks: Int = 0
-fileprivate let maxTicks: Int = 4
+fileprivate let spacingTicksMin: Int = 1
+fileprivate let spacingTicksMax: Int = 5
+fileprivate let iconSizeTicksMin: Int = 1
+fileprivate let iconSizeTicksMax: Int = 4
 
-fileprivate let iconSizeBaseMultiplier: CGFloat = 0.5
-fileprivate let playIconSpacingScaleMultiplier: CGFloat = 0.5
-fileprivate let playIconSpacingMinScaleMultiplier: CGFloat = 0.1
-fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.5
+/// Icons can never shrink smaller than this fraction of the available height.
+fileprivate let iconSizeMinScaleMultiplier: CGFloat = 0.5
+
+fileprivate let playIconSpacingScaleMultiplier: CGFloat = 0.35
+fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.25
 
 fileprivate let minToolBtnHeight: CGFloat = 8
 fileprivate let minPlayBtnHeight: CGFloat = 8
@@ -167,8 +170,8 @@ struct ControlBarGeometry {
       } else {
         self.playIconSize = fullIconHeight
         self.toolIconSize = fullIconHeight
-        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: 2, fullHeight: fullIconHeight)
-        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: 2, fullHeight: fullIconHeight)
+        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: 3, fullHeight: fullIconHeight)
+        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: 3, fullHeight: fullIconHeight)
       }
     }
 
@@ -184,11 +187,11 @@ struct ControlBarGeometry {
     case .unused:
       arrowIconHeight = 0
     case .seek:
-      arrowIconHeight = playIconSize * stepIconScaleFactor
+      arrowIconHeight = (playIconSize * stepIconScaleFactor).rounded()
     case .speed, .playlist:
       if #available(macOS 11.0, *) {
         // Using built-in MacOS symbols
-        arrowIconHeight = playIconSize * systemArrowSymbolScaleFactor
+        arrowIconHeight = (playIconSize * systemArrowSymbolScaleFactor).rounded()
       } else {
         // Legacy custom icons are scaled already:
         arrowIconHeight = playIconSize
@@ -212,13 +215,13 @@ struct ControlBarGeometry {
 
   var isValid: Bool {
     let playIconSizeTicks = playIconSizeTicks
-    guard playIconSizeTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
+    guard playIconSizeTicks.isBetweenInclusive(iconSizeTicksMin, and: iconSizeTicksMax) else { return false }
     let playIconSpacingTicks = playIconSpacingTicks
-    guard playIconSpacingTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
+    guard playIconSpacingTicks.isBetweenInclusive(spacingTicksMin, and: spacingTicksMax) else { return false }
     let toolIconSizeTicks = toolIconSizeTicks
-    guard toolIconSizeTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
+    guard toolIconSizeTicks.isBetweenInclusive(iconSizeTicksMin, and: iconSizeTicksMax) else { return false }
     let toolIconSpacingTicks = toolIconSpacingTicks
-    guard toolIconSpacingTicks.isBetweenInclusive(minTicks, and: maxTicks) else { return false }
+    guard toolIconSpacingTicks.isBetweenInclusive(spacingTicksMin, and: spacingTicksMax) else { return false }
     return true
   }
 
@@ -293,9 +296,9 @@ struct ControlBarGeometry {
 
   var hStackSpacing: CGFloat {
     if isTwoRowBarOSC {
-      return Constants.Distance.oscSectionHSpacing_MultiLine
+      return (Constants.Distance.oscSectionHSpacing_TwoRow * (barHeight / Constants.Distance.Slider.minPlaySliderHeight)).rounded()
     } else {
-      return (Constants.Distance.oscSectionHSpacing_SingleLine + barHeight / 5).rounded()
+      return (Constants.Distance.oscSectionHSpacing_SingleRow + barHeight / 5).rounded()
     }
   }
 
@@ -394,25 +397,22 @@ struct ControlBarGeometry {
 
   /// Prefs UI ticks → CGFloat
   private static func iconSize(fromTicks ticks: Int, fullHeight: CGFloat) -> CGFloat {
-    let baseHeight = fullHeight * iconSizeBaseMultiplier
-    let adjustableHeight = fullHeight - baseHeight
+    let fixedMinHeight = fullHeight * iconSizeMinScaleMultiplier
+    let adjustableHeight = fullHeight - fixedMinHeight
 
-    let height = baseHeight + (adjustableHeight * (CGFloat(ticks) / CGFloat(maxTicks)))
+    let height = fixedMinHeight + (adjustableHeight * (CGFloat(ticks) / CGFloat(iconSizeTicksMax)))
     return height.rounded()
   }
 
   /// Prefs UI ticks → CGFloat
   private static func playIconSpacing(fromTicks ticks: Int, fullHeight: CGFloat) -> CGFloat {
-    let baseHeight = fullHeight * playIconSpacingMinScaleMultiplier
-    let adjustableHeight = fullHeight - baseHeight
-    let adjustableHeight_Adjusted = adjustableHeight * CGFloat(ticks) / CGFloat(maxTicks) * playIconSpacingScaleMultiplier
-    let spacing: CGFloat = (baseHeight + adjustableHeight_Adjusted).rounded()
-    return spacing
+    let spacing = fullHeight * CGFloat(ticks) / CGFloat(spacingTicksMax - 1) * playIconSpacingScaleMultiplier
+    return spacing.rounded()
   }
 
   /// Prefs UI ticks → CGFloat
   private static func toolIconSpacing(fromTicks ticks: Int, fullHeight: CGFloat) -> CGFloat {
-    let spacing = fullHeight * CGFloat(ticks) / CGFloat(maxTicks) * toolSpacingScaleMultiplier
+    let spacing = fullHeight * CGFloat(ticks) / CGFloat(spacingTicksMax - 1) * toolSpacingScaleMultiplier
     return spacing.rounded()
   }
 

@@ -357,8 +357,8 @@ struct Constants {
     /// their images)
     static let titleBarIconHSpacing: CGFloat = 6
 
-    static let oscSectionHSpacing_SingleLine: CGFloat = 4
-    static let oscSectionHSpacing_MultiLine: CGFloat = 12
+    static let oscSectionHSpacing_SingleRow: CGFloat = 4
+    static let oscSectionHSpacing_TwoRow: CGFloat = 3
 
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).

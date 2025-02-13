@@ -126,7 +126,7 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
 
     if viewsForRow2.contains(pwc.leftTimeLabel) {
-      hStackView.setVisibilityPriority(.detachLessEarly, for: pwc.leftTimeLabel)
+      hStackView.setVisibilityPriority(.detachLessEarly, for: pwc.rightTimeLabel)
       hStackView.setVisibilityPriority(.detachLessEarly, for: timeSlashLabel)
     }
 

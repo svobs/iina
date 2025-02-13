@@ -1279,7 +1279,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-1380"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="692" height="1058"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -1704,7 +1704,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             </textField>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="B1C-hb-rqp" userLabel="ToolIconSpacing Horizontal Slider">
                                                                 <rect key="frame" x="284" y="2" width="134" height="20"/>
-                                                                <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" maxValue="3" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="5wb-gi-zNn"/>
+                                                                <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="1" maxValue="5" doubleValue="2" tickMarkPosition="below" numberOfTickMarks="5" allowsTickMarkValuesOnly="YES" sliderType="linear" id="5wb-gi-zNn"/>
                                                                 <connections>
                                                                     <action selector="toolIconSpacingAction:" target="-2" id="d9l-PX-9nb"/>
                                                                 </connections>
@@ -1852,7 +1852,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             </textField>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Cpf-8F-Wfh" userLabel="PlayButtonsSpacing Horizontal Slider">
                                                                 <rect key="frame" x="284" y="-2" width="134" height="25"/>
-                                                                <sliderCell key="cell" controlSize="small" continuous="YES" alignment="left" maxValue="3" doubleValue="2" tickMarkPosition="below" numberOfTickMarks="4" allowsTickMarkValuesOnly="YES" sliderType="linear" id="9NB-ib-vrc"/>
+                                                                <sliderCell key="cell" controlSize="small" continuous="YES" alignment="left" minValue="1" maxValue="5" doubleValue="2" tickMarkPosition="below" numberOfTickMarks="5" allowsTickMarkValuesOnly="YES" sliderType="linear" id="9NB-ib-vrc"/>
                                                                 <connections>
                                                                     <action selector="playIconSpacingAction:" target="-2" id="cFm-Km-MRm"/>
                                                                 </connections>
