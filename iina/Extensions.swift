@@ -1975,22 +1975,50 @@ extension NSView {
     assert(!(top == nil && bottom == nil && leading == nil && trailing == nil),
            "addConstraintsToFillSuperview should never be called with no args! Try addAllConstraintsToFillSuperview instead")
 
+    let idPrefix: String?
+    if idString.isEmpty {
+      idPrefix = nil
+    } else {
+      let superviewID = superview.idString.isEmpty ? "Superview" : "\(superview.idString)"
+      idPrefix = "\(idString)_\(superviewID)_"
+    }
+
     if let top = top {
       let topConstraint = topAnchor.constraint(equalTo: superview.topAnchor, constant: top)
+      if let idPrefix {
+        topConstraint.identifier = "\(idPrefix)_Top-Offset"
+      }
       topConstraint.isActive = true
     }
     if let leading = leading {
       let leadingConstraint = leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: leading)
+      if let idPrefix {
+        leadingConstraint.identifier = "\(idPrefix)_Lead-Offset"
+      }
       leadingConstraint.isActive = true
     }
     if let trailing = trailing {
       let trailingConstraint = superview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: trailing)
+      if let idPrefix {
+        trailingConstraint.identifier = "\(idPrefix)_Trail-Offset"
+      }
       trailingConstraint.isActive = true
     }
     if let bottom = bottom {
       let bottomConstraint = superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: bottom)
+      if let idPrefix {
+        bottomConstraint.identifier = "\(idPrefix)_Btm-Offset"
+      }
       bottomConstraint.isActive = true
     }
+  }
+
+  /// Adds the given NSView to this view's subviews, then adds the given offset constraints.
+  func addSubviewAndConstraints(_ subview: NSView,
+                                top: CGFloat? = nil, bottom: CGFloat? = nil,
+                                leading: CGFloat? = nil, trailing: CGFloat? = nil) {
+    addSubview(subview)
+    subview.addConstraintsToFillSuperview(top: top, bottom: bottom, leading: leading, trailing: trailing)
   }
 
   /// Get `NSImage` representation of the view.

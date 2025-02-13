@@ -238,16 +238,8 @@ extension PlayerWindowController {
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
     controlBarTop.identifier = .init("ControlBarTopView")
-    topBarView.addSubview(controlBarTop)
-    let controlBarTop_LeadingConstraint = controlBarTop.leadingAnchor.constraint(equalTo: topBarView.leadingAnchor, constant: 0)
-    controlBarTop_LeadingConstraint.identifier = .init("ControlBarTop_LeadingConstraint")
-    controlBarTop_LeadingConstraint.isActive = true
-    let controlBarTop_TrailingConstraint = topBarView.trailingAnchor.constraint(equalTo: controlBarTop.trailingAnchor, constant: 0)
-    controlBarTop_TrailingConstraint.identifier = .init("ControlBarTop_TrailingConstraint")
-    controlBarTop_TrailingConstraint.isActive = true
-    let controlBarTop_BottomConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.bottomAnchor, constant: 0)
-    controlBarTop_BottomConstraint.identifier = .init("ControlBarTop_BottomConstraint")
-    controlBarTop_BottomConstraint.isActive = true
+    topBarView.addSubviewAndConstraints(controlBarTop,
+                                        bottom: 0, leading: 0, trailing: 0)
 
     topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
