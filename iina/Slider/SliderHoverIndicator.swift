@@ -59,7 +59,7 @@ final class SliderHoverIndicator: NSView {
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   func update(scaleFactor: CGFloat, oscGeo: ControlBarGeometry, isDark: Bool) {
-    slider.associatedPlayer?.log.verbose("Updating SliderHoverIndicator: isDark=\(isDark.yn)")
+    slider.associatedPlayer?.log.verbose{"Updating SliderHoverIndicator: isDark=\(isDark.yn)"}
     let size = oscGeo.sliderIndicatorSize
     widthConstraint.animateToConstant(size.width)
     heightConstraint.animateToConstant(size.height)
@@ -69,6 +69,7 @@ final class SliderHoverIndicator: NSView {
   }
 
   func show(atSliderCoordX sliderCoordX: CGFloat) {
+//    slider.associatedPlayer?.log.verbose{"Showing SliderHoverIndicator @x=\(sliderCoordX)"}
     centerXConstraint.constant = sliderCoordX
     if isHidden || alphaValue != 1.0 {
       needsDisplay = true

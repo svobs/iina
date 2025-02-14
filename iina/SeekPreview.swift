@@ -517,7 +517,9 @@ extension PlayerWindowController {
       return false
     }
 
-    playSlider.showHoverIndicator(atSliderCoordX: centerOfKnobInSliderCoordX)
+    // Get X coord of hover (not the knob center)!
+    let pointInWindowX: CGFloat = playSlider.convert(pointInWindow, from: nil).x
+    playSlider.showHoverIndicator(atSliderCoordX: pointInWindowX)
 
     // This may be for music mode also!
     let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, video: geo.video)

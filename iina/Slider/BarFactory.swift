@@ -92,6 +92,7 @@ class BarFactory {
     // - Secondary Vars - PlaySlider & VolumeSlider both:
 
     let barHeight_Normal: CGFloat = oscGeo.slidersBarHeightNormal
+    Logger.log.verbose{"OSC slider bar height (normal): \(barHeight_Normal)"}
     updateCurvature(using: barHeight_Normal)
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
@@ -237,31 +238,30 @@ class BarFactory {
                                width: imgConf.imgWidth - rightClipMinX,
                                height: imgConf.imgHeight)
 
-    // X coord of hover is needed to determine chapter hover effect.
-    let currentHoverX: CGFloat?
-    if useFocusEffect {
-      if let currentPreviewTimeSec {
-        // Mouse is hovering & showing Seek Preview: use its X coord
-        currentHoverX = xForSec(currentPreviewTimeSec)
-      } else {
-        // Actively seeking or scrolling: use position of the knob for current chapter
-        currentHoverX = currentValuePointX
-      }
-    } else {
-      // Chapter hover effect not enabled
-      currentHoverX = nil
-    }
-
     let barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
 
       // Note that nothing is drawn for leading knobMarginRadius_Scaled or trailing knobMarginRadius_Scaled.
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
       var segsMaxX: [Double]
+      // X coord of hover is needed to determine chapter hover effect.
+      // currentHoverX==nil: chapter hover effect not enabled
+      var currentHoverX: CGFloat? = nil
       if chapters.count > 0, maxValueSec > 0 {
         segsMaxX = chapters[1...].map{ xForSec($0.startTime) }
+
+        if useFocusEffect {
+          if let currentPreviewTimeSec {
+            // Mouse is hovering & showing Seek Preview: use its X coord
+            currentHoverX = xForSec(currentPreviewTimeSec)
+          } else {
+            // Actively seeking or scrolling: use position of the knob for current chapter
+            currentHoverX = currentValuePointX
+          }
+        }
       } else {
         segsMaxX = []
       }
+      Logger.log.verbose{"ValueX: \(currentValuePointX), PreviewX: \(currentHoverX?.description ?? "nil")"}
 
       // Add right end of bar (don't forget to subtract left & right padding from img)
       let lastSegMaxX = imgConf.imgWidth - (imgConf.imgPadding * 2)
@@ -276,48 +276,35 @@ class BarFactory {
       // 0: Drawing bar left of knob
       // 1: Drawing last (maybe partial) segment of bar left of knob
       // 2: Drawing bar right of knob
-      var leftStatus = 0
-      if hasLeft {
-        // Left of knob
-        ctx.resetClip()
-        ctx.clip(to: leftClipRect)
-      } else {
-        leftStatus = 1
-      }
+      var leftStatus = hasLeft ? 0 : 1
 
       while segIndex < segsMaxX.count {
         let segMaxX = segsMaxX[segIndex]
 
-        if leftStatus == 1 {
-          // Right of knob (or just unfinished progress, if no knob)
-          ctx.resetClip()
-          ctx.clip(to: rightClipRect)
-          leftStatus = 2
-        }
-
         // Need to adjust calculation here to account for trailing img padding:
-        let isHoveringInThisChapter = currentHoverX != nil && segsMaxX.count > 1 && currentHoverX! >= segMinX &&
-        (segIndex == segsMaxX.count - 1 || currentHoverX! <= segMaxX)
+        let isHoveringInThisChapter = currentHoverX != nil && currentHoverX! >= segMinX && (segMaxX == lastSegMaxX || currentHoverX! <= segMaxX)
         let conf: BarConf
-        if leftStatus > 0 {
-          conf = isHoveringInThisChapter ? imgConf.currentChapter_Right : imgConf.nonCurrentChapter_Right
-        } else {
+        if leftStatus == 0 {
           conf = isHoveringInThisChapter ? imgConf.currentChapter_Left : imgConf.nonCurrentChapter_Left
+        } else {
+          conf = isHoveringInThisChapter ? imgConf.currentChapter_Right : imgConf.nonCurrentChapter_Right
+
+          if leftStatus == 1 {
+            // Right of knob (or just unfinished progress, if no knob)
+            ctx.resetClip()
+            leftStatus = 2
+          }
         }
 
-        if segIndex == segsMaxX.count - 1 {
+        if segMaxX == lastSegMaxX {
           // Is last pill
           rightEdge = .noBorderingPill
           if leftStatus == 0 {
             leftStatus = 1
           }
         } else if leftStatus == 0, segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
-          // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
-          conf.addPillPath(ctx,
-                           minX: segMinX, maxX: segMaxX,
-                           leftEdge: leftEdge,
-                           rightEdge: rightEdge)
-          ctx.clip()
+          ctx.clip(to: NSRect(x: segMinX, y: 0,
+                              width: leftClipMaxX - segMinX, height: imgConf.imgHeight))
           leftStatus = 1
         }
 
@@ -346,10 +333,6 @@ class BarFactory {
 
     // First build overlay image which colors all the cached regions
     let cacheImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
-      if hasSpaceForKnob {
-        // Apply clip (pixel whitelist) to avoid drawing over the knob
-        ctx.clip(to: [leftClipRect, rightClipRect])
-      }
 
       // First, just color the cached regions as crude rects which are at least as large as barImg…
       let maxBarHeightNeeded = imgConf.maxBarHeightNeeded
