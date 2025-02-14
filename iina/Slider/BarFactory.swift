@@ -273,85 +273,68 @@ class BarFactory {
       var leftEdge: BarConf.PillEdgeType = .noBorderingPill
       var rightEdge: BarConf.PillEdgeType = .bordersAnotherPill
 
+      // 0: Drawing bar left of knob
+      // 1: Drawing last (maybe partial) segment of bar left of knob
+      // 2: Drawing bar right of knob
+      var leftStatus = 0
       if hasLeft {
         // Left of knob
         ctx.resetClip()
         ctx.clip(to: leftClipRect)
-
-        var doneWithLeft = false
-        while !doneWithLeft && segIndex < segsMaxX.count {
-          let segMaxX = segsMaxX[segIndex]
-          let conf: BarConf
-          // Need to adjust calculation here to account for trailing img padding:
-          if let currentHoverX, segsMaxX.count > 1, currentHoverX >= segMinX &&
-              (segIndex == segsMaxX.count - 1 || currentHoverX <= segMaxX) {
-            // Is hovering in chapter
-            conf = imgConf.currentChapter_Left
-          } else {
-            conf = imgConf.nonCurrentChapter_Left
-          }
-
-          if segIndex == segsMaxX.count - 1 {
-            // Is last pill
-            rightEdge = .noBorderingPill
-            doneWithLeft = true
-          } else if segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
-            // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
-            conf.addPillPath(ctx,
-                             minX: segMinX, maxX: segMaxX,
-                             leftEdge: leftEdge,
-                             rightEdge: rightEdge)
-            ctx.clip()
-            doneWithLeft = true
-          }
-
-          conf.drawPill(ctx,
-                        minX: segMinX, maxX: segMaxX,
-                        leftEdge: leftEdge,
-                        rightEdge: rightEdge)
-
-          // Set for all but first pill
-          leftEdge = .bordersAnotherPill
-
-          if !doneWithLeft {
-            // Advance for next loop
-            segMinX = segMaxX
-            segIndex += 1
-          }
-        }
+      } else {
+        leftStatus = 1
       }
 
-      if hasRight {
-        // Right of knob (or just unfinished progress, if no knob)
-        ctx.resetClip()
-        ctx.clip(to: rightClipRect)
+      while segIndex < segsMaxX.count {
+        let segMaxX = segsMaxX[segIndex]
 
-        while segIndex < segsMaxX.count {
-          let segMaxX = segsMaxX[segIndex]
+        if leftStatus == 1 {
+          // Right of knob (or just unfinished progress, if no knob)
+          ctx.resetClip()
+          ctx.clip(to: rightClipRect)
+          leftStatus = 2
+        }
 
-          let conf: BarConf
-          if let currentHoverX, segsMaxX.count > 1, currentHoverX > segMinX &&
-              (segIndex == segsMaxX.count - 1 || currentHoverX <= segMaxX) {
-            conf = imgConf.currentChapter_Right
-          } else {
-            conf = imgConf.nonCurrentChapter_Right
+        // Need to adjust calculation here to account for trailing img padding:
+        let isHoveringInThisChapter = currentHoverX != nil && segsMaxX.count > 1 && currentHoverX! >= segMinX &&
+        (segIndex == segsMaxX.count - 1 || currentHoverX! <= segMaxX)
+        let conf: BarConf
+        if leftStatus > 0 {
+          conf = isHoveringInThisChapter ? imgConf.currentChapter_Right : imgConf.nonCurrentChapter_Right
+        } else {
+          conf = isHoveringInThisChapter ? imgConf.currentChapter_Left : imgConf.nonCurrentChapter_Left
+        }
+
+        if segIndex == segsMaxX.count - 1 {
+          // Is last pill
+          rightEdge = .noBorderingPill
+          if leftStatus == 0 {
+            leftStatus = 1
           }
+        } else if leftStatus == 0, segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
+          // Round the image corners by clipping out all drawing which is not in roundedRect (like using a stencil)
+          conf.addPillPath(ctx,
+                           minX: segMinX, maxX: segMaxX,
+                           leftEdge: leftEdge,
+                           rightEdge: rightEdge)
+          ctx.clip()
+          leftStatus = 1
+        }
 
-          if segIndex == segsMaxX.count - 1 {
-            rightEdge = .noBorderingPill
-          }
+        conf.drawPill(ctx,
+                      minX: segMinX, maxX: segMaxX,
+                      leftEdge: leftEdge,
+                      rightEdge: rightEdge)
 
-          conf.drawPill(ctx,
-                        minX: segMinX, maxX: segMaxX,
-                        leftEdge: leftEdge,
-                        rightEdge: rightEdge)
-
+        // Set for all but first pill
+        leftEdge = .bordersAnotherPill
+        if leftStatus != 1 {
+          // Advance for next loop
           segIndex += 1
-          // For next loop
           segMinX = segMaxX
-          leftEdge = .bordersAnotherPill
         }
       }
+
     }  // end first img
 
     if cachedRanges.isEmpty {
