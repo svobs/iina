@@ -30,11 +30,6 @@ fileprivate extension CGColor {
 /// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
 /// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
 class BarFactory {
-  /// The current configuration for drawing bars, based on prefs.
-  /// Fill in with defaults to keep it non-nil; we will overwrite soon
-  static var current = BarFactory(effectiveAppearance: NSAppearance(iinaTheme: .dark)!,
-                                  oscGeo: LayoutSpec.fromPrefsAndDefaults().controlBarGeo)
-
   // MARK: - Init / Config
 
   var playBar_Normal:  PlayBarConfScaleSet
@@ -50,9 +45,9 @@ class BarFactory {
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
 
-  init(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
+  init(effectiveAppearance: NSAppearance, _ layout: LayoutSpec) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
-    let hasClearBG = LayoutSpec.effectiveOSCColorSchemeFromPrefs == .clearGradient
+    let hasClearBG = layout.effectiveOSCColorScheme == .clearGradient
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
 
     let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
@@ -91,6 +86,7 @@ class BarFactory {
 
     // - Secondary Vars - PlaySlider & VolumeSlider both:
 
+    let oscGeo = layout.controlBarGeo
     let barHeight_Normal: CGFloat = oscGeo.slidersBarHeightNormal
     Logger.log.verbose{"OSC slider bar height (normal): \(barHeight_Normal)"}
     updateCurvature(using: barHeight_Normal)
@@ -188,13 +184,6 @@ class BarFactory {
                                         volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
   }
 
-  static func updateBarStylesFromPrefs(effectiveAppearance: NSAppearance, oscGeo: ControlBarGeometry) {
-    // Just replace the whole instance:
-    BarFactory.current = BarFactory(effectiveAppearance: effectiveAppearance, oscGeo: oscGeo)
-    // The knobs almost certainly need to be rebuilt:
-    KnobFactory.shared.invalidateCachedKnobs()
-  }
-
   // MARK: - Play Bar
 
   /// `barWidth` does not include added leading or trailing margin
@@ -216,27 +205,19 @@ class BarFactory {
 
     // Determine clipping rects (pixel whitelists)
     let leftClipMaxX: CGFloat
-    let rightClipMinX: CGFloat
     let hasSpaceForKnob = knobRect.width > 0.0
     if hasSpaceForKnob {
       // - Will clip out the knob
       leftClipMaxX = (knobRect.minX - 1) * scaleFactor
-      rightClipMinX = leftClipMaxX + (knobRect.width * scaleFactor)
     } else {
       leftClipMaxX = currentValuePointX
-      rightClipMinX = currentValuePointX
     }
 
     let hasLeft = leftClipMaxX - imgConf.imgPadding > 0.0
-    let hasRight = rightClipMinX + imgConf.imgPadding < imgConf.imgWidth
 
     let leftClipRect = CGRect(x: 0, y: 0,
                               width: leftClipMaxX,
                               height: imgConf.imgHeight)
-
-    let rightClipRect = CGRect(x: rightClipMinX, y: 0,
-                               width: imgConf.imgWidth - rightClipMinX,
-                               height: imgConf.imgHeight)
 
     let barImg = CGImage.buildBitmapImage(width: Int(imgConf.imgWidth), height: Int(imgConf.imgHeight)) { ctx in
 
@@ -276,7 +257,13 @@ class BarFactory {
       // 0: Drawing bar left of knob
       // 1: Drawing last (maybe partial) segment of bar left of knob
       // 2: Drawing bar right of knob
-      var leftStatus = hasLeft ? 0 : 1
+      var leftStatus: Int
+      if hasLeft {
+        leftStatus = 0
+        ctx.clip(to: leftClipRect)
+      } else {
+        leftStatus = 1
+      }
 
       while segIndex < segsMaxX.count {
         let segMaxX = segsMaxX[segIndex]
@@ -303,8 +290,6 @@ class BarFactory {
             leftStatus = 1
           }
         } else if leftStatus == 0, segMaxX > leftClipMaxX || segMinX > leftClipMaxX {
-          ctx.clip(to: NSRect(x: segMinX, y: 0,
-                              width: leftClipMaxX - segMinX, height: imgConf.imgHeight))
           leftStatus = 1
         }
 
@@ -480,13 +465,13 @@ class BarFactory {
 
   // MARK: - Other API functions
 
-  func heightNeeded(tallestBarHeight: CGFloat) -> CGFloat {
+  static func heightNeeded(tallestBarHeight: CGFloat) -> CGFloat {
     return barVerticalPaddingTotal + tallestBarHeight
   }
 
   /// Measured in points, not pixels!
   private func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
-    let imgHeight = heightNeeded(tallestBarHeight: tallestBarHeight)
+    let imgHeight = BarFactory.heightNeeded(tallestBarHeight: tallestBarHeight)
     // can be negative:
     let spareHeight = drawRect.height - imgHeight
     let barImgPadding = barImgPadding

@@ -18,13 +18,15 @@ import Cocoa
 /// - Note: Unlike `NSSlider` the `draw` method of this class will do nothing if the view is hidden.
 final class PlaySlider: ScrollableSlider {
   /// Knob representing the A loop point for the mpv A-B loop feature.
-  var abLoopA: PlaySliderLoopKnob { abLoopAKnob }
+  var abLoopA: PlaySliderLoopKnob { abLoopAKnob! }
 
   /// Knob representing the B loop point for the mpv A-B loop feature.
-  var abLoopB: PlaySliderLoopKnob { abLoopBKnob }
+  var abLoopB: PlaySliderLoopKnob { abLoopBKnob! }
 
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
+
+  var knobFactory: KnobFactory { pwc!.knobFactory }
 
   var hoverIndicator: SliderHoverIndicator! {
     willSet {
@@ -42,9 +44,9 @@ final class PlaySlider: ScrollableSlider {
 
   // MARK:- Private Properties
 
-  private var abLoopAKnob: PlaySliderLoopKnob!
+  private var abLoopAKnob: PlaySliderLoopKnob?
 
-  private var abLoopBKnob: PlaySliderLoopKnob!
+  private var abLoopBKnob: PlaySliderLoopKnob?
 
   private var player: PlayerCore {
     return customCell.player
@@ -81,8 +83,8 @@ final class PlaySlider: ScrollableSlider {
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
-    abLoopA.updateHorizontalPosition()
-    abLoopB.updateHorizontalPosition()
+    abLoopAKnob?.updateHorizontalPosition()
+    abLoopBKnob?.updateHorizontalPosition()
   }
 
   override func viewDidUnhide() {
@@ -117,19 +119,17 @@ final class PlaySlider: ScrollableSlider {
       return
     }
 
-    if !abLoopA.isHidden {
-      let knobCenterX = abLoopA.x
-      let kf = KnobFactory.shared
-      let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
+    if let abLoopAKnob, !abLoopAKnob.isHidden {
+      let knobCenterX = abLoopAKnob.x
+      let halfWidth = customCell.loopKnobWidth * 0.5
       if x.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX + halfWidth) {
         hoverIndicator.isHidden = true
         return
       }
     }
-    if !abLoopB.isHidden {
-      let knobCenterX = abLoopB.x
-      let kf = KnobFactory.shared
-      let halfWidth = kf.loopKnobWidth(mainKnobWidth: customCell.knobWidth) * 0.5
+    if let abLoopBKnob, !abLoopBKnob.isHidden {
+      let knobCenterX = abLoopBKnob.x
+      let halfWidth = customCell.loopKnobWidth * 0.5
       if x.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX + halfWidth) {
         hoverIndicator.isHidden = true
         return

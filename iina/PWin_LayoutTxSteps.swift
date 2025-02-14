@@ -561,6 +561,7 @@ extension PlayerWindowController {
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
+      applyThemeMaterial()
 
       if transition.outputLayout.isMusicMode {
         log.verbose{"[\(transition.name)] Entering music mode: adding views to bottomBarView"}
@@ -593,7 +594,6 @@ extension PlayerWindowController {
 
         // Update music mode UI
         updateTitle()
-        applyThemeMaterial()
       } else { // Exiting music mode
         log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
         miniPlayer.view.removeFromSuperview()
@@ -719,7 +719,7 @@ extension PlayerWindowController {
           rightTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
           oscTwoRowView.timeSlashLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
 
-          KnobFactory.shared.mainKnobColor = NSColor.controlForClearBG
+          knobFactory.mainKnobColor = NSColor.controlForClearBG
         } else {
           // Default alpha for text labels is 0.5. They don't change their text color.
           textAlpha = 0.5
@@ -729,7 +729,7 @@ extension PlayerWindowController {
           rightTimeLabel.shadow = nil
           oscTwoRowView.timeSlashLabel.shadow = nil
 
-          KnobFactory.shared.mainKnobColor = NSColor.mainSliderKnob
+          knobFactory.mainKnobColor = NSColor.mainSliderKnob
         }
 
         leftTimeLabel.textColor = timeLabelTextColor
@@ -740,7 +740,7 @@ extension PlayerWindowController {
         oscTwoRowView.timeSlashLabel.alphaValue = textAlpha
 
         // Invalidate all cached knob images so they are rebuilt with new style
-        KnobFactory.shared.invalidateCachedKnobs()
+        knobFactory.invalidateCachedKnobs()
       }
 
       let timeLabelFont: NSFont = oscGeo.timeLabelFont
@@ -839,6 +839,7 @@ extension PlayerWindowController {
 
     updateAdditionalInfo()
     updateVolumeUI()
+    playSlider.needsDisplay = true
 
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()

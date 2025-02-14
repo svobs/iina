@@ -7,7 +7,6 @@
 //
 
 class KnobFactory {
-  static let shared = KnobFactory()
 
   enum KnobType: Int {
     case mainKnob = 0
@@ -27,8 +26,7 @@ class KnobFactory {
     }
   }
 
-  init() {
-  }
+  init() {}
 
   // - Knob Constants
 
@@ -68,7 +66,7 @@ class KnobFactory {
       return cachedKnob
     }
     // There may some minor loss due to races, but it will settle quickly. Don't need lousy locksss
-    let knob = Knob(knobType, isDarkMode: darkMode, hasClearBG: clearBG,
+    let knob = Knob(self, knobType, isDarkMode: darkMode, hasClearBG: clearBG,
                     knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: scaleFactor)
     cachedKnobs[knobType.rawValue] = knob
     return knob
@@ -84,10 +82,9 @@ class KnobFactory {
                 knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
     let knob: Knob = getKnob(knobType, darkMode: darkMode, clearBG: clearBG,
                              knobWidth: knobWidth, mainKnobHeight: mainKnobHeight, scaleFactor: scaleFactor)
-    let kf = KnobFactory.shared
     let image = knob.image
-    let marginRadius = kf.knobMarginRadius
-    let knobHeight = knobType.isLoopKnob ? kf.loopKnobHeight(mainKnobHeight: knob.mainKnobHeight) : knob.mainKnobHeight
+    let marginRadius = knobMarginRadius
+    let knobHeight = knobType.isLoopKnob ? loopKnobHeight(mainKnobHeight: knob.mainKnobHeight) : knob.mainKnobHeight
     let knobImageSize = imageSize(knobWidth: knobWidth, knobHeight: knobHeight)
     // These use points. The CGImage will be scaled appropriately.
     let drawRect = NSRect(x: round(knobRect.origin.x) - marginRadius,
@@ -97,13 +94,12 @@ class KnobFactory {
     NSGraphicsContext.current!.cgContext.draw(image, in: drawRect)
   }
 
-  func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat,
-                 scaleFactor: CGFloat) -> CGImage {
+  func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat, scaleFactor: CGFloat) -> CGImage {
     let knobImageSizeScaled = imgSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight,
                                             scaleFactor: scaleFactor)
 
-    let knobMarginRadius_Scaled = KnobFactory.shared.knobMarginRadius * scaleFactor
-    let knobCornerRadius_Scaled = KnobFactory.shared.knobCornerRadius(fromKnobWidth: knobWidth) * scaleFactor
+    let knobMarginRadius_Scaled = knobMarginRadius * scaleFactor
+    let knobCornerRadius_Scaled = knobCornerRadius(fromKnobWidth: knobWidth) * scaleFactor
     let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
                                              height: knobImageSizeScaled.heightInt) { cgContext in
 
@@ -147,8 +143,18 @@ class KnobFactory {
   }
 
   func imageSize(knobWidth: CGFloat, knobHeight: CGFloat) -> CGSize {
-    return CGSize(width: knobWidth + (2 * KnobFactory.shared.knobMarginRadius),
-                  height: knobHeight + (2 * KnobFactory.shared.knobMarginRadius))
+    return CGSize(width: knobWidth + (2 * knobMarginRadius),
+                  height: knobHeight + (2 * knobMarginRadius))
+  }
+
+  func imageSize(_ knob: Knob, _ knobType: KnobType) -> CGSize {
+    switch knobType {
+    case .mainKnob, .mainKnobSelected, .volumeKnob, .volumeKnobSelected:
+      return imageSize(knobWidth: knob.knobWidth, knobHeight: knob.mainKnobHeight)
+    case .loopKnob, .loopKnobSelected:
+      let loopKnobHeight = loopKnobHeight(mainKnobHeight: knob.mainKnobHeight)
+      return imageSize(knobWidth: knob.knobWidth, knobHeight: loopKnobHeight)
+    }
   }
 
   func imgSizeScaled(knobWidth: CGFloat, knobHeight: CGFloat, scaleFactor: CGFloat) -> CGSize {
@@ -164,26 +170,26 @@ class KnobFactory {
     let image: CGImage
     let scaleFactor: CGFloat
 
-    init(_ knobType: KnobType, isDarkMode: Bool, hasClearBG: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
-      let kf = KnobFactory.shared
+    init(_ kf: KnobFactory, _ knobType: KnobType, isDarkMode: Bool, hasClearBG: Bool,
+         knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
       let loopKnobHeight = kf.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-      let shadowOrGlowColor = isDarkMode ? KnobFactory.shared.glowColor : KnobFactory.shared.shadowColor
+      let shadowOrGlowColor = isDarkMode ? kf.glowColor : kf.shadowColor
       switch knobType {
       case .mainKnobSelected, .volumeKnobSelected:
-        image = kf.makeImage(fill: KnobFactory.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
+        image = kf.makeImage(fill: kf.mainKnobActiveColor, shadow: shadowOrGlowColor,
                              knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .mainKnob, .volumeKnob:
-        let shadowColor = hasClearBG ? KnobFactory.shared.shadowColor : ((hasClearBG || !isDarkMode) ? KnobFactory.shared.shadowColor : nil)
-        image = kf.makeImage(fill: KnobFactory.shared.mainKnobColor, shadow: shadowColor,
+        let shadowColor = hasClearBG ? kf.shadowColor : ((hasClearBG || !isDarkMode) ? kf.shadowColor : nil)
+        image = kf.makeImage(fill: kf.mainKnobColor, shadow: shadowColor,
                              knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .loopKnob:
-        image = kf.makeImage(fill: KnobFactory.shared.loopKnobColor, shadow: nil,
+        image = kf.makeImage(fill: kf.loopKnobColor, shadow: nil,
                              knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       case .loopKnobSelected:
         image = isDarkMode ?
-        kf.makeImage(fill: KnobFactory.shared.mainKnobActiveColor, shadow: shadowOrGlowColor,
+        kf.makeImage(fill: kf.mainKnobActiveColor, shadow: shadowOrGlowColor,
                      knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor) :
-        kf.makeImage(fill: KnobFactory.shared.loopKnobColor, shadow: nil,
+        kf.makeImage(fill: kf.loopKnobColor, shadow: nil,
                      knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       }
       self.isDarkMode = isDarkMode
@@ -191,18 +197,6 @@ class KnobFactory {
       self.knobWidth = knobWidth
       self.mainKnobHeight = mainKnobHeight
       self.scaleFactor = scaleFactor
-    }
-
-    func imageSize(_ knobType: KnobType) -> CGSize {
-      let kf = KnobFactory.shared
-
-      switch knobType {
-      case .mainKnob, .mainKnobSelected, .volumeKnob, .volumeKnobSelected:
-        return kf.imageSize(knobWidth: knobWidth, knobHeight: mainKnobHeight)
-      case .loopKnob, .loopKnobSelected:
-        let loopKnobHeight = kf.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-        return kf.imageSize(knobWidth: knobWidth, knobHeight: loopKnobHeight)
-      }
     }
 
   }  // end struct Knob

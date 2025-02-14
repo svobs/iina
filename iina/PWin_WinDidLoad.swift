@@ -113,10 +113,6 @@ extension PlayerWindowController {
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
 
-      // Apply theme after all views are hooked up
-      log.verbose{"Done connecting views. Applying theme"}
-      applyThemeMaterial()
-
       bufferIndicatorView.roundCorners()
       additionalInfoView.roundCorners()
       osdVisualEffectView.roundCorners()

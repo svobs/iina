@@ -17,13 +17,14 @@ class VolumeSliderCell: ScrollableSliderCell {
   let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
 
   override var wantsKnob: Bool {
-    let alwaysShowKnob = Preference.bool(for: .alwaysShowSliderKnob) || !player.windowController.currentLayout.useSliderFocusEffect
+    guard let pwc else { return false }
+    let alwaysShowKnob = Preference.bool(for: .alwaysShowSliderKnob) || !pwc.currentLayout.useSliderFocusEffect
     return alwaysShowKnob || wantsFocusEffect
   }
 
   var wantsFocusEffect: Bool {
-    guard let wc else { return false }
-    return player.windowController.currentLayout.useSliderFocusEffect && (wc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider)
+    guard let pwc else { return false }
+    return pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider)
   }
 
   override var currentKnobType: KnobFactory.KnobType {
@@ -38,6 +39,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
     guard let appearance = sliderAppearance,
+          let bf = player.windowController.barFactory,
           let screen = controlView?.window?.screen else { return }
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
@@ -45,7 +47,6 @@ class VolumeSliderCell: ScrollableSliderCell {
     let previewValue: CGFloat? = nil  // FIXME: find actual preview value, implement preview
 
     appearance.applyAppearanceFor {
-      let bf = BarFactory.current
       let drawShadow = hasClearBG
       let scaleFactor = screen.backingScaleFactor
       let volBarImg = bf.buildVolumeBarImage(useFocusEffect: wantsFocusEffect,
@@ -60,9 +61,9 @@ class VolumeSliderCell: ScrollableSliderCell {
   }
 
   func refreshVolumeSliderHoverEffect() {
-    guard let wc else { return }
+    guard let pwc else { return }
     let priorHoverState = isMouseHoveringOverVolumeSlider
-    let newHoverState = wc.isMouseActuallyInside(view: slider)
+    let newHoverState = pwc.isMouseActuallyInside(view: slider)
     isMouseHoveringOverVolumeSlider = newHoverState
     if priorHoverState != newHoverState {
       slider.needsDisplay = true

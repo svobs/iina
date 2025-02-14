@@ -14,19 +14,21 @@ class PlaySliderCell: ScrollableSliderCell {
   var wasPausedBeforeSeeking = false
 
   override var wantsKnob: Bool {
-    let alwaysShowKnob = Preference.bool(for: .alwaysShowSliderKnob) || !player.windowController.currentLayout.useSliderFocusEffect
+    guard let pwc else { return false }
+    let alwaysShowKnob = Preference.bool(for: .alwaysShowSliderKnob) || !pwc.currentLayout.useSliderFocusEffect
     return alwaysShowKnob || wantsFocusEffect
   }
 
   var wantsFocusEffect: Bool {
-    guard let wc else { return false }
-    return player.windowController.currentLayout.useSliderFocusEffect && (wc.isScrollingOrDraggingPlaySlider || wc.seekPreview.animationState == .shown)
+    guard let pwc else { return false }
+    return pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingPlaySlider || pwc.seekPreview.animationState == .shown)
   }
 
   // MARK:- Displaying the Cell
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
     guard let appearance = sliderAppearance,
+          let bf = player.windowController.barFactory,
           let scaleFactor = controlView?.window?.screen?.backingScaleFactor else { return }
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
@@ -41,7 +43,6 @@ class PlaySliderCell: ScrollableSliderCell {
     let currentPreviewTimeSec: Double? = player.windowController.isScrollingOrDraggingPlaySlider ? nil : player.windowController.seekPreview.currentPreviewTimeSec
 
     appearance.applyAppearanceFor {
-      let bf = BarFactory.current
       let drawShadow = hasClearBG
       let playBarImg = bf.buildPlayBarImage(useFocusEffect: wantsFocusEffect,
                                             barWidth: barRect.width,

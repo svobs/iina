@@ -121,11 +121,11 @@ class ScrollableSliderCell: NSSliderCell {
   unowned var _player: PlayerCore!
   var player: PlayerCore {
     if let player = _player { return player }
-    _player = wc?.player
+    _player = pwc?.player
     return _player
   }
 
-  var wc: PlayerWindowController? {
+  var pwc: PlayerWindowController? {
     controlView?.window?.windowController as? PlayerWindowController
   }
 
@@ -145,7 +145,7 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   var hasClearBG: Bool {
-    if let wc, wc.currentLayout.oscHasClearBG {
+    if let pwc, pwc.currentLayout.oscHasClearBG {
       return true
     }
     return false
@@ -161,22 +161,25 @@ class ScrollableSliderCell: NSSliderCell {
   var knobWidth: CGFloat = Constants.Distance.Slider.defaultKnobWidth
   var knobHeight: CGFloat = Constants.Distance.Slider.defaultKnobHeight
 
+  var loopKnobWidth: CGFloat { knobWidth }
+
   var currentKnobType: KnobFactory.KnobType {
     isHighlighted ? .mainKnobSelected : .mainKnob
   }
 
   override func drawKnob(_ knobRect: NSRect) {
     guard let scaleFactor = controlView?.window?.screen?.backingScaleFactor,
+          let kf = pwc?.knobFactory,
           let appearance = sliderAppearance else { return }
 
     guard wantsKnob else { return }
 
     appearance.applyAppearanceFor {
-      KnobFactory.shared.drawKnob(currentKnobType, in: knobRect,
-                                  darkMode: appearance.isDark,
-                                  clearBG: hasClearBG,
-                                  knobWidth: knobWidth, mainKnobHeight: knobHeight,
-                                  scaleFactor: scaleFactor)
+      kf.drawKnob(currentKnobType, in: knobRect,
+                  darkMode: appearance.isDark,
+                  clearBG: hasClearBG,
+                  knobWidth: knobWidth, mainKnobHeight: knobHeight,
+                  scaleFactor: scaleFactor)
     }
   }
 
@@ -200,11 +203,10 @@ class ScrollableSliderCell: NSSliderCell {
 
   override func barRect(flipped: Bool) -> NSRect {
     let superRect = super.barRect(flipped: flipped)
-    let bf = BarFactory.current
     // Important: use knobHeight because it is the tallest thing being redrawn.
     // When seeking, anything being rapidly redrawn needs to have all its possible bounds included in
     // the slider's barRect, so that it knows what to mark dirty. Otherwise we will see artifacts!
-    let imgHeight = bf.heightNeeded(tallestBarHeight: knobHeight)
+    let imgHeight = BarFactory.heightNeeded(tallestBarHeight: knobHeight)
     let extraHeightNeeded = imgHeight - superRect.height
     if extraHeightNeeded <= 0.0 {
       return superRect

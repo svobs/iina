@@ -178,7 +178,9 @@ extension PlayerWindowController {
         .toneMappingAlgorithm:
       videoView.refreshEdrMode()
     case .themeMaterial:
-      applyThemeMaterial()
+      animationPipeline.submitInstantTask { [self] in
+        applyThemeMaterial()
+      }
     case .playerWindowOpacity:
       animationPipeline.submitTask({ [self] in
         updateWindowBorderAndOpacity()
@@ -234,7 +236,7 @@ extension PlayerWindowController {
         .arrowButtonAction,
         .showRemainingTime,
         .oscTimeLabelsAlwaysWrapSlider,
-      // These need calls to BarFactory.current.updateBarStylesFromPrefs():
+      // These need calls to regenerate BarFactory:
         .roundSliderBarRects,
         .sliderBarDoneColor:
 
@@ -340,7 +342,9 @@ extension PlayerWindowController {
       log.verbose{"Window appearance changed to: \(effectiveAppearanceName)"}
       cachedEffectiveAppearanceName = effectiveAppearanceName
 
-      applyThemeMaterial()
+      animationPipeline.submitInstantTask { [self] in
+        applyThemeMaterial()
+      }
     default:
       return
     }

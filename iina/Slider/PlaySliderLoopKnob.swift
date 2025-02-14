@@ -50,7 +50,7 @@ final class PlaySliderLoopKnob: NSImageView {
     get {
       let bar = slider.customCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.
-      let effectiveWidth = bar.width - slider.customCell.knobWidth
+      let effectiveWidth = bar.width - slider.customCell.loopKnobWidth
       let percentage = CGFloat(posInSliderPercent / slider.span)
       let calculatedX = constrainX(bar.origin.x + percentage * effectiveWidth)
       return calculatedX
@@ -60,7 +60,7 @@ final class PlaySliderLoopKnob: NSImageView {
       // Calculate the value selected by the new location.
       let bar = slider.customCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.
-      let effectiveWidth = bar.width - slider.customCell.knobWidth
+      let effectiveWidth = bar.width - slider.customCell.loopKnobWidth
       let percentage = Double((constrainedX - bar.origin.x) / effectiveWidth)
       posInSliderPercent = percentage * slider.span
       updateHorizontalPosition()
@@ -98,7 +98,6 @@ final class PlaySliderLoopKnob: NSImageView {
     widthConstraint.isActive = true
     heightConstraint = heightAnchor.constraint(equalToConstant: 0)
     heightConstraint.isActive = true
-    updateKnobImage(to: .loopKnob)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -122,12 +121,12 @@ final class PlaySliderLoopKnob: NSImageView {
   func updateKnobImage(to knobType: KnobFactory.KnobType) {
     guard let scaleFactor: CGFloat = window?.screen?.backingScaleFactor else { return }
     let cell = slider.customCell
-    let knob = KnobFactory.shared.getKnob(knobType,
+    let knob = slider.knobFactory.getKnob(knobType,
                                           darkMode: cell.isDarkMode, clearBG: cell.hasClearBG,
                                           knobWidth: cell.knobWidth, mainKnobHeight: cell.knobHeight,
                                           scaleFactor: scaleFactor)
     let knobImage = knob.image
-    let imgSize = knob.imageSize(knobType)  // unscaled
+    let imgSize = slider.knobFactory.imageSize(knob, knobType)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
     widthConstraint.constant = imgSize.width
     heightConstraint.constant = imgSize.height

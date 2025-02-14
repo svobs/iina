@@ -82,6 +82,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// For responding to changes to app prefs & other notifications
   var co: CocoaObserver!
 
+  var barFactory: BarFactory?
+  let knobFactory = KnobFactory()
+
   // MARK: - Vars: State
 
   var isAnimating: Bool {
@@ -673,48 +676,41 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// Set material & theme (light or dark mode) for OSC and title bar.
+  /// Make sure this is running inside an animation task too!
   func applyThemeMaterial(using layoutSpec: LayoutSpec? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let window, let screen = window.screen else {
       log.debug{"Cannot apply theme: no window or screen!"}
       return
     }
-    animationPipeline.submitInstantTask { [self] in
-      let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-      // Can be nil, which means dynamic system appearance:
-      let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
-      window.appearance = newAppearance
+    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    // Can be nil, which means dynamic system appearance:
+    let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
+    window.appearance = newAppearance
 
-      // Either dark or light, never nil:
-      let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
+    // Either dark or light, never nil:
+    let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
 
-      let layoutSpec: LayoutSpec = layoutSpec ?? currentLayout.spec
-      let oscGeo = layoutSpec.controlBarGeo
+    let layoutSpec: LayoutSpec = layoutSpec ?? currentLayout.spec
+    let oscGeo = layoutSpec.controlBarGeo
 
-      if playlistView.isViewLoaded {
-        playlistView.updateTableColors()
-      }
+    if playlistView.isViewLoaded {
+      playlistView.updateTableColors()
+    }
 
-      let sliderAppearance = layoutSpec.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
-      sliderAppearance.applyAppearanceFor {
-        // This only needs to be run once, but doing it here will multiply the work by the number of player windows
-        // currently open. Should be ok for now as this is fairly fast...
-        // TODO: refactor to use an app-wide singleton to monitor prefs for changes to title bar & OSC styles.
-        // TODO: do global state updates like this in singleton first, then have it kick off updates to player windows.
-        BarFactory.updateBarStylesFromPrefs(effectiveAppearance: effectiveAppearance, oscGeo: oscGeo)
+    let sliderAppearance = layoutSpec.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    sliderAppearance.applyAppearanceFor {
+      barFactory = BarFactory(effectiveAppearance: effectiveAppearance, layoutSpec)
+      knobFactory.invalidateCachedKnobs()
+      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
+      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 
-        playSlider.appearance = sliderAppearance
-        volumeSlider.appearance = sliderAppearance
-        playSlider.abLoopA.updateKnobImage(to: .loopKnob)
-        playSlider.abLoopB.updateKnobImage(to: .loopKnob)
-        
-        let scaleFactor = screen.backingScaleFactor
-        if let hoverIndicator = playSlider.hoverIndicator {
-          hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
-        } else {
-          playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
-                                                           scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
-        }
+      let scaleFactor = screen.backingScaleFactor
+      if let hoverIndicator = playSlider.hoverIndicator {
+        hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
+      } else {
+        playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
+                                                         scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
       }
     }
   }
