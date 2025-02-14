@@ -305,7 +305,7 @@ struct ControlBarGeometry {
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
     let timeLabelFontSize = timeLabelFontSize
-    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .light)
+    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .bold)
   }
 
   var timeLabelFontSize: CGFloat {
@@ -319,11 +319,11 @@ struct ControlBarGeometry {
     case .top, .bottom:
       if isTwoRowBarOSC && !oscTimeLabelsAlwaysWrapSlider {
         // Time labels go under slider; plenty of space
-        let normalSize = 13.0
-        return (sliderScale * normalSize).rounded().clamped(to:13...39)
+        let normalSize = 12.0
+        return (sliderScale * normalSize).rounded().clamped(to:normalSize...(normalSize * 3))
       }
       let normalSize = 11.0
-      return (sliderScale * normalSize).rounded().clamped(to:11...32)
+      return (sliderScale * normalSize).rounded().clamped(to:normalSize...(normalSize * 3))
     }
   }
 

@@ -46,7 +46,7 @@ class ThumbnailPeekView: NSImageView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func updateBorderStyle(thumbWidth: CGFloat, thumbHeight: CGFloat) -> CGFloat {
+  func updateBorderStyle(thumbSize: CGSize, previewTimeSec: CGFloat) -> CGFloat {
     guard let layer = self.layer else { return 0.0 }
 
     let cornerRadius: CGFloat
@@ -63,26 +63,38 @@ class ThumbnailPeekView: NSImageView {
     case .outlineRoundedCorners:
       layer.borderWidth = outlineBorderWidth
       layer.shadowRadius = 0
-      cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
+      cornerRadius = roundedCornerRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
     case .shadowSharpCorners:
       layer.borderWidth = 0
-      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
+      layer.shadowRadius = shadowRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
       cornerRadius = 0
     case .shadowRoundedCorners:
       layer.borderWidth = 0
-      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
-      cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
+      layer.shadowRadius = shadowRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
+      cornerRadius = roundedCornerRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
     case .outlinePlusShadowSharpCorners:
       layer.borderWidth = outlineBorderWidth
-      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
+      layer.shadowRadius = shadowRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
       cornerRadius = 0
     case .outlinePlusShadowRoundedCorners:
       layer.borderWidth = outlineBorderWidth
-      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
-      cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
+      layer.shadowRadius = shadowRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
+      cornerRadius = roundedCornerRadius(forHeight: (thumbSize.width + thumbSize.height) * 0.5)
     }
-
     layer.cornerRadius = cornerRadius
+
+#if THUMBNAIL_SHADOWCAST_FUN
+    // Cast shadow left or right based on play position of the hover as a ratio of the media duration.
+    if layer.shadowRadius > 0.0, let duration = associatedPlayer?.info.playbackDurationSec {
+      let halfDuration = duration * 0.5
+      let ratio = (previewTimeSec - halfDuration) / halfDuration
+      layer.shadowRadius *= 2
+      let shadowOffsetX = (layer.shadowRadius * ratio)
+      layer.shadowOffset = CGSize(width: shadowOffsetX * 2, height: -layer.shadowRadius * 2)
+    } else {
+      layer.shadowOffset = .zero
+    }
+#endif
     return cornerRadius
   }
 
@@ -94,17 +106,18 @@ class ThumbnailPeekView: NSImageView {
   private func shadowRadius(forHeight frameHeight: CGFloat) -> CGFloat {
     // Set shadow radius to between 0 and 10 based on frame height
     // shadow is set in xib
-    return min(10, 2 + (frameHeight * 0.005))
+    return min(10, 2 + (frameHeight * 0.01))
   }
 
   func updateColors() {
     guard let layer = self.layer else { return }
     layer.borderColor = CGColor(gray: 0.6, alpha: 0.5)
 
-    if effectiveAppearance.isDark {
-      layer.shadowColor = CGColor(gray: 1, alpha: 0.75)
+    let shadow: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
+    if shadow == .glow {
+      layer.shadowColor = Constants.Color.whiteShadow
     } else {
-      layer.shadowColor = CGColor(gray: 0, alpha: 0.75)
+      layer.shadowColor = Constants.Color.blackShadow
     }
   }
 }

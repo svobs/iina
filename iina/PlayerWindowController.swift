@@ -691,8 +691,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let layoutSpec: LayoutSpec = layoutSpec ?? currentLayout.spec
       let oscGeo = layoutSpec.controlBarGeo
 
-      seekPreview.thumbnailPeekView.updateColors()
-
       if playlistView.isViewLoaded {
         playlistView.updateTableColors()
       }

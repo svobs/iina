@@ -282,6 +282,7 @@ struct Preference {
 
     static let seekPreviewHasTimeDelta = Key("seekPreviewHasTimeDelta")
     static let seekPreviewHasChapter = Key("seekPreviewHasChapter")
+    static let seekPreviewShadow = Key("seekPreviewShadow")
 
     // - Music mode
 
@@ -642,6 +643,20 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
   }
+
+  enum Shadow: Int, InitializingFromKey {
+    case none = 0
+    case dark
+    case glow
+
+    static var defaultValue = Shadow.dark
+
+    init?(key: Key) {
+      let value = Preference.integer(for: key)
+      self.init(rawValue: Preference.integer(for: key))
+    }
+  }
+
 
   enum ThumnailBorderStyle: Int, InitializingFromKey {
     case plain = 1
@@ -1327,7 +1342,8 @@ struct Preference {
 
       .seekPreviewHasTimeDelta: true,
     .seekPreviewHasChapter: true,
-    
+    .seekPreviewShadow: Shadow.dark.rawValue,
+
       .autoSwitchToMusicMode: true,
     .musicModeShowPlaylist: false,
     .musicModePlaylistHeight: 300,

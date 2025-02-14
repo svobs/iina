@@ -33,6 +33,7 @@ extension PlayerWindowController {
       .alwaysShowSliderKnob,
       .showChapterPos,
 
+        .seekPreviewShadow,
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -197,9 +198,11 @@ extension PlayerWindowController {
           updateVolumeUI()
         }
       }
+    case .seekPreviewShadow:
+      seekPreview.thumbnailPeekView.updateColors()
     case .playlistShowMetadata, .playlistShowMetadataInMusicMode, .shortenFileGroupsInPlaylist:
       // Reload now, even if not visible. Don't nitpick.
-      player.windowController.playlistView.playlistTableView.reloadData()
+      playlistView.playlistTableView.reloadData()
     case .autoSwitchToMusicMode:
       player.overrideAutoMusicMode = false
 

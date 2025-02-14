@@ -21,6 +21,7 @@ extension PlayerWindowController {
                                             bottom: Constants.Distance.Thumbnail.extraOffsetY,
                                             leading: Constants.Distance.Thumbnail.extraOffsetX)
 
+    // Components:
     let timeLabel = NSTextField()
     let thumbnailPeekView = ThumbnailPeekView()
 
@@ -78,7 +79,8 @@ extension PlayerWindowController {
     func addShadow() {
       timeLabel.addShadow(blurRadiusConstant: Constants.Distance.seekPreviewTimeLabel_ShadowRadiusConstant,
                           xOffsetConstant: Constants.Distance.seekPreviewTimeLabel_xOffsetConstant,
-                          yOffsetConstant: Constants.Distance.seekPreviewTimeLabel_yOffsetConstant)
+                          yOffsetConstant: Constants.Distance.seekPreviewTimeLabel_yOffsetConstant,
+                          color: NSColor.black)
     }
 
     /// This is expected to be called at first layout
@@ -312,7 +314,7 @@ extension PlayerWindowController {
           player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInWindowX, y: 0)
           thumbnailPeekView.isHidden = true
         } else {
-          updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo)
+          updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
         }
       }
       thumbnailPeekView.isHidden = !showThumbnail
@@ -323,12 +325,12 @@ extension PlayerWindowController {
     }
 
     private func updateThumbnailPeekView(to ffThumbnail: Thumbnail, thumbFrame: NSRect, _ thumbStore: SingleMediaThumbnailsLoader,
-                                         _ currentGeo: PWinGeometry) {
+                                         _ currentGeo: PWinGeometry, previewTimeSec: CGFloat) {
       // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
       let somethingChanged = true //thumbStore.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
       if somethingChanged {
         thumbStore.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
-        let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbWidth: thumbFrame.width, thumbHeight: thumbFrame.height)
+        let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbSize: thumbFrame.size, previewTimeSec: previewTimeSec)
 
         // Apply crop first. Then aspect
         let croppedImage: CGImage
@@ -373,7 +375,7 @@ extension PlayerWindowController {
         layer.position = centerPoint
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.transform = sumTF
-        
+
         CATransaction.commit()
       }
 

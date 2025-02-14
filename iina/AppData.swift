@@ -362,7 +362,7 @@ struct Constants {
 
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).
-    static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 2.0
+    static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
     static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
     static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
     static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.5
@@ -410,7 +410,9 @@ struct Constants {
 
   struct Color {
     static let defaultWindowBackgroundColor = CGColor.black
-    static let interactiveModeBackground = NSColor.windowBackgroundColor.cgColor
+    static let interactiveModeBackground: CGColor = NSColor.windowBackgroundColor.cgColor
+    static let blackShadow = CGColor(gray: 1, alpha: 0.75)
+    static let whiteShadow = CGColor(gray: 0, alpha: 0.75)
   }
 }  /// end `Constants`
 
