@@ -411,8 +411,8 @@ struct Constants {
   struct Color {
     static let defaultWindowBackgroundColor = CGColor.black
     static let interactiveModeBackground: CGColor = NSColor.windowBackgroundColor.cgColor
-    static let blackShadow = CGColor(gray: 1, alpha: 0.75)
-    static let whiteShadow = CGColor(gray: 0, alpha: 0.75)
+    static let blackShadow = CGColor(gray: 0, alpha: 0.75)
+    static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
   }
 }  /// end `Constants`
 

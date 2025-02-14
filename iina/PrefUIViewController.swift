@@ -134,6 +134,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var windowPosYAnchorPopUpButton: NSPopUpButton!
   @IBOutlet weak var windowPosBox: NSBox!
 
+  @IBOutlet weak var seekPreviewWhiteShadowCheckbox: NSButton!
   @IBOutlet weak var currentThumbCacheSizeTextField: NSTextField!
 
   @IBOutlet weak var pipDoNothing: NSButton!
@@ -219,6 +220,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .useLegacyWindowedMode,
       .aspectRatioPanelPresets,
       .cropPanelPresets,
+      .thumbnailBorderStyle,
     ])
   }
 
@@ -257,6 +259,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
       animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
+      }
+    case .thumbnailBorderStyle:
+      animationPipeline.submitTask { [self] in
+        refreshSeekPreviewShadow()
       }
     default:
       break
@@ -319,6 +325,20 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     rightSidebarPlacement.isEnabled = isUsingTrailingSidebar
     rightSidebarShowToggleButton.isEnabled = isUsingTrailingSidebar
     rightSidebarClickToCloseButton.isEnabled = isUsingTrailingSidebar
+    refreshSeekPreviewShadow()
+  }
+
+  func refreshSeekPreviewShadow() {
+    let thumbBorderStyle: Preference.ThumnailBorderStyle = Preference.enum(for: .thumbnailBorderStyle)
+    seekPreviewWhiteShadowCheckbox.isHidden = !thumbBorderStyle.hasShadow
+    let shadow: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
+    seekPreviewWhiteShadowCheckbox.state = (shadow == .glow) ? .on : .off
+  }
+
+  @IBAction func whiteShadowCheckboxAction(_ sender: NSButton) {
+    let useWhiteShadow = sender.state == .on
+    let shadow: Preference.Shadow = useWhiteShadow ? .glow : .dark
+    Preference.set(shadow.rawValue, for: .seekPreviewShadow)
   }
 
   @IBAction func settingsSidebarTabGroupAction(_ sender: NSButton) {

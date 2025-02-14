@@ -652,7 +652,6 @@ struct Preference {
     static var defaultValue = Shadow.dark
 
     init?(key: Key) {
-      let value = Preference.integer(for: key)
       self.init(rawValue: Preference.integer(for: key))
     }
   }
@@ -671,6 +670,16 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var hasShadow: Bool {
+      switch self {
+      case .shadowSharpCorners, .shadowRoundedCorners,
+          .outlinePlusShadowSharpCorners, .outlinePlusShadowRoundedCorners:
+        return true
+      default:
+        return false
+      }
     }
   }
 

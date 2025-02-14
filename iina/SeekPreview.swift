@@ -68,7 +68,7 @@ extension PlayerWindowController {
 
       timeLabel.isHidden = true
       timeLabel.alphaValue = 0.0
-      addShadow()
+      updateStyle()
     }
 
     func restartHideTimer() {
@@ -76,19 +76,21 @@ extension PlayerWindowController {
       hideTimer.restart()
     }
 
-    func addShadow() {
+    func updateStyle() {
       timeLabel.addShadow(blurRadiusConstant: Constants.Distance.seekPreviewTimeLabel_ShadowRadiusConstant,
                           xOffsetConstant: Constants.Distance.seekPreviewTimeLabel_xOffsetConstant,
                           yOffsetConstant: Constants.Distance.seekPreviewTimeLabel_yOffsetConstant,
-                          color: NSColor.black)
+                          color: .black)
+      let shadow: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
+      let useGlow = shadow == .glow
+      thumbnailPeekView.updateColors(glowShadow: useGlow)
     }
 
     /// This is expected to be called at first layout
     func updateTimeLabelFontSize(to newSize: CGFloat) {
-      guard timeLabel.font?.pointSize != newSize else { return }
-
-      timeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: newSize, weight: .bold)
-      addShadow()
+      if timeLabel.font?.pointSize != newSize {
+        timeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: newSize, weight: .bold)
+      }
     }
 
     /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be
@@ -347,7 +349,8 @@ extension PlayerWindowController {
         } else {
           unrotatedImageSize = thumbFrame.size
         }
-        let affineImage = croppedImage.resized(newWidth: Int(unrotatedImageSize.width), newHeight: Int(unrotatedImageSize.height), cornerRadius: cornerRadius)
+        let affineImage = croppedImage.resized(newWidth: unrotatedImageSize.widthInt, newHeight: unrotatedImageSize.heightInt,
+                                               cornerRadius: cornerRadius)
         thumbnailPeekView.image = NSImage.from(affineImage)
         thumbnailPeekView.widthConstraint.constant = unrotatedImageSize.width
         thumbnailPeekView.heightConstraint.constant = unrotatedImageSize.height

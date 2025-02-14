@@ -199,7 +199,7 @@ extension PlayerWindowController {
         }
       }
     case .seekPreviewShadow:
-      seekPreview.thumbnailPeekView.updateColors()
+      seekPreview.updateStyle()
     case .playlistShowMetadata, .playlistShowMetadataInMusicMode, .shortenFileGroupsInPlaylist:
       // Reload now, even if not visible. Don't nitpick.
       playlistView.playlistTableView.reloadData()

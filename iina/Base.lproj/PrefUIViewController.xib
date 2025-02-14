@@ -59,6 +59,7 @@
                 <outlet property="sectionSidebarsView" destination="iZa-Jl-fXs" id="MXu-01-lS4"/>
                 <outlet property="sectionThumbnailView" destination="3uJ-UU-1zw" id="Noy-VW-Uax"/>
                 <outlet property="sectionWindowView" destination="D77-Iw-nrY" id="qGB-hx-chL"/>
+                <outlet property="seekPreviewWhiteShadowCheckbox" destination="9ps-qR-8m9" id="u73-uK-80J"/>
                 <outlet property="showTopBarTriggerContainerView" destination="EaM-oZ-jJO" id="vwd-nV-ra6"/>
                 <outlet property="simpleVideoSizeRadioButton" destination="VP5-cz-tSV" id="mQ5-Zf-djp"/>
                 <outlet property="spacer0" destination="KWh-Ak-RW7" id="vL5-Sj-sCo"/>
@@ -1279,7 +1280,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-1380"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="692" height="1058"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -3337,8 +3338,8 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-20" y="976"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="500" height="300"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview">
+            <rect key="frame" x="0.0" y="0.0" width="536" height="300"/>
             <subviews>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">
                     <rect key="frame" x="-2" y="260" width="124" height="32"/>
@@ -3349,7 +3350,7 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="47i-yB-uyE" userLabel="ThumbnailRightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="380" height="284"/>
+                    <rect key="frame" x="120" y="8" width="416" height="284"/>
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="mvX-qm-iUh" userLabel="Enable thumbnail preview Checkbox">
                             <rect key="frame" x="-2" y="265" width="181" height="20"/>
@@ -3903,8 +3904,23 @@ For smoothest results, also enable custom full screen.</string>
                         <real value="3.4028234663852886e+38"/>
                     </customSpacing>
                 </stackView>
+                <button translatesAutoresizingMaskIntoConstraints="NO" id="9ps-qR-8m9" userLabel="White shadow Checkbox">
+                    <rect key="frame" x="424" y="160" width="112" height="20"/>
+                    <buttonCell key="cell" type="check" title="White shadow" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="yKc-YA-ZwP">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="18" id="eaW-bk-s4t"/>
+                    </constraints>
+                    <connections>
+                        <action selector="whiteShadowCheckboxAction:" target="-2" id="3ih-at-HWI"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
+                <constraint firstItem="9ps-qR-8m9" firstAttribute="leading" secondItem="5ri-jj-x4V" secondAttribute="trailing" constant="8" id="B4M-OE-8pa"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="9ps-qR-8m9" secondAttribute="trailing" id="Gnr-7N-OwT"/>
                 <constraint firstItem="47i-yB-uyE" firstAttribute="leading" secondItem="3uJ-UU-1zw" secondAttribute="leading" constant="120" id="Nq0-rL-eHY"/>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="3uJ-UU-1zw" secondAttribute="leading" constant="120" id="Pwz-CG-l82"/>
                 <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="maZ-e8-1vw" secondAttribute="bottom" constant="8" id="QX0-CL-Hcs"/>
@@ -3913,6 +3929,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="47i-yB-uyE" secondAttribute="trailing" id="ZCA-Qc-OoV"/>
                 <constraint firstAttribute="bottom" secondItem="47i-yB-uyE" secondAttribute="bottom" constant="8" id="f1R-1U-HFp"/>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="top" secondItem="3uJ-UU-1zw" secondAttribute="top" constant="8" id="tNX-yo-ggt"/>
+                <constraint firstItem="9ps-qR-8m9" firstAttribute="firstBaseline" secondItem="5ri-jj-x4V" secondAttribute="firstBaseline" id="uX1-0P-QqK"/>
             </constraints>
             <point key="canvasLocation" x="-20" y="1401"/>
         </customView>
