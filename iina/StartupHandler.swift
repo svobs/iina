@@ -74,6 +74,11 @@ class StartupHandler {
   }
 
   func doStartup() {
+    // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch.
+    // Do this *before* restoring, because the cleanup task will reassign windows to this launch
+    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
+    UserDefaults.standard.addObserver(AppDelegate.shared, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
+
     // Restore window state *before* hooking up the listener which saves state.
     restoreWindowsFromPreviousLaunch()
 
@@ -465,10 +470,6 @@ class StartupHandler {
       // Fall back to default action:
       AppDelegate.shared.doLaunchOrReopenAction()
     }
-
-    // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch
-    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
-    UserDefaults.standard.addObserver(AppDelegate.shared, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
 
     // Init MediaPlayer integration
     MediaPlayerIntegration.shared.update()

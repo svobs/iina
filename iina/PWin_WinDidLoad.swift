@@ -532,6 +532,7 @@ extension PlayerWindowController {
   }
 
   func removeSubviewsFromPlaySliderAndTimeLabelsView() {
+    /* TODO: Seems not needed. Delete after testing.
     if let playSliderSuperview = playSlider.superview {
       let constraints = playSliderSuperview.constraints.filter{
         let item1 = $0.firstItem as? NSObject
@@ -540,6 +541,7 @@ extension PlayerWindowController {
       }
       playSliderSuperview.removeConstraints(constraints)
     }
+    */
     playSliderAndTimeLabelsView.removeAllSubviews()
   }
 

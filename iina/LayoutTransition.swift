@@ -175,7 +175,7 @@ extension PlayerWindowController {
 
     var isTopBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      return isTopBarPlacementChanging || (outputLayout.hasTopOSC && isOSCStyleChanging)
+      return isTopBarPlacementChanging // || (outputLayout.hasTopOSC && isOSCStyleChanging)
     }
 
     var isBottomBarPlacementChanging: Bool {
@@ -267,18 +267,13 @@ extension PlayerWindowController {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }
 
-    /// NOT placement!
-    var isControlBarChanging: Bool {
-      return inputLayout.enableOSC != outputLayout.enableOSC || inputLayout.oscPosition != outputLayout.oscPosition || inputLayout.isMusicMode != outputLayout.isMusicMode || isOSCStyleChanging
-    }
-
     var isOpeningOSC: Bool {
       isWindowInitialLayout || !inputLayout.hasControlBar || isClosingThenReopeningOSC
     }
 
-    /// Animation
+    /// For animation purposes only
     var isClosingThenReopeningOSC: Bool {
-      isControlBarChanging || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isBottomBarPlacementChanging) || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isTopBarPlacementChanging)
+      (inputLayout.mode == outputLayout.mode && outputLayout.mode != .musicMode) && (inputLayout.enableOSC != outputLayout.enableOSC || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging) || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isTopBarPlacementChanging))
     }
   }
 

@@ -225,24 +225,24 @@ class BarFactory {
       // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
       var segsMaxX: [Double]
       // X coord of hover is needed to determine chapter hover effect.
-      // currentHoverX==nil: chapter hover effect not enabled
-      var currentHoverX: CGFloat? = nil
+      // currentChapterHoverX==nil: chapter hover effect not enabled
+      var currentChapterHoverX: CGFloat? = nil
       if chapters.count > 0, maxValueSec > 0 {
         segsMaxX = chapters[1...].map{ xForSec($0.startTime) }
 
         if useFocusEffect {
           if let currentPreviewTimeSec {
             // Mouse is hovering & showing Seek Preview: use its X coord
-            currentHoverX = xForSec(currentPreviewTimeSec)
+            currentChapterHoverX = xForSec(currentPreviewTimeSec)
           } else {
             // Actively seeking or scrolling: use position of the knob for current chapter
-            currentHoverX = currentValuePointX
+            currentChapterHoverX = currentValuePointX
           }
         }
       } else {
         segsMaxX = []
       }
-      Logger.log.verbose{"ValueX: \(currentValuePointX), PreviewX: \(currentHoverX?.description ?? "nil")"}
+      Logger.log.verbose{"ValueX: \(currentValuePointX), CurrChHoverX: \(currentChapterHoverX?.description ?? "nil")"}
 
       // Add right end of bar (don't forget to subtract left & right padding from img)
       let lastSegMaxX = imgConf.imgWidth - (imgConf.imgPadding * 2)
@@ -269,7 +269,7 @@ class BarFactory {
         let segMaxX = segsMaxX[segIndex]
 
         // Need to adjust calculation here to account for trailing img padding:
-        let isHoveringInThisChapter = currentHoverX != nil && currentHoverX! >= segMinX && (segMaxX == lastSegMaxX || currentHoverX! <= segMaxX)
+        let isHoveringInThisChapter = currentChapterHoverX != nil && currentChapterHoverX! >= segMinX && (segMaxX == lastSegMaxX || currentChapterHoverX! <= segMaxX)
         let conf: BarConf
         if leftStatus == 0 {
           conf = isHoveringInThisChapter ? imgConf.currentChapter_Left : imgConf.nonCurrentChapter_Left

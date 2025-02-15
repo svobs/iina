@@ -139,7 +139,7 @@ struct ControlBarGeometry {
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
-      if !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition) {
+      if !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition, mode) {
         // Is 2-row OSC
         let playSliderHeight: CGFloat
         if Constants.twoRowOSC_LimitPlaySliderHeight {
@@ -225,7 +225,7 @@ struct ControlBarGeometry {
     return true
   }
 
-  var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, position) }
+  var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, position, mode) }
 
   // MARK: - Sliders
 
@@ -438,8 +438,8 @@ struct ControlBarGeometry {
     }
   }
 
-  private static func qualifiesForMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition) -> Bool {
-    guard position == .bottom else { return false }
+  private static func qualifiesForMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition, _ mode: PlayerWindowMode) -> Bool {
+    guard position == .bottom, mode != .musicMode else { return false }
     return barHeight >= Constants.Distance.TwoRowOSC.minQualifyingBarHeight
   }
 

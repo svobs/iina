@@ -492,7 +492,8 @@ extension PlayerWindowController {
       }
     }
 
-    if !outputLayout.hasControlBar || transition.isControlBarChanging {
+    if !outputLayout.hasControlBar {
+      log.verbose{"[\(transition.name)] Removing playSliderAndTimeLabelsView from superview"}
       playSliderAndTimeLabelsView.removeFromSuperview()
 
       if !transition.inputLayout.hasFloatingOSC {
