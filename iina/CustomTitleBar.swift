@@ -71,7 +71,6 @@ class CustomTitleBarViewController: NSViewController {
     leadingStackView.setViews(trafficLightButtons + [leadingSidebarToggleButton], in: .center)
     leadingStackView.identifier = .init("TitleBar-LeadingStackView")
     leadingStackView.orientation = .horizontal
-    leadingStackView.detachesHiddenViews = true
     leadingStackView.alignment = .centerY
     leadingStackView.spacing = iconSpacingH
     leadingStackView.distribution = .fill
@@ -121,7 +120,6 @@ class CustomTitleBarViewController: NSViewController {
     centerStackView.setViews([documentIconButton, titleText], in: .center)
     centerStackView.identifier = .init("TitleBar-CenterStackView")
     centerStackView.orientation = .horizontal
-    centerStackView.detachesHiddenViews = true
     centerStackView.alignment = .centerY
     centerStackView.spacing = 0
     centerStackView.distribution = .fill
@@ -146,7 +144,6 @@ class CustomTitleBarViewController: NSViewController {
     trailingStackView.setViews([trailingSidebarToggleButton, onTopButton], in: .center)
     trailingStackView.identifier = .init("TitleBar-TrailingStackView")
     trailingStackView.orientation = .horizontal
-    trailingStackView.detachesHiddenViews = true
     trailingStackView.alignment = .centerY
     trailingStackView.spacing = iconSpacingH
     trailingStackView.distribution = .fill

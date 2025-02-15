@@ -28,7 +28,6 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView.orientation = .horizontal
     hStackView.alignment = .centerY
     hStackView.translatesAutoresizingMaskIntoConstraints = false
-    hStackView.detachesHiddenViews = true
     hStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
     addSubview(hStackView)

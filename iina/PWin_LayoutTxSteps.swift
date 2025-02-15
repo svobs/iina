@@ -614,7 +614,6 @@ extension PlayerWindowController {
       addSubviewsToPlaySliderAndTimeLabelsView()
       if !wasThere {
         playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
-        playSliderAndTimeLabelsView.updateConstraints()
         playSliderAndTimeLabelsView.isHidden = false
       }
     }
@@ -680,7 +679,6 @@ extension PlayerWindowController {
           oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
           fragToolbarView.isHidden = false
-          fragToolbarView.updateConstraints()
         }
       }
 
@@ -929,6 +927,7 @@ extension PlayerWindowController {
         // Must check if it already contains the view before adding.
         if !oscFloatingUpperView.views(in: .leading).contains(fragVolumeView) {
           oscFloatingUpperView.addView(fragVolumeView, in: .leading)
+          fragVolumeView.isHidden = false
         }
         oscFloatingUpperView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
 
@@ -936,6 +935,7 @@ extension PlayerWindowController {
 
         oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
         addSubviewsToPlaySliderAndTimeLabelsView()
+        playSliderAndTimeLabelsView.isHidden = false
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 
         controlBarFloating.addMarginConstraints()

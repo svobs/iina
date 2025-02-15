@@ -195,7 +195,6 @@ extension PlayerWindowController {
     leadingTB.alignment = .centerY
     leadingTB.distribution = .fill
     leadingTB.spacing = 0
-    leadingTB.detachesHiddenViews = true
     leadingTB.setHuggingPriority(.init(500), for: .horizontal)
 
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
@@ -222,7 +221,6 @@ extension PlayerWindowController {
     trailingTB.alignment = .centerY
     trailingTB.distribution = .fill
     trailingTB.spacing = iconSpacingH
-    trailingTB.detachesHiddenViews = true
     trailingTB.setHuggingPriority(.init(500), for: .horizontal)
     trailingTB.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
 
@@ -372,7 +370,6 @@ extension PlayerWindowController {
     playBtnSpeedVStackView.identifier = .init("PlayBtnSpeedVStackView")
     playBtnSpeedVStackView.orientation = .vertical
     playBtnSpeedVStackView.alignment = .centerX
-    playBtnSpeedVStackView.detachesHiddenViews = true
     playBtnSpeedVStackView.spacing = 0
     playBtnSpeedVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     playBtnSpeedVStackView.addView(speedLabel, in: .center)
@@ -539,6 +536,10 @@ extension PlayerWindowController {
     playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
     playSliderAndTimeLabelsView.addSubview(playSlider)
     playSliderAndTimeLabelsView.addSubview(rightTimeLabel)
+    // In case these were detached while in a stack view, restore their visibility:
+    leftTimeLabel.isHidden = false
+    playSlider.isHidden = false
+    rightTimeLabel.isHidden = false
 
     // - Add constraints to subviews
 
