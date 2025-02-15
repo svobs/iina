@@ -84,7 +84,6 @@ class TwoRowBarOSCView: ClickThroughView {
       playSliderTypeView = pwc.playSliderAndTimeLabelsView
     } else {
       // Option 1: PlaySlider goes in Row 1; time labels in Row 2
-      pwc.removeSubviewsFromPlaySliderAndTimeLabelsView()
       pwc.playSliderAndTimeLabelsView.removeFromSuperview()
       if !Preference.bool(for: .showRemainingTime) {
         viewsForRow2.append(pwc.leftTimeLabel)

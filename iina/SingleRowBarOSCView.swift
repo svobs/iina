@@ -55,6 +55,8 @@ class SingleRowBarOSCView: ClickThroughStackView {
     if let fragToolbarView = pwc.fragToolbarView {
       setVisibilityPriority(.detachEarlier, for: fragToolbarView)
     }
+    // Seems to help restore views which have been detached from other stack views before being added here
+    updateConstraints()
   }
 
 }

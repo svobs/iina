@@ -81,7 +81,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
     /// `musicModeControlBarView` is always the same height
     musicModeControlBarView.heightAnchor.constraint(equalToConstant: Constants.Distance.MusicMode.oscHeight).isActive = true
-    musicModeControlBarView.identifier = .init("MusicModeControlBarView")
+    musicModeControlBarView.idString = "MusicModeControlBarView"
+    positionSliderWrapperView.idString = "PositionSliderWrapperView"
+    controllerButtonsPanelView.idString = "ControllerButtonsPanelView"
+    mediaInfoView.idString = "MediaInfoView"
 
     // Clip scrolling text at the margins so it doesn't touch the sides of the window
     mediaInfoView.clipsToBounds = true
@@ -97,8 +100,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
     // hide controls initially
     controllerButtonsPanelView.alphaValue = 0
-    controllerButtonsPanelView.identifier = .init("ControllerButtonsPanelView")
-    mediaInfoView.identifier = .init("MediaInfoView")
 
     // tool tips
     togglePlaylistButton.identifier = .init("TogglePlaylistButton")

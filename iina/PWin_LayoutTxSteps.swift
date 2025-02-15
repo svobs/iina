@@ -577,10 +577,6 @@ extension PlayerWindowController {
         miniPlayer.playlistWrapperView.addSubview(playlistView)
         playlistView.addAllConstraintsToFillSuperview()
 
-        // move playback position slider & time labels
-        addSubviewsToPlaySliderAndTimeLabelsView()
-        miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
-        playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         playSlider.customCell.knobHeight = Constants.Distance.Slider.musicModeKnobHeight
 
         // move playback buttons
@@ -602,15 +598,24 @@ extension PlayerWindowController {
         miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
         viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
 
-        leftTimeLabel.font = NSFont.messageFont(ofSize: 11)
-        rightTimeLabel.font = NSFont.messageFont(ofSize: 11)
-
         // Make sure to reset constraints for OSD
         miniPlayer.hideControllerButtons()
         closeButtonView.isHidden = true
         if !transition.inputGeometry.isVideoVisible {
           addVideoViewToWindow()
         }
+      }
+    }
+
+    if transition.outputLayout.isMusicMode {
+      // move playback position slider & time labels
+      let wasThere = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
+      miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
+      addSubviewsToPlaySliderAndTimeLabelsView()
+      if !wasThere {
+        playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
+        playSliderAndTimeLabelsView.updateConstraints()
+        playSliderAndTimeLabelsView.isHidden = false
       }
     }
 
@@ -674,6 +679,8 @@ extension PlayerWindowController {
         if let fragToolbarView, !oscFloatingUpperView.views.contains(fragToolbarView) {
           oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
+          fragToolbarView.isHidden = false
+          fragToolbarView.updateConstraints()
         }
       }
 
@@ -927,8 +934,8 @@ extension PlayerWindowController {
 
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-        addSubviewsToPlaySliderAndTimeLabelsView()
         oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
+        addSubviewsToPlaySliderAndTimeLabelsView()
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 
         controlBarFloating.addMarginConstraints()

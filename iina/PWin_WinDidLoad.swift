@@ -531,26 +531,10 @@ extension PlayerWindowController {
     rightTimeLabel.setContentCompressionResistancePriority(.init(749), for: .horizontal)
   }
 
-  func removeSubviewsFromPlaySliderAndTimeLabelsView() {
-    /* TODO: Seems not needed. Delete after testing.
-    if let playSliderSuperview = playSlider.superview {
-      let constraints = playSliderSuperview.constraints.filter{
-        let item1 = $0.firstItem as? NSObject
-        let item2 = $0.secondItem as? NSObject
-        return item1 == playSlider || item2 == playSlider
-      }
-      playSliderSuperview.removeConstraints(constraints)
-    }
-    */
-    playSliderAndTimeLabelsView.removeAllSubviews()
-  }
-
   func addSubviewsToPlaySliderAndTimeLabelsView() {
     // Assume that if all subviews are inside, the constraints are properly configured as well,
     // and no more work is needed.
-    guard !playSliderAndTimeLabelsView.containsAllSubviews([leftTimeLabel, playSlider, rightTimeLabel]) else { return }
-
-    removeSubviewsFromPlaySliderAndTimeLabelsView()
+    playSliderAndTimeLabelsView.removeAllSubviews()
 
     playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
     playSliderAndTimeLabelsView.addSubview(playSlider)

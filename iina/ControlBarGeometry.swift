@@ -305,7 +305,13 @@ struct ControlBarGeometry {
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
   var timeLabelFont: NSFont {
     let timeLabelFontSize = timeLabelFontSize
-    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: .bold)
+    let weight: NSFont.Weight
+    if mode == .musicMode || position == .floating {
+      weight = .light
+    } else {
+      weight = .regular
+    }
+    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: weight)
   }
 
   var timeLabelFontSize: CGFloat {
