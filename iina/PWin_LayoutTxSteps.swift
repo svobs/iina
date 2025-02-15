@@ -561,7 +561,6 @@ extension PlayerWindowController {
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       showOrHidePipOverlayView()
-      applyThemeMaterial()
 
       if transition.outputLayout.isMusicMode {
         log.verbose{"[\(transition.name)] Entering music mode: adding views to bottomBarView"}
@@ -1220,6 +1219,7 @@ extension PlayerWindowController {
 
     refreshHidesOnDeactivateStatus()
     updateIsMoveableByWindowBackground()
+    applyThemeMaterial(using: transition.outputLayout.spec, window, window.screen!)
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()

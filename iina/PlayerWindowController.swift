@@ -677,12 +677,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
-  func applyThemeMaterial(using layoutSpec: LayoutSpec? = nil) {
+  func applyThemeMaterial(using layoutSpec: LayoutSpec? = nil, _ window: NSWindow, _ screen: NSScreen) {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let window, let screen = window.screen else {
-      log.debug{"Cannot apply theme: no window or screen!"}
-      return
-    }
+    log.verbose{"Apply theme material for screen \(screen.screenID.pii.quoted)"}
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
@@ -712,6 +709,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
                                                          scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
       }
+      playSlider.needsDisplay = true
+      volumeSlider.needsDisplay = true
     }
   }
 
@@ -722,7 +721,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
         log.verbose{"Applying theme from UpdateTitleBarAndOSC"}
-        applyThemeMaterial(using: newLayoutSpec)
+        if let window, let screen = window.screen {
+          applyThemeMaterial(using: newLayoutSpec, window, screen)
+        } else {
+          log.debug{"Could not apply theme: no window or screen!"}
+        }
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }
     }
@@ -1236,6 +1239,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
+        applyThemeMaterial(window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoState()
         player.events.emit(.windowScreenChanged)
       })

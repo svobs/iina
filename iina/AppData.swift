@@ -306,8 +306,8 @@ struct Constants {
     static let rawHeight: Int = 1600
   }
   struct Distance {
-    // TODO: change to % of window width
-    static let floatingControllerSnapToCenterThreshold = 20.0
+    // This multiplied by available window width → snap to center
+    static let floatingControllerSnapToCenterThresholdMultiplier = 0.05
 
     struct Slider {
       /// May be overridden

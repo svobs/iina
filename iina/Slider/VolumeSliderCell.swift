@@ -39,7 +39,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
     guard let appearance = sliderAppearance,
-          let bf = player.windowController.barFactory,
+          let bf = pwc?.barFactory,
           let screen = controlView?.window?.screen else { return }
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.

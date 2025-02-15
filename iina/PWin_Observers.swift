@@ -179,7 +179,11 @@ extension PlayerWindowController {
       videoView.refreshEdrMode()
     case .themeMaterial:
       animationPipeline.submitInstantTask { [self] in
-        applyThemeMaterial()
+        if let window, let screen = window.screen {
+          applyThemeMaterial(window, screen)
+        } else {
+          log.debug{"Could not apply theme change: no window or screen!"}
+        }
       }
     case .playerWindowOpacity:
       animationPipeline.submitTask({ [self] in
@@ -343,7 +347,11 @@ extension PlayerWindowController {
       cachedEffectiveAppearanceName = effectiveAppearanceName
 
       animationPipeline.submitInstantTask { [self] in
-        applyThemeMaterial()
+        if let screen = window.screen {
+          applyThemeMaterial(window, screen)
+        } else {
+          log.debug{"Could not apply appearance change: no screen!"}
+        }
       }
     default:
       return

@@ -110,6 +110,8 @@ extension PlayerWindowController {
       addSubviewsToPlaySliderAndTimeLabelsView()
       initVolumeView()
       initAlbumArtView()
+      playSlider.customCell.pwc = self
+      volumeSliderCell.pwc = self
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
 

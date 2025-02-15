@@ -118,16 +118,8 @@ class ScrollableSlider: NSSlider {
 
 
 class ScrollableSliderCell: NSSliderCell {
-  unowned var _player: PlayerCore!
-  var player: PlayerCore {
-    if let player = _player { return player }
-    _player = pwc?.player
-    return _player
-  }
-
-  var pwc: PlayerWindowController? {
-    controlView?.window?.windowController as? PlayerWindowController
-  }
+  var player: PlayerCore { pwc!.player }
+  unowned var pwc: PlayerWindowController?
 
   var slider: ScrollableSlider { controlView as! ScrollableSlider }
 

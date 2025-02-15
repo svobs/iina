@@ -22,6 +22,7 @@ class FloatingControlBarView: NSVisualEffectView {
   weak var trailingMarginConstraint: NSLayoutConstraint!
   weak var bottomMarginConstraint: NSLayoutConstraint!
 
+  private var minDragDistanceMet = false
   var mousePosRelatedToView: CGPoint?
   var mouseDownLocationInWindow: CGPoint?
 
@@ -130,8 +131,15 @@ class FloatingControlBarView: NSVisualEffectView {
     pwc.log.verbose("FloatingOSC mouseDown")
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
+    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: viewportView.frame.size)
     let originInViewport = viewportView.convert(frame.origin, from: nil)
-    isAlignFeedbackSent = abs(originInViewport.x - (viewportView.frame.width - frame.width) / 2) <= Constants.Distance.floatingControllerSnapToCenterThreshold
+    let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier
+    isAlignFeedbackSent = abs(originInViewport.x - (viewportView.frame.width - frame.width) / 2) <= threshold
+
+    // Claim this now to signal to other things that nothing else should drag:
+    pwc.currentDragObject = self
+    // Reset flag
+    minDragDistanceMet = false
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -142,15 +150,11 @@ class FloatingControlBarView: NSVisualEffectView {
       return
     }
 
-    if !isDragging {
-      if mouseDownLocationInWindow.distance(to: event.locationInWindow) <= Constants.WindowedMode.minInitialDragThreshold {
-        return
-      }
-      if Logger.enabled && Logger.Level.preferred >= .verbose {
-        pwc.log.verbose("FloatingOSC mouseDrag: minimum dragging distance was met")
-      }
-      // drag start
-      pwc.currentDragObject = self
+    if !minDragDistanceMet {
+      let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
+      guard dragDistance >= Constants.WindowedMode.minInitialDragThreshold else { return }
+      pwc.log.verbose{"FloatingOSC mouseDrag: minimum dragging distance was met"}
+      minDragDistanceMet = true
     }
     assert(isDragging, "Something's wrong: isDragging should be true here")
 
@@ -164,7 +168,9 @@ class FloatingControlBarView: NSVisualEffectView {
     // stick to center
     if Preference.bool(for: .controlBarStickToCenter) {
       let xPosWhenCenter = geometry.centerX
-      if abs(newCenterX - xPosWhenCenter) <= Constants.Distance.floatingControllerSnapToCenterThreshold {
+      let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier
+      pwc.log.trace{"Floating OSC snap distanceToCenter=\(newCenterX - xPosWhenCenter) threshold=\(threshold)"}
+      if abs(newCenterX - xPosWhenCenter) <= threshold {
         newCenterX = xPosWhenCenter
         if !isAlignFeedbackSent {
           NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .default)
