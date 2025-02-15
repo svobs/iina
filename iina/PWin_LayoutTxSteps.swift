@@ -675,6 +675,7 @@ extension PlayerWindowController {
         }
 
       case .floating:
+        currentControlBar = controlBarFloating
         if let fragToolbarView, !oscFloatingUpperView.views.contains(fragToolbarView) {
           oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
@@ -693,7 +694,7 @@ extension PlayerWindowController {
       currentControlBar = nil
     }
 
-    if currentControlBar != nil {
+    if outputLayout.hasControlBar {
       // Has OSC, or music mode
       let oscGeo = outputLayout.controlBarGeo
       playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
@@ -917,8 +918,8 @@ extension PlayerWindowController {
     updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
 
     if outputLayout.hasFloatingOSC {
+
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
-      currentControlBar = controlBarFloating
 
       if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
         oscFloatingPlayButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)

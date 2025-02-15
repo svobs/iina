@@ -129,6 +129,7 @@ class FloatingControlBarView: NSVisualEffectView {
           let viewportView = pwc.viewportView else { return }
 
     pwc.log.verbose("FloatingOSC mouseDown")
+    window?.isMovableByWindowBackground = false
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
     let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: viewportView.frame.size)

@@ -228,7 +228,6 @@ struct LayoutSpec {
     && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
     && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
     && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
-    && otherSpec.oscColorScheme == oscColorScheme
   }
 
   func getWidthBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
