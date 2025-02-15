@@ -1006,6 +1006,9 @@ extension PlayerWindowController {
       videoView.apply(transition.outputGeometry)
     }
 
+    // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)
+    applyThemeMaterial(using: transition.outputLayout.spec, window!, window!.screen!)
+
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
@@ -1227,7 +1230,6 @@ extension PlayerWindowController {
 
     refreshHidesOnDeactivateStatus()
     updateIsMoveableByWindowBackground()
-    applyThemeMaterial(using: transition.outputLayout.spec, window, window.screen!)
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()

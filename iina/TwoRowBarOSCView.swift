@@ -73,7 +73,7 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView.spacing = oscGeo.hStackSpacing
 
     // Start building replacement views list
-    var viewsForRow2: [NSView] = [pwc.fragPlaybackBtnsView]
+    var viewsForHStack: [NSView] = [pwc.fragPlaybackBtnsView]
 
     // Choose either playSlider or playSliderAndTimeLabelsView based on pref
     let playSliderTypeView: NSView
@@ -85,10 +85,10 @@ class TwoRowBarOSCView: ClickThroughView {
       // Option 1: PlaySlider goes in Row 1; time labels in Row 2
       pwc.playSliderAndTimeLabelsView.removeFromSuperview()
       if !Preference.bool(for: .showRemainingTime) {
-        viewsForRow2.append(pwc.leftTimeLabel)
-        viewsForRow2.append(timeSlashLabel)
+        viewsForHStack.append(pwc.leftTimeLabel)
+        viewsForHStack.append(timeSlashLabel)
       }
-      viewsForRow2.append(pwc.rightTimeLabel)
+      viewsForHStack.append(pwc.rightTimeLabel)
       playSliderTypeView = pwc.playSlider
     }
 
@@ -107,13 +107,17 @@ class TwoRowBarOSCView: ClickThroughView {
 
     // - [Re-]add views to hStack
 
-    viewsForRow2.append(centralSpacerView)
-    viewsForRow2.append(pwc.fragVolumeView)
+    viewsForHStack.append(centralSpacerView)
+    viewsForHStack.append(pwc.fragVolumeView)
 
     if let toolbarView = pwc.fragToolbarView {
-      viewsForRow2.append(toolbarView)
+      viewsForHStack.append(toolbarView)
     }
-    hStackView.setViews(viewsForRow2, in: .leading)
+    hStackView.setViews(viewsForHStack, in: .leading)
+    // In case any were previously hidden via stack view clip, restore:
+    for view in viewsForHStack {
+      view.isHidden = false
+    }
 
     // - Set visibility priorities
 
@@ -123,7 +127,7 @@ class TwoRowBarOSCView: ClickThroughView {
 
     hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
 
-    if viewsForRow2.contains(pwc.leftTimeLabel) {
+    if viewsForHStack.contains(pwc.leftTimeLabel) {
       hStackView.setVisibilityPriority(.detachLessEarly, for: pwc.rightTimeLabel)
       hStackView.setVisibilityPriority(.detachLessEarly, for: timeSlashLabel)
     }

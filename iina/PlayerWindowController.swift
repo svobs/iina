@@ -720,12 +720,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       animationPipeline.submitInstantTask { [self] in
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-        log.verbose{"Applying theme from UpdateTitleBarAndOSC"}
-        if let window, let screen = window.screen {
-          applyThemeMaterial(using: newLayoutSpec, window, screen)
-        } else {
-          log.debug{"Could not apply theme: no window or screen!"}
-        }
         buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
       }
     }
