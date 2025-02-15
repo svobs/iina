@@ -494,7 +494,7 @@ extension PlayerWindowController {
 
     // Call this out of an abundance of caution. Custom cursors are set via mouseMoved, which only fires while
     // actually inside the window! May need to reset the cursor if mouse exited the window too quickly.
-    mouseInWindow()
+    mouseDidMoveInWindow()
 
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("MouseExited: no data for tracking area!")
@@ -520,16 +520,15 @@ extension PlayerWindowController {
     // Disable hover actions if first mouse is disabled & window not in focus:
     guard let window, (Preference.bool(for: .videoViewAcceptsFirstMouse) || window.isKeyWindow) else { return }
 
-    mouseInWindow()
+    mouseDidMoveInWindow()
   }
 
-  func mouseInWindow() {
+  func mouseDidMoveInWindow() {
     guard currentDragObject == nil else { return }
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
 
     // Do not use `event.locationInWindow`: it can be stale
     let pointInWindow = mouseLocationInWindow
-
 
     // Kludge to prevent window drag if trying to drag sidebar or other widget. Do not drag the window!
     var disableWindowDrag = true

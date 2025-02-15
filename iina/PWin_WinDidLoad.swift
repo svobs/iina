@@ -195,6 +195,7 @@ extension PlayerWindowController {
     leadingTB.alignment = .centerY
     leadingTB.distribution = .fill
     leadingTB.spacing = 0
+    leadingTB.detachesHiddenViews = true
     leadingTB.setHuggingPriority(.init(500), for: .horizontal)
 
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
@@ -219,6 +220,7 @@ extension PlayerWindowController {
 
     trailingTB.orientation = .horizontal
     trailingTB.alignment = .centerY
+    trailingTB.detachesHiddenViews = true
     trailingTB.distribution = .fill
     trailingTB.spacing = iconSpacingH
     trailingTB.setHuggingPriority(.init(500), for: .horizontal)
@@ -368,6 +370,7 @@ extension PlayerWindowController {
 
     let playBtnSpeedVStackView = ClickThroughStackView()
     playBtnSpeedVStackView.identifier = .init("PlayBtnSpeedVStackView")
+    playBtnSpeedVStackView.detachesHiddenViews = true
     playBtnSpeedVStackView.orientation = .vertical
     playBtnSpeedVStackView.alignment = .centerX
     playBtnSpeedVStackView.spacing = 0

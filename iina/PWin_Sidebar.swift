@@ -1075,7 +1075,7 @@ extension PlayerWindowController {
     }
 
     // Call this to refresh cursor
-    mouseInWindow()
+    mouseDidMoveInWindow()
     return true
   }
 
