@@ -167,7 +167,7 @@ struct Constants {
     static let minLoopPointTime = 0.000001
 
     /// Speed of scrolling labels in music mode. Increase to scroll faster
-    static let scrollingLabelOffsetPerSec: TimeInt = 100
+    static let scrollingLabelOffsetPerSec: TimeInt = 10
     static let scrollingLabelInitialWaitSec: TimeInt = 1.0
 
     static let keyDownHandlingTimeout = 1.0
