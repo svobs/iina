@@ -70,11 +70,13 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
 /// Also see `volumeSliderAction(_:)` in `PlayerWindowController`.
 class VolumeSliderScrollWheel: SliderScrollWheelDelegate {
   override func scrollSessionWillBegin(_ session: ScrollSession) {
+    slider.associatedPlayer?.log.verbose("VolumeSlider scrollWheel seek began")
     session.sensitivity = Preference.volumeScrollSensitivity()
     session.valueAtStart = slider.doubleValue
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
+    slider.associatedPlayer?.log.verbose("VolumeSlider scrollWheel seek ended")
     super.scrollSessionDidEnd(session)
     slider.needsDisplay = true  // redraw slider if only showing knob during scroll (e.g. for clear BG style)
   }
@@ -117,11 +119,11 @@ class PWinScrollWheel: VirtualScrollWheel {
       let distX = deltaX.magnitude
       let distY = deltaY.magnitude
       if distX > distY {
-        log.verbose("Scroll direction is horizontal: \(distX) > \(distY)")
         scrollAction = Preference.enum(for: .horizontalScrollAction)
+        log.verbose{"Scroll direction is horizontal (\(distX) > \(distY)): action=\(scrollAction?.rawValue.description ?? "nil")"}
       } else {
-        log.verbose("Scroll direction is vertical: \(distX) ≤ \(distY)")
         scrollAction =  Preference.enum(for: .verticalScrollAction)
+        log.verbose{"Scroll direction is vertical (\(distX) ≤ \(distY)): action=\(scrollAction?.rawValue.description ?? "nil")"}
       }
     }
 

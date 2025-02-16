@@ -208,7 +208,11 @@ class VirtualScrollWheel {
 
     scrollSessionDidEnd(session)
     lastSessionEndTime = Date().timeIntervalSince1970
-    log.verbose("ScrollWheel session ended. Time=\(lastSessionEndTime)")
+#if DEBUG
+    if DebugConfig.enableScrollWheelDebug {
+      log.verbose{"ScrollWheel session ended"}
+    }
+#endif
   }
 
   private func changeState(with event: NSEvent) {
@@ -216,7 +220,7 @@ class VirtualScrollWheel {
 
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug {
-      log.verbose("ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)")
+      log.verbose{"ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)"}
     }
 #endif
 
@@ -266,7 +270,7 @@ class VirtualScrollWheel {
           let timeElapsedSinceIntentStart = Date().timeIntervalSince1970 - intentStartTime
           if timeElapsedSinceIntentStart >= Constants.TimeInterval.minQualifyingScrollWheelDuration {
             startScrolling = true
-            log.verbose("Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session")
+            log.verbose{"Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session"}
           }
         }
 
@@ -330,7 +334,7 @@ class VirtualScrollWheel {
 
   /// Executed when `scrollSessionTimer` fires.
   private func scrollSessionDidTimeOut() {
-    Logger.log.verbose("ScrollWheel timed out: state=\(state)")
+    Logger.log.verbose{"ScrollWheel timed out: state=\(state)"}
     guard isScrolling() else { return }
     endScrollSession()
   }

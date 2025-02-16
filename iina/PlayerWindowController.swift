@@ -2216,12 +2216,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  @IBAction func volumeSliderAction(_ sender: NSSlider) {
+  @IBAction func volumeSliderAction(_ slider: ScrollableSlider) {
     // show volume popover when volume seek begins and hide on end
     if isInMiniPlayer {
       miniPlayer.showVolumePopover()
     }
-    let value = sender.doubleValue
+    let value = slider.doubleValue
+    log.verbose{"VolumeSlider: changing volume to \(value)"}
     if Preference.double(for: .maxVolume) > 100, value > 100 && value < 101 {
       NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
     }

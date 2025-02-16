@@ -217,6 +217,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   /// From `NSPopoverDelegate`: close volume popover
   func popoverWillClose(_ notification: Notification) {
+    hideVolumePopoverTimer?.invalidate()
     if NSWindow.windowNumber(at: NSEvent.mouseLocation, belowWindowWithWindowNumber: 0) != window!.windowNumber {
       hideControllerButtonsInPipeline()
     }
@@ -229,11 +230,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     // if it's a mouse, simply show popover then hide after a while when user stops scrolling
     if !volumePopover.isShown {
       volumePopover.animates = false
-      volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView,
-                         preferredEdge: .minY)
+      volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView, preferredEdge: .minY)
     }
 
-    let timeout = Preference.double(for: .osdAutoHideTimeout)
+    let timeout = max(Preference.double(for: .osdAutoHideTimeout), Constants.TimeInterval.musicModePopoverMinTimeout)
     hideVolumePopoverTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self,
                                                   selector: #selector(self.hideVolumePopover), userInfo: nil, repeats: false)
   }
