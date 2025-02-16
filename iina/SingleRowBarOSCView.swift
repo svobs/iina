@@ -41,8 +41,7 @@ class SingleRowBarOSCView: ClickThroughStackView {
 
     pwc.addSubviewsToPlaySliderAndTimeLabelsView()
     
-    var newViews: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView, pwc.fragToolbarView]
-
+    let newViews: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView, pwc.fragToolbarView]
     setViews(newViews, in: .leading)
     // Seems to help restore views which have been detached from other stack views before being added here
     for view in newViews {

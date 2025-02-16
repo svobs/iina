@@ -105,11 +105,12 @@ class TwoRowBarOSCView: ClickThroughView {
     intraRowSpacingConstraint.priority = .defaultLow  // for now
     intraRowSpacingConstraint.isActive = true
 
-    // - [Re-]add views to hStack
-
     viewsForHStack.append(centralSpacerView)
     viewsForHStack.append(pwc.fragVolumeView)
     viewsForHStack.append(pwc.fragToolbarView)
+
+    // - [Re-]add views to hStack
+
     hStackView.setViews(viewsForHStack, in: .leading)
     // In case any were previously hidden via stack view clip, restore:
     for view in viewsForHStack {

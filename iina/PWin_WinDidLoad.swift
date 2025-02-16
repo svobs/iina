@@ -101,6 +101,7 @@ extension PlayerWindowController {
 
       initSeekPreview(in: contentView)
       initTitleBar()
+      initOSCToolbar()
       initTopBarView(in: contentView)
       initBottomBarTopBorder()
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
@@ -230,6 +231,15 @@ extension PlayerWindowController {
     trailingTB.addArrangedSubview(onTopButton)
 
     addTitleBarAccessoryViews()
+  }
+
+  func initOSCToolbar() {
+    fragToolbarView.idString = "OSC-ToolbarView"
+    fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
+    fragToolbarView.orientation = .horizontal
+    fragToolbarView.distribution = .fill
+    fragToolbarView.setHuggingPriority(.init(499), for: .horizontal)
+    fragToolbarView.setHuggingPriority(.init(499), for: .vertical)
   }
 
   func initTopBarView(in contentView: NSView) {

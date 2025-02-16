@@ -1483,31 +1483,22 @@ extension PlayerWindowController {
 
     let isOpeningOSC = transition.isOpeningOSC
     if isOpeningOSC || !oldGeo.toolbarItemsAreSame(as: newGeo) {
-      removeOSCToolBar()
-      guard newButtonTypes.count > 0 else { return }
-      fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
-      let oscGeo = transition.outputLayout.controlBarGeo
-      let iconSize: CGFloat = isOpeningOSC && !transition.isWindowInitialLayout ? 0 : oscGeo.toolIconSize
-      let iconSpacing = oscGeo.toolIconSpacing
-      log.verbose("[\(transition.name)] Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(oscGeo.barHeight) fullIconHeight=\(oscGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
-      var toolbarButtons: [OSCToolbarButton] = []
-      for buttonType in newButtonTypes {
-        let button = OSCToolbarButton()
-        button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
-        button.action = #selector(self.toolBarButtonAction(_:))
-        toolbarButtons.append(button)
-      }
-      needsButtonsUpdate = false
+      fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
 
-      fragToolbarView.identifier = .init("OSC-ToolBarView")
-      fragToolbarView.orientation = .horizontal
-      fragToolbarView.distribution = .fill
-      fragToolbarView.setHuggingPriority(.init(499), for: .horizontal)
-      fragToolbarView.setHuggingPriority(.init(500), for: .vertical)
-      for button in toolbarButtons {
-        fragToolbarView.addView(button, in: .trailing)
-        fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+      if newButtonTypes.count > 0 {
+        let oscGeo = transition.outputLayout.controlBarGeo
+        let iconSize: CGFloat = isOpeningOSC && !transition.isWindowInitialLayout ? 0 : oscGeo.toolIconSize
+        let iconSpacing = oscGeo.toolIconSpacing
+        log.verbose("[\(transition.name)] Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(oscGeo.barHeight) fullIconHeight=\(oscGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
+        for buttonType in newButtonTypes {
+          let button = OSCToolbarButton()
+          button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
+          button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
+          button.action = #selector(self.toolBarButtonAction(_:))
+          fragToolbarView.addView(button, in: .trailing)
+          fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+        }
+        needsButtonsUpdate = false
       }
     }
 
@@ -1528,12 +1519,6 @@ extension PlayerWindowController {
                                      bottom: iconSpacing, right: sideInset)
       log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
     }
-  }
-
-  // Looks like in some cases, the toolbar doesn't disappear unless all its buttons are also removed
-  private func removeOSCToolBar() {
-    fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
-    fragToolbarView.removeFromSuperview()
   }
 
   // MARK: - Misc support functions
