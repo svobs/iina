@@ -116,16 +116,16 @@ struct Constants {
     static let exitMiniPlayer = NSLocalizedString("menu.exit_mini_player", comment: "Exit Music Mode")
     static let custom = NSLocalizedString("menu.crop_custom", comment: "Custom crop size")
     static let findOnlineSubtitles = NSLocalizedString("menu.find_online_sub", comment: "Find Online Subtitles")
-    static let chaptersPanel = NSLocalizedString("menu.chapters", comment: "Show Chapters Panel")
-    static let hideChaptersPanel = NSLocalizedString("menu.hide_chapters", comment: "Hide Chapters Panel")
-    static let playlistPanel = NSLocalizedString("menu.playlist", comment: "Show Playlist Panel")
-    static let hidePlaylistPanel = NSLocalizedString("menu.hide_playlist", comment: "Hide Playlist Panel")
-    static let videoPanel = NSLocalizedString("menu.video", comment: "Show Video Panel")
-    static let hideVideoPanel = NSLocalizedString("menu.hide_video", comment: "Hide Video Panel")
-    static let audioPanel = NSLocalizedString("menu.audio", comment: "Show Audio Panel")
-    static let hideAudioPanel = NSLocalizedString("menu.hide_audio", comment: "Hide Audio Panel")
-    static let subtitlesPanel = NSLocalizedString("menu.subtitles", comment: "Show Subtitles Panel")
-    static let hideSubtitlesPanel = NSLocalizedString("menu.hide_subtitles", comment: "Hide Subtitles Panel")
+    static let chaptersPanel = NSLocalizedString("menu.chapters", comment: "Show Chapters Sidebar")
+    static let hideChaptersPanel = NSLocalizedString("menu.hide_chapters", comment: "Hide Chapters Sidebar")
+    static let playlistPanel = NSLocalizedString("menu.playlist", comment: "Show Playlist Sidebar")
+    static let hidePlaylistPanel = NSLocalizedString("menu.hide_playlist", comment: "Hide Playlist Sidebar")
+    static let videoPanel = NSLocalizedString("menu.video", comment: "Show Video Sidebar")
+    static let hideVideoPanel = NSLocalizedString("menu.hide_video", comment: "Hide Video Sidebar")
+    static let audioPanel = NSLocalizedString("menu.audio", comment: "Show Audio Sidebar")
+    static let hideAudioPanel = NSLocalizedString("menu.hide_audio", comment: "Hide Audio Sidebar")
+    static let subtitlesPanel = NSLocalizedString("menu.subtitles", comment: "Show Subtitles Sidebar")
+    static let hideSubtitlesPanel = NSLocalizedString("menu.hide_subtitles", comment: "Hide Subtitles Sidebar")
     static let hideSubtitles = NSLocalizedString("menu.sub_hide", comment: "Hide Subtitles")
     static let showSubtitles = NSLocalizedString("menu.sub_show", comment: "Show Subtitles")
     static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
@@ -136,8 +136,8 @@ struct Constants {
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
     static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")
-    static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Panel")
-    static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Panel")
+    static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Sidebar")
+    static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Sidebar")
   }
 
   // - Quantities:

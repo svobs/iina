@@ -193,14 +193,14 @@
 "menu.speed" = "Speed: %@x";
 "menu.chapters" = "Vis kapitel-panel";
 "menu.hide_chapters" = "Skjul kapitel-panel";
-"menu.playlist" = "Vis Playlist Panel";
-"menu.hide_playlist" = "Hide Playlist Panel";
-"menu.video" = "Show Video Panel";
-"menu.hide_video" = "Hide Video Panel";
+"menu.playlist" = "Vis Playlist Sidebar";
+"menu.hide_playlist" = "Hide Playlist Sidebar";
+"menu.video" = "Show Video Sidebar";
+"menu.hide_video" = "Hide Video Sidebar";
 "menu.audio" = "Vis lydpanel";
 "menu.hide_audio" = "Skjul lydpanel";
-"menu.subtitles" = "Show Subtitles Panel";
-"menu.hide_subtitles" = "Hide Subtitles Panel";
+"menu.subtitles" = "Show Subtitles Sidebar";
+"menu.hide_subtitles" = "Hide Subtitles Sidebar";
 
 "menu.seek_forward" = "Spol frem %.0fs";
 "menu.seek_backward" = "Spol tilbage %.0fs";

@@ -197,16 +197,16 @@
 "menu.pause" = "Pause";
 "menu.resume" = "Resume";
 "menu.speed" = "Speed: %@x";
-"menu.chapters" = "Show Chapters Panel";
-"menu.hide_chapters" = "Hide Chapters Panel";
-"menu.playlist" = "Show Playlist Panel";
-"menu.hide_playlist" = "Hide Playlist Panel";
-"menu.video" = "Show Video Panel";
-"menu.hide_video" = "Hide Video Panel";
-"menu.audio" = "Show Audio Panel";
-"menu.hide_audio" = "Hide Audio Panel";
-"menu.subtitles" = "Show Subtitles Panel";
-"menu.hide_subtitles" = "Hide Subtitles Panel";
+"menu.chapters" = "Show Chapters Sidebar";
+"menu.hide_chapters" = "Hide Chapters Sidebar";
+"menu.playlist" = "Show Playlist Sidebar";
+"menu.hide_playlist" = "Hide Playlist Sidebar";
+"menu.video" = "Show Video Sidebar";
+"menu.hide_video" = "Hide Video Sidebar";
+"menu.audio" = "Show Audio Sidebar";
+"menu.hide_audio" = "Hide Audio Sidebar";
+"menu.subtitles" = "Show Subtitles Sidebar";
+"menu.hide_subtitles" = "Hide Subtitles Sidebar";
 
 "menu.seek_forward" = "Step Forward %.0fs";
 "menu.seek_backward" = "Step Backward %.0fs";

@@ -1,8 +1,8 @@
 /* Class = "NSMenuItem"; title = "Subtitle Delay + 0.1s"; ObjectID = "0Cz-OE-85L"; */
 "0Cz-OE-85L.title" = "Penundaan Terjemahan + 0.1dtk";
 
-/* Class = "NSMenuItem"; title = "Show Playlist Panel"; ObjectID = "0T7-Nu-SL7"; */
-"0T7-Nu-SL7.title" = "Tampilkan Panel Playlist";
+/* Class = "NSMenuItem"; title = "Show Playlist Sidebar"; ObjectID = "0T7-Nu-SL7"; */
+"0T7-Nu-SL7.title" = "Tampilkan Sidebar Playlist";
 
 /* Class = "NSMenuItem"; title = "Open URL…"; ObjectID = "0m7-3r-twH"; */
 "0m7-3r-twH.title" = "Buka URL…";
@@ -25,14 +25,14 @@
 /* Class = "NSMenuItem"; title = "Jump to…"; ObjectID = "2id-wn-xsC"; */
 "2id-wn-xsC.title" = "Lompat ke…";
 
-/* Class = "NSMenuItem"; title = "Show Video Panel"; ObjectID = "2t8-Ot-yoO"; */
-"2t8-Ot-yoO.title" = "Tampilkan Panel Video";
+/* Class = "NSMenuItem"; title = "Show Video Sidebar"; ObjectID = "2t8-Ot-yoO"; */
+"2t8-Ot-yoO.title" = "Tampilkan Sidebar Video";
 
 /* Class = "NSMenuItem"; title = "Select All"; ObjectID = "3Ax-P3-QQu"; */
 "3Ax-P3-QQu.title" = "Pilih Semua";
 
-/* Class = "NSMenuItem"; title = "Show Audio Panel"; ObjectID = "43n-Ed-5kT"; */
-"43n-Ed-5kT.title" = "Tampilkan Panel Audio";
+/* Class = "NSMenuItem"; title = "Show Audio Sidebar"; ObjectID = "43n-Ed-5kT"; */
+"43n-Ed-5kT.title" = "Tampilkan Sidebar Audio";
 
 /* Class = "NSMenuItem"; title = "Audio Delay + 0.5s"; ObjectID = "4ae-MT-2L1"; */
 "4ae-MT-2L1.title" = "Penundaan Audio + 0.5dtk";
@@ -70,8 +70,8 @@
 /* Class = "NSMenuItem"; title = "Speed:"; ObjectID = "8pV-XQ-AvB"; */
 "8pV-XQ-AvB.title" = "Kecepatan:";
 
-/* Class = "NSMenuItem"; title = "Show Subtitles Panel"; ObjectID = "8y7-Cy-lKT"; */
-"8y7-Cy-lKT.title" = "Tampilkan Panel Terjemahan";
+/* Class = "NSMenuItem"; title = "Show Subtitles Sidebar"; ObjectID = "8y7-Cy-lKT"; */
+"8y7-Cy-lKT.title" = "Tampilkan Sidebar Terjemahan";
 
 /* Class = "NSMenuItem"; title = "Speed Up to 1.1x"; ObjectID = "91n-xW-L37"; */
 "91n-xW-L37.title" = "Percepat 1.1x";
@@ -121,8 +121,8 @@
 /* Class = "NSMenuItem"; title = "Close"; ObjectID = "DVo-aG-piG"; */
 "DVo-aG-piG.title" = "Tutup";
 
-/* Class = "NSMenuItem"; title = "Show Chapters Panel"; ObjectID = "DwM-3d-Eb9"; */
-"DwM-3d-Eb9.title" = "Lihat Panel Chapter";
+/* Class = "NSMenuItem"; title = "Show Chapters Sidebar"; ObjectID = "DwM-3d-Eb9"; */
+"DwM-3d-Eb9.title" = "Lihat Sidebar Chapter";
 
 /* Class = "NSMenu"; title = "Subtitles"; ObjectID = "EKp-Qx-4Mn"; */
 "EKp-Qx-4Mn.title" = "Terjemahan";

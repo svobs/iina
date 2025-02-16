@@ -192,15 +192,15 @@
 "menu.resume" = "Jatka";
 "menu.speed" = "Speed: %@x";
 "menu.chapters" = "Näytä lukupaneeli";
-"menu.hide_chapters" = "Hide Chapters Panel";
+"menu.hide_chapters" = "Hide Chapters Sidebar";
 "menu.playlist" = "Näytä soittolistan paneeli";
-"menu.hide_playlist" = "Hide Playlist Panel";
+"menu.hide_playlist" = "Hide Playlist Sidebar";
 "menu.video" = "Näytä Videopaneeli";
-"menu.hide_video" = "Hide Video Panel";
+"menu.hide_video" = "Hide Video Sidebar";
 "menu.audio" = "Näytä Äänipaneeli";
-"menu.hide_audio" = "Hide Audio Panel";
+"menu.hide_audio" = "Hide Audio Sidebar";
 "menu.subtitles" = "Näytä Tekstityspaneeli";
-"menu.hide_subtitles" = "Hide Subtitles Panel";
+"menu.hide_subtitles" = "Hide Subtitles Sidebar";
 
 "menu.seek_forward" = "Astu eteenpäin %.0fs";
 "menu.seek_backward" = "Siirry taaksepäin %.0fs";

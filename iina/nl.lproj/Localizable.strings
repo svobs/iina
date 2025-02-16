@@ -192,15 +192,15 @@
 "menu.resume" = "Hervat";
 "menu.speed" = "Speed: %@x";
 "menu.chapters" = "Toon hoofdstukken";
-"menu.hide_chapters" = "Hide Chapters Panel";
+"menu.hide_chapters" = "Hide Chapters Sidebar";
 "menu.playlist" = "Toon afspeellijst";
-"menu.hide_playlist" = "Hide Playlist Panel";
-"menu.video" = "Show Video Panel";
-"menu.hide_video" = "Hide Video Panel";
-"menu.audio" = "Show Audio Panel";
-"menu.hide_audio" = "Hide Audio Panel";
-"menu.subtitles" = "Show Subtitles Panel";
-"menu.hide_subtitles" = "Hide Subtitles Panel";
+"menu.hide_playlist" = "Hide Playlist Sidebar";
+"menu.video" = "Show Video Sidebar";
+"menu.hide_video" = "Hide Video Sidebar";
+"menu.audio" = "Show Audio Sidebar";
+"menu.hide_audio" = "Hide Audio Sidebar";
+"menu.subtitles" = "Show Subtitles Sidebar";
+"menu.hide_subtitles" = "Hide Subtitles Sidebar";
 
 "menu.seek_forward" = "Ga %.0fs vooruit";
 "menu.seek_backward" = "Ga %.0fs terug";

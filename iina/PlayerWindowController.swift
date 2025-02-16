@@ -494,7 +494,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
   }
 
-  /// Panel at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
+  /// Sidebar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
   @IBOutlet weak var topBarView: NSVisualEffectView!
   /// Bottom border of `topBarView`.

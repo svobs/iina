@@ -191,16 +191,16 @@
 "menu.pause" = "Jeda";
 "menu.resume" = "Lanjutkan";
 "menu.speed" = "Speed: %@x";
-"menu.chapters" = "Lihat Panel Chapter";
-"menu.hide_chapters" = "Sembunyikan Panel Chapter";
-"menu.playlist" = "Tampilkan Panel Playlist";
-"menu.hide_playlist" = "Sembunyikan Panel Playlist";
-"menu.video" = "Tampilkan Panel Video";
-"menu.hide_video" = "Sembunyikan Panel Video";
-"menu.audio" = "Tampilkan Panel Audio";
-"menu.hide_audio" = "Sembunyikan Panel Audio";
-"menu.subtitles" = "Tampilkan Panel Terjemahan";
-"menu.hide_subtitles" = "Sembunyikan Panel Terjemahan";
+"menu.chapters" = "Lihat Sidebar Chapter";
+"menu.hide_chapters" = "Sembunyikan Sidebar Chapter";
+"menu.playlist" = "Tampilkan Sidebar Playlist";
+"menu.hide_playlist" = "Sembunyikan Sidebar Playlist";
+"menu.video" = "Tampilkan Sidebar Video";
+"menu.hide_video" = "Sembunyikan Sidebar Video";
+"menu.audio" = "Tampilkan Sidebar Audio";
+"menu.hide_audio" = "Sembunyikan Sidebar Audio";
+"menu.subtitles" = "Tampilkan Sidebar Terjemahan";
+"menu.hide_subtitles" = "Sembunyikan Sidebar Terjemahan";
 
 "menu.seek_forward" = "Majukan %.0fdtk";
 "menu.seek_backward" = "Mundurkan %.0fdtk";

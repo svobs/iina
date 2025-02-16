@@ -191,7 +191,7 @@
 "menu.pause" = "Pause (Megállít)";
 "menu.resume" = "Folytatás";
 "menu.speed" = "Speed: %@x";
-"menu.chapters" = "Fejezet Panel Megjelenítése";
+"menu.chapters" = "Fejezet Sidebar Megjelenítése";
 "menu.hide_chapters" = "Rejtsd a fejezetek panelt";
 "menu.playlist" = "Lejátszási lista megjelenítése";
 "menu.hide_playlist" = "Rejtsd a lejátszólistát";
