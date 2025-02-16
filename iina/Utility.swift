@@ -597,8 +597,16 @@ class Utility {
 
   static func icon(for url: URL?) -> NSImage {
     if #available(macOS 11.0, *) {
-      if let url, let uttype = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil).first {
-        return NSWorkspace.shared.icon(for: uttype)
+      if let url {
+        let uttypeList = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil)
+        for uttype in uttypeList {
+          if uttype.identifier.starts(with: "io.iina.") {
+            return NSWorkspace.shared.icon(for: uttype)
+          }
+        }
+        if let firstUTType = uttypeList.first {
+          return NSWorkspace.shared.icon(for: firstUTType)
+        }
       }
       return NSWorkspace.shared.icon(for: .data)
     } else {
