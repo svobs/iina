@@ -727,7 +727,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) {
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
-    setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
+    setWindowFloatingOnTop(isOnTop, from: currentLayout, updateOnTopStatus: true)
 
     guard let stateString = priorState.string(for: .miscWindowBools) else { return }
 
@@ -1857,15 +1857,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     log.verbose{"Removed black windows for screens \(blackWindows.compactMap({$0.screen?.displayId}).map{String($0)})"}
   }
 
-  func setWindowFloatingOnTop(_ onTop: Bool, updateOnTopStatus: Bool = true) {
-    guard !isFullScreen else { return }
+  func setWindowFloatingOnTop(_ onTop: Bool, from layout: LayoutState, updateOnTopStatus: Bool = true) {
+    guard !layout.isFullScreen else { return }
     guard let window = window else { return }
+    log.verbose{"Setting window onTop=\(onTop.yn) → \((!onTop).yn)"}
 
     window.level = onTop ? .iinaFloating : .normal
     if updateOnTopStatus {
       self.isOnTop = onTop
       player.mpv.setFlag(MPVOption.Window.ontop, onTop)
-      updateOnTopButton(from: currentLayout, showIfFadeable: true)
+      updateOnTopButton(from: layout, showIfFadeable: true)
       player.saveState()
     }
     resetCollectionBehavior()
@@ -2329,7 +2330,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         return
       }
     }
-    setWindowFloatingOnTop(!onTop)
+    setWindowFloatingOnTop(!onTop, from: currentLayout)
   }
 
   /// Executes an absolute seek using `playSlider`'s current value.

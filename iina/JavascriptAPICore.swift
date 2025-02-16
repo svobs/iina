@@ -283,7 +283,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
       }
     case "ontop":
       guard let val = value as? Bool else { return }
-      window.setWindowFloatingOnTop(val)
+      window.setWindowFloatingOnTop(val, from: window.currentLayout)
     case "sidebar":
       if let name = value as? String {
         if let tab = Sidebar.Tab(name: name) {

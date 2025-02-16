@@ -1341,7 +1341,7 @@ class PlayerCore: NSObject {
       }
 
       if windowController.loaded, !isFullScreen && Preference.bool(for: .alwaysFloatOnTop) {
-        windowController.setWindowFloatingOnTop(!paused)
+        windowController.setWindowFloatingOnTop(!paused, from: windowController.currentLayout)
       }
     }
   }
@@ -2710,7 +2710,7 @@ class PlayerCore: NSObject {
     log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
     if ontop != windowController.isOnTop {
       DispatchQueue.main.async { [self] in
-        windowController.setWindowFloatingOnTop(ontop)
+        windowController.setWindowFloatingOnTop(ontop, from: windowController.currentLayout)
       }
     }
   }
@@ -3125,8 +3125,8 @@ class PlayerCore: NSObject {
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     if ontop != windowController.isOnTop {
       log.verbose{"IINA OnTop state (\(windowController.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state"}
-      DispatchQueue.main.async {
-        self.windowController.setWindowFloatingOnTop(ontop, updateOnTopStatus: false)
+      DispatchQueue.main.async { [self] in
+        windowController.setWindowFloatingOnTop(ontop, from: windowController.currentLayout, updateOnTopStatus: false)
       }
     }
   }

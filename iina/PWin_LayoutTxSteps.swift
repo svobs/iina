@@ -74,7 +74,7 @@ extension PlayerWindowController {
         }
       }
 
-      setWindowFloatingOnTop(false, updateOnTopStatus: false)
+      setWindowFloatingOnTop(false, from: transition.inputLayout, updateOnTopStatus: false)
 
       if transition.outputLayout.isLegacyFullScreen {
         // stylemask
@@ -1212,9 +1212,7 @@ extension PlayerWindowController {
       }
 
       // restore ontop status
-      if player.info.isPlaying {
-        setWindowFloatingOnTop(isOnTop, updateOnTopStatus: false)
-      }
+      setWindowFloatingOnTop(isOnTop, from: transition.outputLayout, updateOnTopStatus: false)
 
       if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
         player.pause()
