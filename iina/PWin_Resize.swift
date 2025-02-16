@@ -720,14 +720,14 @@ extension PlayerWindowController {
           if views.contains(fragVolumeView) {
             oscFloatingUpperView.removeView(fragVolumeView)
           }
-          if let fragToolbarView = fragToolbarView, views.contains(fragToolbarView) {
+          if views.contains(fragToolbarView) {
             oscFloatingUpperView.removeView(fragToolbarView)
           }
         } else {
           if !views.contains(fragVolumeView) {
             oscFloatingUpperView.addView(fragVolumeView, in: .leading)
           }
-          if let fragToolbarView = fragToolbarView, !views.contains(fragToolbarView) {
+          if !views.contains(fragToolbarView) {
             oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           }
         }

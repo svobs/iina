@@ -573,7 +573,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let rightArrowButton = OSCSymButton()
 
   /// Toolbar Buttons container
-  var fragToolbarView: ClickThroughStackView? = nil
+  let fragToolbarView = ClickThroughStackView()
 
   /// Container for legacy PlaySlider layout which shows time labels on left & right of slider.
   let playSliderAndTimeLabelsView = ClickThroughView()

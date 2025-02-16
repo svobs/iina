@@ -109,10 +109,7 @@ class TwoRowBarOSCView: ClickThroughView {
 
     viewsForHStack.append(centralSpacerView)
     viewsForHStack.append(pwc.fragVolumeView)
-
-    if let toolbarView = pwc.fragToolbarView {
-      viewsForHStack.append(toolbarView)
-    }
+    viewsForHStack.append(pwc.fragToolbarView)
     hStackView.setViews(viewsForHStack, in: .leading)
     // In case any were previously hidden via stack view clip, restore:
     for view in viewsForHStack {
@@ -121,9 +118,7 @@ class TwoRowBarOSCView: ClickThroughView {
 
     // - Set visibility priorities
 
-    if let toolbarView = pwc.fragToolbarView {
-      hStackView.setVisibilityPriority(.detachEarlier, for: toolbarView)
-    }
+    hStackView.setVisibilityPriority(.detachEarlier, for: pwc.fragToolbarView)
 
     hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
 

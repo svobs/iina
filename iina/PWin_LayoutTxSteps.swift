@@ -279,10 +279,8 @@ extension PlayerWindowController {
     // TODO: incorporate this into middleGeometry for cleaner code
     if transition.isClosingThenReopeningOSC {
       // Shrink all the buttons to create cool animated effect
-      if let fragToolbarView {
-        for toolbarItem in fragToolbarView.views {
-          (toolbarItem as! OSCToolbarButton).setStyle(iconSize: 0)
-        }
+      for toolbarItem in fragToolbarView.views {
+        (toolbarItem as! OSCToolbarButton).setStyle(iconSize: 0)
       }
 
       // Volume icon
@@ -496,12 +494,6 @@ extension PlayerWindowController {
       playSliderAndTimeLabelsView.removeFromSuperview()
       oscOneRowView.removeFromSuperview()
       oscTwoRowView.removeFromSuperview()
-
-      if !transition.inputLayout.hasFloatingOSC {
-        for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
-          view?.removeFromSuperview()
-        }
-      }
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -638,7 +630,7 @@ extension PlayerWindowController {
       let oscGeo = outputLayout.controlBarGeo
       log.verbose{"[\(transition.name)] Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)"}
 
-      fragToolbarView = rebuildOSCToolbar(transition)
+      rebuildOSCToolbar(transition)
 
       switch outputLayout.oscPosition {
       case .top:
@@ -686,7 +678,7 @@ extension PlayerWindowController {
 
       case .floating:
         currentControlBar = controlBarFloating
-        if let fragToolbarView, !oscFloatingUpperView.views.contains(fragToolbarView) {
+        if  !oscFloatingUpperView.views.contains(fragToolbarView) {
           oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
           fragToolbarView.isHidden = false
@@ -903,7 +895,7 @@ extension PlayerWindowController {
       leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
       rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
 
-      if let fragToolbarView, transition.isClosingThenReopeningOSC {
+      if transition.isClosingThenReopeningOSC {
         // Animate toolbar icons to full size now
         let iconSize = transition.outputLayout.controlBarGeo.toolIconSize
         for toolbarItem in fragToolbarView.views {
@@ -1480,7 +1472,7 @@ extension PlayerWindowController {
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  private func rebuildOSCToolbar(_ transition: LayoutTransition) -> ClickThroughStackView? {
+  private func rebuildOSCToolbar(_ transition: LayoutTransition) {
     let oldGeo = transition.inputLayout.controlBarGeo
     let newGeo = transition.outputLayout.controlBarGeo
     let newButtonTypes = newGeo.toolbarItems
@@ -1490,12 +1482,10 @@ extension PlayerWindowController {
     var needsButtonsUpdate = hasSizeChange || hasColorChange
 
     let isOpeningOSC = transition.isOpeningOSC
-    let toolbarView: ClickThroughStackView
     if isOpeningOSC || !oldGeo.toolbarItemsAreSame(as: newGeo) {
       removeOSCToolBar()
-      guard newButtonTypes.count > 0 else { return nil }
-      toolbarView = ClickThroughStackView()
-      toolbarView.translatesAutoresizingMaskIntoConstraints = false
+      guard newButtonTypes.count > 0 else { return }
+      fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
       let oscGeo = transition.outputLayout.controlBarGeo
       let iconSize: CGFloat = isOpeningOSC && !transition.isWindowInitialLayout ? 0 : oscGeo.toolIconSize
       let iconSpacing = oscGeo.toolIconSpacing
@@ -1510,24 +1500,19 @@ extension PlayerWindowController {
       }
       needsButtonsUpdate = false
 
-      toolbarView.identifier = .init("OSC-ToolBarView")
-      toolbarView.orientation = .horizontal
-      toolbarView.distribution = .fill
-      toolbarView.setHuggingPriority(.init(499), for: .horizontal)
-      toolbarView.setHuggingPriority(.init(500), for: .vertical)
+      fragToolbarView.identifier = .init("OSC-ToolBarView")
+      fragToolbarView.orientation = .horizontal
+      fragToolbarView.distribution = .fill
+      fragToolbarView.setHuggingPriority(.init(499), for: .horizontal)
+      fragToolbarView.setHuggingPriority(.init(500), for: .vertical)
       for button in toolbarButtons {
-        toolbarView.addView(button, in: .trailing)
-        toolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+        fragToolbarView.addView(button, in: .trailing)
+        fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
       }
-    } else {
-      guard let fragToolbarView else {
-        return nil
-      }
-      toolbarView = fragToolbarView
     }
 
     if needsButtonsUpdate {
-      for btn in toolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
+      for btn in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         btn.setStyle(using: transition.outputLayout)
         btn.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
       }
@@ -1537,22 +1522,18 @@ extension PlayerWindowController {
       // It's not possible to control the icon padding from inside the buttons in all cases.
       // Instead we can get the same effect with a little more work, by controlling the stack view:
       let iconSpacing = newGeo.toolIconSpacing
-      toolbarView.spacing = 2 * iconSpacing
+      fragToolbarView.spacing = 2 * iconSpacing
       let sideInset = (iconSpacing * 0.5).rounded()
-      toolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
+      fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
                                      bottom: iconSpacing, right: sideInset)
-      log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
+      log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
     }
-    return toolbarView
   }
 
   // Looks like in some cases, the toolbar doesn't disappear unless all its buttons are also removed
   private func removeOSCToolBar() {
-    guard let toolBarStackView = fragToolbarView else { return }
-
-    toolBarStackView.views.forEach { toolBarStackView.removeView($0) }
-    toolBarStackView.removeFromSuperview()
-    fragToolbarView = nil
+    fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
+    fragToolbarView.removeFromSuperview()
   }
 
   // MARK: - Misc support functions
