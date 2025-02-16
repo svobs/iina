@@ -156,6 +156,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
+    for sectionView in sectionViews {
+      // helps with show/hide animations
+      sectionView.clipsToBounds = true
+    }
+
     configureObservers()
 
     // Init with dummy values for now
@@ -220,6 +225,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .useLegacyWindowedMode,
       .aspectRatioPanelPresets,
       .cropPanelPresets,
+      .enableThumbnailPreview,
       .thumbnailBorderStyle,
     ])
   }
@@ -260,7 +266,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
       }
-    case .thumbnailBorderStyle:
+    case .enableThumbnailPreview,
+        .thumbnailBorderStyle:
       animationPipeline.submitTask { [self] in
         refreshSeekPreviewShadow()
       }
@@ -330,7 +337,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   func refreshSeekPreviewShadow() {
     let thumbBorderStyle: Preference.ThumnailBorderStyle = Preference.enum(for: .thumbnailBorderStyle)
-    seekPreviewWhiteShadowCheckbox.isHidden = !thumbBorderStyle.hasShadow
+    seekPreviewWhiteShadowCheckbox.isHidden = !(Preference.bool(for: .enableThumbnailPreview) && thumbBorderStyle.hasShadow)
     let shadow: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
     seekPreviewWhiteShadowCheckbox.state = (shadow == .glow) ? .on : .off
   }
