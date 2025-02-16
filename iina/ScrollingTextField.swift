@@ -13,13 +13,18 @@ import Cocoa
 fileprivate let mediaInfoViewLeadingOffset: CGFloat = 10 + 2
 fileprivate let startPoint = NSPoint(x: mediaInfoViewLeadingOffset, y: 0)
 
+/// Scrolls the text in the field, interpolating the position based on the system clock's elapsed time.
+///
+/// Design:
+/// - When playback starts, waits for `Constants.TimeInterval.scrollingLabelInitialWaitSec` before scrolling.
+/// - Scrolls at a rate of `Constants.TimeInterval.scrollingLabelOffsetPerSec` per second.
+/// - To pause scroll, call `redraw(paused: true)`. Scroll will freeze at current position.
+/// - To resume scroll, call `redraw(paused: false)` Scroll will continue from its previous position...
+/// - ... UNLESS `reset()` was called. In that case, the text will start from `0` and wait for the above
+///   time interval before scrolling again.
 class ScrollingTextField: NSTextField {
 
-  /// Increase this to scroll faster
-  let offsetPerSec: CGFloat = 6.0
-  let timeToWaitBeforeStart: TimeInterval = 1
-
-  private var startTime: TimeInterval = 0
+  private var baseTime: TimeInterval? = nil
   private var pauseTime: TimeInterval? = nil
 
   private var drawPoint = startPoint
@@ -39,13 +44,22 @@ class ScrollingTextField: NSTextField {
     }
   }
 
-  /// Applies next quanta of animation. Calculates the label's new X offset based on `stepIndex`.
+  /// Redraws, after updating the label's X offset based on `baseTime` and the current time.
   func redraw(paused: Bool) {
-    if paused && pauseTime == nil {
-      pauseTime = Date().timeIntervalSince1970
-    } else if !paused && pauseTime != nil {
-      reset()
+    if paused {
+      if pauseTime == nil {
+        pauseAnimation()
+      }
+      return
+    } else if pauseTime != nil {
+      resumeAnimation()
     }
+
+    let baseTime: TimeInterval = self.baseTime ?? Date().timeIntervalSince1970
+    if self.baseTime == nil {
+      self.baseTime = baseTime
+    }
+
     let stringWidth = attributedStringValue.size().width
     // Must use superview frame as a reference. NSTextField frame is poorly defined
     let frameWidth = superview!.frame.width
@@ -54,12 +68,13 @@ class ScrollingTextField: NSTextField {
       let xOffset = (frameWidth - stringWidth) / 2
       drawPoint.x = xOffset + mediaInfoViewLeadingOffset
     } else {
+      let initialWait = Constants.TimeInterval.scrollingLabelInitialWaitSec
       let endTime = pauseTime ?? Date().timeIntervalSince1970
-      let scrollOffsetSecs = max(0, endTime - startTime - timeToWaitBeforeStart)
-      let scrollOffset = scrollOffsetSecs * offsetPerSec
-      /// Loop back to `stepIndex` origin:
+      let scrollOffsetSecs = max(0, endTime - baseTime - initialWait)
+      let scrollOffset = scrollOffsetSecs * Constants.TimeInterval.scrollingLabelOffsetPerSec
+      /// Loop back to beginning, but fudge the numbers to exclude the pause
       if appendedStringCopyWidth - scrollOffset < 0 {
-        reset()
+        self.baseTime = Date().timeIntervalSince1970 - initialWait
         return
       } else {
         /// Subtract from X to scroll leftwards:
@@ -69,8 +84,24 @@ class ScrollingTextField: NSTextField {
     needsDisplay = true
   }
 
+  private func pauseAnimation() {
+    pauseTime = Date().timeIntervalSince1970
+  }
+
+  private func resumeAnimation() {
+    guard let lastPauseTime = pauseTime, let lastBaseTime = baseTime else {
+      pauseTime = nil
+      baseTime = Date().timeIntervalSince1970
+      return
+    }
+    let elapsedTime = lastPauseTime - lastBaseTime
+    pauseTime = nil
+    // Need to preserve the interval between now & baseTime to ensure offset continuity
+    baseTime = Date().timeIntervalSince1970 - elapsedTime
+  }
+
   func reset() {
-    startTime = Date().timeIntervalSince1970
+    baseTime = nil
     pauseTime = nil
     drawPoint = startPoint
     needsDisplay = true

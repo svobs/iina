@@ -166,6 +166,10 @@ struct Constants {
     /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue.
     static let minLoopPointTime = 0.000001
 
+    /// Speed of scrolling labels in music mode. Increase to scroll faster
+    static let scrollingLabelOffsetPerSec: TimeInt = 100
+    static let scrollingLabelInitialWaitSec: TimeInt = 1.0
+
     static let keyDownHandlingTimeout = 1.0
 
     /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
