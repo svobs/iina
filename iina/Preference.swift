@@ -206,6 +206,7 @@ struct Preference {
     static let showCachedRangesInSlider = Key("showCachedRangesInSlider")
     static let roundSliderBarRects = Key("roundSliderBarRects")
     static let sliderBarDoneColor = Key("sliderBarDoneColor")
+    static let useSliderFocusMagnifyEffect = Key("useSliderFocusMagnifyEffect")
     static let alwaysShowSliderKnob = Key("alwaysShowSliderKnob")
     // If true, break up the PlaySlider bar into chapter segments. (bool)
     static let showChapterPos = Key("showChapterPos")
@@ -1252,6 +1253,7 @@ struct Preference {
     .showCachedRangesInSlider: true,
     .roundSliderBarRects: true,
     .sliderBarDoneColor: SliderBarLeftColor.defaultValue.rawValue,
+    .useSliderFocusMagnifyEffect: false,
     .alwaysShowSliderKnob: false,
     .showChapterPos: false,
     .enableControlBarAutoHide: true,

@@ -24,7 +24,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   var wantsFocusEffect: Bool {
     guard let pwc else { return false }
-    return pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider)
+    return Preference.bool(for: .useSliderFocusMagnifyEffect) && pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingVolumeSlider || isMouseHoveringOverVolumeSlider)
   }
 
   override var currentKnobType: KnobFactory.KnobType {

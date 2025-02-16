@@ -21,7 +21,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
   var wantsFocusEffect: Bool {
     guard let pwc else { return false }
-    return pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingPlaySlider || pwc.seekPreview.animationState == .shown)
+    return Preference.bool(for: .useSliderFocusMagnifyEffect) && pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingPlaySlider || pwc.seekPreview.animationState == .shown)
   }
 
   // MARK:- Displaying the Cell
