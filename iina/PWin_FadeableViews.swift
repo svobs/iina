@@ -275,7 +275,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let showDefaultArt else { return }
 
-    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (state=\(player.info.currentPlayback?.state.description ?? "nil"))")
+    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt, state=\(player.info.currentPlayback?.state.description ?? "nil")")
     // Update default album art visibility:
     defaultAlbumArtView.isHidden = !showDefaultArt
   }

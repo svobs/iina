@@ -2894,9 +2894,10 @@ class PlayerCore: NSObject {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
     postNotification(.iinaVIDChanged)
-    
-    let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt in
-      log.verbose{"Calling transformGeometry for vid change (to: \(vid)), vidLastSized=\(String(currentPlayback.vidTrackLastSized)), sessionState=\(cxt.sessionState))"}
+
+    log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
+    let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt -> PWinSessionState? in
+      log.verbose{"[applyVideoGeo \(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
       if case .existingSession_continuing = cxt.sessionState {
         if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
           return .existingSession_videoTrackChangedForSamePlayback
@@ -2910,17 +2911,17 @@ class PlayerCore: NSObject {
       return nil  // abort
     }
 
-    let musicModeTransform: MusicModeGeometry.Transform = { [self] ctx in
+    let musicModeTransform: MusicModeGeometry.Transform = { [self] ctx -> MusicModeGeometry? in
       let oldMusicModeGeo = ctx.oldGeo.musicMode
       // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
-      guard isShowVideoPendingInMiniPlayer else { return oldMusicModeGeo }
+      guard isShowVideoPendingInMiniPlayer else { return nil }
+      log.verbose{"MusicMode: Showing video (visibleNow=\(oldMusicModeGeo.isVideoVisible.yesno))"}
       /// Must change `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
       isShowVideoPendingInMiniPlayer = false
       miniPlayerShowVideoTimer.cancel()
-      guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return oldMusicModeGeo }
+      guard isInMiniPlayer && !oldMusicModeGeo.isVideoVisible else { return nil }
       /// `showDefaultArt` should already have been handled by `transformGeometry` so do not change here
       let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
-      log.verbose{"MusicMode: changing videoView visibility: \(oldMusicModeGeo.isVideoVisible.yesno) → YES, H=\(newGeo.videoHeight)"}
       return newGeo
     }
     windowController.transformGeometry("VidTrackChanged",

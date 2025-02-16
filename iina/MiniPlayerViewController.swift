@@ -254,7 +254,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBAction func togglePlaylist(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showPlaylist = !isPlaylistVisible
-      log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
+      log.verbose{"Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)"}
       let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
 
       let currentMusicModeGeo = windowController.musicModeGeoForCurrentFrame()
@@ -273,7 +273,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         // Hiding playlist
         let playlistHeightRounded = Int(round(currentDisplayedPlaylistHeight))
         if playlistHeightRounded >= Int(Constants.Distance.MusicMode.minPlaylistHeight) {
-          log.verbose{"Saving playlist height: \(playlistHeightRounded)"}
+          log.trace{"Saving playlist height: \(playlistHeightRounded)"}
           Preference.set(playlistHeightRounded, for: .musicModePlaylistHeight)
         }
 
@@ -296,7 +296,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBAction func toggleVideoViewVisibleState(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !isVideoVisible
-      log.verbose("MusicMode: user clicked video toggle btn. Changing videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)")
+      log.verbose{"MusicMode: user clicked video toggle btn. Changing videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)"}
 
       if showVideoView {
         /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
@@ -319,7 +319,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // MARK: - Window size & layout
 
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
-    log.verbose{"Updating viewportViewHeightContraint using visible=\(isVideoVisible.yn)"}
+    log.verbose{"Updating ViewportView-HeightContraint using visible=\(isVideoVisible.yn)"}
 
     if isVideoVisible {
       // Remove zero-height constraint
@@ -333,7 +333,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         heightConstraint.isActive = true
       } else {
         let heightConstraint = windowController.viewportView.heightAnchor.constraint(equalToConstant: 0)
-        heightConstraint.identifier = .init("viewportViewHeightContraint")
+        heightConstraint.identifier = "ViewportView-HeightContraint"
         heightConstraint.isActive = true
         windowController.viewportViewHeightContraint = heightConstraint
       }

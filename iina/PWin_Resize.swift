@@ -245,7 +245,7 @@ extension PlayerWindowController {
   /// - `musicModeTransform`: optional operator function which if provided, will run in the main queue.
   ///   - If non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
   ///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
-  ///     the transform will ignore it and will proceed with its calculated values.
+  ///     the transform will not transform the geometry.
   func transformGeometry(_ transformName: String,
                          stateChange: ((GeometryTransform.Context) -> PWinSessionState?)? = nil,
                          video videoTransform: VideoGeometry.Transform? = nil,
@@ -356,7 +356,7 @@ extension PlayerWindowController {
   /// Cleanup, update `sessionState` & UI.
   private func buildEndTask(_ cxt: GeometryTransform.Context, newVidGeo: VideoGeometry, onSuccess: (() -> Void)? = nil) -> IINAAnimation.Task {
     IINAAnimation.Task.instantTask{ [self] in
-      log.verbose{"[applyVideoGeo \(cxt.name)] Running endTask; sessionState=\(cxt.sessionState)"}
+      log.verbose{"[applyVideoGeo \(cxt.name)] Running endTask for sessionState=\(cxt.sessionState) vid=\(cxt.vidTrackID)"}
       if cxt.sessionState.isChangingVideoTrack {
         // Set to prevent future duplicate calls from continuing
         cxt.currentPlayback.vidTrackLastSized = cxt.vidTrackID
@@ -479,12 +479,16 @@ extension PlayerWindowController {
         log.verbose{"[applyVideoGeo \(cxt.name)] Music mode already handled for opened window: \(musicModeGeo)"}
         return []
       }
+      let oldMusicModeGeo = newCxt.oldGeo.musicMode  // has updated windowFrame
+      var newMusicModeGeo = oldMusicModeGeo
+      if let musicModeTransform {
+        guard let transformedGeo = musicModeTransform(newCxt) else {
+          return []
+        }
+        newMusicModeGeo = transformedGeo
+      }
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      log.verbose{"[applyVideoGeo \(cxt.name)] Prev cached value of musicModeGeo: \(musicModeGeo)"}
-
-      let oldMusicModeGeo = newCxt.oldGeo.musicMode  // has updated windowFrame
-      let newMusicModeGeo = musicModeTransform?(newCxt) ?? oldMusicModeGeo
 
       if oldMusicModeGeo.isVideoVisible != newMusicModeGeo.isVideoVisible {
         // Toggling videoView visiblity: use longer duration for nicety
@@ -494,9 +498,7 @@ extension PlayerWindowController {
       /// If `showDefaultArt == nil`, don't change existing visibility.
       let shouldDecideDefaultArtStatus = oldMusicModeGeo.isVideoVisible || newMusicModeGeo.isVideoVisible
       let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
-      log.verbose{"[applyVideoGeo \(cxt.name)] Start: sessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
-
-      log.verbose{"[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)"}
+      log.verbose{"[applyVideoGeo \(cxt.name)] Applying musicMode result: \(newMusicModeGeo) (sessionState=\(sessionState) showDefaultArt=\(showDefaultArt?.yn ?? "nil"))"}
       return buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
                                          duration: duration, showDefaultArt: showDefaultArt)
     default:
