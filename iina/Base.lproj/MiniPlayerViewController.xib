@@ -12,7 +12,6 @@
                 <outlet property="controllerButtonsPanelView" destination="Wxl-Ex-FWV" id="Qyk-3u-ay1"/>
                 <outlet property="mediaInfoView" destination="Cef-Fd-eDH" id="ngB-gq-f49"/>
                 <outlet property="musicModeControlBarView" destination="Q6R-eL-qkW" id="2OU-bR-LVG"/>
-                <outlet property="muteButton" destination="5Og-lg-qvH" id="9dA-7h-PGA"/>
                 <outlet property="playbackBtnsWrapperView" destination="EqE-sr-ba8" id="6m3-ha-kK2"/>
                 <outlet property="playlistWrapperView" destination="2bL-q1-qry" id="acd-8i-uDw"/>
                 <outlet property="positionSliderWrapperView" destination="e1r-vi-5HY" id="nU3-cx-gOS"/>
@@ -26,7 +25,6 @@
                 <outlet property="volumeLabel" destination="MP6-sS-T7f" id="Ztm-8c-Zay"/>
                 <outlet property="volumePopover" destination="yea-QL-Hlq" id="ByH-tP-YzC"/>
                 <outlet property="volumePopoverAlignmentView" destination="ezf-Py-pMY" id="vVK-wa-ngY"/>
-                <outlet property="volumeSlider" destination="Ene-VG-UYY" id="EMJ-5b-xPT"/>
                 <outlet property="volumeSliderView" destination="JoU-Y0-cxJ" id="aKh-R6-I13"/>
             </connections>
         </customObject>
@@ -188,26 +186,6 @@
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="JoU-Y0-cxJ" userLabel="Volume Slider View">
             <rect key="frame" x="0.0" y="0.0" width="180" height="36"/>
             <subviews>
-                <imageView verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="5Og-lg-qvH" userLabel="Mute Button" customClass="SymButton" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="16" y="9" width="16" height="18"/>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="18" id="cUj-wp-dxX"/>
-                    </constraints>
-                    <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" image="volume" id="6jy-7B-dv6"/>
-                    <connections>
-                        <action selector="muteButtonAction:" target="-1" id="jKh-Qf-tOV"/>
-                    </connections>
-                </imageView>
-                <slider verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Ene-VG-UYY" userLabel="Volume Slider" customClass="ScrollableSlider" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="38" y="10" width="104" height="16"/>
-                    <constraints>
-                        <constraint firstAttribute="width" constant="100" id="22P-mK-lYF"/>
-                    </constraints>
-                    <sliderCell key="cell" controlSize="small" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="rZ7-sj-3jn" customClass="VolumeSliderCell" customModule="IINA" customModuleProvider="target"/>
-                    <connections>
-                        <action selector="volumeSliderAction:" target="-1" id="amd-td-7lV"/>
-                    </connections>
-                </slider>
                 <textField focusRingType="none" horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="MP6-sS-T7f" userLabel="50 Label">
                     <rect key="frame" x="146" y="10" width="21" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="50" id="aot-6J-Jp7" userLabel="50 Cell">
@@ -218,15 +196,9 @@
                 </textField>
             </subviews>
             <constraints>
-                <constraint firstItem="MP6-sS-T7f" firstAttribute="centerY" secondItem="Ene-VG-UYY" secondAttribute="centerY" id="IEM-58-wBy"/>
-                <constraint firstItem="Ene-VG-UYY" firstAttribute="top" secondItem="JoU-Y0-cxJ" secondAttribute="top" constant="12" id="JXq-kB-fdn"/>
-                <constraint firstItem="MP6-sS-T7f" firstAttribute="leading" secondItem="Ene-VG-UYY" secondAttribute="trailing" constant="8" id="Jfv-7v-xAE"/>
-                <constraint firstItem="5Og-lg-qvH" firstAttribute="centerY" secondItem="Ene-VG-UYY" secondAttribute="centerY" id="U0k-sl-lgS"/>
-                <constraint firstAttribute="bottom" secondItem="Ene-VG-UYY" secondAttribute="bottom" constant="12" id="Yba-0E-lbi"/>
-                <constraint firstItem="Ene-VG-UYY" firstAttribute="leading" secondItem="5Og-lg-qvH" secondAttribute="trailing" constant="8" id="agK-tV-GdH"/>
-                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="MP6-sS-T7f" secondAttribute="trailing" constant="12" id="dnE-83-KFx"/>
-                <constraint firstItem="Ene-VG-UYY" firstAttribute="leading" secondItem="JoU-Y0-cxJ" secondAttribute="leading" constant="40" id="m0h-y1-xX9"/>
-                <constraint firstAttribute="trailing" secondItem="Ene-VG-UYY" secondAttribute="trailing" constant="40" id="w85-5y-426"/>
+                <constraint firstItem="MP6-sS-T7f" firstAttribute="centerY" secondItem="JoU-Y0-cxJ" secondAttribute="centerY" id="DVI-KE-ycU"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="MP6-sS-T7f" secondAttribute="trailing" id="b5b-k4-Bwp"/>
+                <constraint firstAttribute="trailing" secondItem="MP6-sS-T7f" secondAttribute="leading" constant="32" id="dnE-83-KFx"/>
                 <constraint firstAttribute="height" constant="36" id="zi8-jI-v9K"/>
             </constraints>
             <point key="canvasLocation" x="176" y="24"/>

@@ -303,7 +303,6 @@ extension PlayerWindowController {
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
-        volumeIconAspectConstraint.priority = .init(900)
         volumeIconAspectConstraint.isActive = true
       }
       if arrowBtnWidthConstraint.constant > oscGeo.arrowIconHeight {
@@ -584,6 +583,15 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
           miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
+        }
+
+        if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {
+          miniPlayer.volumeSliderView.addSubview(fragVolumeView)
+          fragVolumeView.centerYAnchor.constraint(equalTo: miniPlayer.volumeSliderView.centerYAnchor).isActive = true
+          volumeSlider.leadingAnchor.constraint(equalTo: miniPlayer.volumeSliderView.leadingAnchor, constant: 40).isActive = true
+          miniPlayer.volumeSliderView.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor, constant: 40).isActive = true
+          muteButton.target = self
+          muteButton.action = #selector(muteButtonAction(_:))
         }
 
         seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
@@ -884,7 +892,6 @@ extension PlayerWindowController {
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
-        volumeIconAspectConstraint.priority = .init(900)
         volumeIconAspectConstraint.isActive = true
       }
 

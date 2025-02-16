@@ -259,6 +259,9 @@ struct ControlBarGeometry {
   }
 
   var volumeIconHeight: CGFloat {
+    if mode == .musicMode {
+      return 18.0
+    }
     if position == .floating {
       return floatingVolumeIconSize
     }
@@ -270,6 +273,9 @@ struct ControlBarGeometry {
   }
 
   var volumeSliderWidth: CGFloat {
+    if mode == .musicMode {
+      return 100.0
+    }
     return (Constants.Distance.Slider.unscaledVolumeSliderWidth * sliderScale).rounded()
   }
 

@@ -579,13 +579,12 @@ extension PlayerWindowController {
     muteButton.toolTip = "Toggle mute"
     fragVolumeView.addSubview(muteButton)
     muteButton.translatesAutoresizingMaskIntoConstraints = false
-    muteButton.addConstraintsToFillSuperview(bottom: 0, leading: 0)
+    muteButton.addConstraintsToFillSuperview(leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
     volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
     volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
-    volumeIconAspectConstraint.priority = .init(900)
     volumeIconAspectConstraint.isActive = true
 
     // Volume slider
@@ -600,7 +599,7 @@ extension PlayerWindowController {
     volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
     volumeSliderWidthConstraint.identifier = .init("VolumeSlider-WidthConstraint")
     volumeSliderWidthConstraint.isActive = true
-    volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true
+    volumeSlider.addConstraintsToFillSuperview(top: 0, bottom: 0)
     volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: hSpacing).isActive = true
     volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor).isActive = true
     volumeSlider.target = self

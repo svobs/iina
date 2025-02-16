@@ -1973,7 +1973,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let task = IINAAnimation.Task(duration: IINAAnimation.btnLayoutChangeDuration, { [self] in
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
-        volumeIconAspectConstraint.priority = .init(900)
         volumeIconAspectConstraint.isActive = true
       })
       IINAAnimation.runAsync(task, then: { [self] in
@@ -1985,11 +1984,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
     // TODO: consolidate music mode buttons with regular player's
     miniPlayer.loadIfNeeded()
-    miniPlayer.volumeSlider.isEnabled = hasAudio
-    miniPlayer.volumeSlider.doubleValue = volume
     miniPlayer.volumeLabel.intValue = Int32(volume)
     miniPlayer.volumeButton.image = volumeImage
-    miniPlayer.muteButton.image = volumeImage
   }
 
   func volumeIcon(volume: Double, isMuted: Bool) -> NSImage? {
