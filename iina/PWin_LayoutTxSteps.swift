@@ -492,8 +492,10 @@ extension PlayerWindowController {
     }
 
     if !outputLayout.hasControlBar {
-      log.verbose{"[\(transition.name)] Removing playSliderAndTimeLabelsView from superview"}
+      log.verbose{"[\(transition.name)] Removing OSC views from window"}
       playSliderAndTimeLabelsView.removeFromSuperview()
+      oscOneRowView.removeFromSuperview()
+      oscTwoRowView.removeFromSuperview()
 
       if !transition.inputLayout.hasFloatingOSC {
         for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
