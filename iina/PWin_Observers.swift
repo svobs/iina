@@ -71,6 +71,7 @@ extension PlayerWindowController {
       .useLegacyFullScreen,
       .displayTimeAndBatteryInFullScreen,
       .alwaysShowOnTopIcon,
+      .alwaysFloatOnTop,
       .leadingSidebarPlacement,
       .trailingSidebarPlacement,
       .settingsTabGroupLocation,
@@ -295,8 +296,12 @@ extension PlayerWindowController {
           fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
         }
       }
-    case .alwaysShowOnTopIcon:
-      updateOnTopButton(from: currentLayout, showIfFadeable: true)
+    case .alwaysShowOnTopIcon,
+        .alwaysFloatOnTop:
+      if loaded, Preference.bool(for: .alwaysFloatOnTop) {
+        let playing = player.info.isPlaying
+        setWindowFloatingOnTop(playing, from: currentLayout)
+      }
     case .leadingSidebarPlacement, .trailingSidebarPlacement:
       updateSidebarPlacements()
     case .settingsTabGroupLocation:

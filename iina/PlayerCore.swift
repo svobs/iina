@@ -1340,7 +1340,7 @@ class PlayerCore: NSObject {
         windowController.pip.controller.playing = !paused
       }
 
-      if windowController.loaded, !isFullScreen && Preference.bool(for: .alwaysFloatOnTop) {
+      if windowController.loaded, Preference.bool(for: .alwaysFloatOnTop) {
         windowController.setWindowFloatingOnTop(!paused, from: windowController.currentLayout)
       }
     }
