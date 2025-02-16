@@ -367,7 +367,7 @@ extension PlayerWindowController {
         // The OSD can have weird stretching glitches if displayed while zooming open...
         if cxt.currentPlayback.state == .loaded {
           // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
-          log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID)"}
+          log.debug{"[applyVideoGeo \(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID), will emit fileLoaded notifications"}
           cxt.currentPlayback.state = .loadedAndSized
 
           // If is network resource, may not be loaded yet. If file, it will be.
@@ -483,12 +483,14 @@ extension PlayerWindowController {
         return []
       }
       let oldMusicModeGeo = newCxt.oldGeo.musicMode  // has updated windowFrame
-      var newMusicModeGeo = oldMusicModeGeo
+      let newMusicModeGeo: MusicModeGeometry
       if let musicModeTransform {
         guard let transformedGeo = musicModeTransform(newCxt) else {
           return []
         }
         newMusicModeGeo = transformedGeo
+      } else {
+        newMusicModeGeo = oldMusicModeGeo.clone(video: newVidGeo)
       }
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)

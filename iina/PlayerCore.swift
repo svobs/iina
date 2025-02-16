@@ -687,7 +687,7 @@ class PlayerCore: NSObject {
   }
 
   func enterMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
-    log.debug{"Switch to mini player, automatically=\(automatically)"}
+    log.debug{"Switch to music mode, automatically=\(automatically)"}
     if !automatically {
       // Toggle manual override
       overrideAutoMusicMode = !overrideAutoMusicMode
@@ -698,7 +698,7 @@ class PlayerCore: NSObject {
   }
 
   func exitMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
-    log.debug{"Switch to normal window from mini player, automatically=\(automatically)"}
+    log.debug{"Switch to normal window from music mode, automatically=\(automatically)"}
     if !automatically {
       overrideAutoMusicMode = !overrideAutoMusicMode
       log.verbose{"Changed overrideAutoMusicMode to \(overrideAutoMusicMode)"}
