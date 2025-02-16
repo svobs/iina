@@ -415,8 +415,7 @@ extension PlayerWindowController {
     // TODO: find place for this in tasks
     pip.controller.aspectRatio = newVidGeo.videoSizeCAR
 
-    let oldGeoLatest: GeometrySet? = buildGeoSet(from: newLayout, baseGeoSet: cxt.oldGeo)
-    let newCxt = cxt.clone(oldGeo: oldGeoLatest)
+    let newCxt = cxt.clone(oldGeo: buildGeoSet(from: newLayout, baseGeoSet: cxt.oldGeo))
     log.verbose{"[applyVideoGeo \(cxt.name)] Mode=\(newLayout.mode): updated cxt=\(newCxt)"}
     switch newLayout.mode {
 
@@ -458,10 +457,11 @@ extension PlayerWindowController {
 
     case .fullScreenNormal:
       let intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-      let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
-                                                                   intendedViewportSize: intendedViewportSize)
+      let newWinGeo = cxt.oldGeo.windowed.resizeMinimally(forNewVideoGeo: newVidGeo,
+                                                          intendedViewportSize: intendedViewportSize)
       let fsGeo = newLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
-      log.debug{"[applyVideoGeo \(cxt.name)] Will apply FS result: \(fsGeo)"}
+      let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
+      log.debug{"[applyVideoGeo \(cxt.name)] Will apply FS result: \(fsGeo), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
 
       return [.init(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
@@ -471,6 +471,9 @@ extension PlayerWindowController {
         windowedModeGeo = newWinGeo
 
         resetRotationPreview()
+        hideSeekPreviewImmediately()
+        updateDefaultArtVisibility(to: showDefaultArt)
+        player.updateMPVWindowScale(using: fsGeo)
         updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
       })]
 
