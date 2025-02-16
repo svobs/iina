@@ -67,25 +67,30 @@ extension PlayerWindowController {
                    baseGeoSet: GeometrySet? = nil) -> GeometrySet {
     let geo = baseGeoSet ?? geo
 
+    guard inputLayout.mode == currentLayout.mode else {
+      log.debug{"Mode has changed (current=\(currentLayout.mode), provided=\(inputLayout.mode)): will reuse existing GeometrySet instead of updating"}
+      return geo
+    }
+
     let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() ?? (nil, nil)
-    let mode: PlayerWindowMode? = (inputLayout.mode == currentLayout.mode) ? inputLayout.mode : nil
 
     let windowedNew: PWinGeometry
+    let musicModeNew: MusicModeGeometry
+
     if let windowed {
       windowedNew = windowed
-    } else if mode?.isWindowed ?? false {
+    } else if inputLayout.mode.isWindowed {
       windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
-    } else if mode?.isFullScreen ?? false {
+    } else if inputLayout.mode.isFullScreen {
       // may have changed screen while in FS
       windowedNew = geo.windowed.clone(screenID: latestScreenID, video: video)
     } else {
       windowedNew = geo.windowed
     }
 
-    let musicModeNew: MusicModeGeometry
     if let musicMode {
       musicModeNew = musicMode
-    } else if mode == .musicMode {
+    } else if inputLayout.mode == .musicMode {
       musicModeNew = geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
     } else {
       musicModeNew = geo.musicMode
