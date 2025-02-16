@@ -174,12 +174,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - UI: Media Info
 
-  func stepScrollingLabels() {
+  func updateScrollingLabels() {
     windowController.animationPipeline.submitInstantTask { [self] in
       loadIfNeeded()
-      // FIXME: update based on TIME, not # of function calls!
-      titleLabel.stepNext()
-      artistAlbumLabel.stepNext()
+      let isPaused = player.info.isPaused
+      titleLabel.redraw(paused: isPaused)
+      artistAlbumLabel.redraw(paused: isPaused)
     }
   }
 

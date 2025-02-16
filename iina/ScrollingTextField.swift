@@ -15,12 +15,13 @@ fileprivate let startPoint = NSPoint(x: mediaInfoViewLeadingOffset, y: 0)
 
 class ScrollingTextField: NSTextField {
 
-  let stepSize: CGFloat = 3.0  // increase this to scroll faster
-  let stepsToWaitBeforeStart: Int = 10
+  /// Increase this to scroll faster
+  let offsetPerSec: CGFloat = 6.0
+  let timeToWaitBeforeStart: TimeInterval = 1
 
-  private var stepIndex: Int = 0
+  private var startTime: TimeInterval = 0
+  private var pauseTime: TimeInterval? = nil
 
-  private var scrollingTimer: Timer?
   private var drawPoint = startPoint
 
   private var scrollingString = NSAttributedString(string: "")
@@ -39,7 +40,12 @@ class ScrollingTextField: NSTextField {
   }
 
   /// Applies next quanta of animation. Calculates the label's new X offset based on `stepIndex`.
-  func stepNext() {
+  func redraw(paused: Bool) {
+    if paused && pauseTime == nil {
+      pauseTime = Date().timeIntervalSince1970
+    } else if !paused && pauseTime != nil {
+      reset()
+    }
     let stringWidth = attributedStringValue.size().width
     // Must use superview frame as a reference. NSTextField frame is poorly defined
     let frameWidth = superview!.frame.width
@@ -48,12 +54,9 @@ class ScrollingTextField: NSTextField {
       let xOffset = (frameWidth - stringWidth) / 2
       drawPoint.x = xOffset + mediaInfoViewLeadingOffset
     } else {
-      stepIndex += 1
-      let scrollOffset = CGFloat(stepIndex - stepsToWaitBeforeStart) * stepSize
-      if scrollOffset < 0 {
-        // Initial pause
-        return
-      }
+      let endTime = pauseTime ?? Date().timeIntervalSince1970
+      let scrollOffsetSecs = max(0, endTime - startTime - timeToWaitBeforeStart)
+      let scrollOffset = scrollOffsetSecs * offsetPerSec
       /// Loop back to `stepIndex` origin:
       if appendedStringCopyWidth - scrollOffset < 0 {
         reset()
@@ -67,7 +70,8 @@ class ScrollingTextField: NSTextField {
   }
 
   func reset() {
-    stepIndex = 0
+    startTime = Date().timeIntervalSince1970
+    pauseTime = nil
     drawPoint = startPoint
     needsDisplay = true
   }

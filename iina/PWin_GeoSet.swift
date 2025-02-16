@@ -63,18 +63,19 @@ extension PlayerWindowController {
   }
 
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: MusicModeGeometry? = nil,
-                   video: VideoGeometry? = nil, from inputLayout: LayoutState? = nil,
+                   video: VideoGeometry? = nil, from inputLayout: LayoutState,
                    baseGeoSet: GeometrySet? = nil) -> GeometrySet {
     let geo = baseGeoSet ?? geo
 
     let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() ?? (nil, nil)
+    let mode: PlayerWindowMode? = (inputLayout.mode == currentLayout.mode) ? inputLayout.mode : nil
 
     let windowedNew: PWinGeometry
     if let windowed {
       windowedNew = windowed
-    } else if inputLayout?.mode.isWindowed ?? false {
+    } else if mode?.isWindowed ?? false {
       windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
-    } else if inputLayout?.mode.isFullScreen ?? false {
+    } else if mode?.isFullScreen ?? false {
       // may have changed screen while in FS
       windowedNew = geo.windowed.clone(screenID: latestScreenID, video: video)
     } else {
@@ -84,7 +85,7 @@ extension PlayerWindowController {
     let musicModeNew: MusicModeGeometry
     if let musicMode {
       musicModeNew = musicMode
-    } else if inputLayout?.mode == .musicMode {
+    } else if mode == .musicMode {
       musicModeNew = geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
     } else {
       musicModeNew = geo.musicMode

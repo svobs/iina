@@ -1749,7 +1749,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                                                      video: geo.video)
       let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo)
       if currentLayout.mode == .windowedInteractive {
-        geoSet = buildGeoSet(windowed: newIMGeo)
+        geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
       }
 
       // Crop animation:
@@ -1919,7 +1919,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     updateAdditionalInfo()
 
     if isInMiniPlayer {
-      miniPlayer.stepScrollingLabels()
+      miniPlayer.updateScrollingLabels()
     }
     if player.info.isNetworkResource {
       updateNetworkState()
@@ -1982,10 +1982,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
     // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-    // TODO: consolidate music mode buttons with regular player's
-    miniPlayer.loadIfNeeded()
-    miniPlayer.volumeLabel.intValue = Int32(volume)
-    miniPlayer.volumeButton.image = volumeImage
+    if isInMiniPlayer {
+      miniPlayer.loadIfNeeded()
+      miniPlayer.volumeLabel.intValue = Int32(volume)
+      miniPlayer.volumeButton.image = volumeImage
+    }
   }
 
   func volumeIcon(volume: Double, isMuted: Bool) -> NSImage? {

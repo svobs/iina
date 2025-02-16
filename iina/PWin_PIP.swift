@@ -62,11 +62,13 @@ extension PlayerWindowController: PIPViewControllerDelegate {
         pip.status = .notInPIP
         return
       }
-      // Special case if in music mode
-      miniPlayer.loadIfNeeded()
-      if isInMiniPlayer && !miniPlayer.isVideoVisible {
-        // need to re-enable video to enter PiP
-        player.setVideoTrackEnabled()
+      
+      if isInMiniPlayer {
+        miniPlayer.loadIfNeeded()
+        if !miniPlayer.isVideoVisible {
+          // need to re-enable video to enter PiP
+          player.setVideoTrackEnabled()
+        }
       }
 
       doPIPEntry(usePipBehavior: usePipBehavior)
