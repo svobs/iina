@@ -117,6 +117,7 @@ extension PlayerWindowController {
           showThumbnail = false
         }
       } else {
+        log.trace{"Not showing thumbnail for time=\(previewTimeSec): requested=\(showThumbnail.yn) found=\((ffThumbnail != nil).yn)"}
         showThumbnail = false
         thumbWidth = 0
         thumbHeight = 0
@@ -482,7 +483,7 @@ extension PlayerWindowController {
 
     // - 2. Thumbnail Preview
 
-    let showThumbnail = Preference.bool(for: .enableThumbnailPreview)
+    let showThumbnail = Preference.bool(for: .enableThumbnailPreview) && player.info.isVideoTrackSelected
     let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
     if (isShowingThumbnailForSeek || playSlider.isDraggingLoopKnob) && !(Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek)) {
       // Do not show any preview if preview for seeking is disabled

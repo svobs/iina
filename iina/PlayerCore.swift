@@ -2893,6 +2893,9 @@ class PlayerCore: NSObject {
     if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
+    if vid != 0, isActive, !isRestoring {
+      reloadThumbnails()
+    }
     postNotification(.iinaVIDChanged)
 
     log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
@@ -3467,7 +3470,7 @@ class PlayerCore: NSObject {
       }
       let videoTrackID = info.vid
       guard let videoTrackID, videoTrackID > 0 else {
-        log.debug("Thumbnails reload stopped: invalid/missing video track \(String(videoTrackID))")
+        log.debug{"Thumbnails reload stopped: invalid/missing video track: \(String(videoTrackID))"}
         clearExistingThumbnails(for: currentPlayback)
         return
       }
