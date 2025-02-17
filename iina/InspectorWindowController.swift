@@ -651,6 +651,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       let insertIndexSet = IndexSet(integer: watchTableView.numberOfRows)
       watchTableView.insertRows(at: insertIndexSet, withAnimation: IINAAnimation.isAnimationEnabled ? .slideDown : [])
       watchTableView.selectRowIndexes(insertIndexSet, byExtendingSelection: false)
+      watchTableView.scrollRowToVisible(watchTableView.numberOfRows - 1)
     }
   }
 
