@@ -50,32 +50,32 @@ struct GeometryTransform {
       let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
 
       if let ffMeta {
-        log.debug{"[applyVideoGeo \(name)] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}
+        log.debug{"[GeoTF:\(name)] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}
         return videoGeo.substituting(ffMeta)
       } else {
-        log.debug{"[applyVideoGeo \(name)] Derived videoGeo \(videoGeo)"}
+        log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
         return videoGeo
       }
     }  // end of transform block
 
     func syncVideoParamsFromMpv() -> VideoGeometry? {
-      log.verbose{"[applyVideoGeo \(name)] Starting transform, vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
+      log.verbose{"[GeoTF:\(name)] Starting transform, vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
       let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
       guard vidTrackID == vid else {
-        log.debug{"[applyVideoGeo \(name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
+        log.debug{"[GeoTF:\(name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
         return nil
       }
 
       if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
         // Square album art
-        log.debug{"[applyVideoGeo \(name)] Using albumArtGeometry ∵ isAudio=\(currentMediaAudioStatus.isAudio.yn) vid=\(vidTrackID)"}
+        log.debug{"[GeoTF:\(name)] Using albumArtGeometry ∵ isAudio=\(currentMediaAudioStatus.isAudio.yn) vid=\(vidTrackID)"}
         return VideoGeometry.albumArtGeometry(log)
       }
 
       if Logger.isVerboseEnabled {
         let videoParams = player.mpv.getString(MPVProperty.videoParams)
         let videoOutParams = player.mpv.getString(MPVProperty.videoOutParams)
-        log.verbose{"[applyVideoGeo \(name)] Vid \(vidTrackID) has mpv videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParams ?? "nil")"}
+        log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParams ?? "nil")"}
       }
 
       // Sync video's raw dimensions from mpv.
@@ -89,7 +89,7 @@ struct GeometryTransform {
         rawHeight = vidHeight
       } else {
         if vidTrackID != 0 {
-          log.warn{"[applyVideoGeo \(name)]: mpv returned 0 for video dimensions, using cached video info instead"}
+          log.warn{"[GeoTF:\(name)]: mpv returned 0 for video dimensions, using cached video info instead"}
         }
         rawWidth = nil 
         rawHeight = nil
@@ -122,19 +122,19 @@ struct GeometryTransform {
         userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
         if userAspectLabelDerived != oldGeo.video.userAspectLabel {
           // Not necessarily an error? Need to improve aspect name matching logic
-          log.debug{"[applyVideoGeo \(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldGeo.video.userAspectLabel.quoted))"}
+          log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldGeo.video.userAspectLabel.quoted))"}
         }
       }
 
-      let codecRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
+      let decodedRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
       let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
 
       // If opening window, videoGeo may still have the global (default) log. Update it
       let videoGeo = oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
-                                        codecAspectLabel: codecAspect,
+                                        decodedAspectLabel: codecAspect,
                                         userAspectLabel: userAspectLabelDerived,
-                                        codecRotation: codecRotation,
+                                        decodedRotation: decodedRotation,
                                         userRotation: userRotation,
                                         log)
 

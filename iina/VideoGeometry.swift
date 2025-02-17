@@ -19,7 +19,7 @@ import Foundation
 ///     ➤ `videoSizeC`: (`videoWidthC` x `videoHeightC`), AKA "dsize", per mpv usage)
 ///       ➤ Parse `userAspectLabel` into `aspectRatioOverride`, then apply it
 ///         ➤ `videoSizeCA`
-///           ➤ apply `totalRotation` (== `userRotation` + `codecRotation`)
+///           ➤ apply `totalRotation` (== `userRotation` + `decodedRotation`)
 ///             ➤ `videoSizeCAR`
 struct VideoGeometry: Equatable, CustomStringConvertible {
   typealias Transform = (GeometryTransform.Context) -> VideoGeometry?
@@ -28,8 +28,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     let log = log ?? Logger.log
     return VideoGeometry(rawWidth: Constants.DefaultVideoSize.rawWidth,
                          rawHeight: Constants.DefaultVideoSize.rawHeight,
-                         codecAspectLabel: Constants.DefaultVideoSize.aspectLabel, userAspectLabel: "",
-                         codecRotation: 0, userRotation: 0,
+                         decodedAspectLabel: Constants.DefaultVideoSize.aspectLabel, userAspectLabel: "",
+                         decodedRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
                          log: log)
   }
@@ -38,8 +38,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   static func albumArtGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
     let log = log ?? Logger.log
     return VideoGeometry(rawWidth: Constants.AlbumArt.rawWidth, rawHeight: Constants.AlbumArt.rawHeight,
-                         codecAspectLabel: "1:1", userAspectLabel: "",
-                         codecRotation: 0, userRotation: 0,
+                         decodedAspectLabel: "1:1", userAspectLabel: "",
+                         decodedRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
                          log: log)
   }
@@ -47,19 +47,19 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   let log: Logger.Subsystem
 
   init(rawWidth: Int, rawHeight: Int,
-       codecAspectLabel: String, userAspectLabel: String,
-       codecRotation: Int, userRotation: Int,
+       decodedAspectLabel: String, userAspectLabel: String,
+       decodedRotation: Int, userRotation: Int,
        selectedCropLabel: String,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
-    self.codecAspectLabel = codecAspectLabel
+    self.decodedAspectLabel = decodedAspectLabel
     if Aspect.isValid(userAspectLabel) {
       self.userAspectLabel = userAspectLabel
     } else {
       self.userAspectLabel = Aspect.defaultIdentifier
     }
-    self.codecRotation = codecRotation
+    self.decodedRotation = decodedRotation
     self.userRotation = userRotation
     self.selectedCropLabel = selectedCropLabel
     let cropRect = VideoGeometry.makeCropRect(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
@@ -92,19 +92,19 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Substitution convenience functions
 
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
-             codecAspectLabel: String? = nil,
+             decodedAspectLabel: String? = nil,
              userAspectLabel: String? = nil,
-             codecRotation: Int? = nil, userRotation: Int? = nil,
+             decodedRotation: Int? = nil, userRotation: Int? = nil,
              selectedCropLabel: String? = nil, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
-                         codecAspectLabel: codecAspectLabel ?? self.codecAspectLabel,
+                         decodedAspectLabel: decodedAspectLabel ?? self.decodedAspectLabel,
                          userAspectLabel: userAspectLabel ?? self.userAspectLabel,
-                         codecRotation: codecRotation ?? self.codecRotation, userRotation: userRotation ?? self.userRotation,
+                         decodedRotation: decodedRotation ?? self.decodedRotation, userRotation: userRotation ?? self.userRotation,
                          selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel, log: log ?? self.log)
   }
 
   func substituting(_ ffMeta: FFVideoMeta, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
-    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height, codecRotation: ffMeta.streamRotation, log)
+    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height, decodedRotation: ffMeta.streamRotation, log)
   }
 
   // MARK: - TRANSFORMATION 1: Crop
@@ -176,7 +176,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// This is a string so that it can be used to identify the currently selected aspect in the Video menu & in the Video Settings
   /// sidebar's segmented control. It ideally should be in the format `"W:H"` to match the UI and avoid number rounding issues,
   /// but this is also allowed to contain a decimal number (only the first 2 digits of its decimal will be read, however).
-  let codecAspectLabel: String
+  let decodedAspectLabel: String
 
   /// The currently applied aspect ratio override.
   ///
@@ -206,7 +206,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     var videoSize = videoSizeC
 
     // FIXME: this is still not consistent with mpv when crop + container aspect are active!
-    if let codecAspect = Aspect(string: codecAspectLabel),
+    if let codecAspect = Aspect(string: decodedAspectLabel),
        !Aspect.looselyEquals(codecAspect.value, videoSizeRaw.aspect) {
       // mpv uses some fuzzy matching here. Let's do the same
       videoSize = VideoGeometry.applyAspectOverride(codecAspect.value, to: videoSize)
@@ -221,8 +221,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - TRANSFORMATION 3: Rotation
   // (Crop + Aspect + Rotation)
 
-  /// codecRotation = (totalRotation - userRotation) %% 360
-  let codecRotation: Int
+  /// decodedRotation = (totalRotation - userRotation) %% 360
+  let decodedRotation: Int
 
   /// `MPVProperty.videoRotate`.
   ///
@@ -235,7 +235,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// Is refreshed as property change events arrive for `MPVProperty.videoParamsRotate` ("video-params/rotate")
   /// IINA only supports one of [0, 90, 180, 270]
   var totalRotation: Int {
-    return (codecRotation + userRotation) %% 360
+    return (decodedRotation + userRotation) %% 360
   }
 
   var isWidthSwappedWithHeightByRotation: Bool {
@@ -264,14 +264,14 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Protocol conformance
 
   var description: String {
-    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(codecAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR))"
+    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR))"
   }
 
   static func == (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {
     return lhs.rawWidth == rhs.rawWidth
-    && lhs.codecAspectLabel == rhs.codecAspectLabel
+    && lhs.decodedAspectLabel == rhs.decodedAspectLabel
     && lhs.userAspectLabel == rhs.userAspectLabel
-    && lhs.codecRotation == rhs.codecRotation
+    && lhs.decodedRotation == rhs.decodedRotation
     && lhs.userRotation == rhs.userRotation
     && lhs.selectedCropLabel == rhs.selectedCropLabel
   }

@@ -1356,7 +1356,7 @@ class PlayerCore: NSObject {
 
     windowController.transformGeometry("UserRotation", video: { [self] cxt -> VideoGeometry? in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
-      log.verbose{"[applyVideoGeo \(cxt.name)] Applying rotation: \(userRotation)"}
+      log.verbose{"[GeoTF:\(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
@@ -1396,14 +1396,14 @@ class PlayerCore: NSObject {
 
       // Send update to mpv
       let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
-      log.verbose{"[applyVideoGeo \(cxt.name)] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
+      log.verbose{"[GeoTF:\(cxt.name)] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
       mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
 
       // FIXME: Default aspect needs i18n
       sendOSD(.aspect(aspectLabel))
 
       // Change video size:
-      log.verbose{"[applyVideoGeo \(cxt.name)] changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
+      log.verbose{"[GeoTF:\(cxt.name)] changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
       return oldVideoGeo.clone(userAspectLabel: aspectLabel)
     })
   }
@@ -2895,7 +2895,7 @@ class PlayerCore: NSObject {
 
     log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
     let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt -> PWinSessionState? in
-      log.verbose{"[applyVideoGeo \(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
+      log.verbose{"[GeoTF:\(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
       if case .existingSession_continuing = cxt.sessionState {
         if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
           return .existingSession_videoTrackChangedForSamePlayback

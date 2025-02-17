@@ -481,11 +481,11 @@ struct PlayerSaveState: CustomStringConvertible {
       let defaultGeo = VideoGeometry.defaultGeometry(log)
       let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
       let userRotation = PlayerSaveState.int(for: .videoRotation, props)
-      let codecRotation = (totalRotation ?? 0) - (userRotation ?? 0)
+      let decodedRotation = (totalRotation ?? 0) - (userRotation ?? 0)
       videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
                                   rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
                                   userAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
-                                  codecRotation: codecRotation,
+                                  decodedRotation: decodedRotation,
                                   userRotation: userRotation,
                                   selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
     }
@@ -922,9 +922,9 @@ extension VideoGeometry {
 
       guard let rawWidth = Int(iter.next()!),
             let rawHeight = Int(iter.next()!),
-            let codecRotation = Int(iter.next()!),
+            let decodedRotation = Int(iter.next()!),
             let userRotation = Int(iter.next()!),
-            let codecAspectLabel = iter.next(),
+            let decodedAspectLabel = iter.next(),
             let userAspectLabel = iter.next(),
             let selectedCropLabel = iter.next()
       else {
@@ -935,8 +935,9 @@ extension VideoGeometry {
       }
 
       return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
-                           codecAspectLabel: codecAspectLabel, userAspectLabel: userAspectLabel,
-                           codecRotation: codecRotation, userRotation: userRotation, selectedCropLabel: selectedCropLabel, log: log)
+                           decodedAspectLabel: decodedAspectLabel, userAspectLabel: userAspectLabel,
+                           decodedRotation: decodedRotation, userRotation: userRotation,
+                           selectedCropLabel: selectedCropLabel, log: log)
     }) {
       return vidGeoV2
     }
@@ -948,7 +949,7 @@ extension VideoGeometry {
 
       guard let rawWidth = Int(iter.next()!),
             let rawHeight = Int(iter.next()!),
-            let codecRotation = Int(iter.next()!),
+            let decodedRotation = Int(iter.next()!),
             let userRotation = Int(iter.next()!),
             let userAspectLabel = iter.next(),
             let selectedCropLabel = iter.next()
@@ -959,11 +960,12 @@ extension VideoGeometry {
         return nil
       }
 
-      let codecAspectLabel = Aspect.bestLabelFor((Double(rawWidth) / Double(rawHeight)).mpvAspectString)
+      let decodedAspectLabel = Aspect.bestLabelFor((Double(rawWidth) / Double(rawHeight)).mpvAspectString)
 
       return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
-                           codecAspectLabel: codecAspectLabel, userAspectLabel: userAspectLabel,
-                           codecRotation: codecRotation, userRotation: userRotation, selectedCropLabel: selectedCropLabel, log: log)
+                           decodedAspectLabel: decodedAspectLabel, userAspectLabel: userAspectLabel,
+                           decodedRotation: decodedRotation, userRotation: userRotation,
+                           selectedCropLabel: selectedCropLabel, log: log)
     }
   }
 
@@ -978,9 +980,9 @@ extension VideoGeometry {
     [
       "\(rawWidth)",
       "\(rawHeight)",
-      "\(codecRotation)",
+      "\(decodedRotation)",
       "\(userRotation)",
-      "\(codecAspectLabel)",
+      "\(decodedAspectLabel)",
       "\(userAspectLabel)",
       "\(selectedCropLabel)"
     ]

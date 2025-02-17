@@ -1596,7 +1596,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       log.verbose("Entering interactive mode: \(mode)")
 
-      if videoGeo.codecRotation != 0 {
+      if videoGeo.decodedRotation != 0 {
         log.warn("FIXME: Video codec rotation is not yet supported in interactive mode! Any selection chosen will be completely wrong!")
       }
 

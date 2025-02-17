@@ -113,7 +113,7 @@ class CropSettingsViewController: CropBoxViewController {
     } else {
       player.mpv.queue.async { [self] in
         let newCropFilter: MPVFilter
-        if player.videoGeo.codecRotation == 0 {
+        if player.videoGeo.decodedRotation == 0 {
           newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
           player.log.verbose("Submitting from interactive mode with new crop: (\(self.cropx), \(self.cropy)), \(self.cropw) x \(self.croph)")
         } else {
