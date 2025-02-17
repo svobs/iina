@@ -1693,10 +1693,10 @@ For smoothest results, also enable custom full screen.</string>
                                                                 </connections>
                                                             </slider>
                                                             <customView horizontalHuggingPriority="251" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="wMB-F5-wMG" userLabel="Spacer">
-                                                                <rect key="frame" x="176" y="0.0" width="41" height="21"/>
+                                                                <rect key="frame" x="176" y="0.0" width="11" height="21"/>
                                                             </customView>
                                                             <textField focusRingType="none" translatesAutoresizingMaskIntoConstraints="NO" id="0FD-yE-8tk">
-                                                                <rect key="frame" x="223" y="0.0" width="57" height="21"/>
+                                                                <rect key="frame" x="193" y="0.0" width="57" height="21"/>
                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Spacing:" id="eYa-PA-h0Q">
                                                                     <font key="font" metaFont="system"/>
                                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1704,7 +1704,10 @@ For smoothest results, also enable custom full screen.</string>
                                                                 </textFieldCell>
                                                             </textField>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="B1C-hb-rqp" userLabel="ToolIconSpacing Horizontal Slider">
-                                                                <rect key="frame" x="284" y="2" width="134" height="20"/>
+                                                                <rect key="frame" x="254" y="2" width="164" height="20"/>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" constant="160" id="Dl4-Qo-XIy"/>
+                                                                </constraints>
                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="1" maxValue="5" doubleValue="2" tickMarkPosition="below" numberOfTickMarks="5" allowsTickMarkValuesOnly="YES" sliderType="linear" id="5wb-gi-zNn"/>
                                                                 <connections>
                                                                     <action selector="toolIconSpacingAction:" target="-2" id="d9l-PX-9nb"/>
@@ -1713,7 +1716,6 @@ For smoothest results, also enable custom full screen.</string>
                                                         </subviews>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="21" id="R66-WX-wem"/>
-                                                            <constraint firstItem="B1C-hb-rqp" firstAttribute="width" secondItem="hee-NP-azH" secondAttribute="width" id="uHB-Pz-OrP"/>
                                                         </constraints>
                                                         <visibilityPriorities>
                                                             <integer value="1000"/>
@@ -1841,10 +1843,10 @@ For smoothest results, also enable custom full screen.</string>
                                                                 </connections>
                                                             </slider>
                                                             <customView horizontalHuggingPriority="247" horizontalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="vDr-5Q-gDW" userLabel="Spacer">
-                                                                <rect key="frame" x="176" y="0.0" width="41" height="21"/>
+                                                                <rect key="frame" x="176" y="0.0" width="11" height="21"/>
                                                             </customView>
                                                             <textField focusRingType="none" horizontalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lix-Rh-k6S">
-                                                                <rect key="frame" x="223" y="0.0" width="57" height="21"/>
+                                                                <rect key="frame" x="193" y="0.0" width="57" height="21"/>
                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Spacing:" id="B0V-bv-Ktg">
                                                                     <font key="font" metaFont="system"/>
                                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1852,7 +1854,10 @@ For smoothest results, also enable custom full screen.</string>
                                                                 </textFieldCell>
                                                             </textField>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Cpf-8F-Wfh" userLabel="PlayButtonsSpacing Horizontal Slider">
-                                                                <rect key="frame" x="284" y="-2" width="134" height="25"/>
+                                                                <rect key="frame" x="254" y="-2" width="164" height="25"/>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" constant="160" id="3cB-n0-78W"/>
+                                                                </constraints>
                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" alignment="left" minValue="1" maxValue="5" doubleValue="2" tickMarkPosition="below" numberOfTickMarks="5" allowsTickMarkValuesOnly="YES" sliderType="linear" id="9NB-ib-vrc"/>
                                                                 <connections>
                                                                     <action selector="playIconSpacingAction:" target="-2" id="cFm-Km-MRm"/>
@@ -1861,7 +1866,6 @@ For smoothest results, also enable custom full screen.</string>
                                                         </subviews>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="21" id="00V-Nk-bJh"/>
-                                                            <constraint firstItem="Cpf-8F-Wfh" firstAttribute="width" secondItem="s3w-bP-YzK" secondAttribute="width" id="RDv-lO-o0W"/>
                                                         </constraints>
                                                         <visibilityPriorities>
                                                             <integer value="1000"/>
