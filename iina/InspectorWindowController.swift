@@ -221,6 +221,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
   override func showWindow(_ sender: Any?) {
     updateInfo()
     deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
+    watchTableView.sizeLastColumnToFit()
     watchTableView.scrollRowToVisible(0)
 
     removeTimerAndListeners()

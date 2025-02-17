@@ -96,6 +96,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     bindingSearchField.stringValue = bindingTableState.filterString
 
     useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
+    bindingTableView.sizeLastColumnToFit()
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForConfTable, object: nil, queue: .main) { _ in
       self.updateTableButtonVisibilities()

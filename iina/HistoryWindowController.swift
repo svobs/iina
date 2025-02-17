@@ -174,6 +174,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     co.addAllObservers()
 
+    outlineView.sizeLastColumnToFit()
+
     // Reload may take a long time. Send signal to open right away, and refresh when load is done.
     super.openWindow(sender)
   }

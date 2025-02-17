@@ -67,7 +67,6 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsTableView.dataSource = self
     optionsTableView.delegate = self
     optionsTableView.editableDelegate = self
-    optionsTableView.sizeLastColumnToFit()
     optionsTableView.editableTextColumnIndexes = [0, 1]
     optionsTableView.selectNextRowAfterDelete = false
     refreshRemoveButton()
@@ -82,6 +81,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
                                                     insertFunc: insertOptionRows,
                                                     removeFunc: removeOptionRows)
 
+    optionsTableView.sizeLastColumnToFit()
 
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",
                                                                 comment: "Enable advanced settings")
