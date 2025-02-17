@@ -256,6 +256,7 @@ class VideoView: NSView {
 
   // MARK: - HDR
 
+  /// See also: `refreshAllVideoState`. Cannot execute until player is started & file is loaded.
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }
     // Do not execute if hidden during restore! Some of these calls may cause the window to show

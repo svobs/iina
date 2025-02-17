@@ -2405,7 +2405,7 @@ class PlayerCore: NSObject {
       if let url = Playback.url(fromPath: path) {
         MediaMetaCache.shared.setCachedMediaDuration(url, duration)
       } else {
-        log.error("Could not create URL for path, skipping: \(path)")
+        log.error{"MediaMetaCache: could not create URL for path, skipping: \(path)"}
       }
     }
     let playbackPosition = mpv.getDouble(MPVProperty.timePos)
@@ -2429,7 +2429,7 @@ class PlayerCore: NSObject {
     }
 
     guard currentPlayback.state.isNotYet(.loaded) else {
-      log.warn("FileLoaded: aborting - state of \(currentPlayback.path.pii.quoted) is \(currentPlayback.state.description.quoted)")
+      log.warn{"FileLoaded: aborting - state of \(currentPlayback.path.pii.quoted) is \(currentPlayback.state.description.quoted)"}
       return
     }
 
@@ -2475,7 +2475,7 @@ class PlayerCore: NSObject {
     // Done syncing tracks
 
     windowController.transformGeometry("FileLoaded", stateChange: { [self] context in
-      log.verbose("Calling transformGeometry from fileLoaded; sessionState=\(context.sessionState)")
+      log.verbose{"Calling transformGeometry from fileLoaded; sessionState=\(context.sessionState)"}
       switch context.sessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
@@ -2547,7 +2547,7 @@ class PlayerCore: NSObject {
     }
     // auto load matched subtitles
     if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
-      log.debug("Found \(matchedSubs.count) external subs for current file")
+      log.debug{"Found \(matchedSubs.count) external subs for current file"}
       for sub in matchedSubs {
         guard currentTicket == self.backgroundQueueTicket else { return }
         self.loadExternalSubFile(sub)
@@ -2604,12 +2604,12 @@ class PlayerCore: NSObject {
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     guard info.isFileLoaded else {
-      log.verbose("Audio track changed to \(aid) but file is not loaded; ignoring")
+      log.verbose{"Audio track changed to \(aid) but file is not loaded; ignoring"}
       return
     }
     info.aid = aid
 
-    log.verbose("Audio track changed to: \(aid)")
+    log.verbose{"Audio track changed to: \(aid)"}
     syncUI(.volume)
     postNotification(.iinaAIDChanged)
     if !silent {
@@ -2626,7 +2626,7 @@ class PlayerCore: NSObject {
     guard isActive else { return }
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
     info.chapter = chapter
-    log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
+    log.verbose{"Δ mpv prop: 'chapter' = \(info.chapter)"}
     syncUI(.chapterList)
     mediaTitleChanged()
   }
@@ -2642,10 +2642,10 @@ class PlayerCore: NSObject {
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
     let eofWhileLoading = receivedEndFileWhileLoading
-    log.verbose("Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state))")
+    log.verbose{"Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state))"}
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
     if eofWhileLoading, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
-      log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window")
+      log.error{"Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window"}
       DispatchQueue.main.async { [self] in
         Utility.showAlert("error_open_name", arguments: [playback.path.quoted])
         let openURLWindow = AppDelegate.shared.openURLWindow
@@ -2702,7 +2702,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard windowController.loaded else { return }
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
-    log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
+    log.verbose{"Δ mpv prop: 'ontop' = \(ontop.yesno)"}
     if ontop != windowController.isOnTop {
       DispatchQueue.main.async { [self] in
         windowController.setWindowFloatingOnTop(ontop, from: windowController.currentLayout)
@@ -2744,13 +2744,13 @@ class PlayerCore: NSObject {
     guard !windowController.sessionState.isRestoring, !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard info.isFileLoaded else {
-      log.verbose("SID changed to \(sid) but file is not loaded; ignoring")
+      log.verbose{"SID changed to \(sid) but file is not loaded; ignoring"}
       return
     }
     guard sid != info.sid else { return }
     info.sid = sid
 
-    log.verbose("SID changed to \(sid)")
+    log.verbose{"SID changed to \(sid)"}
     if !silent {
       sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     }
@@ -2764,13 +2764,13 @@ class PlayerCore: NSObject {
     guard !isRestoring, !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard info.isFileLoaded else {
-      log.verbose("SSID changed to \(ssid) but file is not loaded; ignoring")
+      log.verbose{"SSID changed to \(ssid) but file is not loaded; ignoring"}
       return
     }
     guard ssid != info.secondSid else { return }
     info.secondSid = ssid
 
-    log.verbose("SSID changed to \(ssid)")
+    log.verbose{"SSID changed to \(ssid)"}
     if !silent {
       sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSecondSubTrack))
     }
@@ -3013,7 +3013,7 @@ class PlayerCore: NSObject {
     let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
 
     if info.vidDisabled == nil {
-      log.verbose("Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0")
+      log.verbose{"Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0"}
       info.vidDisabled = vidNow
     }
     guard vidNow != 0 else {

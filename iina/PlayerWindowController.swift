@@ -864,7 +864,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
-        videoView.refreshEdrMode()  // if restoring, this will have been prevented until now
         forceDraw()  // needed if restoring while paused
       })
 
