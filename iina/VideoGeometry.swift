@@ -238,7 +238,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return (decodedRotation + userRotation) %% 360
   }
 
-  var isWidthSwappedWithHeightByRotation: Bool {
+  var isWidthSwappedWithHeightByTotalRotation: Bool {
     // 90, 270, etc...
     (totalRotation %% 180) != 0
   }
@@ -246,7 +246,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// Like `videoSizeCA`, but after applying `totalRotation`.
   var videoSizeCAR: CGSize {
     let videoSizeCA = videoSizeCA
-    if isWidthSwappedWithHeightByRotation {
+    if isWidthSwappedWithHeightByTotalRotation {
       return CGSize(width: videoSizeCA.height, height: videoSizeCA.width)
     }
     return videoSizeCA

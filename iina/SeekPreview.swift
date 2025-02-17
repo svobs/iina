@@ -345,7 +345,7 @@ extension PlayerWindowController {
         // The calculations for thumbFrame reflect the final image coordinates. But for faster speed we are going
         // to use the unflipped, unrotated thumbnail & apply rotation & mirroring/flipping via CoreAnimation transformations.
         let unrotatedImageSize: CGSize
-        if currentGeo.video.isWidthSwappedWithHeightByRotation {
+        if currentGeo.video.isWidthSwappedWithHeightByTotalRotation {
           unrotatedImageSize = CGSize(width: thumbFrame.height, height: thumbFrame.width)
         } else {
           unrotatedImageSize = thumbFrame.size
@@ -360,13 +360,13 @@ extension PlayerWindowController {
       }
 
       // Apply flip, mirror, & rotate using CoreAnimation for blazing fast transformations
-      if player.info.isFlippedHorizontal || player.info.isFlippedVertical || currentGeo.video.userRotation != 0 {
+      if player.info.isFlippedHorizontal || player.info.isFlippedVertical || currentGeo.video.totalRotation != 0 {
         let xFlip: CGFloat = player.info.isFlippedHorizontal ? -1 : 1
         let yFlip: CGFloat = player.info.isFlippedVertical ? -1 : 1
         var sumTF = CATransform3DMakeScale(xFlip, yFlip, 1)
 
-        if currentGeo.video.userRotation != 0 {
-          let rotationRadians = CGFloat.degToRad(CGFloat(-currentGeo.video.userRotation))
+        if currentGeo.video.totalRotation != 0 {
+          let rotationRadians = CGFloat.degToRad(CGFloat(-currentGeo.video.totalRotation))
           let rotateTF = CATransform3DMakeRotation(rotationRadians, 0, 0, 1)
           sumTF = CATransform3DConcat(sumTF, rotateTF)
         }
