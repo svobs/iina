@@ -579,6 +579,14 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
 
+        let shouldDisableConstraint = musicModeGeo.isPlaylistVisible  // musicModeGeo==transition.outputGeo
+        /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
+        /// (See note in `applyMusicModeGeo`)
+        if shouldDisableConstraint {
+          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 1"}
+          viewportBtmOffsetFromContentViewBtmConstraint.priority = .minimum
+        }
+
         if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {
           miniPlayer.volumeSliderView.addSubview(fragVolumeView)
           fragVolumeView.centerYAnchor.constraint(equalTo: miniPlayer.volumeSliderView.centerYAnchor).isActive = true
@@ -598,6 +606,9 @@ extension PlayerWindowController {
 
         // Make sure to restore video
         miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
+        if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
+          log.verbose{"[\(transition.name)] Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
+        }
         viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
 
         // Make sure to reset constraints for OSD

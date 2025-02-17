@@ -202,7 +202,7 @@ extension PlayerWindowController {
                                                               topMarginHeight: 0,
                                                               outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero)
         player.window.setFrameImmediately(intermediateGeo)
-        if transition.isEnteringMusicMode && !musicModeGeo.isVideoVisible {
+        if transition.isEnteringMusicMode && !transition.outputGeometry.isVideoVisible {
           // Entering music mode when album art is hidden
           miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: false)
         }

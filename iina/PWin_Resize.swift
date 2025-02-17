@@ -904,9 +904,13 @@ extension PlayerWindowController {
           }
         }
 
+        let shouldDisableConstraint = outputGeo.isPlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
-        viewportBtmOffsetFromContentViewBtmConstraint.priority = .minimum
+        if shouldDisableConstraint {
+          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 1"}
+          viewportBtmOffsetFromContentViewBtmConstraint.priority = .minimum
+        }
       }
 
       isAnimatingLayoutTransition = false
@@ -966,6 +970,7 @@ extension PlayerWindowController {
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
     if !shouldDisableConstraint {
+      log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
       viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
     }
 
