@@ -91,14 +91,30 @@ struct GeometryTransform {
         if vidTrackID != 0 {
           log.warn{"[applyVideoGeo \(name)]: mpv returned 0 for video dimensions, using cached video info instead"}
         }
-        rawWidth = nil
+        rawWidth = nil 
         rawHeight = nil
       }
 
       // TODO: sync video-crop (actually, add support for video-crop...)
 
-      // Do NOT use video-params/aspect-name! As of mpv 0.39.0 it may not match video-params/aspect!
-      let codecAspect: String? = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
+      struct VideoParams: Decodable {
+        let aspect: Double
+      }
+
+      let codecAspect: String?
+      do {
+        if let decParamsJson = player.mpv.getString(MPVProperty.videoDecParams),
+           let jsonData = decParamsJson.data(using: .utf8) {
+          let vidParams = try JSONDecoder().decode(VideoParams.self, from: jsonData)
+          codecAspect = String(vidParams.aspect)
+        } else {
+          log.error{"Failed to get or parse videoDecParams from mpv"}
+          codecAspect = nil
+        }
+      } catch {
+        log.error{"Failed to get aspect from mpv videoDecParams: \(error)"}
+        codecAspect = nil
+      }
 
       // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
       var userAspectLabelDerived = ""
@@ -110,15 +126,17 @@ struct GeometryTransform {
         }
       }
 
+      let codecRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
       let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
 
       // If opening window, videoGeo may still have the global (default) log. Update it
       let videoGeo = oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
-                                                codecAspectLabel: codecAspect,
-                                                userAspectLabel: userAspectLabelDerived,
-                                                userRotation: userRotation,
-                                                log)
+                                        codecAspectLabel: codecAspect,
+                                        userAspectLabel: userAspectLabelDerived,
+                                        codecRotation: codecRotation,
+                                        userRotation: userRotation,
+                                        log)
 
       // FIXME: audioStatus==notAudio for playlist which auto-plays audio
       if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {

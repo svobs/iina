@@ -897,7 +897,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       if let intendedViewportSize  {
         // Just use existing size in this case:
         desiredViewportSize = intendedViewportSize
-        log.verbose("[applyVideoGeo D-2] Using intendedViewportSize \(intendedViewportSize)")
+        log.verbose("[geo] Using intendedViewportSize \(intendedViewportSize)")
       }
 
       let minNewViewportHeight = round(desiredViewportSize.width / newVidGeo.videoAspectCAR)
@@ -907,7 +907,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
     }
 
-    log.verbose("[applyVideoGeo D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
+    log.verbose("[geo] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
     return clone(video: newVidGeo).scalingViewport(to: desiredViewportSize)
   }
 

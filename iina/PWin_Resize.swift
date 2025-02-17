@@ -301,6 +301,7 @@ extension PlayerWindowController {
           guard let resultGeo = videoTransform(cxt) else {
             return abort("transform \(transformName) returned nil")
           }
+          log.verbose{"[applyVideoGeo \(cxt.name)] VideoTransform returned: \(resultGeo)"}
           newVidGeo = resultGeo
         } else {
           newVidGeo = oldGeo.video
