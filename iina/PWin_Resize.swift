@@ -418,9 +418,9 @@ extension PlayerWindowController {
                                    _ musicModeTransform: MusicModeGeometry.Transform? = nil) -> [IINAAnimation.Task] {
 
     let sessionState = cxt.sessionState
-    let didRotate = cxt.oldGeo.video.totalRotation != newVidGeo.totalRotation
 
     var duration: CGFloat
+    let didRotate = cxt.oldGeo.video.userRotation != newVidGeo.userRotation
     if didRotate {
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       duration = 0.0
