@@ -117,7 +117,7 @@ extension PlayerWindowController {
       player.refreshSyncUITimer()
       player.touchBarSupport.setupTouchBarUI()
 
-      let shouldDecideDefaultArtStatus = !currentLayout.isMusicMode || (musicModeGeo.isVideoVisible)
+      let shouldDecideDefaultArtStatus = !initialLayout.isMusicMode || (musicModeGeo.isVideoVisible)
       let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
       if let showDefaultArt {
         // May need to set this while restoring a network audio stream
@@ -144,11 +144,11 @@ extension PlayerWindowController {
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {
             log.verbose("[applyVideoGeo \(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
-          } else if currentMediaAudioStatus.isAudio && !isInMiniPlayer && !isFullScreen {
+          } else if cxt.currentMediaAudioStatus.isAudio && !initialLayout.isMusicMode && !initialLayout.isFullScreen {
             log.debug("[applyVideoGeo \(cxt.name)] Opened media is audio: auto-switching to music mode")
             player.enterMusicMode(automatically: true, withNewVidGeo: newVidGeo)
             return  // do not even try to go to full screen if already going to music mode
-          } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
+          } else if cxt.currentMediaAudioStatus == .notAudio && initialLayout.isMusicMode {
             log.debug("[applyVideoGeo \(cxt.name)] Opened media is not audio: auto-switching to normal window")
             player.exitMusicMode(automatically: true, withNewVidGeo: newVidGeo)
             return  // do not even try to go to full screen if already going to windowed mode

@@ -1065,9 +1065,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     if modeToSetAfterExitingFullScreen == .musicMode {
       let windowedLayout = LayoutState.buildFrom(windowedLayoutSpec)
       let geo = geo.clone(windowed: exitFSTransition.outputGeometry)
-      let enterMusicModeTransition = buildTransitionToEnterMusicMode(from: windowedLayout, geo)
-      animationPipeline.submit(exitFSTransition.tasks)
-      animationPipeline.submit(enterMusicModeTransition.tasks)
+      let enterMusicModeTransitionTasks = buildTransitionTasksToEnterMusicMode(from: windowedLayout, geo)
+      animationPipeline.submit(exitFSTransition.tasks + enterMusicModeTransitionTasks)
       modeToSetAfterExitingFullScreen = nil
     } else {
       animationPipeline.submit(exitFSTransition.tasks)
@@ -1793,38 +1792,63 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // TODO
   }
 
-  func enterMusicMode(withNewVidGeo newVidGeo: VideoGeometry? = nil) {
+  /// Calls `buildTransitionToEnterMusicMode`, but first exits existing FS or interactive mode.
+  func enterMusicMode(automatically: Bool = false, from oldLayout: LayoutState? = nil, _ geo: GeometrySet? = nil) {
     exitInteractiveMode(then: { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
-      let oldLayout = currentLayout
+      let oldLayout = oldLayout ?? currentLayout
       if oldLayout.isFullScreen {
         // Use exit FS as main animation and piggypack on that.
         // Need to do some gymnastics to parameterize exit from native full screen
         modeToSetAfterExitingFullScreen = .musicMode
         exitFullScreen()
       } else {
-        let geo = buildGeoSet(video: newVidGeo, from: oldLayout)
-        let transition = buildTransitionToEnterMusicMode(from: oldLayout, geo)
-        animationPipeline.submit(transition.tasks)
+        let transitionTasks = buildTransitionTasksToEnterMusicMode(automatically: automatically, from: oldLayout, geo)
+        animationPipeline.submit(transitionTasks)
       }
     })
   }
 
-  private func buildTransitionToEnterMusicMode(from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> LayoutTransition {
+  /// `automatically` == via auto-switch to music mode
+  func buildTransitionTasksToEnterMusicMode(automatically: Bool = false,
+                                            from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
-    return buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo)
+    var transitionTasks = buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo).tasks
+
+    if !automatically {
+      transitionTasks.append(IINAAnimation.Task.instantTask { [self] in
+        // Toggle manual override
+        player.overrideAutoMusicMode = !player.overrideAutoMusicMode
+        log.verbose{"Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)"}
+      })
+    }
+    return transitionTasks
   }
 
-  func exitMusicMode(withNewVidGeo newVidGeo: VideoGeometry? = nil) {
+  func exitMusicMode(automatically: Bool = false, from oldLayout: LayoutState? = nil, _ geo: GeometrySet? = nil) {
     animationPipeline.submitInstantTask { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
-      let oldLayout = currentLayout
-      let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
-      let geo = buildGeoSet(video: newVidGeo, from: oldLayout)
-      buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, thenRun: true, geo)
+      let oldLayout = oldLayout ?? currentLayout
+      let tasks = buildTransitionTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
+      animationPipeline.submit(tasks)
     }
+  }
+
+  func buildTransitionTasksToExitMusicMode(automatically: Bool = false,
+                                            from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
+    let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
+    var transitionTasks = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo).tasks
+    if !automatically {
+      transitionTasks.append(IINAAnimation.Task.instantTask { [self] in
+        if !automatically {
+          player.overrideAutoMusicMode = !player.overrideAutoMusicMode
+          log.verbose{"Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)"}
+        }
+      })
+    }
+    return transitionTasks
   }
 
   func blackOutOtherMonitors() {

@@ -292,7 +292,7 @@ extension PlayerWindowController {
           }
           cxt = cxt.clone(sessionState: newSessionState)
         } else {
-          log.verbose{"[applyVideoGeo \(transformName)] Reusing current sessionState: \(cxt.sessionState)"}
+          log.verbose{"[applyVideoGeo \(cxt.name)] Reusing current sessionState: \(cxt.sessionState)"}
         }
 
         /// Apply `videoTransform` if present
@@ -307,7 +307,7 @@ extension PlayerWindowController {
         }
 
         animationPipeline.submitInstantTask { [self] in
-          log.verbose{"[applyVideoGeo \(transformName)] sessionState=\(cxt.sessionState)"}
+          log.verbose{"[applyVideoGeo \(cxt.name)] sessionState=\(cxt.sessionState)"}
 
           var immediateTasks: [IINAAnimation.Task]
 
@@ -322,15 +322,33 @@ extension PlayerWindowController {
             let isRestoringMinimizedWindow = cxt.sessionState.isRestoring && UIState.shared.windowsMinimized.contains(window!.savedStateName)
             if isRestoringMinimizedWindow {
               // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
-              log.verbose{"[applyVideoGeo \(transformName)] Restoring minimized window: will run tasks immediately instead of queueing"}
+              log.verbose{"[applyVideoGeo \(cxt.name)] Restoring minimized window: will run tasks immediately instead of queueing"}
               immediateTasks.append(contentsOf: videoGeoUpdateTasks)
             } else {
               pendingVideoGeoUpdateTasks = videoGeoUpdateTasks
             }
 
           } else {
-            immediateTasks = buildTasks(forNewVideoGeo: newVidGeo, newLayout: currentLayout, cxt,
+            let layout = currentLayout
+            immediateTasks = buildTasks(forNewVideoGeo: newVidGeo, newLayout: layout, cxt,
                                         windowedTransform, musicModeTransform, onSuccess: onSuccess)
+
+            // Need to switch to music mode? Append to above tasks
+            if case .existingSession_startingNewPlayback = cxt.sessionState, Preference.bool(for: .autoSwitchToMusicMode) {
+              if player.overrideAutoMusicMode {
+                log.verbose("[applyVideoGeo \(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+              } else if cxt.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
+                log.debug("[applyVideoGeo \(cxt.name)] Opened media is audio: auto-switching to music mode")
+                let geo = buildGeoSet(video: newVidGeo, from: layout)
+                let enterMusicModeTransitionTasks = buildTransitionTasksToEnterMusicMode(automatically: true, from: layout, geo)
+                immediateTasks += enterMusicModeTransitionTasks
+              } else if cxt.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
+                log.debug("[applyVideoGeo \(cxt.name)] Opened media is not audio: auto-switching to normal window")
+                let geo = buildGeoSet(video: newVidGeo, from: layout)
+                let enterMusicModeTransitionTasks = buildTransitionTasksToExitMusicMode(automatically: true, from: layout, geo)
+                immediateTasks += enterMusicModeTransitionTasks
+              }
+            }
           }
 
           animationPipeline.submit(immediateTasks)

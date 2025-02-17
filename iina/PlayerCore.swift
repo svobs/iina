@@ -687,23 +687,18 @@ class PlayerCore: NSObject {
   }
 
   func enterMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
-    log.debug{"Switch to music mode, automatically=\(automatically)"}
-    if !automatically {
-      // Toggle manual override
-      overrideAutoMusicMode = !overrideAutoMusicMode
-      log.verbose{"Changed overrideAutoMusicMode to \(overrideAutoMusicMode)"}
-    }
-    windowController.enterMusicMode(withNewVidGeo: newVidGeo)
+    log.debug{"Switch to music mode, automatically=\(automatically.yesno)"}
+    let oldLayout = windowController.currentLayout
+    let geo = windowController.buildGeoSet(video: newVidGeo, from: oldLayout)
+    windowController.enterMusicMode(automatically: automatically, from: oldLayout, geo)
     events.emit(.musicModeChanged, data: true)
   }
 
   func exitMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
-    log.debug{"Switch to normal window from music mode, automatically=\(automatically)"}
-    if !automatically {
-      overrideAutoMusicMode = !overrideAutoMusicMode
-      log.verbose{"Changed overrideAutoMusicMode to \(overrideAutoMusicMode)"}
-    }
-    windowController.exitMusicMode(withNewVidGeo: newVidGeo)
+    log.debug{"Switch to normal window from music mode, automatically=\(automatically.yesno)"}
+    let oldLayout = windowController.currentLayout
+    let geo = windowController.buildGeoSet(video: newVidGeo, from: oldLayout)
+    windowController.exitMusicMode(automatically: automatically, from: oldLayout, geo)
     windowController.updateTitle()
 
     events.emit(.musicModeChanged, data: false)
