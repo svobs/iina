@@ -22,7 +22,9 @@ class FreeSelectingViewController: CropBoxViewController {
         "h": String(self.croph)
         ])
       if let existingFilter = player.info.delogoFilter {
-        let _ = player.removeVideoFilter(existingFilter)
+        player.mpv.queue.async {
+          player.removeVideoFilter(existingFilter)
+        }
       }
       if !player.addVideoFilter(filter) {
         Utility.showAlert("filter.incorrect")

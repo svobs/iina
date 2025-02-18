@@ -1805,7 +1805,7 @@ class PlayerCore: NSObject {
 
   func playFileInPlaylist(_ pos: Int) {
     mpv.queue.async { [self] in
-      log.verbose("Changing mpv playlist-pos to \(pos)")
+      log.verbose{"Changing mpv playlist-pos to \(pos)"}
       mpv.setInt(MPVProperty.playlistPos, pos)
       saveState()
     }
@@ -1819,7 +1819,7 @@ class PlayerCore: NSObject {
 
   @discardableResult
   func playChapter(_ pos: Int) -> MPVChapter? {
-    log.verbose("Seeking to chapter \(pos)")
+    log.verbose{"Seeking to chapter \(pos)"}
     let chapters = info.chapters
     guard pos < chapters.count else {
       return nil
@@ -1862,7 +1862,7 @@ class PlayerCore: NSObject {
   func addVideoFilter(_ filter: MPVFilter) -> Bool {
     let success = addVideoFilter(filter.stringFormat)
     if !success {
-      log.verbose("Video filter \(filter.stringFormat) was not added")
+      log.verbose{"Video filter \(filter.stringFormat) was not added"}
     }
     return success
   }
@@ -1873,7 +1873,7 @@ class PlayerCore: NSObject {
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   func addVideoFilter(_ filter: String) -> Bool {
-    Logger.log("Adding video filter \(filter.quoted)...", subsystem: subsystem)
+    log.debug{"Adding video filter \(filter.quoted)..."}
 
     // check hwdec
     let hwdec = mpv.getString(MPVProperty.hwdec)
@@ -1914,7 +1914,7 @@ class PlayerCore: NSObject {
     // try apply filter
     var didSucceed = true
     didSucceed = mpv.command(.vf, args: ["add", filter], checkError: false) >= 0
-    log.debug("Add filter: \(didSucceed ? "Succeeded" : "Failed")")
+    log.debug{"Add filter: \(didSucceed ? "Succeeded" : "Failed")"}
 
     if didSucceed, let vf = MPVFilter(rawString: filter) {
       if Thread.isMainThread {
@@ -1932,9 +1932,9 @@ class PlayerCore: NSObject {
 
   private func logRemoveFilter(type: String, result: Bool, name: String) {
     if !result {
-      log.warn("Failed to remove \(type) filter \(name)")
+      log.warn{"Failed to remove \(type) filter \(name)"}
     } else {
-      log.debug("Successfully removed \(type) filter \(name)")
+      log.debug{"Successfully removed \(type) filter \(name)"}
     }
   }
 
@@ -1955,7 +1955,8 @@ class PlayerCore: NSObject {
   /// - Parameter index: The index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeVideoFilter(_ filter: String, _ index: Int) -> Bool {
-    Logger.log("Removing video filter \(filter)...", subsystem: subsystem)
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    log.debug{"Removing video filter \(filter)..."}
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     let result = mpv.removeFilter(MPVProperty.vf, index)
     logRemoveFilter(type: "video", result: result, name: filter)

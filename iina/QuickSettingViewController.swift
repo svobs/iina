@@ -398,7 +398,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func updateControlsState() {
     guard isViewLoaded else { return }
-    
+
     updateVideoTabControls()
     updateAudioTabControls()
     updateSubTabControls()
@@ -776,10 +776,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBAction func aspectChangedAction(_ sender: NSSegmentedControl) {
     guard let aspect = sender.label(forSegment: sender.selectedSegment) else {
-      player.log.error("Bad aspect segment: \(sender.selectedSegment)")
+      player.log.error{"Bad aspect segment: \(sender.selectedSegment)"}
       return
     }
-    player.log.verbose("Setting aspect ratio from segmented control: \(aspect)")
+    player.log.verbose{"Setting aspect from segmented control: \(aspect.quoted)"}
     player.setVideoAspectOverride(aspect)
   }
 
@@ -789,9 +789,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       windowController.enterInteractiveMode(.crop)
     } else {
       guard let selectedCropString = sender.label(forSegment: sender.selectedSegment) else {
-        player.log.error("Bad crop segment: \(sender.selectedSegment)")
+        player.log.error{"Bad crop segment: \(sender.selectedSegment)"}
         return
       }
+      player.log.verbose{"Setting crop from segmented control: \(selectedCropString.quoted)"}
       player.setCrop(fromLabel: selectedCropString)
     }
   }
@@ -803,9 +804,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func customAspectEditFinishedAction(_ sender: AnyObject?) {
-    let value = customAspectTextField.stringValue
-    if value != "" {
-      player.setVideoAspectOverride(value)
+    let aspectString = customAspectTextField.stringValue
+    player.log.verbose{"Setting aspect from text field: \(aspectString.quoted)"}
+    if aspectString != "" {
+      player.setVideoAspectOverride(aspectString)
     }
   }
 

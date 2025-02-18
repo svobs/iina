@@ -189,14 +189,16 @@ extension PlayerCore {
       log.verbose("Received drop of file paths: \(paths.map{$0.pii})")
       // check 3d lut files
       if paths.count == 1 && Utility.lut3dExt.contains(paths[0].lowercasedPathExtension) {
-        let result = addVideoFilter(MPVFilter(lavfiName: "lut3d", label: "iina_quickl3d", paramDict: [
-          "file": paths[0],
-          "interp": "nearest"
+        mpv.queue.async { [self] in
+          let result = addVideoFilter(MPVFilter(lavfiName: "lut3d", label: "iina_quickl3d", paramDict: [
+            "file": paths[0],
+            "interp": "nearest"
           ]))
-        if result {
-          sendOSD(.addFilter("3D LUT"))
+          if result {
+            sendOSD(.addFilter("3D LUT"))
+          }
         }
-        return result
+        return true
       }
 
       let urls = paths.map{ URL(fileURLWithPath: $0) }

@@ -70,10 +70,12 @@ class Aspect: NSObject {
     return ratioLabel ?? string
   }
 
+  /// This includes crop presets, because at present, all crop presets are aspect ratios.
   static func findLabelForAspectRatio(_ aspectRatio: Double, strict: Bool = true) -> String? {
     let mpvAspect = strict ? mpvPrecision(of: aspectRatio) : aspectRatio
-    let userPresets = Preference.csvStringArray(for: .aspectRatioPanelPresets) ?? []
-    for knownAspectRatio in allKnownLabels + userPresets {
+    let userAspectPresets = Preference.csvStringArray(for: .aspectRatioPanelPresets) ?? []
+    let userCropPresets = Preference.csvStringArray(for: .cropPanelPresets) ?? []
+    for knownAspectRatio in allKnownLabels + userAspectPresets + userCropPresets {
       if let knownAspect = Aspect(string: knownAspectRatio) {
         if strict {
           if knownAspect.mpvAspect == mpvAspect {

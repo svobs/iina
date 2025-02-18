@@ -1760,7 +1760,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
           /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
           /// But that task can only happen once we return and relinquish the main queue.
-          _ = player.addVideoFilter(newCropFilter)
+          player.mpv.queue.async { [self] in
+            _ = player.addVideoFilter(newCropFilter)
+          }
         }
 
         // Fade out cropBox selection rect
