@@ -1371,7 +1371,7 @@ extension PlayerWindowController {
       viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(0)
     case .outsideViewport:
       viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(0)
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(-bottomBarHeight)
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(bottomBarHeight)
       viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(bottomBarHeight)
     }
   }

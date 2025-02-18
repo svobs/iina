@@ -337,14 +337,14 @@ extension PlayerWindowController {
             // Need to switch to music mode? Append to above tasks
             if case .existingSession_startingNewPlayback = cxt.sessionState, Preference.bool(for: .autoSwitchToMusicMode) {
               if player.overrideAutoMusicMode {
-                log.verbose("[GeoTF:\(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+                log.verbose{"[GeoTF:\(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y"}
               } else if cxt.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
-                log.debug("[GeoTF:\(cxt.name)] Opened media is audio: auto-switching to music mode")
+                log.debug{"[GeoTF:\(cxt.name)] Opened media is audio: auto-switching to music mode"}
                 let geo = buildGeoSet(video: newVidGeo, from: layout)
                 let enterMusicModeTransitionTasks = buildTransitionTasksToEnterMusicMode(automatically: true, from: layout, geo)
                 immediateTasks += enterMusicModeTransitionTasks
               } else if cxt.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
-                log.debug("[GeoTF:\(cxt.name)] Opened media is not audio: auto-switching to normal window")
+                log.debug{"[GeoTF:\(cxt.name)] Opened media is not audio: auto-switching to normal window"}
                 let geo = buildGeoSet(video: newVidGeo, from: layout)
                 let enterMusicModeTransitionTasks = buildTransitionTasksToExitMusicMode(automatically: true, from: layout, geo)
                 immediateTasks += enterMusicModeTransitionTasks

@@ -64,11 +64,14 @@ class PlayerWindow: NSWindow {
   }
 
   override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
+    let time: TimeInterval
     if useZeroDurationForNextResize {
       useZeroDurationForNextResize = false
-      return 0
+      time = 0.0
+    } else {
+      time = super.animationResizeTime(newFrame)
     }
-    return super.animationResizeTime(newFrame)
+    return time
   }
 
   // MARK: - Key event handling
@@ -254,6 +257,8 @@ class PlayerWindow: NSWindow {
 
   /// See `windowWillUseStandardFrame` in `PlayerWindowController` for resize handling.
   override func zoom(_ sender: Any?) {
+    // Explicitly enable animation. Otherwise the window may jump
+    useZeroDurationForNextResize = false
     super.zoom(sender)
   }
   
