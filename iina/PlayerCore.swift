@@ -2751,7 +2751,7 @@ class PlayerCore: NSObject {
     guard sid != info.sid else { return }
     info.sid = sid
 
-    log.verbose{"SID changed to \(sid)"}
+    log.verbose{"Δ mpv prop: `sid`=\(sid)"}
     if !silent {
       sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     }
@@ -2771,7 +2771,7 @@ class PlayerCore: NSObject {
     guard ssid != info.secondSid else { return }
     info.secondSid = ssid
 
-    log.verbose{"SSID changed to \(ssid)"}
+    log.verbose{"Δ mpv prop: `ssid` = \(ssid)"}
     if !silent {
       sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSecondSubTrack))
     }
@@ -2858,7 +2858,8 @@ class PlayerCore: NSObject {
   func vfChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
-    _ = getVideoFilters()
+    let vf = getVideoFilters()
+    log.verbose{"Δ mpv prop: `vf = \(vf)"}
     postNotification(.iinaVFChanged)
 
     saveState()
@@ -3809,6 +3810,16 @@ class PlayerCore: NSObject {
       updateSelectedCrop(to: AppData.noneCropIdentifier)
     }
     return videoFilters
+  }
+
+  func getCropFilter() -> MPVFilter? {
+    let videoFilters = mpv.getFilters(MPVProperty.vf)
+    for filter in videoFilters {
+      if filter.label == Constants.FilterLabel.crop {
+        return filter
+      }
+    }
+    return nil
   }
 
   /// `af`: gets up-to-date list of audio filters AND updates associated state in the process

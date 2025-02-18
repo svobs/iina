@@ -457,20 +457,32 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   private func updateCropControls() {
     guard isViewLoaded else { return }
 
-    let selectedCropLabel = player.videoGeo.selectedCropLabel
-    cropPresetsSegment.selectSegment(withLabel: selectedCropLabel)
-    let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
-
-    if isCropInPanel {
-      customCropTextField.isHidden = true
+    // Derive selected crop label directly from the filter. Do not use videoGeo as it could be stale.
+    let cropLabel: String?
+    if let vfCrop = player.getCropFilter() {
+      cropLabel = player.deriveCropLabel(from: vfCrop)
     } else {
-      cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
-      if Preference.bool(for: .enableAdvancedSettings), let cropRect = player.videoGeo.cropRect {
-        customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropRect)
-        customCropTextField.isHidden = false
-      } else {
-        customCropTextField.isHidden = true
+      cropLabel = nil
+    }
+
+    if let cropLabel {
+      cropPresetsSegment.selectSegment(withLabel: cropLabel)
+      let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
+      player.log.verbose{"Selected crop preset segment: \(cropLabel.quoted)"}
+      if !isCropInPanel {
+        player.log.verbose{"Selecting custom crop segment for \(cropLabel.quoted)"}
+        cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
+        if Preference.bool(for: .enableAdvancedSettings), let cropRect = player.videoGeo.cropRect {
+          customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropRect)
+          customCropTextField.isHidden = false
+        } else {
+          customCropTextField.isHidden = true
+        }
       }
+    } else {
+      player.log.verbose{"Selecting crop segment: None"}
+      cropPresetsSegment.selectSegment(withTag: 0)
+      customCropTextField.isHidden = true
     }
   }
 
@@ -586,7 +598,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
            "switchToTab should not be called when settings TabGroup is not shown")
     guard currentTab != tab else { return }
     guard tab.group == .settings else {
-      player.log.error("QuickSettingsViewController: cannot switch to tab: \(tab)")
+      player.log.error{"QuickSettingsViewController: cannot switch to tab: \(tab)"}
       return
     }
 
@@ -632,7 +644,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       secSubTableView.reloadData()
       updateSubTabControls()
     default:
-      player.log.error("QuickSettingsViewController.reload(): currentTab is invalid: \(currentTab)")
+      player.log.error{"QuickSettingsViewController.reload(): currentTab is invalid: \(currentTab)"}
     }
   }
 

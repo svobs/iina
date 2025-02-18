@@ -71,11 +71,20 @@ class Aspect: NSObject {
   }
 
   /// This includes crop presets, because at present, all crop presets are aspect ratios.
-  static func findLabelForAspectRatio(_ aspectRatio: Double, strict: Bool = true) -> String? {
+  static func findLabelForAspectRatio(_ aspectRatio: Double, isCrop: Bool = false, strict: Bool = true) -> String? {
     let mpvAspect = strict ? mpvPrecision(of: aspectRatio) : aspectRatio
     let userAspectPresets = Preference.csvStringArray(for: .aspectRatioPanelPresets) ?? []
     let userCropPresets = Preference.csvStringArray(for: .cropPanelPresets) ?? []
-    for knownAspectRatio in allKnownLabels + userAspectPresets + userCropPresets {
+
+    let aspectStringsToSearch: [String]
+    if isCrop {
+      // Search user crop presets first. Aspects can have multiple representations, so we should try to match with the UI
+      aspectStringsToSearch = userCropPresets + userAspectPresets + allKnownLabels
+    } else {
+      // Search user aspect presets first
+      aspectStringsToSearch = userAspectPresets + userCropPresets + allKnownLabels
+    }
+    for knownAspectRatio in aspectStringsToSearch {
       if let knownAspect = Aspect(string: knownAspectRatio) {
         if strict {
           if knownAspect.mpvAspect == mpvAspect {

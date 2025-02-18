@@ -22,7 +22,7 @@ extension PlayerCore {
       // Truncate to 2 decimal places precision for comparison.
       let selectedAspect = Aspect(size: NSSize(width: w, height: h))
       log.verbose{"Determined aspect=\(selectedAspect.value) from filter \(filter.label?.quoted ?? "")"}
-      if let knownAspectLabel = Aspect.findLabelForAspectRatio(selectedAspect.value, strict: false) {
+      if let knownAspectLabel = Aspect.findLabelForAspectRatio(selectedAspect.value, isCrop: true, strict: false) {
         log.verbose{"Filter \(filter.label?.quoted ?? "") matches known aspect label \(knownAspectLabel.quoted)"}
         return knownAspectLabel  // Known aspect-based crop
       }

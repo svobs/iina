@@ -186,7 +186,7 @@ extension PlayerCore {
     if types.contains(.nsFilenames) {
       guard var paths = pb.propertyList(forType: .nsFilenames) as? [String] else { return false }
       paths = Utility.resolvePaths(paths)
-      log.verbose("Received drop of file paths: \(paths.map{$0.pii})")
+      log.verbose{"Received drop of file paths: \(paths.map{$0.pii})"}
       // check 3d lut files
       if paths.count == 1 && Utility.lut3dExt.contains(paths[0].lowercasedPathExtension) {
         mpv.queue.async { [self] in
@@ -224,11 +224,11 @@ extension PlayerCore {
       }
     } else if types.contains(.nsURL) {
       guard let url = pb.propertyList(forType: .nsURL) as? [String] else { return false }
-      log.verbose("Received drop of url(s), will open first: \(url)")
+      log.verbose{"Received drop of url(s), will open first: \(url)"}
       openURLString(url[0])
       return true
     } else if let droppedString = pb.string(forType: .string) {
-      log.verbose("Received drop of string: \(droppedString.quoted)")
+      log.verbose{"Received drop of string: \(droppedString.quoted)"}
       if Regex.url.matches(droppedString) || Regex.filePath.matches(droppedString) {
         openURLString(droppedString)
         return true

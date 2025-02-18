@@ -1537,12 +1537,13 @@ extension NSSegmentedControl {
   @discardableResult
   func selectSegment(withLabel label: String) -> Bool {
     for i in 0..<segmentCount {
-      if self.label(forSegment: i) == label {
+      let iLabel = self.label(forSegment: i)
+      if iLabel == label {
         self.selectedSegment = i
         return true
       }
     }
-    Logger.log("Could not find segment with label \(label.quoted). Setting selection to -1", level: .verbose)
+    Logger.log.verbose{"Could not find segment with label \(label.quoted). Setting selection to -1"}
     self.selectedSegment = -1
     return false
   }
