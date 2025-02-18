@@ -67,10 +67,12 @@ struct AppData {
   static let crowdinMembersLink = "https://crowdin.com/project/iina"
   static let wikiLink = "https://github.com/iina/iina/wiki"
   static let websiteLink = "https://iina.io"
+  // TODO: update email
   static let emailLink = "developers@iina.io"
   static let ytdlHelpLink = "https://github.com/yt-dlp/yt-dlp/blob/master/README.md"
-  static let appcastLink = "https://www.iina.io/appcast.xml"
-  static let appcastBetaLink = "https://www.iina.io/appcast-beta.xml"
+  /// "https://advancemediaplayer.com/iina-appcast.xml"
+  static let appcastLink = Bundle.main.infoDictionary!["SUFeedURL"] as! String
+  static let appcastBetaLink = "https://https://advancemediaplayer.com/iina-appcast-beta.xml"
   static let assrtRegisterLink = "https://secure.assrt.net/user/register.xml?redir=http%3A%2F%2Fassrt.net%2Fusercp.php"
   static let chromeExtensionLink = "https://chrome.google.com/webstore/detail/open-in-iina/pdnojahnhpgmdhjdhgphgdcecehkbhfo"
   static let firefoxExtensionLink = "https://addons.mozilla.org/addon/open-in-iina-x"

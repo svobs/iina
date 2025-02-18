@@ -625,11 +625,9 @@
 		</dict>
 	</array>
 	<key>SUFeedURL</key>
-	<string>https://www.iina.io/appcast.xml</string>
-	<key>SUPublicDSAKeyFile</key>
-	<string>dsa_pub.pem</string>
+	<string>https://advancemediaplayer.com/iina-appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>UpwCRYfYOg0OGgQHY6RUdrV29yPcdkvxGlEfq46r6a0=</string>
+	<string>XxtjBWHLjueWBnPSOlz7TtgvQ99pHgc41rYxl9JHhWE=</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

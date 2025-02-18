@@ -8,7 +8,6 @@
 
 import Cocoa
 
-// FIXME: Add Sparkle back in
 // TODO: gpu-next
 // TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
