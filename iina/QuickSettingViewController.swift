@@ -397,6 +397,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateControlsState() {
+    guard isViewLoaded else { return }
+    
     updateVideoTabControls()
     updateAudioTabControls()
     updateSubTabControls()
@@ -412,6 +414,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   func updateSegmentLabels() {
+    guard isViewLoaded else { return }
+
     if let segmentLabels = Preference.csvStringArray(for: .aspectRatioPanelPresets) {
       aspectPresetsSegment.segmentCount = segmentLabels.count + 1
       for segmentIndex in 1...cropPresetsSegment.segmentCount {
@@ -441,6 +445,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload Aspect settings controls
   private func updateAspectControls() {
+    guard isViewLoaded else { return }
+
     let userAspectLabel = player.videoGeo.userAspectLabel
     aspectPresetsSegment.selectSegment(withLabel: userAspectLabel)
     let isAspectInPanel = aspectPresetsSegment.selectedSegment >= 0
@@ -449,6 +455,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload Crop settings controls
   private func updateCropControls() {
+    guard isViewLoaded else { return }
+
     let selectedCropLabel = player.videoGeo.selectedCropLabel
     cropPresetsSegment.selectSegment(withLabel: selectedCropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
