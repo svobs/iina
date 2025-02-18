@@ -291,7 +291,12 @@ extension PlayerWindowController {
     case .displayTimeAndBatteryInFullScreen:
       if let newValue = newValue as? Bool {
         if newValue {
-          fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
+          animationPipeline.submitTask{ [self] in
+            if isFullScreen {
+              fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
+              updateAdditionalInfo()
+            }
+          }
         } else {
           fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
         }
