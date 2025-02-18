@@ -13,7 +13,6 @@
                 <outlet property="additionalInfoBatteryView" destination="Ybl-06-ksj" id="NdR-gs-P1p"/>
                 <outlet property="additionalInfoLabel" destination="4mb-jy-Y1w" id="rgV-hQ-MH2"/>
                 <outlet property="additionalInfoStackView" destination="HJv-RK-JT8" id="T3L-fd-A60"/>
-                <outlet property="additionalInfoTitle" destination="3uh-OF-zy6" id="N6w-Hh-fQ1"/>
                 <outlet property="additionalInfoView" destination="Qbi-jx-9pO" id="bdV-ZH-SkC"/>
                 <outlet property="backButtonBox" destination="6vJ-s6-gdD" id="CK1-B8-Kga"/>
                 <outlet property="backButtonVE" destination="NWr-qI-ocU" id="qqc-Fd-kAb"/>
@@ -121,14 +120,6 @@
                     <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View">
                         <rect key="frame" x="472" y="297" width="160" height="67"/>
                         <subviews>
-                            <textField identifier="Additional-Info-Title" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="3uh-OF-zy6">
-                                <rect key="frame" x="107" y="38" width="39" height="21"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Title" id="DVg-p3-w5Q">
-                                    <font key="font" metaFont="system" size="18"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
                             <stackView identifier="Additional-Info-Horizontal-Stack-View" wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HJv-RK-JT8" userLabel="Additional-Info Horizontal Stack View">
                                 <rect key="frame" x="16" y="4" width="128" height="30"/>
                                 <subviews>
@@ -201,14 +192,11 @@
                             </stackView>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="3uh-OF-zy6" firstAttribute="leading" secondItem="Qbi-jx-9pO" secondAttribute="leading" priority="99" id="2hv-9S-3wT"/>
                             <constraint firstItem="HJv-RK-JT8" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="leading" constant="16" id="4JZ-kz-GjJ"/>
-                            <constraint firstItem="3uh-OF-zy6" firstAttribute="top" secondItem="Qbi-jx-9pO" secondAttribute="top" constant="8" id="8rt-mu-Log"/>
-                            <constraint firstAttribute="trailing" secondItem="3uh-OF-zy6" secondAttribute="trailing" constant="16" id="LfP-Gv-tbK"/>
-                            <constraint firstItem="3uh-OF-zy6" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="leading" constant="16" id="Nip-Zi-DhD"/>
-                            <constraint firstItem="HJv-RK-JT8" firstAttribute="top" secondItem="3uh-OF-zy6" secondAttribute="bottom" constant="4" id="WEg-qx-fA6"/>
+                            <constraint firstItem="HJv-RK-JT8" firstAttribute="leading" secondItem="Qbi-jx-9pO" secondAttribute="leading" constant="16" placeholder="YES" identifier="Placeholder2" id="Gm2-PP-0ay"/>
+                            <constraint firstItem="HJv-RK-JT8" firstAttribute="top" secondItem="Qbi-jx-9pO" secondAttribute="top" constant="33" placeholder="YES" identifier="Placeholder1" id="dpY-Cd-Plf"/>
                             <constraint firstAttribute="bottom" secondItem="HJv-RK-JT8" secondAttribute="bottom" constant="4" id="lUv-4l-9RZ"/>
-                            <constraint firstItem="HJv-RK-JT8" firstAttribute="trailing" secondItem="3uh-OF-zy6" secondAttribute="trailing" id="m0K-bE-aKW"/>
+                            <constraint firstAttribute="trailing" secondItem="HJv-RK-JT8" secondAttribute="trailing" constant="16" id="m0K-bE-aKW"/>
                         </constraints>
                     </visualEffectView>
                     <visualEffectView identifier="Buffer-Indicator-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="oX4-0N-but" userLabel="Buffer-Indicator View">

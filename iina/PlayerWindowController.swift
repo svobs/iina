@@ -538,9 +538,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var bufferDetailLabel: NSTextField!
 
   @IBOutlet weak var additionalInfoView: NSVisualEffectView!
-  @IBOutlet weak var additionalInfoLabel: NSTextField!
+  let additionalInfoTitle = ResizableTextView()
   @IBOutlet weak var additionalInfoStackView: NSStackView!
-  @IBOutlet weak var additionalInfoTitle: NSTextField!
+  @IBOutlet weak var additionalInfoLabel: NSTextField!
   @IBOutlet weak var additionalInfoBatteryView: NSView!
   @IBOutlet weak var additionalInfoBattery: NSTextField!
 
@@ -2123,7 +2123,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     additionalInfoLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
     let title = window?.representedURL?.lastPathComponent ?? window?.title ?? ""
-    additionalInfoTitle.stringValue = title
+    additionalInfoTitle.string = title
+    additionalInfoTitle.sizeToFit()
+    additionalInfoTitle.invalidateIntrinsicContentSize()
     if let capacity = PowerSource.getList().filter({ $0.type == "InternalBattery" }).first?.currentCapacity {
       additionalInfoBattery.stringValue = "\(capacity)%"
       additionalInfoStackView.setVisibilityPriority(.mustHold, for: additionalInfoBatteryView)

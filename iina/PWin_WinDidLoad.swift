@@ -117,7 +117,7 @@ extension PlayerWindowController {
       playSlider.action = #selector(playSliderAction(_:))
 
       bufferIndicatorView.roundCorners()
-      additionalInfoView.roundCorners()
+      initAdditionalInfoView()
       osdVisualEffectView.roundCorners()
 
       log.verbose{"Configuring for CoreAnimation: window"}
@@ -647,4 +647,32 @@ extension PlayerWindowController {
     defaultAlbumArtView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
+  func initAdditionalInfoView() {
+    additionalInfoView.roundCorners()
+    additionalInfoTitle.translatesAutoresizingMaskIntoConstraints = false
+    additionalInfoTitle.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+    additionalInfoTitle.setContentHuggingPriority(.init(900), for: .horizontal)
+    additionalInfoView.addSubview(additionalInfoTitle)
+    let topConstraint = additionalInfoTitle.topAnchor.constraint(equalTo: osdVisualEffectView.topAnchor, constant: 8)
+    topConstraint.priority = .init(rawValue: 900)
+    topConstraint.isActive = true
+
+    let btmConstraint = additionalInfoStackView.topAnchor.constraint(equalTo: additionalInfoTitle.bottomAnchor, constant: 4)
+    btmConstraint.isActive = true
+    let trailingConstraint = additionalInfoView.trailingAnchor.constraint(equalTo: additionalInfoTitle.trailingAnchor, constant: 16)
+    trailingConstraint.isActive = true
+    let leadingConstraint = additionalInfoTitle.leadingAnchor.constraint(equalTo: additionalInfoView.leadingAnchor, constant: 16)
+    leadingConstraint.isActive = true
+    additionalInfoTitle.identifier = .init("AdditionalInfo-TitleLabel")
+    additionalInfoTitle.isEditable = false
+    additionalInfoTitle.isSelectable = false
+    additionalInfoTitle.isFieldEditor = false
+    additionalInfoTitle.backgroundColor = .clear
+    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+    pStyle.lineBreakMode = .byTruncatingMiddle
+    additionalInfoTitle.defaultParagraphStyle = pStyle
+    additionalInfoTitle.font = .systemFont(ofSize: 18)
+    additionalInfoTitle.textColor = .labelColor
+
+  }
 }
