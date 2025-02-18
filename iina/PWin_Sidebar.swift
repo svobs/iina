@@ -523,8 +523,8 @@ extension PlayerWindowController {
       equalTo: tabContainerView.leadingAnchor, constant: coefficients.0 * sidebarWidth)
     viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.isActive = true
 
-    viewportLeadingOffsetFromLeadingSidebarTrailingConstraint = viewportView.leadingAnchor.constraint(
-      equalTo: tabContainerView.trailingAnchor, constant: coefficients.1 * sidebarWidth)
+    viewportLeadingOffsetFromLeadingSidebarTrailingConstraint = tabContainerView.trailingAnchor.constraint(
+      equalTo: viewportView.leadingAnchor, constant: coefficients.1 * sidebarWidth)
     viewportLeadingOffsetFromLeadingSidebarTrailingConstraint.isActive = true
 
     prepareRemainingLayoutForOpening(sidebar: leadingSidebar, sidebarView: leadingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
@@ -582,8 +582,8 @@ extension PlayerWindowController {
       equalTo: tabContainerView.leadingAnchor, constant: coefficients.0 * sidebarWidth)
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.isActive = true
 
-    viewportTrailingOffsetFromTrailingSidebarTrailingConstraint = viewportView.trailingAnchor.constraint(
-      equalTo: tabContainerView.trailingAnchor, constant: coefficients.1 * sidebarWidth)
+    viewportTrailingOffsetFromTrailingSidebarTrailingConstraint = tabContainerView.trailingAnchor.constraint(
+      equalTo: viewportView.trailingAnchor, constant: coefficients.1 * sidebarWidth)
     viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.isActive = true
 
     prepareRemainingLayoutForOpening(sidebar: trailingSidebar, sidebarView: trailingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
@@ -630,7 +630,7 @@ extension PlayerWindowController {
     switch placement {
     case .insideViewport:
       if visible {
-        return (0, -1, 0)
+        return (0, 1, 0)
       } else {
         return (1, 0, 0)
       }
@@ -641,7 +641,7 @@ extension PlayerWindowController {
         if ΔWindowWidth == 0 {
           return (1, 0, 0)
         } else {
-          return (0, -1, 0)
+          return (0, 1, 0)
         }
       }
     }
@@ -671,14 +671,14 @@ extension PlayerWindowController {
       if visible {
         return (1, 0, 0)
       } else {
-        return (0, -1, 0)
+        return (0, 1, 0)
       }
     case .outsideViewport:
       if visible {
-        return (0, -1, -1)
+        return (0, 1, 1)
       } else {
         if ΔWindowWidth == 0 {
-          return (0, -1, 0)
+          return (0, 1, 0)
         } else {
           return (1, 0, 0)
         }
