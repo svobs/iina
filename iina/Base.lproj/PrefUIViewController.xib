@@ -1488,16 +1488,16 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="499" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KxK-zk-W7E" userLabel="OSC-Bottom-Styles HStack View">
-                            <rect key="frame" x="0.0" y="519" width="450" height="22"/>
+                            <rect key="frame" x="0.0" y="519" width="453" height="22"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="900" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="NQR-nq-sbu" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="0.0" y="4" width="183" height="1"/>
+                                    <rect key="frame" x="0.0" y="4" width="186" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="T5F-vr-M0y"/>
                                     </constraints>
                                 </customView>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="hwA-ec-V4c">
-                                    <rect key="frame" x="189" y="3" width="93" height="16"/>
+                                    <rect key="frame" x="192" y="3" width="93" height="16"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="Gxo-GK-ECm">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1505,7 +1505,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Color-Scheme Popup">
-                                    <rect key="frame" x="285" y="-4" width="166" height="25"/>
+                                    <rect key="frame" x="288" y="-4" width="166" height="25"/>
                                     <popUpButtonCell key="cell" type="push" title="MacOS Graphite" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="Controller-Position Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -2177,10 +2177,10 @@ For smoothest results, also enable custom full screen.</string>
                         </stackView>
                     </subviews>
                     <constraints>
+                        <constraint firstItem="EOh-sr-h6b" firstAttribute="trailing" secondItem="oZp-7o-wcg" secondAttribute="trailing" id="2e1-Mg-c8f"/>
                         <constraint firstItem="PrI-KL-aZn" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="5tT-06-ukJ"/>
                         <constraint firstItem="EOh-sr-h6b" firstAttribute="width" secondItem="oZp-7o-wcg" secondAttribute="width" id="AiY-vy-3aa"/>
                         <constraint firstItem="0Ih-pL-Y4o" firstAttribute="width" relation="greaterThanOrEqual" secondItem="yaR-pw-wfD" secondAttribute="width" id="CLe-2r-BZz"/>
-                        <constraint firstItem="EOh-sr-h6b" firstAttribute="trailing" secondItem="67g-AK-VP6" secondAttribute="trailing" id="IYE-J4-BiV"/>
                         <constraint firstItem="VAZ-Ki-EPD" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="bVg-yv-fOx" secondAttribute="leading" constant="20" id="NoY-Ia-Nji"/>
                         <constraint firstItem="d0z-Kd-exY" firstAttribute="leading" secondItem="4SE-r9-OnD" secondAttribute="leading" constant="20" id="UsX-hB-Xd8"/>
                         <constraint firstItem="bVg-yv-fOx" firstAttribute="leading" secondItem="HbB-K7-G5g" secondAttribute="leading" id="bHH-mu-TP3"/>
