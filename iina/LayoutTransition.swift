@@ -273,7 +273,8 @@ extension PlayerWindowController {
 
     /// For animation purposes only
     var isClosingThenReopeningOSC: Bool {
-      (inputLayout.mode == outputLayout.mode && outputLayout.mode != .musicMode) && (inputLayout.enableOSC != outputLayout.enableOSC || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging) || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isTopBarPlacementChanging))
+      (inputLayout.mode == outputLayout.mode && outputLayout.mode != .musicMode) &&
+      (inputLayout.enableOSC != outputLayout.enableOSC || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging) || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isTopBarPlacementChanging))
     }
   }
 

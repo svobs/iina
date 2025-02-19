@@ -910,12 +910,10 @@ extension PlayerWindowController {
       leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
       rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
 
-      if transition.isClosingThenReopeningOSC {
-        // Animate toolbar icons to full size now
-        let iconSize = transition.outputLayout.controlBarGeo.toolIconSize
-        for toolbarItem in fragToolbarView.views {
-          (toolbarItem as! OSCToolbarButton).setStyle(iconSize: iconSize)
-        }
+      // Animate toolbar icons to full size now
+      let iconSize = transition.outputLayout.controlBarGeo.toolIconSize
+      for toolbarItem in fragToolbarView.views {
+        (toolbarItem as! OSCToolbarButton).setStyle(using: transition.outputLayout)
       }
     }
 
