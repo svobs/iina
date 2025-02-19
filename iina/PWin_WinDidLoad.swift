@@ -108,7 +108,7 @@ extension PlayerWindowController {
       initSpeedLabel()
       initPlaybackBtnsView()
       initPlaySliderAndTimeLabelsView()
-      addSubviewsToPlaySliderAndTimeLabelsView()
+      addSubviewsToPlaySliderAndTimeLabelsView(currentLayout.controlBarGeo)
       initVolumeView()
       initAlbumArtView()
       playSlider.customCell.pwc = self
@@ -315,10 +315,7 @@ extension PlayerWindowController {
       gradient.startPoint = CGPoint(x: 0.5, y: 1.0)
       gradient.endPoint = CGPoint(x: 0.5, y: 0.0)
       // Ideally the gradient would use a quadratic function, but seems we are limited to linear, so just fudge it a bit.
-      gradient.colors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
-                         CGColor(red: 0, green: 0, blue: 0, alpha: 0.2),
-                         CGColor(red: 0, green: 0, blue: 0, alpha: 0.5),
-                         CGColor(red: 0, green: 0, blue: 0, alpha: 0.7)]
+      gradient.colors = Constants.Color.clearBlackGradientColors
       bottomBarView.layer = gradient
       bottomBarView.wantsLayer = true
     }
@@ -541,14 +538,11 @@ extension PlayerWindowController {
     rightTimeLabel.setContentCompressionResistancePriority(.init(749), for: .horizontal)
   }
 
-  func addSubviewsToPlaySliderAndTimeLabelsView() {
-    // Assume that if all subviews are inside, the constraints are properly configured as well,
-    // and no more work is needed.
+  func addSubviewsToPlaySliderAndTimeLabelsView(_ oscGeo: ControlBarGeometry) {
+    // Assume that if all subviews are inside, the constraints are properly configured as well, & no more work is needed.
     playSliderAndTimeLabelsView.removeAllSubviews()
 
-    playSliderAndTimeLabelsView.addSubview(leftTimeLabel)
-    playSliderAndTimeLabelsView.addSubview(playSlider)
-    playSliderAndTimeLabelsView.addSubview(rightTimeLabel)
+    playSliderAndTimeLabelsView.subviews = [leftTimeLabel, playSlider, rightTimeLabel]
     // In case these were detached while in a stack view, restore their visibility:
     leftTimeLabel.isHidden = false
     playSlider.isHidden = false
@@ -556,9 +550,9 @@ extension PlayerWindowController {
 
     // - Add constraints to subviews
 
-    let spacing = Constants.Distance.playSliderAndTimeLabelsViewHSpacing
+    let hSpacing = oscGeo.hSpacingAroundSliders
     leftTimeLabel.leadingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.leadingAnchor).isActive = true
-    playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: spacing).isActive = true
+    playSlider.leadingAnchor.constraint(equalTo: leftTimeLabel.trailingAnchor, constant: hSpacing).isActive = true
 
     // See also: playSliderHeightConstraint
     playSlider.addConstraintsToFillSuperview(top: 0, bottom: 0)
@@ -566,7 +560,7 @@ extension PlayerWindowController {
     playSlider.centerYAnchor.constraint(equalTo: leftTimeLabel.centerYAnchor).isActive = true
     playSlider.centerYAnchor.constraint(equalTo: rightTimeLabel.centerYAnchor).isActive = true
 
-    rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: spacing).isActive = true
+    rightTimeLabel.leadingAnchor.constraint(equalTo: playSlider.trailingAnchor, constant: hSpacing).isActive = true
     rightTimeLabel.trailingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.trailingAnchor).isActive = true
   }
 

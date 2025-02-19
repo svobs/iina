@@ -624,7 +624,7 @@ extension PlayerWindowController {
       // move playback position slider & time labels
       let wasThere = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
       miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
-      addSubviewsToPlaySliderAndTimeLabelsView()
+      addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
       if !wasThere {
         playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
         playSliderAndTimeLabelsView.isHidden = false
@@ -689,7 +689,7 @@ extension PlayerWindowController {
 
       case .floating:
         currentControlBar = controlBarFloating
-        if  !oscFloatingUpperView.views.contains(fragToolbarView) {
+        if !oscFloatingUpperView.views.contains(fragToolbarView) {
           oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
           oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
           fragToolbarView.isHidden = false
@@ -947,7 +947,7 @@ extension PlayerWindowController {
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
         oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
-        addSubviewsToPlaySliderAndTimeLabelsView()
+        addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
         playSliderAndTimeLabelsView.isHidden = false
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 
@@ -1500,7 +1500,7 @@ extension PlayerWindowController {
         let oscGeo = transition.outputLayout.controlBarGeo
         let iconSize: CGFloat = isOpeningOSC && !transition.isWindowInitialLayout ? 0 : oscGeo.toolIconSize
         let iconSpacing = oscGeo.toolIconSpacing
-        log.verbose("[\(transition.name)] Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(oscGeo.barHeight) fullIconHeight=\(oscGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
+        log.verbose{"[\(transition.name)] Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(oscGeo.barHeight) fullIconHeight=\(oscGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
         for buttonType in newButtonTypes {
           let button = OSCToolbarButton()
           button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
@@ -1514,24 +1514,26 @@ extension PlayerWindowController {
     }
 
     if needsButtonsUpdate {
+      log.verbose{
+        let oscGeo = transition.outputLayout.controlBarGeo
+        return "[\(transition.name)] Updating OSC toolbar: iconSize=\(oscGeo.toolIconSize) iconSpacing=\(oscGeo.toolIconSpacing) barHeight=\(oscGeo.barHeight) fullIconHeight=\(oscGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"
+      }
       for btn in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         btn.setStyle(using: transition.outputLayout)
         btn.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
       }
     }
-
-    if hasSizeChange {
-      // It's not possible to control the icon padding from inside the buttons in all cases.
-      // Instead we can get the same effect with a little more work, by controlling the stack view:
-      let iconSpacing = newGeo.toolIconSpacing
-      fragToolbarView.spacing = 2 * iconSpacing
-      let sideInset = (iconSpacing * 0.5).rounded()
-      fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
-                                     bottom: iconSpacing, right: sideInset)
-      log.verbose("[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
-    }
+    
+    // It's not possible to control the icon padding from inside the buttons in all cases.
+    // Instead we can get the same effect with a little more work, by controlling the stack view:
+    let iconSpacing = newGeo.toolIconSpacing
+    fragToolbarView.spacing = 2 * iconSpacing
+    let sideInset = (iconSpacing * 0.5).rounded()
+    fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
+                                       bottom: iconSpacing, right: sideInset)
+    log.verbose{"[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)"}
   }
-
+  
   // MARK: - Misc support functions
 
   /// Call this when `origVideoSize` is known.

@@ -87,7 +87,7 @@ class BarFactory {
     // - Secondary Vars - PlaySlider & VolumeSlider both:
 
     let oscGeo = layout.controlBarGeo
-    let barHeight_Normal: CGFloat = oscGeo.slidersBarHeightNormal
+    let barHeight_Normal: CGFloat = oscGeo.sliderBarHeightNormal
     Logger.log.verbose{"OSC slider bar height (normal): \(barHeight_Normal)"}
     updateCurvature(using: barHeight_Normal)
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)

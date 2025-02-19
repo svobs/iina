@@ -337,8 +337,6 @@ struct Constants {
       static let reducedCurvatureBarHeightThreshold = 9.0
     }
 
-    static let playSliderAndTimeLabelsViewHSpacing: CGFloat = 6
-
     /// Should match the range of OSC height values in Settings > UI.
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 100
@@ -373,7 +371,7 @@ struct Constants {
     static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
     static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
     static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.5
-    static let oscClearBG_TextShadowBlurRadius: CGFloat = 0.5
+    static let oscClearBG_TextShadowBlurRadius: CGFloat = 1.5
     // See also: Constants.Distance.Slider.shadowBlurRadius
 
     /**
@@ -420,6 +418,11 @@ struct Constants {
     static let interactiveModeBackground: CGColor = NSColor.windowBackgroundColor.cgColor
     static let blackShadow = CGColor(gray: 0, alpha: 0.75)
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
+
+    static let clearBlackGradientColors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.2),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.6),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.75)]
   }
 }  /// end `Constants`
 

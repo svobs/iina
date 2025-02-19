@@ -161,17 +161,19 @@ struct ControlBarGeometry {
       }
 
       if forceSingleRowStyle || oscPosition == .top {
-        // Single-line configuration: icon sizes & spacing are adjustable
+        // Single row configuration: icon sizes & spacing are adjustable
         self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
         self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
         self.playIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks, fullHeight: fullIconHeight)
         self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks, fullHeight: fullIconHeight)
 
       } else {
-        self.playIconSize = fullIconHeight
-        self.toolIconSize = fullIconHeight
-        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: 3, fullHeight: fullIconHeight)
-        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: 3, fullHeight: fullIconHeight)
+        // Two-row configuration (qualifying for 2-row! May actually be single-row)
+        let iconSize = ControlBarGeometry.iconSize(fromTicks: iconSizeTicksMax - 1, fullHeight: fullIconHeight)
+        self.playIconSize = iconSize
+        self.toolIconSize = iconSize
+        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: spacingTicksMax + 1, fullHeight: fullIconHeight)
+        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: spacingTicksMax, fullHeight: fullIconHeight)
       }
     }
 
@@ -254,8 +256,9 @@ struct ControlBarGeometry {
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
   /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
   /// of its bounds, to prevent clipping.
-  var slidersBarHeightNormal: CGFloat {
-    return (sliderScale * Constants.Distance.Slider.unscaledBarNormalHeight).rounded()
+  var sliderBarHeightNormal: CGFloat {
+    let height = (sliderScale * Constants.Distance.Slider.unscaledBarNormalHeight * 0.8).rounded()
+    return max(Constants.Distance.Slider.unscaledBarNormalHeight, height)
   }
 
   var volumeIconHeight: CGFloat {
@@ -300,12 +303,21 @@ struct ControlBarGeometry {
 
   // MARK: Computed props: Playback Controls
 
+  /// Horizontal spacing between each of the set of controls in the bar (e.g., `playSliderAndTimeLabelsView`, `fragToolbarView`, etc.
   var hStackSpacing: CGFloat {
     if isTwoRowBarOSC {
       return (Constants.Distance.oscSectionHSpacing_TwoRow * (barHeight / Constants.Distance.Slider.minPlaySliderHeight)).rounded()
     } else {
       return (Constants.Distance.oscSectionHSpacing_SingleRow + barHeight / 5).rounded()
     }
+  }
+
+  /// Horizontal spacing between PlaySlider & time labels (if `timeLabelsWrapSlider==YES`). Also: horizontal spacing between VolumeSlider & volume icon.
+  var hSpacingAroundSliders: CGFloat {
+    if mode == .musicMode || position == .floating {
+      return 6.0
+    }
+    return (max(6.0, hStackSpacing * 0.667)).rounded()
   }
 
   /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
@@ -331,10 +343,10 @@ struct ControlBarGeometry {
     case .top, .bottom:
       if isTwoRowBarOSC && !oscTimeLabelsAlwaysWrapSlider {
         // Time labels go under slider; plenty of space
-        let normalSize = 12.0
+        let normalSize = 11.0
         return (sliderScale * normalSize).rounded().clamped(to:normalSize...(normalSize * 3))
       }
-      let normalSize = 11.0
+      let normalSize = 10.0
       return (sliderScale * normalSize).rounded().clamped(to:normalSize...(normalSize * 3))
     }
   }

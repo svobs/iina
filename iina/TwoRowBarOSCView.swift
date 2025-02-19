@@ -13,6 +13,8 @@ class TwoRowBarOSCView: ClickThroughView {
   var intraRowSpacingConstraint: NSLayoutConstraint!
   /// This subtracts from the height of the icons, but is needed to balance out the space above
   var hStackView_BottomMarginConstraint: NSLayoutConstraint!
+  var hStackViewLeadingConstraint: NSLayoutConstraint!
+  var hStackViewTrailingConstraint: NSLayoutConstraint!
 
   /// Used only if `PK.oscTimeLabelsAlwaysWrapSlider` is enabled.
   let timeSlashLabel = ClickThroughTextField()
@@ -31,8 +33,15 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
     addSubview(hStackView)
-    hStackView.addConstraintsToFillSuperview(leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
-                                             trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
+
+    hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: Constants.Distance.TwoRowOSC.leadingStackViewMargin)
+    hStackViewLeadingConstraint.identifier = "\(hStackView.idString)_Lead-Offset"
+    hStackViewLeadingConstraint.isActive = true
+
+    hStackViewTrailingConstraint = self.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
+    hStackViewTrailingConstraint.identifier = "\(hStackView.idString)_Trail-Offset"
+    hStackViewTrailingConstraint.isActive = true
+
     hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0.0)
     hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
     relaxConstraints()
@@ -79,7 +88,7 @@ class TwoRowBarOSCView: ClickThroughView {
     let playSliderTypeView: NSView
     if oscGeo.timeLabelsWrapSlider {
       // Option 2: Both PlaySlider & time labels go in Row 1 (via playSliderAndTimeLabelsView)
-      pwc.addSubviewsToPlaySliderAndTimeLabelsView()
+      pwc.addSubviewsToPlaySliderAndTimeLabelsView(oscGeo)
       playSliderTypeView = pwc.playSliderAndTimeLabelsView
     } else {
       // Option 1: PlaySlider goes in Row 1; time labels in Row 2
@@ -105,6 +114,9 @@ class TwoRowBarOSCView: ClickThroughView {
     intraRowSpacingConstraint.priority = .defaultLow  // for now
     intraRowSpacingConstraint.isActive = true
 
+    hStackViewLeadingConstraint.animateToConstant(oscGeo.hStackSpacing * 0.5)  // TODO: fix play icon spacing
+    hStackViewTrailingConstraint.animateToConstant(oscGeo.hStackSpacing)
+
     viewsForHStack.append(centralSpacerView)
     viewsForHStack.append(pwc.fragVolumeView)
     viewsForHStack.append(pwc.fragToolbarView)
@@ -128,7 +140,6 @@ class TwoRowBarOSCView: ClickThroughView {
       hStackView.setVisibilityPriority(.detachLessEarly, for: timeSlashLabel)
     }
 
-
     pwc.log.verbose{"TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) toolIconH=\(oscGeo.toolIconSize)"}
     // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top
     // (and overlapping with the btm of the play slider, but that is just empty space not being used anyway).
@@ -138,6 +149,10 @@ class TwoRowBarOSCView: ClickThroughView {
     // exactly the same time and can result in constraint conflict errors.
     hStackView_BottomMarginConstraint.priority = .init(901)
     intraRowSpacingConstraint.priority = .init(901)
+
+    pwc.fragToolbarView.updateConstraints()
+    pwc.osdHStackView.updateConstraints()
+    pwc.osdHStackView.layout()
   }
 
   func relaxConstraints() {

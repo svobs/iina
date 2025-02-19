@@ -36,7 +36,7 @@ extension VideoView {
     checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: self)),
                 "CVDisplayLinkSetOutputCallback")
     checkResult(CVDisplayLinkStart(link), "CVDisplayLinkStart")
-    log.verbose("Started DisplayLink")
+    log.verbose("DisplayLink started")
   }
 
   func stopDisplayLink() {
