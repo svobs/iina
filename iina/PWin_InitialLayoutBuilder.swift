@@ -114,6 +114,9 @@ extension PlayerWindowController {
         postWindowIsReadyToShow()
       }
 
+      // Run this early when restoring, before showWindow(), to avoid noticeable color flickering
+      videoView.refreshAllVideoDisplayState()
+
       player.refreshSyncUITimer()
       player.touchBarSupport.setupTouchBarUI()
 

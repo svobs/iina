@@ -855,7 +855,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     super.showWindow(sender)
 
     // Registers this window for didChangeScreenProfileNotification.
-    // Do not set this until now - have some suspicision that doing so can cause window to be displayed prematurely
+    // Do not set this until now - have some suspicion that doing so can cause window to be displayed prematurely
     window!.displaysWhenScreenProfileChanges = true
 
     /// Need this as a kludge to ensure it runs after tasks in `transformGeometry`

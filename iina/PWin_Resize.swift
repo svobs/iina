@@ -388,15 +388,14 @@ extension PlayerWindowController {
           // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
           log.debug{"[GeoTF:\(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID), will emit fileLoaded notifications"}
           cxt.currentPlayback.state = .loadedAndSized
+          // Should refresh EDR each time switching files
+          videoView.refreshAllVideoDisplayState()
 
           // If is network resource, may not be loaded yet. If file, it will be.
           player.postNotification(.iinaFileLoaded)
           player.events.emit(.fileLoaded, data: cxt.currentPlayback.url.absoluteString)
         }
       }
-
-      // Plugs loophole when restoring:
-      videoView.refreshAllVideoDisplayState()
 
       // Need to call here to ensure file title OSD is displayed when navigating playlist...
       player.refreshSyncUITimer()
