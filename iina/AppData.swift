@@ -322,7 +322,7 @@ struct Constants {
       static let defaultKnobHeight: CGFloat = 15
 
       /// Note: doubling this value must result in a whole integer because it influences CGImage size.
-      static let shadowBlurRadius: CGFloat = 1.0
+      static let shadowBlurRadius: CGFloat = 2.0
 
       static let musicModeKnobHeight: CGFloat = 12
 
@@ -422,9 +422,12 @@ struct Constants {
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
 
     static let clearBlackGradientColors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.05),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.2),
-                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.6),
-                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.75)]
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.35),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.5),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)]
+
   }
 }  /// end `Constants`
 
