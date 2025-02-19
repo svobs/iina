@@ -425,6 +425,26 @@ extension PlayerWindowController {
       }
     }
 
+    // If exiting music mode, need to restore views early in this step
+    if transition.isExitingMusicMode {
+      log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
+      miniPlayer.view.removeFromSuperview()
+
+      // Make sure to restore video
+      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
+      if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
+        log.verbose{"[\(transition.name)] Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
+      }
+      viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+
+      // Make sure to reset constraints for OSD
+      miniPlayer.hideControllerButtons()
+      closeButtonView.isHidden = true
+      if !transition.inputGeometry.isVideoVisible {
+        addVideoViewToWindow()
+      }
+    }
+
     if transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging {
       rebuildBottomBarView(in: window.contentView!, style: transition.outputLayout.effectiveOSCColorScheme)
       updateBottomBarPlacement(placement: outputLayout.bottomBarPlacement)
@@ -600,23 +620,6 @@ extension PlayerWindowController {
 
         // Update music mode UI
         updateTitle()
-      } else { // Exiting music mode
-        log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
-        miniPlayer.view.removeFromSuperview()
-
-        // Make sure to restore video
-        miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
-        if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
-          log.verbose{"[\(transition.name)] Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
-        }
-        viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
-
-        // Make sure to reset constraints for OSD
-        miniPlayer.hideControllerButtons()
-        closeButtonView.isHidden = true
-        if !transition.inputGeometry.isVideoVisible {
-          addVideoViewToWindow()
-        }
       }
     }
 
@@ -1020,7 +1023,14 @@ extension PlayerWindowController {
     }
 
     // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)
-    applyThemeMaterial(using: transition.outputLayout.spec, window!, window!.screen!)
+    if let window, let screen = window.screen {
+      applyThemeMaterial(using: transition.outputLayout.spec, window, screen)
+    } else {
+      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
+      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
+      // be called via windowDidChangeScreen.
+      log.verbose{"[\(transition.name)] Skipped applyThemeMaterial due to missing window or screen"}
+    }
 
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
@@ -1523,7 +1533,7 @@ extension PlayerWindowController {
         btn.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
       }
     }
-    
+
     // It's not possible to control the icon padding from inside the buttons in all cases.
     // Instead we can get the same effect with a little more work, by controlling the stack view:
     let iconSpacing = newGeo.toolIconSpacing
@@ -1533,7 +1543,7 @@ extension PlayerWindowController {
                                        bottom: iconSpacing, right: sideInset)
     log.verbose{"[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)"}
   }
-  
+
   // MARK: - Misc support functions
 
   /// Call this when `origVideoSize` is known.

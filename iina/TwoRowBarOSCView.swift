@@ -115,7 +115,7 @@ class TwoRowBarOSCView: ClickThroughView {
     intraRowSpacingConstraint.isActive = true
 
     hStackViewLeadingConstraint.animateToConstant(oscGeo.hStackSpacing * 0.5)  // TODO: fix play icon spacing
-    hStackViewTrailingConstraint.animateToConstant(oscGeo.hStackSpacing)
+    hStackViewTrailingConstraint.animateToConstant(oscGeo.hStackSpacing * 0.5)
 
     viewsForHStack.append(centralSpacerView)
     viewsForHStack.append(pwc.fragVolumeView)
