@@ -371,7 +371,9 @@ struct Constants {
     static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
     static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
     static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.5
-    static let oscClearBG_TextShadowBlurRadius: CGFloat = 1.5
+    /// Shadow blur of time labels = its contentHeight * multiplier + constant
+    static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.5
+    static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.02
     // See also: Constants.Distance.Slider.shadowBlurRadius
 
     /**

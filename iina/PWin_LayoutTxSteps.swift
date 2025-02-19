@@ -721,7 +721,30 @@ extension PlayerWindowController {
       leftArrowButton.isHidden = hideArrowBtns
       rightArrowButton.isHidden = hideArrowBtns
 
-      if transition.isWindowInitialLayout || transition.isOSCStyleChanging {
+      let timeLabelFont: NSFont = oscGeo.timeLabelFont
+      leftTimeLabel.font = timeLabelFont
+      rightTimeLabel.font = timeLabelFont
+      oscTwoRowView.timeSlashLabel.font = timeLabelFont
+
+      // Not floating OSC!
+      if !transition.outputLayout.hasFloatingOSC {
+        updateSpeedLabelFont(for: transition)
+      }
+
+      let sliderKnobWidth = oscGeo.sliderKnobWidth
+      let sliderKnobHeight = oscGeo.sliderKnobHeight
+      playSlider.customCell.knobWidth = sliderKnobWidth
+      playSlider.customCell.knobHeight = sliderKnobHeight
+      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
+      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+      playSlider.needsDisplay = true
+
+      let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
+      volumeSliderCell.knobWidth = sliderKnobWidth
+      volumeSliderCell.knobHeight = sliderKnobHeight
+      volumeSlider.needsDisplay = true
+
+      if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
         let hasClearBG = transition.outputLayout.oscHasClearBG
         log.verbose{"[\(transition.name)] Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}
 
@@ -736,10 +759,11 @@ extension PlayerWindowController {
           textAlpha = 0.8
           timeLabelTextColor = .white
 
-          let blurRadiusConstant = Constants.Distance.oscClearBG_TextShadowBlurRadius
-          leftTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
-          rightTimeLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
-          oscTwoRowView.timeSlashLabel.addShadow(blurRadiusConstant: blurRadiusConstant)
+          let blurRadiusConstant = Constants.Distance.oscClearBG_TextShadowBlurRadius_Constant
+          let blurRadiusMultiplier = Constants.Distance.oscClearBG_TextShadowBlurRadius_Multiplier
+          leftTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
+          rightTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
+          oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
 
           knobFactory.mainKnobColor = NSColor.controlForClearBG
         } else {
@@ -764,29 +788,6 @@ extension PlayerWindowController {
         // Invalidate all cached knob images so they are rebuilt with new style
         knobFactory.invalidateCachedKnobs()
       }
-
-      let timeLabelFont: NSFont = oscGeo.timeLabelFont
-      leftTimeLabel.font = timeLabelFont
-      rightTimeLabel.font = timeLabelFont
-      oscTwoRowView.timeSlashLabel.font = timeLabelFont
-
-      // Not floating OSC!
-      if !transition.outputLayout.hasFloatingOSC {
-        updateSpeedLabelFont(for: transition)
-      }
-
-      let sliderKnobWidth = oscGeo.sliderKnobWidth
-      let sliderKnobHeight = oscGeo.sliderKnobHeight
-      playSlider.customCell.knobWidth = sliderKnobWidth
-      playSlider.customCell.knobHeight = sliderKnobHeight
-      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
-      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
-      playSlider.needsDisplay = true
-
-      let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
-      volumeSliderCell.knobWidth = sliderKnobWidth
-      volumeSliderCell.knobHeight = sliderKnobHeight
-      volumeSlider.needsDisplay = true
     }
 
     // Interactive mode

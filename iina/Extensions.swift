@@ -1876,7 +1876,8 @@ extension NSControl {
     let controlHeight = fittingSize.height
     let shadow = NSShadow()
     // Amount of blur (in pixels) applied to the shadow.
-    shadow.shadowBlurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
+    let blurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
+    shadow.shadowBlurRadius = blurRadius
     shadow.shadowColor = color
     // the distance from the text the shadow is dropped (+X = to the right; -Y = below the text):
     shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier + xOffsetConstant, height: controlHeight * shadowOffsetMultiplier + yOffsetConstant)
