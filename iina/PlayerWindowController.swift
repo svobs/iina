@@ -665,7 +665,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
     }
     // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
-    videoView.refreshAllVideoState()
+    videoView.refreshAllVideoDisplayState()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
     if !sessionState.isRestoring {  // this can mess up music mode restore
@@ -854,6 +854,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
 
+    // Registers this window for didChangeScreenProfileNotification.
+    // Do not set this until now - have some suspicision that doing so can cause window to be displayed prematurely
+    window!.displaysWhenScreenProfileChanges = true
+
     /// Need this as a kludge to ensure it runs after tasks in `transformGeometry`
     DispatchQueue.main.async { [self] in
       var animationTasks: [IINAAnimation.Task] = []
@@ -893,7 +897,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// Do not use the offical `NSWindowDelegate` method. This method will be called by the global window listener.
-  func windowWillClose() {
+  func doPriorToWindowWillClose(_ window: NSWindow) {
     log.verbose("Window will close")
     defer {
       player.events.emit(.windowWillClose)
@@ -916,7 +920,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard !AppDelegate.shared.isTerminating else { return }
 
     // stop tracking mouse event
-    if let window, let contentView = window.contentView {
+    if let contentView = window.contentView {
       contentView.trackingAreas.forEach(contentView.removeTrackingArea)
     }
     playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
@@ -924,6 +928,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     hideOSD(immediately: true)
 
     // Reset state flags
+    window.displaysWhenScreenProfileChanges = false
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
     let wasSessionFinishedOpening = sessionState.hasOpenSession
@@ -1231,7 +1236,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
         applyThemeMaterial(window, screen)  // scaleFactor may have changed
-        videoView.refreshAllVideoState()
+        videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
       })
 
@@ -1283,7 +1288,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       guard !isClosing else { return }
       UIState.shared.updateCachedScreens()
       log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
-      videoView.refreshAllVideoState()
+      videoView.refreshAllVideoDisplayState()
 
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 

@@ -177,9 +177,9 @@ class VideoView: NSView {
     return false
   }
 
-  func refreshAllVideoState() {
-    // Do not execute if hidden during restore! Some of these calls may cause the window to show
+  func refreshAllVideoDisplayState() {
     guard player.windowController.loaded, player.isActive && !player.isRestoring else { return }
+    log.verbose{"Refreshing all VideoView display state"}
     updateDisplayLink()
     refreshContentsScale()
     refreshEdrMode()
@@ -256,11 +256,9 @@ class VideoView: NSView {
 
   // MARK: - HDR
 
-  /// See also: `refreshAllVideoState`. Cannot execute until player is started & file is loaded.
+  /// See also: `refreshAllVideoDisplayState`. Cannot execute until player is started & file is loaded.
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }
-    // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.isActive, !player.isRestoring else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 

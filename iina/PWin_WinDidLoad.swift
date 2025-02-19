@@ -41,9 +41,6 @@ extension PlayerWindowController {
 
     window.minSize = Constants.WindowedMode.minWindowSize
 
-    // Registers this window for didChangeScreenProfileNotification
-    window.displaysWhenScreenProfileChanges = true
-
     leftTimeLabel.mode = .current
     rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 

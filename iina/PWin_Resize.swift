@@ -396,7 +396,7 @@ extension PlayerWindowController {
       }
 
       // Plugs loophole when restoring:
-      videoView.refreshAllVideoState()
+      videoView.refreshAllVideoDisplayState()
 
       // Need to call here to ensure file title OSD is displayed when navigating playlist...
       player.refreshSyncUITimer()

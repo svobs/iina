@@ -387,7 +387,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
 
     if let player = (window.windowController as? PlayerWindowController)?.player {
-      player.windowController.windowWillClose()
+      player.windowController.doPriorToWindowWillClose(window)
       // Player window was closed; need to remove some additional state
       player.clearSavedState()
 

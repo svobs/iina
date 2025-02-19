@@ -177,7 +177,7 @@ extension PlayerWindowController {
         .toneMappingTargetPeak,
         .loadIccProfile,
         .toneMappingAlgorithm:
-      videoView.refreshEdrMode()
+      player.refreshEdrMode()
     case .themeMaterial:
       animationPipeline.submitInstantTask { [self] in
         if let window, let screen = window.screen {
