@@ -537,7 +537,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var bufferDetailLabel: NSTextField!
 
   @IBOutlet weak var additionalInfoView: NSVisualEffectView!
-  let additionalInfoTitle = ResizableTextView()
+  let additionalInfoTitle = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
   @IBOutlet weak var additionalInfoStackView: NSStackView!
   @IBOutlet weak var additionalInfoLabel: NSTextField!
   @IBOutlet weak var additionalInfoBatteryView: NSView!

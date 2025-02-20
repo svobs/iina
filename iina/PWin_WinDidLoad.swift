@@ -654,14 +654,7 @@ extension PlayerWindowController {
     trailingConstraint.isActive = true
     let leadingConstraint = additionalInfoTitle.leadingAnchor.constraint(equalTo: additionalInfoView.leadingAnchor, constant: 16)
     leadingConstraint.isActive = true
-    additionalInfoTitle.identifier = .init("AdditionalInfo-TitleLabel")
-    additionalInfoTitle.isEditable = false
-    additionalInfoTitle.isSelectable = false
-    additionalInfoTitle.isFieldEditor = false
-    additionalInfoTitle.backgroundColor = .clear
-    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-    pStyle.lineBreakMode = .byTruncatingMiddle
-    additionalInfoTitle.defaultParagraphStyle = pStyle
+    additionalInfoTitle.idString = "AdditionalInfo-TitleLabel"
     additionalInfoTitle.font = .systemFont(ofSize: 18)
     additionalInfoTitle.textColor = .labelColor
 

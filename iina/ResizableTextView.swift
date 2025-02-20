@@ -7,6 +7,32 @@
 //
 
 class ResizableTextView: NSTextView {
+
+  init(lineBreakMode: NSLineBreakMode) {
+    super.init(frame: .zero)
+    setup()
+    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+    pStyle.lineBreakMode = lineBreakMode
+    defaultParagraphStyle = pStyle
+  }
+
+  required override init(frame frameRect: NSRect, textContainer aTextContainer: NSTextContainer!) {
+    super.init(frame: frameRect, textContainer: aTextContainer)
+    setup()
+  }
+
+  required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    setup()
+  }
+
+  fileprivate func setup() {
+    isEditable = false
+    isSelectable = false
+    isFieldEditor = false
+    backgroundColor = .clear
+  }
+
   override var acceptsFirstResponder: Bool {
     return false
   }
