@@ -128,7 +128,7 @@ struct ControlBarGeometry {
     } else if oscPosition == .floating {
       barHeight = 67  // not really useful here anyway
       fullIconHeight = 24
-      self.playSliderHeight = barHeight
+      self.playSliderHeight = 37
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
       self.playIconSize = floatingPlayIconSize

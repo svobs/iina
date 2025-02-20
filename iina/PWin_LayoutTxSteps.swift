@@ -947,8 +947,8 @@ extension PlayerWindowController {
 
         oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-        oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
         addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
+        oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.isHidden = false
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
 
