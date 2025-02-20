@@ -15,7 +15,7 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// PRE TRANSITION
-  /// Always immediate (i.e., not animated).
+  /// Setup work. Always immediate (i.e., not animated).
   func doPreTransitionWork(_ transition: LayoutTransition) {
     log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true
@@ -911,7 +911,6 @@ extension PlayerWindowController {
       rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
 
       // Animate toolbar icons to full size now
-      let iconSize = transition.outputLayout.controlBarGeo.toolIconSize
       for toolbarItem in fragToolbarView.views {
         (toolbarItem as! OSCToolbarButton).setStyle(using: transition.outputLayout)
       }
@@ -1103,37 +1102,11 @@ extension PlayerWindowController {
     }
   }
 
-  func updateTitleBarUI(from layoutState: LayoutState) {
-    guard let window else { return }
-    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
-    let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
-    // Leading sidebar toggle button
-    for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
-      if layoutState.leadingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: enableGlow && layoutState.leadingSidebar.isVisible)
-      }
-      fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
-    }
-    // Trailing sidebar toggle button
-    for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
-      if layoutState.trailingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: enableGlow && layoutState.trailingSidebar.isVisible)
-      }
-      fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
-    }
-
-    updateOnTopButton(from: layoutState, showIfFadeable: false)
-
-    // Title bar accessories (to cover native windowed mode):
-    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
-    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
-  }
-
   /// -------------------------------------------------
   /// POST TRANSITION: UPDATE INVISIBLES
-  /// Always instantaneous (not animated).
+  /// Cleanup & variable state updates. Always instantaneous (not animated).
   func doPostTransitionWork(_ transition: LayoutTransition) {
-    log.verbose("[\(transition.name)] DoPostTransitionWork")
+    log.verbose{"[\(transition.name)] DoPostTransitionWork"}
     // Update blending mode:
     updatePanelBlendingModes(to: transition.outputLayout)
 
@@ -1386,6 +1359,32 @@ extension PlayerWindowController {
   }
 
   // MARK: - Title bar items
+
+  func updateTitleBarUI(from layoutState: LayoutState) {
+    guard let window else { return }
+    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
+    let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
+    // Leading sidebar toggle button
+    for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
+      if layoutState.leadingSidebarToggleButton.isShowable {
+        button.setGlowForTitleBar(enabled: enableGlow && layoutState.leadingSidebar.isVisible)
+      }
+      fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
+    }
+    // Trailing sidebar toggle button
+    for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
+      if layoutState.trailingSidebarToggleButton.isShowable {
+        button.setGlowForTitleBar(enabled: enableGlow && layoutState.trailingSidebar.isVisible)
+      }
+      fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
+    }
+
+    updateOnTopButton(from: layoutState, showIfFadeable: false)
+
+    // Title bar accessories (to cover native windowed mode):
+    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
+    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
+  }
 
   func addTitleBarAccessoryViews() {
     guard let window = window else { return }
