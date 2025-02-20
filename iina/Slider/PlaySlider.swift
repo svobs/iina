@@ -48,10 +48,6 @@ final class PlaySlider: ScrollableSlider {
 
   private var abLoopBKnob: PlaySliderLoopKnob?
 
-  private var player: PlayerCore {
-    return customCell.player
-  }
-
   // MARK:- Initialization
 
   override init(frame frameRect: NSRect) {
@@ -98,12 +94,19 @@ final class PlaySlider: ScrollableSlider {
   }
 
   override func mouseUp(with event: NSEvent) {
-    player.windowController.mouseUp(with: event)
+    pwc?.mouseUp(with: event)
   }
 
   func showHoverIndicator(atSliderCoordX x: CGFloat) {
     guard let scaleFactor = window?.screen?.backingScaleFactor,
-          let sliderAppearance = customCell.sliderAppearance else { return }
+          let sliderAppearance = customCell.sliderAppearance,
+          let pwc else { return }
+
+    guard let hoverIndicator else {
+      // Probably init is done yet. If so, it should be soon enough to ignore for now
+      pwc.player.log.verbose{"PlaySlider.showHoverIndicator: hoverIndicator is nil, ignoring"}
+      return
+    }
 
     // Do not draw over the main knob, or AB loop knobs
     if customCell.wantsKnob {
@@ -137,7 +140,7 @@ final class PlaySlider: ScrollableSlider {
     }
 
     if hoverIndicator.imgLayer.contentsScale != scaleFactor {
-      let oscGeo = player.windowController.currentLayout.controlBarGeo
+      let oscGeo = pwc.currentLayout.controlBarGeo
       hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
     }
 
