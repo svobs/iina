@@ -114,6 +114,14 @@ class ScrollableSlider: NSSlider {
     return delta
   }
 
+  override var isHidden: Bool {
+     didSet {
+       // Trying to fix rare timing-related bug where slider does not appear
+       if !isHidden {
+         alphaValue = 1.0
+       }
+     }
+  }
 }
 
 
@@ -129,7 +137,7 @@ class ScrollableSliderCell: NSSliderCell {
     if hasClearBG {
       return NSAppearance(iinaTheme: .dark)
     }
-    return controlView?.window?.contentView?.iinaAppearance
+    return slider.window?.contentView?.iinaAppearance
   }
 
   var isDarkMode: Bool {
@@ -160,7 +168,7 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   override func drawKnob(_ knobRect: NSRect) {
-    guard let scaleFactor = controlView?.window?.screen?.backingScaleFactor,
+    guard let scaleFactor = slider.window?.screen?.backingScaleFactor,
           let kf = pwc?.knobFactory,
           let appearance = sliderAppearance else { return }
 

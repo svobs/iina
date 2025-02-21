@@ -154,6 +154,8 @@ struct Constants {
 
   static let symButtonImageTransitionSpeed = 2.0
 
+  static let defaultBackingScaleFactor: CGFloat = 2
+
   // Should PlaySlider height be capped at 2x its minimum?
   static let twoRowOSC_LimitPlaySliderHeight = false
 

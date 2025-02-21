@@ -27,9 +27,10 @@ class PlaySliderCell: ScrollableSliderCell {
   // MARK:- Displaying the Cell
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
-    guard let appearance = sliderAppearance,
-          let bf = pwc?.barFactory,
-          let scaleFactor = controlView?.window?.screen?.backingScaleFactor else { return }
+    guard let pwc else { return }
+    let scaleFactor: CGFloat = slider.window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
+    let appearance = sliderAppearance ?? slider.effectiveAppearance
+    let bf = pwc.barFactory ?? BarFactory(effectiveAppearance: appearance, pwc.currentLayout.spec)
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
     let knobRect = knobRect(flipped: false)
