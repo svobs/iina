@@ -106,7 +106,8 @@ struct LayoutSpec {
                                   visibility: oldTrailingSidebar?.visibility ?? .hide,
                                   lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
     let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
-    let isLegacyStyle = isLegacyStyle ?? mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode)
+    // Tricky need for parantheses here! Would be great as an interview question
+    let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
 
     return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,

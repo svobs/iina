@@ -1008,11 +1008,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let oldLayout = currentLayout
 
     let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreenNormal
-    log.verbose{"Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "")\(newMode)"}
+    log.verbose{"Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "native ")\(newMode)"}
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
     let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
 
-    buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "")FullScreen", from: oldLayout, to: fullscreenLayout,
+    buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "Native")FullScreen", from: oldLayout, to: fullscreenLayout,
                           totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
   }
 
@@ -1061,7 +1061,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     log.verbose{"Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutSpec.mode)"}
     assert(!windowedLayoutSpec.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutSpec.mode)! Spec: \(windowedLayoutSpec)")
     /// Split the duration between `openNewPanels` animation and `fadeInNewViews` animation
-    let exitFSTransition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "")FullScreen",
+    let exitFSTransition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "Native")FullScreen",
                                                  from: oldLayout, to: windowedLayoutSpec,
                                                  totalStartingDuration: 0, totalEndingDuration: duration)
 
@@ -1094,7 +1094,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
     let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    log.verbose{"EnterFullScreen called. Legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)"}
+    log.verbose{"EnterFullScreen called. Legacy=\(isLegacy.yn) isNativeFullScreenNow=\(isFullScreen.yn)"}
 
     if isLegacy {
       animationPipeline.submitInstantTask({ [self] in
@@ -2452,7 +2452,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return
     }
     guard let window else { return }
-    if Preference.bool(for: .useLegacyFullScreen) {
+    let useLegacy = Preference.bool(for: .useLegacyFullScreen)
+    log.verbose{"Resetting collection behavior for full screen, legacy=\(useLegacy.yn)"}
+    if useLegacy {
       window.collectionBehavior.remove(.fullScreenPrimary)
       window.collectionBehavior.insert(.fullScreenAuxiliary)
     } else {
