@@ -81,9 +81,7 @@ extension PlayerWindowController {
                           xOffsetConstant: Constants.Distance.seekPreviewTimeLabel_xOffsetConstant,
                           yOffsetConstant: Constants.Distance.seekPreviewTimeLabel_yOffsetConstant,
                           color: .black)
-      let shadow: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
-      let useGlow = shadow == .glow
-      thumbnailPeekView.updateColors(glowShadow: useGlow)
+      thumbnailPeekView.updateColors()
     }
 
     /// This is expected to be called at first layout

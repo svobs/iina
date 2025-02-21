@@ -26,12 +26,7 @@ class ThumbnailPeekView: NSImageView {
     imageScaling = .scaleNone
     imageFrameStyle = .none
     refusesFirstResponder = true
-
-    let shadow = NSShadow()
-    shadow.shadowColor = .black
-    shadow.shadowBlurRadius = 0
-    shadow.shadowOffset = .zero
-    self.shadow = shadow
+    updateColors()
 
     translatesAutoresizingMaskIntoConstraints = false
     widthConstraint = widthAnchor.constraint(equalToConstant: dummyFrame.width)
@@ -107,16 +102,23 @@ class ThumbnailPeekView: NSImageView {
     return min(10, 2 + (frameHeight * 0.01))
   }
 
-  func updateColors(glowShadow: Bool) {
-    guard let layer = self.layer else { return }
-    layer.borderColor = CGColor(gray: 0.6, alpha: 0.5)
+  func updateColors() {
+    layer?.borderColor = CGColor(gray: 0.6, alpha: 0.5)
 
-    if glowShadow {
-      associatedPlayer?.log.verbose("Using thumbnail shadow: glow")
-      layer.shadowColor = Constants.Color.whiteShadow
+    let shadowColor: CGColor
+    let shadowType: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
+    if shadowType == .glow {
+      associatedPlayer?.log.verbose("Using thumbnail shadow: white")
+      shadowColor = Constants.Color.whiteShadow
     } else {
       associatedPlayer?.log.verbose("Using thumbnail shadow: black")
-      layer.shadowColor = Constants.Color.blackShadow
+      shadowColor = Constants.Color.blackShadow
     }
+
+    let shadow = NSShadow()
+    shadow.shadowColor = NSColor(cgColor: shadowColor)
+    shadow.shadowBlurRadius = 0
+    shadow.shadowOffset = .zero
+    self.shadow = shadow
   }
 }
