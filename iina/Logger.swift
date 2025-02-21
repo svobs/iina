@@ -253,8 +253,7 @@ class Logger: NSObject {
 
     func trace(_ msgFunc: LogMsgFunc) {
       guard Logger.isTraceEnabled else { return }
-      /// trace is not a "real" level yet. Just use `verbose` for now
-      Logger.log(msgFunc(), level: .verbose, subsystem: self)
+      Logger.log(msgFunc(), level: .trace, subsystem: self)
     }
 
     func verbose(_ msgFunc: LogMsgFunc) {

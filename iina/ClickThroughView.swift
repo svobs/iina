@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+ 
 class ClickThroughView: NSView {
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     return Preference.bool(for: .videoViewAcceptsFirstMouse)

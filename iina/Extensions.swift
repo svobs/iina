@@ -1895,9 +1895,9 @@ extension NSView {
     return pwc?.player
   }
 
-  /// Needs superview to return non-nil value.
-  var frameInWindowCoords: NSRect? {
-    return superview?.convert(frame, to: nil)
+  /// Obviously, make sure this view has been added to the window first.
+  var frameInWindowCoords: NSRect {
+    return convert(bounds, to: nil)
   }
 
   var idString: String {

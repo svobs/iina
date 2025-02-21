@@ -242,7 +242,7 @@ extension PlayerWindowController {
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
           timeLabelOriginY = (oscTopY + halfMargin).rounded()
         } else {
-          guard let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords else { return }
+          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
           let quarterMargin = margins.bottom * 0.25
           let halfKnobHeight = player.windowController.playSlider.customCell.knobHeight * 0.5
@@ -260,7 +260,7 @@ extension PlayerWindowController {
         if currentLayout.oscPosition == .floating {
           timeLabelOriginY = (oscOriginInWindowY - quarterMargin - timeLabelSize.height).rounded()
         } else {
-          guard let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords else { return }
+          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
           let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
           let halfKnobHeight = (player.windowController.playSlider.customCell.knobHeight * 0.5).rounded()
@@ -443,7 +443,7 @@ extension PlayerWindowController {
 
   /// Makes fake point in window to position seek time & thumbnail
   func refreshSeekPreviewAsync(forWindowCoordX windowCoordX: CGFloat, animateHide: Bool = false) {
-    guard let playSliderFrameInWindowCoords = playSlider.frameInWindowCoords else { return }
+    let playSliderFrameInWindowCoords = playSlider.frameInWindowCoords
     let pointInWindow = CGPoint(x: windowCoordX, y: playSliderFrameInWindowCoords.midY)
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: animateHide)
   }

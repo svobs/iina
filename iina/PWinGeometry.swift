@@ -70,6 +70,7 @@ enum ScreenFit: Int {
     values which can arise if calculating it from disparate sources.
 
  Below is an example of a player window with letterboxed video, where the viewport is taller than `videoView`.
+ All 4 bars in this example are in the `outsideViewport` placement.
  • Identifiers beginning with `wc.` refer to fields in the `PlayerWindowController` instance.
  • Identifiers beginning with `geo.` are `PWinGeometry` fields.
  • The window's frame (`windowFrame`) is the outermost rectangle.

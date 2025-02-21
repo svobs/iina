@@ -203,13 +203,19 @@ extension PlayerWindowController {
     })
   }
 
-  /// Returns the first view found in `views` for which the given mouse event's point location lands inside its bounds.
-  func viewForMouseEvent(_ event: NSEvent, in views: [NSView?]) -> NSView? {
+  /// Returns the first view found in `views` for which the given mouse event's point location lands inside its bounds, and for
+  /// which neither it nor any of its ancestors are hidden.
+  ///
+  /// This method is meant as a substitute from `NSView.hitTest`, which seems to only return the first responder.
+  func visibleViewForMouseEvent(_ event: NSEvent, in views: [NSView?]) -> NSView? {
+    let pointInWindow = event.locationInWindow
     for view in views {
       guard let view else { continue }
-      let localPoint = view.convert(event.locationInWindow, from: nil)
-      if view.isMousePoint(localPoint, in: view.bounds) {
-        return view
+      let viewFrame = view.frameInWindowCoords
+      if view.isMousePoint(pointInWindow, in: viewFrame) {
+        if !view.isHiddenOrHasHiddenAncestor {
+          return view
+        }
       }
     }
     return nil
@@ -224,8 +230,11 @@ extension PlayerWindowController {
   }
 
   override func pressureChange(with event: NSEvent) {
-    if let clickedButton = viewForMouseEvent(event, in: symButtons) {
+    if let clickedButton = visibleViewForMouseEvent(event, in: symButtons) {
       // Allow these controls to handle the event
+      if log.isTraceEnabled {
+        log.trace{"PressureChange: clicked button=\(clickedButton.idString) hidden=\(clickedButton.isHidden.yn) stage=\(event.stage) stageTransition=\(event.stageTransition)"}
+      }
       clickedButton.pressureChange(with: event)
       return
     }

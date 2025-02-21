@@ -2288,6 +2288,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /** handle action of either left or right arrow button */
   func arrowButtonAction(left: Bool, clickPressure: Int) {
     let didRelease = clickPressure == 0
+    log.verbose{"ArrowButton \(left ? "left" : "right"): \(didRelease ? "released" : "pressed, clickPressure=\(clickPressure)")"}
 
     let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     switch arrowBtnFunction {
