@@ -505,7 +505,8 @@ extension PlayerWindowController {
     case .playerWindow:
       guard currentDragObject == nil else { return }
 
-      if !isAnimating && Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+      if Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+        log.verbose("Mouse moved out of window: hiding fadeableViews")
         hideFadeableViews()
       } else {
         // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)

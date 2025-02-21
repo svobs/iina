@@ -176,7 +176,7 @@ extension PlayerWindowController {
 
   @discardableResult
   func hideFadeableViews() -> Bool {
-    guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViews.animationState == .shown else {
+    guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)) else {
       return false
     }
 
@@ -195,6 +195,7 @@ extension PlayerWindowController {
     }
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
+      guard fadeableViews.animationState == .shown else { return }
       // Don't hide overlays when in PIP or when they are not actually shown
       fadeableViews.hideTimer.cancel()
       fadeableViews.animationState = .willHide
