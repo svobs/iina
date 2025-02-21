@@ -303,9 +303,12 @@ extension PlayerWindowController {
       }
     case .alwaysShowOnTopIcon,
         .alwaysFloatOnTop:
-      if loaded, Preference.bool(for: .alwaysFloatOnTop) {
+      guard loaded else { return }
+      if Preference.bool(for: .alwaysFloatOnTop) {
         let playing = player.info.isPlaying
         setWindowFloatingOnTop(playing, from: currentLayout)
+      } else {
+        updateOnTopButton(from: currentLayout)
       }
     case .leadingSidebarPlacement, .trailingSidebarPlacement:
       updateSidebarPlacements()
