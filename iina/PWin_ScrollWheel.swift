@@ -154,8 +154,7 @@ extension PlayerWindowController {
 
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
-    guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
-                                         titleBarView, subPopoverView]) else { return }
+    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
 
     windowScrollWheel.scrollWheel(with: event)
   }
