@@ -1887,11 +1887,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func setWindowFloatingOnTop(_ onTop: Bool, from layout: LayoutState, updateOnTopStatus: Bool = true) {
-    guard !layout.isFullScreen else { return }
-    guard let window = window else { return }
-    log.verbose{"Setting window onTop=\(onTop.yn) → \((!onTop).yn)"}
+    guard !layout.isFullScreen else {
+      log.verbose{"Ignoring request to set onTop=\(onTop.yn): currently in full screen"}
+      return
+    }
+    log.verbose{"Setting window onTop=\((!onTop).yn) → \(onTop.yn), updateStatus=\(updateOnTopStatus.yn)"}
 
-    window.level = onTop ? .iinaFloating : .normal
+    window?.level = onTop ? .iinaFloating : .normal
     if updateOnTopStatus {
       self.isOnTop = onTop
       player.mpv.setFlag(MPVOption.Window.ontop, onTop)
@@ -2351,17 +2353,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   @IBAction func toggleOnTop(_ sender: AnyObject) {
-    let onTop = isOnTop
-    log.verbose{"Toggling onTop: \(onTop.yn) → \((!onTop).yn)"}
+    let wasOnTop = isOnTop
+    log.verbose{"Toggling onTop: \(wasOnTop.yn) → \((!wasOnTop).yn)"}
     if Preference.bool(for: .alwaysFloatOnTop) {
-      let isPlaying = onTop
+      let isPlaying = wasOnTop
       if isPlaying {
         // Assume window is only on top because media is playing. Pause the media to remove on-top.
         player.pause()
-        return
       }
     }
-    setWindowFloatingOnTop(!onTop, from: currentLayout)
+    setWindowFloatingOnTop(!wasOnTop, from: currentLayout)
   }
 
   /// Executes an absolute seek using `playSlider`'s current value.
