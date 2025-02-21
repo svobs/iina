@@ -245,6 +245,7 @@ extension PlayerWindowController {
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
+    controlBarTop.clipsToBounds = true  // for better animations when toggling OSC position/placement
     controlBarTop.identifier = .init("ControlBarTopView")
     topBarView.addSubviewAndConstraints(controlBarTop,
                                         bottom: 0, leading: 0, trailing: 0)

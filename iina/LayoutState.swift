@@ -595,6 +595,7 @@ struct LayoutState {
     var controlBarFloating: VisibilityMode = .hidden
     var bottomBarHeight: CGFloat = 0
     var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
+    var sidebarDownshift: CGFloat = Constants.Sidebar.defaultDownshift
 
     // OSC:
 
@@ -646,27 +647,14 @@ struct LayoutState {
       /// Special case for music mode. Only really applies to `playlistView`,
       /// because `quickSettingView` is never shown in this mode.
       sidebarTabHeight = Constants.Sidebar.musicModeTabHeight
-      self.sidebarDownshift = Constants.Sidebar.defaultDownshift
     } else if topBarView.isShowable {
       // Top bar always spans the whole width of the window (unlike the bottom bar)
-      // FIXME: someday, refactor title bar & top OSC outside of top bar & make iinto 2 independent bars.
-      // (so that top OSC will not overlap outside sidebars)
-      if spec.topBarPlacement == .outsideViewport {
-        self.sidebarDownshift = Constants.Sidebar.defaultDownshift
-      } else {
-        self.sidebarDownshift = titleBarHeight + topOSCHeight
+      if spec.topBarPlacement == .insideViewport {
+        sidebarDownshift = titleBarHeight + topOSCHeight
       }
-
-      let tabHeight = topOSCHeight
-      // Put some safeguards in place. Don't want to waste space or be too tiny to read.
-      // Leave default height if not in reasonable range.
-      if tabHeight >= Constants.Sidebar.minTabHeight && tabHeight <= Constants.Sidebar.maxTabHeight {
-        sidebarTabHeight = tabHeight
-      }
-    } else {
-      self.sidebarDownshift = Constants.Sidebar.defaultDownshift
     }
     self.titleBarHeight = titleBarHeight
+    self.sidebarDownshift = sidebarDownshift
     self.sidebarTabHeight = sidebarTabHeight
     self.oscHasClearBG = spec.oscBackgroundIsClear
   }
